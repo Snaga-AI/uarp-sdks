@@ -2,6 +2,24 @@
 
 package body UARP.API.Company is
 
+   function Apply_Tenant_Company_Template
+     (Self : Client_Type;
+      Payload : UARP.Models.Apply_Tenant_Company_Template_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Company_Proposal
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/tenants/me/company/apply-template",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Apply_Tenant_Company_Template;
+
    function Apply_Tenant_Proposal
      (Self : Client_Type;
       Proposal_Id : String;
@@ -35,6 +53,54 @@ package body UARP.API.Company is
              Idempotent => True,
              Options => Options));
    end Create_Tenant_Proposal;
+
+   function Export_Tenant_Company
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Company_Export
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/tenants/me/company/export",
+             Options => Options));
+   end Export_Tenant_Company;
+
+   function Fit_Company_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Payload : UARP.Models.Fit_Company_Template_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Fit_Company_Template_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/company-templates/" & UARP.Types.Encode_Path_Segment (Template_Id) & "/fit",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Fit_Company_Template;
+
+   function Get_Company_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Company_Template
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/company-templates/" & UARP.Types.Encode_Path_Segment (Template_Id),
+             Options => Options));
+   end Get_Company_Template;
 
    function Get_Tenant_Blueprint
      (Self : Client_Type;
@@ -84,6 +150,20 @@ package body UARP.API.Company is
              Options => Options));
    end Get_Tenant_Company_Overview;
 
+   function Get_Tenant_Plan_Fit
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Tenant_Plan_Fit_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/tenants/me/fit",
+             Options => Options));
+   end Get_Tenant_Plan_Fit;
+
    function Get_Tenant_Proposal
      (Self : Client_Type;
       Proposal_Id : String;
@@ -113,6 +193,24 @@ package body UARP.API.Company is
              Options => Options));
    end Get_Tenant_Readiness;
 
+   function Import_Tenant_Company
+     (Self : Client_Type;
+      Payload : UARP.Models.Company_Import_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Company_Proposal
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/tenants/me/company/import",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Import_Tenant_Company;
+
    function Launch_Tenant_Company
      (Self : Client_Type;
       Payload : UARP.Models.Launch_Tenant_Company_Request;
@@ -130,6 +228,20 @@ package body UARP.API.Company is
              Idempotent => True,
              Options => Options));
    end Launch_Tenant_Company;
+
+   function List_Company_Templates
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Company_Templates_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/company-templates",
+             Options => Options));
+   end List_Company_Templates;
 
    function List_Tenant_Company_Changes
      (Self : Client_Type;
@@ -150,6 +262,20 @@ package body UARP.API.Company is
              Query => Query,
              Options => Options));
    end List_Tenant_Company_Changes;
+
+   function List_Tenant_Company_Versions
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Tenant_Company_Versions_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/tenants/me/company/versions",
+             Options => Options));
+   end List_Tenant_Company_Versions;
 
    function List_Tenant_Proposals
      (Self : Client_Type;
@@ -223,6 +349,24 @@ package body UARP.API.Company is
              Idempotent => True,
              Options => Options));
    end Reject_Tenant_Proposal;
+
+   function Restore_Tenant_Company_Version
+     (Self : Client_Type;
+      Payload : UARP.Models.Restore_Tenant_Company_Version_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Company_Proposal
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/tenants/me/company/restore",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Restore_Tenant_Company_Version;
 
    function Resume_Tenant_Company
      (Self : Client_Type;

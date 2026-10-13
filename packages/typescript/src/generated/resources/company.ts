@@ -4,21 +4,31 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type {
+  ApplyTenantCompanyTemplateRequest,
+  CompanyExport,
+  CompanyImportRequest,
   CompanyProfile,
   CompanyProposal,
   CompanyProposalStatus,
+  CompanyTemplate,
   CompanyTestRun,
   CreateTenantProposalRequest,
+  FitCompanyTemplateRequest,
+  FitCompanyTemplateResponse,
   GetTenantBlueprintResponse,
   GetTenantCompanyOverviewResponse,
+  GetTenantPlanFitResponse,
   GetTenantReadinessResponse,
   LaunchTenantCompanyRequest,
+  ListCompanyTemplatesResponse,
   ListTenantCompanyChangesResponse,
+  ListTenantCompanyVersionsResponse,
   ListTenantProposalsResponse,
   PauseTenantCompanyRequest,
   PauseTenantCompanyResponse,
   PreviewTenantCompanyPauseResponse,
   RejectTenantProposalRequest,
+  RestoreTenantCompanyVersionRequest,
   StartTenantTestRunRequest,
   UpdateTenantCompanyRequest,
 } from '../models.js';
@@ -48,6 +58,28 @@ export interface ListTenantProposalsParams {
  * Operations tagged `Company`.
  */
 export class CompanyResource extends APIResource {
+  /**
+   * Propose a template for the active company
+   *
+   * Builds the template's operations from `inputs` and stores them as a pending proposal
+   * (`template` set) — nothing is created until a person applies it with `POST
+   * /tenants/me/proposals/{proposalId}/apply`, which also records the template on the company.
+   * Developer + `agents:write`.
+   *
+   * `POST /api/v1/tenants/me/company/apply-template`
+   *
+   * Required scopes: `agents:write`.
+   */
+  applyTenantCompanyTemplate(body: ApplyTenantCompanyTemplateRequest, options?: RequestOptions): Promise<CompanyProposal> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/tenants/me/company/apply-template',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
   /**
    * Apply a proposal — a person only
    *
@@ -96,6 +128,68 @@ export class CompanyResource extends APIResource {
       path: '/api/v1/tenants/me/proposals',
       body,
       idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * The company as a manifest without secrets
+   *
+   * Structure only: the profile, agents (prompts, SPECs, tools, approval policy, schedule;
+   * provider and model but never a key reference or endpoint), departments, schedules, mission
+   * plans, the budget, the governance tool list, and integrations and knowledge sources by name.
+   * Never a connector config, an MCP server's env or auth, a model key, any record's `metadata`,
+   * run history or memory — `excluded` lists each omission with the reason. For an audit, and
+   * the input a clone takes.
+   *
+   * `GET /api/v1/tenants/me/company/export`
+   *
+   * Required scopes: `agents:read`.
+   */
+  exportTenantCompany(options?: RequestOptions): Promise<CompanyExport> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/tenants/me/company/export',
+      options,
+    });
+  }
+
+  /**
+   * Will this template fit a plan, and what would it cost
+   *
+   * `target: new` (default) — as a NEW company: the free plan a new company starts on, the
+   * template's agents plus its Chief of Staff, the platform-default run profile. `target:
+   * current` — added to the active company: its plan, its workload and its run history. Same
+   * shape as `GET /tenants/me/fit`, plus `target` and `template`.
+   *
+   * `POST /api/v1/company-templates/{templateId}/fit`
+   *
+   * Required scopes: `agents:read`.
+   */
+  fitCompanyTemplate(templateId: string, body: FitCompanyTemplateRequest, options?: RequestOptions): Promise<FitCompanyTemplateResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/company-templates/${encodeURIComponent(String(templateId))}/fit`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * One template: roles, departments, pipeline, connectors, inputs
+   *
+   * `templateId` is `research-publishing` or pinned to a version, `research-publishing@1`; an
+   * unknown id or version is 404.
+   *
+   * `GET /api/v1/company-templates/{templateId}`
+   *
+   * Required scopes: `agents:read`.
+   */
+  getCompanyTemplate(templateId: string, options?: RequestOptions): Promise<CompanyTemplate> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/company-templates/${encodeURIComponent(String(templateId))}`,
       options,
     });
   }
@@ -163,6 +257,34 @@ export class CompanyResource extends APIResource {
   }
 
   /**
+   * Does the company fit its plan, and what will it cost a month
+   *
+   * An estimate, with its assumptions listed. One run's use is measured from this company's
+   * completed runs of the last 30 days (25th / 50th / 75th percentile of tokens, billed cost and
+   * tool calls); with fewer than 10, a platform default with a wide range (`run_profile.source:
+   * default`). Runs a month = every active schedule's fires over the next 30 days (as the
+   * scheduler counts them) × the runs one fire starts (a mission: its objectives) + the runs
+   * people started in the last 30 days; the high estimate adds 50% for retries and revisions.
+   * Cost is what this company is billed per run, never the provider's cost. `checks[].status`:
+   * `ok` fits with the high estimate, `tight` only the expected one, `over` not even that.
+   * `fits` is false when any check is `over`. Suggestion codes: UPGRADE_PLAN (with `plan`),
+   * REDUCE_WORKLOAD, RAISE_BUDGET, SET_BUDGET. Assumption codes: RUN_PROFILE_FROM_HISTORY,
+   * RUN_PROFILE_DEFAULT, SCHEDULES_OVER_30_DAYS, PERSON_RUNS_FROM_LAST_30_DAYS,
+   * RETRIES_HEADROOM, SCHEDULE_NOT_COUNTED. A weekly or daily spend cap is compared per month.
+   *
+   * `GET /api/v1/tenants/me/fit`
+   *
+   * Required scopes: `agents:read`.
+   */
+  getTenantPlanFit(options?: RequestOptions): Promise<GetTenantPlanFitResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/tenants/me/fit',
+      options,
+    });
+  }
+
+  /**
    * One proposal
    *
    * `GET /api/v1/tenants/me/proposals/{proposalId}`
@@ -199,6 +321,37 @@ export class CompanyResource extends APIResource {
   }
 
   /**
+   * Build this company from a manifest
+   *
+   * The counterpart of `/company/export`: the body is a manifest of that shape (`schema_version`
+   * must be `"1"`, anything else is 422). It is stored as a PENDING PROPOSAL — nothing is
+   * created until a person applies it, with the usual plan limits and rollback. Every id in the
+   * manifest is rewritten to reference the agent this import creates, so a manifest from another
+   * company cannot address records here; the exceptions are the target company's own Chief of
+   * Staff (an imported one is not re-created, and a department is led by the target's) and
+   * nothing else. An objective whose agent did not come along is dropped, and a department
+   * member the manifest does not create is dropped. A manifest ADDS: importing a company's own
+   * export back into that same company proposes every agent again (it matches nothing by name) —
+   * for a round trip into the same company use `POST /tenants/me/company/restore`, which matches
+   * an agent the snapshot knows and updates it instead. Integrations are never imported: the
+   * manifest names them and the proposal's `rationale` says which the founder must connect. Up
+   * to 50 agents, 20 departments, 50 schedules.
+   *
+   * `POST /api/v1/tenants/me/company/import`
+   *
+   * Required scopes: `agents:write`.
+   */
+  importTenantCompany(body: CompanyImportRequest, options?: RequestOptions): Promise<CompanyProposal> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/tenants/me/company/import',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Launch a ready draft — the version the founder reviewed
    *
    * A `draft` becomes `active` (automated work starts; `launched_at` set; change-log `source:
@@ -222,6 +375,21 @@ export class CompanyResource extends APIResource {
   }
 
   /**
+   * Company templates
+   *
+   * `GET /api/v1/company-templates`
+   *
+   * Required scopes: `agents:read`.
+   */
+  listCompanyTemplates(options?: RequestOptions): Promise<ListCompanyTemplatesResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/company-templates',
+      options,
+    });
+  }
+
+  /**
    * The company's change log, newest first
    *
    * `GET /api/v1/tenants/me/company/changes`
@@ -233,6 +401,27 @@ export class CompanyResource extends APIResource {
       method: 'GET',
       path: '/api/v1/tenants/me/company/changes',
       query: pick(params, ['limit']),
+      options,
+    });
+  }
+
+  /**
+   * The company's versions, and which can be restored
+   *
+   * The change log, newest first, each row saying whether that version's STRUCTURE was written
+   * down. A snapshot is taken when a proposal is applied and when the company is launched — a
+   * profile edit alone is a change-log row without one, and `has_snapshot: false`. Note the
+   * version counts profile changes, so agents and schedules can change without it moving; what a
+   * restore would do is settled by its diff, not by the number.
+   *
+   * `GET /api/v1/tenants/me/company/versions`
+   *
+   * Required scopes: `agents:read`.
+   */
+  listTenantCompanyVersions(options?: RequestOptions): Promise<ListTenantCompanyVersionsResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/tenants/me/company/versions',
       options,
     });
   }
@@ -305,6 +494,31 @@ export class CompanyResource extends APIResource {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/tenants/me/proposals/${encodeURIComponent(String(proposalId))}/reject`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Put the company back to a version's structure — as a proposal
+   *
+   * Builds a pending proposal from that version's snapshot: an agent the snapshot knows is
+   * updated back to how it was, one that is gone is created again, what came after is REMOVED
+   * (agents, their own schedules, mission schedules) and removals run last and cannot be undone.
+   * Departments added since are left in place and the rationale says why — disbanding a
+   * department also stops its members' own schedules, which would undo the restore. Memory, run
+   * history, results and people are not in a snapshot and do not come back. 404 when that
+   * version has no snapshot; 422 when the plan would change nothing; admin or owner.
+   *
+   * `POST /api/v1/tenants/me/company/restore`
+   *
+   * Required scopes: `agents:write`.
+   */
+  restoreTenantCompanyVersion(body: RestoreTenantCompanyVersionRequest, options?: RequestOptions): Promise<CompanyProposal> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/tenants/me/company/restore',
       body,
       idempotent: true,
       options,

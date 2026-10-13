@@ -48,6 +48,29 @@ impl Client {
 }
 
 impl CompanyApi {
+    /// Propose a template for the active company
+    ///
+    /// Builds the template's operations from `inputs` and stores them as a pending proposal
+    /// (`template` set) — nothing is created until a person applies it with `POST
+    /// /tenants/me/proposals/{proposalId}/apply`, which also records the template on the company.
+    /// Developer + `agents:write`.
+    ///
+    /// `POST /api/v1/tenants/me/company/apply-template`
+    ///
+    /// Required scopes: `agents:write`.
+    pub async fn apply_tenant_company_template(&self, body: &models::ApplyTenantCompanyTemplateRequest) -> Result<models::CompanyProposal> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/tenants/me/company/apply-template".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Apply a proposal — a person only
     ///
     /// Runs each operation through the route a person would call, with the caller's rights
@@ -99,6 +122,75 @@ impl CompanyApi {
                 body: Some(body),
                 headers: Vec::new(),
                 idempotent: true,
+            })
+            .await
+    }
+
+    /// The company as a manifest without secrets
+    ///
+    /// Structure only: the profile, agents (prompts, SPECs, tools, approval policy, schedule;
+    /// provider and model but never a key reference or endpoint), departments, schedules, mission
+    /// plans, the budget, the governance tool list, and integrations and knowledge sources by name.
+    /// Never a connector config, an MCP server's env or auth, a model key, any record's `metadata`,
+    /// run history or memory — `excluded` lists each omission with the reason. For an audit, and
+    /// the input a clone takes.
+    ///
+    /// `GET /api/v1/tenants/me/company/export`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn export_tenant_company(&self) -> Result<models::CompanyExport> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/tenants/me/company/export".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Will this template fit a plan, and what would it cost
+    ///
+    /// `target: new` (default) — as a NEW company: the free plan a new company starts on, the
+    /// template's agents plus its Chief of Staff, the platform-default run profile. `target:
+    /// current` — added to the active company: its plan, its workload and its run history. Same
+    /// shape as `GET /tenants/me/fit`, plus `target` and `template`.
+    ///
+    /// `POST /api/v1/company-templates/{templateId}/fit`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn fit_company_template(&self, template_id: &str, body: &models::FitCompanyTemplateRequest) -> Result<models::FitCompanyTemplateResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/company-templates/{}/fit", encode_path(template_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// One template: roles, departments, pipeline, connectors, inputs
+    ///
+    /// `templateId` is `research-publishing` or pinned to a version, `research-publishing@1`; an
+    /// unknown id or version is 404.
+    ///
+    /// `GET /api/v1/company-templates/{templateId}`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn get_company_template(&self, template_id: &str) -> Result<models::CompanyTemplate> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/company-templates/{}", encode_path(template_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
             })
             .await
     }
@@ -173,6 +265,37 @@ impl CompanyApi {
             .await
     }
 
+    /// Does the company fit its plan, and what will it cost a month
+    ///
+    /// An estimate, with its assumptions listed. One run's use is measured from this company's
+    /// completed runs of the last 30 days (25th / 50th / 75th percentile of tokens, billed cost and
+    /// tool calls); with fewer than 10, a platform default with a wide range (`run_profile.source:
+    /// default`). Runs a month = every active schedule's fires over the next 30 days (as the
+    /// scheduler counts them) × the runs one fire starts (a mission: its objectives) + the runs
+    /// people started in the last 30 days; the high estimate adds 50% for retries and revisions.
+    /// Cost is what this company is billed per run, never the provider's cost. `checks\[\].status`:
+    /// `ok` fits with the high estimate, `tight` only the expected one, `over` not even that.
+    /// `fits` is false when any check is `over`. Suggestion codes: UPGRADE_PLAN (with `plan`),
+    /// REDUCE_WORKLOAD, RAISE_BUDGET, SET_BUDGET. Assumption codes: RUN_PROFILE_FROM_HISTORY,
+    /// RUN_PROFILE_DEFAULT, SCHEDULES_OVER_30_DAYS, PERSON_RUNS_FROM_LAST_30_DAYS,
+    /// RETRIES_HEADROOM, SCHEDULE_NOT_COUNTED. A weekly or daily spend cap is compared per month.
+    ///
+    /// `GET /api/v1/tenants/me/fit`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn get_tenant_plan_fit(&self) -> Result<models::GetTenantPlanFitResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/tenants/me/fit".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// One proposal
     ///
     /// `GET /api/v1/tenants/me/proposals/{proposalId}`
@@ -215,6 +338,38 @@ impl CompanyApi {
             .await
     }
 
+    /// Build this company from a manifest
+    ///
+    /// The counterpart of `/company/export`: the body is a manifest of that shape (`schema_version`
+    /// must be `"1"`, anything else is 422). It is stored as a PENDING PROPOSAL — nothing is
+    /// created until a person applies it, with the usual plan limits and rollback. Every id in the
+    /// manifest is rewritten to reference the agent this import creates, so a manifest from another
+    /// company cannot address records here; the exceptions are the target company's own Chief of
+    /// Staff (an imported one is not re-created, and a department is led by the target's) and
+    /// nothing else. An objective whose agent did not come along is dropped, and a department
+    /// member the manifest does not create is dropped. A manifest ADDS: importing a company's own
+    /// export back into that same company proposes every agent again (it matches nothing by name) —
+    /// for a round trip into the same company use `POST /tenants/me/company/restore`, which matches
+    /// an agent the snapshot knows and updates it instead. Integrations are never imported: the
+    /// manifest names them and the proposal's `rationale` says which the founder must connect. Up
+    /// to 50 agents, 20 departments, 50 schedules.
+    ///
+    /// `POST /api/v1/tenants/me/company/import`
+    ///
+    /// Required scopes: `agents:write`.
+    pub async fn import_tenant_company(&self, body: &models::CompanyImportRequest) -> Result<models::CompanyProposal> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/tenants/me/company/import".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Launch a ready draft — the version the founder reviewed
     ///
     /// A `draft` becomes `active` (automated work starts; `launched_at` set; change-log `source:
@@ -239,6 +394,24 @@ impl CompanyApi {
             .await
     }
 
+    /// Company templates
+    ///
+    /// `GET /api/v1/company-templates`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn list_company_templates(&self) -> Result<models::ListCompanyTemplatesResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/company-templates".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// The company's change log, newest first
     ///
     /// `GET /api/v1/tenants/me/company/changes`
@@ -250,6 +423,30 @@ impl CompanyApi {
                 method: Method::GET,
                 path: "/api/v1/tenants/me/company/changes".to_string(),
                 query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// The company's versions, and which can be restored
+    ///
+    /// The change log, newest first, each row saying whether that version's STRUCTURE was written
+    /// down. A snapshot is taken when a proposal is applied and when the company is launched — a
+    /// profile edit alone is a change-log row without one, and `has_snapshot: false`. Note the
+    /// version counts profile changes, so agents and schedules can change without it moving; what a
+    /// restore would do is settled by its diff, not by the number.
+    ///
+    /// `GET /api/v1/tenants/me/company/versions`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn list_tenant_company_versions(&self) -> Result<models::ListTenantCompanyVersionsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/tenants/me/company/versions".to_string(),
+                query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
@@ -330,6 +527,32 @@ impl CompanyApi {
             .request_json(Request {
                 method: Method::POST,
                 path: format!("/api/v1/tenants/me/proposals/{}/reject", encode_path(proposal_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Put the company back to a version's structure — as a proposal
+    ///
+    /// Builds a pending proposal from that version's snapshot: an agent the snapshot knows is
+    /// updated back to how it was, one that is gone is created again, what came after is REMOVED
+    /// (agents, their own schedules, mission schedules) and removals run last and cannot be undone.
+    /// Departments added since are left in place and the rationale says why — disbanding a
+    /// department also stops its members' own schedules, which would undo the restore. Memory, run
+    /// history, results and people are not in a snapshot and do not come back. 404 when that
+    /// version has no snapshot; 422 when the plan would change nothing; admin or owner.
+    ///
+    /// `POST /api/v1/tenants/me/company/restore`
+    ///
+    /// Required scopes: `agents:write`.
+    pub async fn restore_tenant_company_version(&self, body: &models::RestoreTenantCompanyVersionRequest) -> Result<models::CompanyProposal> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/tenants/me/company/restore".to_string(),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

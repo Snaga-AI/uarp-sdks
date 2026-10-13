@@ -6326,6 +6326,16 @@ public data class ApplyProgramResponse(
 )
 
 /**
+ * `ApplyTenantCompanyTemplateRequest` model.
+ */
+@Serializable
+public data class ApplyTenantCompanyTemplateRequest(
+    @SerialName("template_id")
+    public val templateId: String,
+    public val inputs: JsonObject,
+)
+
+/**
  * `ApplyToJobRequest` model.
  */
 @Serializable
@@ -8000,7 +8010,11 @@ public data class CompanyActivityEntry(
 )
 
 /**
- * `CompanyChange` model.
+ * One accepted change. Render `summary` — it is the sentence, and for a proposal-sourced row
+ * it names the proposal applied. `fields` names what a DIRECT edit touched and is absent on a
+ * proposal, a pause and a launch; preferring `fields` everywhere turns "Applied proposal: Pin
+ * the objective" into "Changed what it is for" and loses the fact a person decided it (Android
+ * lane, measured on a device, 2026-10-12).
  */
 @Serializable
 public data class CompanyChange(
@@ -8084,6 +8098,257 @@ public data class CompanyCreateBudget(
 )
 
 /**
+ * The company as structure. Secrets are not projected and every omission is listed in
+ * `excluded`.
+ */
+@Serializable
+public data class CompanyExport(
+    /**
+     * The manifest's own version; a clone refuses one it does not know.
+     */
+    @SerialName("schema_version")
+    public val schemaVersion: String,
+    @SerialName("exported_at")
+    public val exportedAt: String,
+    public val company: CompanyExportCompany,
+    @SerialName("chief_of_staff_agent_id")
+    public val chiefOfStaffAgentId: String? = null,
+    public val agents: List<CompanyExportAgent>,
+    public val departments: List<CompanyExportDepartment>,
+    public val schedules: List<CompanyExportSchedule>,
+    @SerialName("mission_schedules")
+    public val missionSchedules: List<CompanyExportMissionSchedule>,
+    public val budget: CompanyExportBudget? = null,
+    public val governance: CompanyExportGovernance,
+    /**
+     * Named, never configured.
+     */
+    public val integrations: List<CompanyExportIntegration>,
+    @SerialName("knowledge_sources")
+    public val knowledgeSources: List<CompanyExportKnowledgeSource>,
+    public val excluded: List<ExportExcludedNote>,
+)
+
+/**
+ * `CompanyExportAgent` model.
+ */
+@Serializable
+public data class CompanyExportAgent(
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val name: String,
+    public val description: String? = null,
+    public val role: String? = null,
+    public val version: String? = null,
+    @SerialName("execution_mode")
+    public val executionMode: String? = null,
+    /**
+     * System and developer prompts (the Agent schema's `prompts`).
+     */
+    public val prompts: JsonObject? = null,
+    /**
+     * Installed SPECs as stored (spec_id, version).
+     */
+    public val specs: List<JsonObject>? = null,
+    @SerialName("built_in_tools")
+    public val builtInTools: List<String>? = null,
+    @SerialName("approval_required_tools")
+    public val approvalRequiredTools: List<String>? = null,
+    @SerialName("auto_approve_tools")
+    public val autoApproveTools: List<String>? = null,
+    public val autonomy: JsonObject? = null,
+    public val schedule: AgentScheduleConfig? = null,
+    /**
+     * Provider and model only — never the key reference or an endpoint.
+     */
+    public val model: CompanyExportAgentModel? = null,
+    public val mcp: CompanyExportAgentMCP? = null,
+    @SerialName("is_chief_of_staff")
+    public val isChiefOfStaff: Boolean,
+)
+
+/**
+ * `CompanyExportAgentMCP` model.
+ */
+@Serializable
+public data class CompanyExportAgentMCP(
+    @SerialName("server_ids")
+    public val serverIds: List<String>? = null,
+    @SerialName("allowed_tools")
+    public val allowedTools: List<String>? = null,
+    @SerialName("allowed_resources")
+    public val allowedResources: List<String>? = null,
+)
+
+/**
+ * Provider and model only — never the key reference or an endpoint.
+ */
+@Serializable
+public data class CompanyExportAgentModel(
+    public val provider: String? = null,
+    @SerialName("model_ref")
+    public val modelRef: String? = null,
+)
+
+/**
+ * `CompanyExportBudget` model.
+ */
+@Serializable
+public data class CompanyExportBudget(
+    @SerialName("limit_usd")
+    public val limitUsd: Double? = null,
+    public val period: String? = null,
+    @SerialName("soft_threshold")
+    public val softThreshold: Double? = null,
+    @SerialName("hard_threshold")
+    public val hardThreshold: Double? = null,
+)
+
+/**
+ * `CompanyExportCompany` model.
+ */
+@Serializable
+public data class CompanyExportCompany(
+    public val name: String? = null,
+    @SerialName("business_type")
+    public val businessType: String? = null,
+    public val objective: String? = null,
+    public val description: String? = null,
+    @SerialName("target_customer")
+    public val targetCustomer: String? = null,
+    public val timezone: String? = null,
+    public val status: CompanyProfileStatus? = null,
+    public val version: Long? = null,
+    public val template: JsonObject? = null,
+    @SerialName("launched_at")
+    public val launchedAt: String? = null,
+    public val plan: String? = null,
+)
+
+/**
+ * `CompanyExportDepartment` model.
+ */
+@Serializable
+public data class CompanyExportDepartment(
+    @SerialName("squad_id")
+    public val squadId: String,
+    public val name: String,
+    public val topology: String? = null,
+    @SerialName("delegation_strategy")
+    public val delegationStrategy: String? = null,
+    @SerialName("merge_strategy")
+    public val mergeStrategy: String? = null,
+    @SerialName("lead_agent_id")
+    public val leadAgentId: String? = null,
+    public val members: List<CompanyExportDepartmentMember>? = null,
+)
+
+/**
+ * `CompanyExportDepartmentMember` model.
+ */
+@Serializable
+public data class CompanyExportDepartmentMember(
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    public val role: String? = null,
+    public val permissions: TeamWorkerPermissions? = null,
+)
+
+/**
+ * `CompanyExportGovernance` model.
+ */
+@Serializable
+public data class CompanyExportGovernance(
+    @SerialName("approval_required_tools")
+    public val approvalRequiredTools: List<String>? = null,
+)
+
+/**
+ * `CompanyExportIntegration` model.
+ */
+@Serializable
+public data class CompanyExportIntegration(
+    public val kind: GetTenantBlueprintResponseIntegrationKind? = null,
+    @SerialName("connector_id")
+    public val connectorId: String? = null,
+    public val name: String? = null,
+    public val status: String? = null,
+)
+
+/**
+ * `CompanyExportKnowledgeSource` model.
+ */
+@Serializable
+public data class CompanyExportKnowledgeSource(
+    public val name: String? = null,
+    public val documents: Long? = null,
+    public val status: String? = null,
+)
+
+/**
+ * `CompanyExportMissionSchedule` model.
+ */
+@Serializable
+public data class CompanyExportMissionSchedule(
+    @SerialName("schedule_id")
+    public val scheduleId: String? = null,
+    public val name: String? = null,
+    public val cron: String? = null,
+    public val shape: ScheduleShape? = null,
+    public val timezone: String? = null,
+    public val plan: JsonObject? = null,
+)
+
+/**
+ * `CompanyExportSchedule` model.
+ */
+@Serializable
+public data class CompanyExportSchedule(
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    @SerialName("agent_name")
+    public val agentName: String? = null,
+    public val cron: String? = null,
+    public val shape: ScheduleShape? = null,
+    public val timezone: String? = null,
+    public val enabled: Boolean? = null,
+    public val message: String? = null,
+)
+
+/**
+ * The body of `POST /tenants/me/company/import`. Same shape as an export, but a REQUEST:
+ * unknown keys are ignored, and nothing here is a promise about what the import will apply —
+ * the stored proposal's diff is.
+ */
+@Serializable
+public data class CompanyImportRequest(
+    /**
+     * The manifest version this build understands; anything else is 422.
+     */
+    @SerialName("schema_version")
+    public val schemaVersion: ExportDataExplorerIncludeSensitive,
+    /**
+     * Profile fields to take over (`business_type`, `objective`, `description`, `target_customer`,
+     * `timezone`). The company's name is not imported — a manifest cannot rename the tenant.
+     */
+    public val company: JsonObject? = null,
+    public val agents: List<JsonObject>? = null,
+    public val departments: List<JsonObject>? = null,
+    public val schedules: List<JsonObject>? = null,
+    @SerialName("mission_schedules")
+    public val missionSchedules: List<JsonObject>? = null,
+    /**
+     * A spend cap to set (`limit_usd`, `period`).
+     */
+    public val budget: JsonObject? = null,
+    /**
+     * Named only — never imported, since a manifest carries no credentials. The proposal's
+     * `rationale` lists what to connect.
+     */
+    public val integrations: List<JsonObject>? = null,
+)
+
+/**
  * The founder's company — which IS the tenant. Identity (`name`) comes from the tenant record;
  * the rest is what the Company Builder adds. A tenant that never wrote a profile reads as an
  * operating company: `status: active`, `version: 0`. `status` here is the founder's lifecycle
@@ -8135,8 +8400,7 @@ public data class CompanyProfile(
 )
 
 /**
- * `draft` — being set up, no automated run starts (except the launch test run); `active` —
- * operating; `paused` — every automated run stopped, a person's chat still answers.
+ * `CompanyProfileStatus` values.
  */
 ///
 /**
@@ -8183,7 +8447,7 @@ public data class CompanyProposal(
     public val status: CompanyProposalStatus,
     public val summary: String,
     public val rationale: String? = null,
-    public val operations: List<CompanyProposalOperation>,
+    public val operations: List<ProposalOperation>,
     /**
      * The company version it was proposed against.
      */
@@ -8194,6 +8458,10 @@ public data class CompanyProposal(
     public val requiredRole: CompanyProposalRequiredRole,
     @SerialName("proposed_by")
     public val proposedBy: CompanyProposalProposedBy,
+    /**
+     * Set when the proposal builds a company template; recorded on the company at apply.
+     */
+    public val template: CompanyProposalTemplate? = null,
     /**
      * Not estimated yet (null) — arrives with plan fit.
      */
@@ -8232,6 +8500,12 @@ public data class CompanyProposalDiffItem(
      */
     public val summary: String,
     public val before: JsonObject? = null,
+    /**
+     * What the operation NAMES, not the whole record: the rest of the target keeps its stored
+     * value (a schedule keeps its zone, message, concurrency and failure policy; the budget keeps
+     * its period and thresholds). A client that renders `after` as the whole new state will invent
+     * changes the apply does not make (measured 2026-10-12).
+     */
     public val after: JsonObject? = null,
     /**
      * Removals: cannot be rolled back, applied last.
@@ -8273,51 +8547,6 @@ public data class CompanyProposalFailure(
      */
     public val details: JsonObject? = null,
 )
-
-/**
- * `CompanyProposalOperation` model.
- */
-@Serializable
-public data class CompanyProposalOperation(
-    public val op: CompanyProposalOperationOp,
-)
-
-/**
- * `CompanyProposalOperationOp` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = CompanyProposalOperationOpSerializer::class)
-@JvmInline
-public value class CompanyProposalOperationOp(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val ADD_AGENT: CompanyProposalOperationOp = CompanyProposalOperationOp("add_agent")
-        public val UPDATE_AGENT: CompanyProposalOperationOp = CompanyProposalOperationOp("update_agent")
-        public val REMOVE_AGENT: CompanyProposalOperationOp = CompanyProposalOperationOp("remove_agent")
-        public val SET_AGENT_SCHEDULE: CompanyProposalOperationOp = CompanyProposalOperationOp("set_agent_schedule")
-        public val SET_APPROVAL_POLICY: CompanyProposalOperationOp = CompanyProposalOperationOp("set_approval_policy")
-        public val ADD_SQUAD: CompanyProposalOperationOp = CompanyProposalOperationOp("add_squad")
-        public val SET_SQUAD_MEMBERS: CompanyProposalOperationOp = CompanyProposalOperationOp("set_squad_members")
-        public val UPDATE_COMPANY: CompanyProposalOperationOp = CompanyProposalOperationOp("update_company")
-        public val SET_BUDGET: CompanyProposalOperationOp = CompanyProposalOperationOp("set_budget")
-        public val ADD_MISSION_SCHEDULE: CompanyProposalOperationOp = CompanyProposalOperationOp("add_mission_schedule")
-        public val REMOVE_MISSION_SCHEDULE: CompanyProposalOperationOp = CompanyProposalOperationOp("remove_mission_schedule")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<CompanyProposalOperationOp> = listOf(ADD_AGENT, UPDATE_AGENT, REMOVE_AGENT, SET_AGENT_SCHEDULE, SET_APPROVAL_POLICY, ADD_SQUAD, SET_SQUAD_MEMBERS, UPDATE_COMPANY, SET_BUDGET, ADD_MISSION_SCHEDULE, REMOVE_MISSION_SCHEDULE)
-    }
-}
-
-public object CompanyProposalOperationOpSerializer : KSerializer<CompanyProposalOperationOp> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CompanyProposalOperationOp", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: CompanyProposalOperationOp): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): CompanyProposalOperationOp = CompanyProposalOperationOp(decoder.decodeString())
-}
 
 /**
  * `CompanyProposalProposedBy` model.
@@ -8437,6 +8666,15 @@ public data class CompanyProposalStep(
 )
 
 /**
+ * Set when the proposal builds a company template; recorded on the company at apply.
+ */
+@Serializable
+public data class CompanyProposalTemplate(
+    public val id: String? = null,
+    public val version: String? = null,
+)
+
+/**
  * `CompanyReadinessItem` model.
  */
 @Serializable
@@ -8450,6 +8688,136 @@ public data class CompanyReadinessItem(
      * The API call that resolves it — a developer hint, not for display.
      */
     public val fix: String,
+)
+
+/**
+ * `CompanyTemplate` model.
+ */
+@Serializable
+public data class CompanyTemplate(
+    @SerialName("template_id")
+    public val templateId: String,
+    public val version: String,
+    public val name: String,
+    public val summary: String,
+    @SerialName("business_type")
+    public val businessType: String,
+    public val agents: Long,
+    @SerialName("department_names")
+    public val departmentNames: List<String>,
+    /**
+     * Platform features the template needs, e.g. `missions`.
+     */
+    public val requires: List<String>,
+    /**
+     * JSON Schema of the template's inputs, for rendering the form.
+     */
+    @SerialName("inputs_schema")
+    public val inputsSchema: JsonObject? = null,
+    public val roles: List<CompanyTemplateRole>? = null,
+    public val departments: List<CompanyTemplateDepartment>? = null,
+    public val pipeline: List<String>? = null,
+    /**
+     * Integrations the founder connects; never configured by the template.
+     */
+    public val connectors: List<CompanyTemplateConnector>? = null,
+    public val defaults: CompanyTemplateDefaults? = null,
+)
+
+/**
+ * `CompanyTemplateCard` model.
+ */
+@Serializable
+public data class CompanyTemplateCard(
+    @SerialName("template_id")
+    public val templateId: String,
+    public val version: String,
+    public val name: String,
+    public val summary: String,
+    @SerialName("business_type")
+    public val businessType: String,
+    public val agents: Long,
+    @SerialName("department_names")
+    public val departmentNames: List<String>,
+    /**
+     * Platform features the template needs, e.g. `missions`.
+     */
+    public val requires: List<String>,
+)
+
+/**
+ * `CompanyTemplateConnector` model.
+ */
+@Serializable
+public data class CompanyTemplateConnector(
+    public val id: String? = null,
+    public val purpose: String? = null,
+    public val required: Boolean? = null,
+)
+
+/**
+ * `CompanyTemplateDefaults` model.
+ */
+@Serializable
+public data class CompanyTemplateDefaults(
+    public val cron: String? = null,
+    public val timezone: String? = null,
+    @SerialName("budget_usd")
+    public val budgetUsd: Double? = null,
+)
+
+/**
+ * `CompanyTemplateDepartment` model.
+ */
+@Serializable
+public data class CompanyTemplateDepartment(
+    public val name: String? = null,
+    public val lead: CompanyTemplateDepartmentLead? = null,
+    /**
+     * Role refs.
+     */
+    public val members: List<String>? = null,
+)
+
+/**
+ * `CompanyTemplateDepartmentLead` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = CompanyTemplateDepartmentLeadSerializer::class)
+@JvmInline
+public value class CompanyTemplateDepartmentLead(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val CHIEF_OF_STAFF: CompanyTemplateDepartmentLead = CompanyTemplateDepartmentLead("chief_of_staff")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<CompanyTemplateDepartmentLead> = listOf(CHIEF_OF_STAFF)
+    }
+}
+
+public object CompanyTemplateDepartmentLeadSerializer : KSerializer<CompanyTemplateDepartmentLead> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CompanyTemplateDepartmentLead", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: CompanyTemplateDepartmentLead): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): CompanyTemplateDepartmentLead = CompanyTemplateDepartmentLead(decoder.decodeString())
+}
+
+/**
+ * `CompanyTemplateRole` model.
+ */
+@Serializable
+public data class CompanyTemplateRole(
+    public val ref: String? = null,
+    public val name: String? = null,
+    public val department: String? = null,
+    public val does: String? = null,
+    public val tools: List<String>? = null,
+    @SerialName("approval_required_tools")
+    public val approvalRequiredTools: List<String>? = null,
 )
 
 /**
@@ -8495,6 +8863,24 @@ public data class CompanyUpdate(
     @SerialName("strategic_goals")
     public val strategicGoals: List<String>? = null,
     public val config: JsonObject? = null,
+)
+
+/**
+ * `CompanyVersionRow` model.
+ */
+@Serializable
+public data class CompanyVersionRow(
+    public val version: Long,
+    public val at: String,
+    public val actor: String,
+    public val source: CompanyChangeSource,
+    public val summary: String,
+    public val fields: List<String>? = null,
+    /**
+     * True when this version's structure can be restored.
+     */
+    @SerialName("has_snapshot")
+    public val hasSnapshot: Boolean,
 )
 
 /**
@@ -10144,6 +10530,19 @@ public data class CreateMissionScheduleResponse(
 public data class CreateMyTenantRequest(
     public val name: String,
     public val slug: String? = null,
+    /**
+     * Create the company from a template (`GET /company-templates`), e.g. `research-publishing` or
+     * `research-publishing@1`. The company starts as a `draft` with its profile filled in, and its
+     * structure is stored as a pending proposal (`proposal_id`) for the founder to review and
+     * apply — nothing else is created. Since 2026-10-12.
+     */
+    @SerialName("template_id")
+    public val templateId: String? = null,
+    /**
+     * The template's inputs (its `inputs_schema`). Checked before the company is created: a bad
+     * input is 422 and nothing exists afterwards.
+     */
+    public val inputs: JsonObject? = null,
 )
 
 /**
@@ -10159,6 +10558,14 @@ public data class CreateMyTenantResponse(
     public val role: String,
     @SerialName("user_id")
     public val userId: String,
+    public val company: CompanyProfile? = null,
+    /**
+     * With `template_id`: the pending proposal that builds the company.
+     */
+    @SerialName("proposal_id")
+    public val proposalId: String? = null,
+    @SerialName("proposal_error")
+    public val proposalError: List<String>? = null,
 )
 
 /**
@@ -11569,6 +11976,13 @@ public data class DeleteSquadGraphNodeResponse(
 @Serializable
 public data class DeleteSquadResponse(
     public val deleted: Boolean? = null,
+    @SerialName("team_id")
+    public val teamId: String? = null,
+    /**
+     * Agents of this squad that lost their OWN cron schedule with it (see DELETE /teams/{teamId}).
+     */
+    @SerialName("schedules_removed")
+    public val schedulesRemoved: List<String>? = null,
 )
 
 /**
@@ -11599,6 +12013,13 @@ public data class DeleteTeamResponse(
     public val deleted: Boolean,
     @SerialName("team_id")
     public val teamId: String,
+    /**
+     * Agents of this squad that lost their OWN cron schedule with it — the supervisor and any
+     * worker that had one. Disbanding a department stops those agents' scheduled runs while the
+     * agents themselves stay; the field exists so that is not silent (since 2026-10-12).
+     */
+    @SerialName("schedules_removed")
+    public val schedulesRemoved: List<String>? = null,
 )
 
 /**
@@ -13448,7 +13869,7 @@ public data class ExportAdminConfigResponse(
 )
 
 /**
- * `ExportDataExplorerIncludeSensitive` values.
+ * The manifest version this build understands; anything else is 422.
  */
 ///
 /**
@@ -13473,6 +13894,16 @@ public object ExportDataExplorerIncludeSensitiveSerializer : KSerializer<ExportD
     override fun serialize(encoder: Encoder, value: ExportDataExplorerIncludeSensitive): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): ExportDataExplorerIncludeSensitive = ExportDataExplorerIncludeSensitive(decoder.decodeString())
 }
+
+/**
+ * `ExportExcludedNote` model.
+ */
+@Serializable
+public data class ExportExcludedNote(
+    public val code: String,
+    public val what: String,
+    public val why: String,
+)
 
 /**
  * `ExportMyAccountFormat` values.
@@ -13768,6 +14199,114 @@ public data class FileRecord(
     public val sha256: String,
     @SerialName("created_at")
     public val createdAt: String,
+)
+
+/**
+ * `FitCompanyTemplateRequest` model.
+ */
+@Serializable
+public data class FitCompanyTemplateRequest(
+    public val inputs: JsonObject,
+    public val target: FitCompanyTemplateRequestTarget? = null,
+)
+
+/**
+ * `FitCompanyTemplateRequestTarget` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = FitCompanyTemplateRequestTargetSerializer::class)
+@JvmInline
+public value class FitCompanyTemplateRequestTarget(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val NEW: FitCompanyTemplateRequestTarget = FitCompanyTemplateRequestTarget("new")
+        public val CURRENT: FitCompanyTemplateRequestTarget = FitCompanyTemplateRequestTarget("current")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<FitCompanyTemplateRequestTarget> = listOf(NEW, CURRENT)
+    }
+}
+
+public object FitCompanyTemplateRequestTargetSerializer : KSerializer<FitCompanyTemplateRequestTarget> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.FitCompanyTemplateRequestTarget", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: FitCompanyTemplateRequestTarget): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): FitCompanyTemplateRequestTarget = FitCompanyTemplateRequestTarget(decoder.decodeString())
+}
+
+/**
+ * The `GET /tenants/me/fit` body plus `target` and `template`.
+ */
+@Serializable(with = FitCompanyTemplateResponseSerializer::class)
+public data class FitCompanyTemplateResponse(
+    public val target: FitCompanyTemplateRequestTarget? = null,
+    public val template: FitCompanyTemplateResponseTemplate? = null,
+    /**
+     * Properties the server returned that this SDK does not model.
+     */
+    public val additionalProperties: JsonObject = JsonObject(emptyMap()),
+)
+
+/**
+ * Serializer for \[FitCompanyTemplateResponse\] that preserves unmodelled properties.
+ */
+public object FitCompanyTemplateResponseSerializer : KSerializer<FitCompanyTemplateResponse> {
+    @Serializable
+    @SerialName("FitCompanyTemplateResponse")
+    private data class Surrogate(
+        val target: FitCompanyTemplateRequestTarget? = null,
+        val template: FitCompanyTemplateResponseTemplate? = null,
+    )
+
+    private val declaredNames: Set<String> = setOf("target", "template")
+
+    override val descriptor: SerialDescriptor = Surrogate.serializer().descriptor
+
+    override fun deserialize(decoder: Decoder): FitCompanyTemplateResponse {
+        val input = decoder as? JsonDecoder
+            ?: throw SerializationException("FitCompanyTemplateResponse can only be read from JSON")
+        val node = input.decodeJsonElement().jsonObject
+        val declared = input.json.decodeFromJsonElement(Surrogate.serializer(), node)
+        return FitCompanyTemplateResponse(
+            target = declared.target,
+            template = declared.template,
+            additionalProperties = JsonObject(node.filterKeys { it !in declaredNames }),
+        )
+    }
+
+    override fun serialize(encoder: Encoder, value: FitCompanyTemplateResponse) {
+        val output = encoder as? JsonEncoder
+            ?: throw SerializationException("FitCompanyTemplateResponse can only be written as JSON")
+        val declared = Surrogate(
+            target = value.target,
+            template = value.template,
+        )
+        val rendered = output.json.encodeToJsonElement(Surrogate.serializer(), declared).jsonObject
+        output.encodeJsonElement(JsonObject(rendered + value.additionalProperties))
+    }
+}
+
+/**
+ * `FitCompanyTemplateResponseTemplate` model.
+ */
+@Serializable
+public data class FitCompanyTemplateResponseTemplate(
+    public val id: String? = null,
+    public val version: String? = null,
+)
+
+/**
+ * `FitRange` model.
+ */
+@Serializable
+public data class FitRange(
+    public val low: Double,
+    public val mid: Double,
+    public val high: Double,
 )
 
 /**
@@ -14930,7 +15469,8 @@ public data class GetHealthResponse(
      * when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
      * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
      * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
-     * `company_launch`, `company_overview` (since 2026-10-12).
+     * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+     * `company_import`, `company_versions` (since 2026-10-12).
      */
     public val capabilities: List<String>? = null,
     /**
@@ -15213,6 +15753,145 @@ public data class GetMfaStatusResponse(
     public val enrolled: Boolean,
     @SerialName("recovery_remaining")
     public val recoveryRemaining: Long,
+)
+
+/**
+ * `GetMissionPerformanceResponse` model.
+ */
+@Serializable
+public data class GetMissionPerformanceResponse(
+    @SerialName("window_days")
+    public val windowDays: Long,
+    public val missions: GetMissionPerformanceResponseMissions,
+    public val objectives: GetMissionPerformanceResponseObjectives,
+    /**
+     * The review record of objectives with `review_required` that settled.
+     */
+    public val reviews: GetMissionPerformanceResponseReviews,
+    /**
+     * How good the reviewed work was, on what the platform can see. `with_unsourced_links` counts
+     * results citing a link no tool produced — the honest proxy for a factual error, since a model
+     * cannot be asked whether it is right. Since 2026-10-12.
+     */
+    public val quality: GetMissionPerformanceResponseQuality,
+    /**
+     * Objectives ended because a person refused an action mid-run.
+     */
+    @SerialName("actions_rejected")
+    public val actionsRejected: Long,
+    @SerialName("cost_usd")
+    public val costUsd: Double,
+    @SerialName("cost_per_completed_usd")
+    public val costPerCompletedUsd: Double? = null,
+    @SerialName("avg_minutes_to_complete")
+    public val avgMinutesToComplete: Double? = null,
+    /**
+     * Objectives waiting for a person right now.
+     */
+    @SerialName("awaiting_review")
+    public val awaitingReview: Long,
+    /**
+     * The same figures per assignee (`team:<id>` for a squad).
+     */
+    @SerialName("by_agent")
+    public val byAgent: List<GetMissionPerformanceResponseByAgentItem>,
+)
+
+/**
+ * `GetMissionPerformanceResponseByAgentItem` model.
+ */
+@Serializable
+public data class GetMissionPerformanceResponseByAgentItem(
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val objectives: Long,
+    public val completed: Long,
+    public val failed: Long,
+    @SerialName("cost_usd")
+    public val costUsd: Double,
+    public val reviewed: Long? = null,
+    @SerialName("accepted_first_pass")
+    public val acceptedFirstPass: Long? = null,
+    @SerialName("accepted_after_revision")
+    public val acceptedAfterRevision: Long? = null,
+    public val rejected: Long? = null,
+    @SerialName("first_pass_rate")
+    public val firstPassRate: Double? = null,
+    @SerialName("avg_revisions")
+    public val avgRevisions: Double? = null,
+)
+
+/**
+ * `GetMissionPerformanceResponseMissions` model.
+ */
+@Serializable
+public data class GetMissionPerformanceResponseMissions(
+    public val total: Long,
+    @SerialName("by_status")
+    public val byStatus: JsonObject,
+)
+
+/**
+ * `GetMissionPerformanceResponseObjectives` model.
+ */
+@Serializable
+public data class GetMissionPerformanceResponseObjectives(
+    public val total: Long,
+    @SerialName("by_status")
+    public val byStatus: JsonObject,
+    /**
+     * Keyed by `abort_reason`, e.g. budget_exhausted, not_dispatchable, rejected_by_person.
+     */
+    @SerialName("failed_by_reason")
+    public val failedByReason: JsonObject,
+)
+
+/**
+ * How good the reviewed work was, on what the platform can see. `with_unsourced_links` counts
+ * results citing a link no tool produced — the honest proxy for a factual error, since a model
+ * cannot be asked whether it is right. Since 2026-10-12.
+ */
+@Serializable
+public data class GetMissionPerformanceResponseQuality(
+    /**
+     * Reviewed results carrying a provenance record (`sources`).
+     */
+    @SerialName("with_sources")
+    public val withSources: Long,
+    @SerialName("with_unsourced_links")
+    public val withUnsourcedLinks: Long,
+    /**
+     * with_unsourced_links / with_sources; null when nothing carried provenance — absent is not
+     * zero.
+     */
+    @SerialName("unsourced_link_rate")
+    public val unsourcedLinkRate: Double? = null,
+    @SerialName("links_cited")
+    public val linksCited: Long,
+    @SerialName("unsourced_links")
+    public val unsourcedLinks: Long,
+    @SerialName("revisions_per_accepted")
+    public val revisionsPerAccepted: Double? = null,
+)
+
+/**
+ * The review record of objectives with `review_required` that settled.
+ */
+@Serializable
+public data class GetMissionPerformanceResponseReviews(
+    public val reviewed: Long,
+    @SerialName("accepted_first_pass")
+    public val acceptedFirstPass: Long,
+    @SerialName("accepted_after_revision")
+    public val acceptedAfterRevision: Long,
+    public val rejected: Long,
+    /**
+     * accepted_first_pass / reviewed; null when nothing was reviewed.
+     */
+    @SerialName("first_pass_rate")
+    public val firstPassRate: Double? = null,
+    @SerialName("avg_revisions")
+    public val avgRevisions: Double? = null,
 )
 
 /**
@@ -15798,6 +16477,10 @@ public data class GetRunResponse(
  */
 @Serializable
 public data class GetRunResponseApproval(
+    /**
+     * `revised` — the person declined the action and sent the run on with feedback (`POST
+     * /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback.
+     */
     public val decision: RunApprovalDecision,
     /**
      * Tools the run was waiting on when the decision was made.
@@ -16661,6 +17344,195 @@ public data class GetTenantDomainHealthResponse(
 )
 
 /**
+ * `GetTenantPlanFitResponse` model.
+ */
+@Serializable
+public data class GetTenantPlanFitResponse(
+    public val plan: String,
+    public val fits: Boolean,
+    @SerialName("window_days")
+    public val windowDays: Long,
+    @SerialName("run_profile")
+    public val runProfile: GetTenantPlanFitResponseRunProfile,
+    public val needs: GetTenantPlanFitResponseNeeds,
+    public val schedules: List<GetTenantPlanFitResponseSchedule>,
+    public val checks: List<GetTenantPlanFitResponseCheck>,
+    @SerialName("monthly_cost_usd")
+    public val monthlyCostUsd: FitRange,
+    /**
+     * The spend cap per month, or null when none is set.
+     */
+    @SerialName("budget_limit_usd")
+    public val budgetLimitUsd: Double? = null,
+    public val assumptions: List<GetTenantPlanFitResponseAssumption>,
+    public val suggestions: List<GetTenantPlanFitResponseSuggestion>,
+)
+
+/**
+ * `GetTenantPlanFitResponseAssumption` model.
+ */
+@Serializable
+public data class GetTenantPlanFitResponseAssumption(
+    public val code: String? = null,
+    public val text: String? = null,
+)
+
+/**
+ * `GetTenantPlanFitResponseCheck` model.
+ */
+@Serializable
+public data class GetTenantPlanFitResponseCheck(
+    public val code: GetTenantPlanFitResponseCheckCode,
+    public val needed: Double,
+    public val limit: Double? = null,
+    public val status: GetTenantPlanFitResponseCheckStatus,
+)
+
+/**
+ * `GetTenantPlanFitResponseCheckCode` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = GetTenantPlanFitResponseCheckCodeSerializer::class)
+@JvmInline
+public value class GetTenantPlanFitResponseCheckCode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val AGENTS: GetTenantPlanFitResponseCheckCode = GetTenantPlanFitResponseCheckCode("AGENTS")
+        public val SQUADS: GetTenantPlanFitResponseCheckCode = GetTenantPlanFitResponseCheckCode("SQUADS")
+        public val MONTHLY_RUNS: GetTenantPlanFitResponseCheckCode = GetTenantPlanFitResponseCheckCode("MONTHLY_RUNS")
+        public val MONTHLY_TOKENS: GetTenantPlanFitResponseCheckCode = GetTenantPlanFitResponseCheckCode("MONTHLY_TOKENS")
+        public val MONTHLY_TOOL_CALLS: GetTenantPlanFitResponseCheckCode = GetTenantPlanFitResponseCheckCode("MONTHLY_TOOL_CALLS")
+        public val BUDGET: GetTenantPlanFitResponseCheckCode = GetTenantPlanFitResponseCheckCode("BUDGET")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<GetTenantPlanFitResponseCheckCode> = listOf(AGENTS, SQUADS, MONTHLY_RUNS, MONTHLY_TOKENS, MONTHLY_TOOL_CALLS, BUDGET)
+    }
+}
+
+public object GetTenantPlanFitResponseCheckCodeSerializer : KSerializer<GetTenantPlanFitResponseCheckCode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetTenantPlanFitResponseCheckCode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: GetTenantPlanFitResponseCheckCode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): GetTenantPlanFitResponseCheckCode = GetTenantPlanFitResponseCheckCode(decoder.decodeString())
+}
+
+/**
+ * `GetTenantPlanFitResponseCheckStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = GetTenantPlanFitResponseCheckStatusSerializer::class)
+@JvmInline
+public value class GetTenantPlanFitResponseCheckStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val OK: GetTenantPlanFitResponseCheckStatus = GetTenantPlanFitResponseCheckStatus("ok")
+        public val TIGHT: GetTenantPlanFitResponseCheckStatus = GetTenantPlanFitResponseCheckStatus("tight")
+        public val OVER: GetTenantPlanFitResponseCheckStatus = GetTenantPlanFitResponseCheckStatus("over")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<GetTenantPlanFitResponseCheckStatus> = listOf(OK, TIGHT, OVER)
+    }
+}
+
+public object GetTenantPlanFitResponseCheckStatusSerializer : KSerializer<GetTenantPlanFitResponseCheckStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetTenantPlanFitResponseCheckStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: GetTenantPlanFitResponseCheckStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): GetTenantPlanFitResponseCheckStatus = GetTenantPlanFitResponseCheckStatus(decoder.decodeString())
+}
+
+/**
+ * `GetTenantPlanFitResponseNeeds` model.
+ */
+@Serializable
+public data class GetTenantPlanFitResponseNeeds(
+    public val agents: Long? = null,
+    public val squads: Long? = null,
+    @SerialName("runs_per_month")
+    public val runsPerMonth: FitRange? = null,
+    @SerialName("tokens_per_month")
+    public val tokensPerMonth: FitRange? = null,
+    @SerialName("tool_calls_per_month")
+    public val toolCallsPerMonth: FitRange? = null,
+)
+
+/**
+ * `GetTenantPlanFitResponseRunProfile` model.
+ */
+@Serializable
+public data class GetTenantPlanFitResponseRunProfile(
+    public val tokens: FitRange? = null,
+    @SerialName("cost_usd")
+    public val costUsd: FitRange? = null,
+    @SerialName("tool_calls")
+    public val toolCalls: FitRange? = null,
+    @SerialName("sample_runs")
+    public val sampleRuns: Long? = null,
+    public val source: GetTenantPlanFitResponseRunProfileSource? = null,
+)
+
+/**
+ * `GetTenantPlanFitResponseRunProfileSource` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = GetTenantPlanFitResponseRunProfileSourceSerializer::class)
+@JvmInline
+public value class GetTenantPlanFitResponseRunProfileSource(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val HISTORY: GetTenantPlanFitResponseRunProfileSource = GetTenantPlanFitResponseRunProfileSource("history")
+        public val DEFAULT: GetTenantPlanFitResponseRunProfileSource = GetTenantPlanFitResponseRunProfileSource("default")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<GetTenantPlanFitResponseRunProfileSource> = listOf(HISTORY, DEFAULT)
+    }
+}
+
+public object GetTenantPlanFitResponseRunProfileSourceSerializer : KSerializer<GetTenantPlanFitResponseRunProfileSource> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetTenantPlanFitResponseRunProfileSource", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: GetTenantPlanFitResponseRunProfileSource): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): GetTenantPlanFitResponseRunProfileSource = GetTenantPlanFitResponseRunProfileSource(decoder.decodeString())
+}
+
+/**
+ * `GetTenantPlanFitResponseSchedule` model.
+ */
+@Serializable
+public data class GetTenantPlanFitResponseSchedule(
+    public val kind: GetTenantBlueprintResponseScheduleKind? = null,
+    public val name: String? = null,
+    public val cron: String? = null,
+    public val timezone: String? = null,
+    @SerialName("runs_per_fire")
+    public val runsPerFire: Long? = null,
+    @SerialName("fires_per_month")
+    public val firesPerMonth: Long? = null,
+)
+
+/**
+ * `GetTenantPlanFitResponseSuggestion` model.
+ */
+@Serializable
+public data class GetTenantPlanFitResponseSuggestion(
+    public val code: String? = null,
+    public val message: String? = null,
+    public val plan: String? = null,
+)
+
+/**
  * `GetTenantReadinessResponse` model.
  */
 @Serializable
@@ -17102,7 +17974,8 @@ public data class HealthCheckV1aliasResponse(
      * when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
      * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
      * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
-     * `company_launch`, `company_overview` (since 2026-10-12).
+     * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+     * `company_import`, `company_versions` (since 2026-10-12).
      */
     public val capabilities: List<String>? = null,
 )
@@ -19489,6 +20362,15 @@ public data class ListCompaniesResponse(
 )
 
 /**
+ * `ListCompanyTemplatesResponse` model.
+ */
+@Serializable
+public data class ListCompanyTemplatesResponse(
+    public val items: List<CompanyTemplateCard>,
+    public val total: Long,
+)
+
+/**
  * `ListContentReportsResponse` model.
  */
 @Serializable
@@ -20777,7 +21659,31 @@ public data class ListTeamsResponse(
 @Serializable
 public data class ListTenantCompanyChangesResponse(
     public val items: List<CompanyChange>,
+    /**
+     * Every row in the log, not the page — `items` honours `limit` while this counts them all, so
+     * a client can say "N of M".
+     */
     public val total: Long,
+    /**
+     * The scan hit its cap (5000 rows), so `total` is a floor rather than a count.
+     */
+    public val truncated: Boolean? = null,
+)
+
+/**
+ * `ListTenantCompanyVersionsResponse` model.
+ */
+@Serializable
+public data class ListTenantCompanyVersionsResponse(
+    public val items: List<CompanyVersionRow>,
+    /**
+     * Every version in the log, not just the rows returned.
+     */
+    public val total: Long,
+    /**
+     * The scan hit its cap (5000 rows), so `total` is a floor rather than a count.
+     */
+    public val truncated: Boolean? = null,
 )
 
 /**
@@ -24633,6 +25539,35 @@ public data class PatchTenantRequestMarketplaceListing(
 @Serializable
 public data class PauseCompanyResponse(
     public val status: String? = null,
+    /**
+     * What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+     * sentences; the counts and run ids are exact.
+     */
+    @SerialName("pause_scope")
+    public val pauseScope: PauseCompanyResponsePauseScope? = null,
+)
+
+/**
+ * What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+ * sentences; the counts and run ids are exact.
+ */
+@Serializable
+public data class PauseCompanyResponsePauseScope(
+    public val stopped: List<String>? = null,
+    @SerialName("not_stopped")
+    public val notStopped: List<String>? = null,
+    /**
+     * Agents of the initiative, its strategist included.
+     */
+    public val agents: Long? = null,
+    public val squads: Long? = null,
+    @SerialName("schedules_held")
+    public val schedulesHeld: Long? = null,
+    /**
+     * Run ids.
+     */
+    @SerialName("runs_cancelled")
+    public val runsCancelled: List<String>? = null,
 )
 
 /**
@@ -24641,6 +25576,35 @@ public data class PauseCompanyResponse(
 @Serializable
 public data class PauseInitiativeResponse(
     public val status: String? = null,
+    /**
+     * What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+     * sentences; the counts and run ids are exact.
+     */
+    @SerialName("pause_scope")
+    public val pauseScope: PauseInitiativeResponsePauseScope? = null,
+)
+
+/**
+ * What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+ * sentences; the counts and run ids are exact.
+ */
+@Serializable
+public data class PauseInitiativeResponsePauseScope(
+    public val stopped: List<String>? = null,
+    @SerialName("not_stopped")
+    public val notStopped: List<String>? = null,
+    /**
+     * Agents of the initiative, its strategist included.
+     */
+    public val agents: Long? = null,
+    public val squads: Long? = null,
+    @SerialName("schedules_held")
+    public val schedulesHeld: Long? = null,
+    /**
+     * Run ids.
+     */
+    @SerialName("runs_cancelled")
+    public val runsCancelled: List<String>? = null,
 )
 
 /**
@@ -25818,6 +26782,494 @@ public data class PromoCodeInput(
      */
     public val active: Boolean? = null,
 )
+
+/**
+ * `ProposalOpAddAgent` model.
+ */
+@Serializable
+public data class ProposalOpAddAgent(
+    public val op: ProposalOpAddAgentOp,
+    /**
+     * A name later operations use as `$ref:<name>` for the id this one creates.
+     */
+    public val ref: String? = null,
+    /**
+     * The body of `POST /agents`.
+     */
+    public val agent: JsonObject,
+)
+
+/**
+ * `ProposalOpAddAgentOp` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ProposalOpAddAgentOpSerializer::class)
+@JvmInline
+public value class ProposalOpAddAgentOp(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ADD_AGENT: ProposalOpAddAgentOp = ProposalOpAddAgentOp("add_agent")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ProposalOpAddAgentOp> = listOf(ADD_AGENT)
+    }
+}
+
+public object ProposalOpAddAgentOpSerializer : KSerializer<ProposalOpAddAgentOp> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProposalOpAddAgentOp", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ProposalOpAddAgentOp): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ProposalOpAddAgentOp = ProposalOpAddAgentOp(decoder.decodeString())
+}
+
+/**
+ * `ProposalOpAddMissionSchedule` model.
+ */
+@Serializable
+public data class ProposalOpAddMissionSchedule(
+    public val op: ProposalOpAddMissionScheduleOp,
+    /**
+     * A name later operations use as `$ref:<name>` for the id this one creates.
+     */
+    public val ref: String? = null,
+    /**
+     * The body of `POST /missions/schedules`.
+     */
+    public val schedule: JsonObject,
+)
+
+/**
+ * `ProposalOpAddMissionScheduleOp` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ProposalOpAddMissionScheduleOpSerializer::class)
+@JvmInline
+public value class ProposalOpAddMissionScheduleOp(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ADD_MISSION_SCHEDULE: ProposalOpAddMissionScheduleOp = ProposalOpAddMissionScheduleOp("add_mission_schedule")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ProposalOpAddMissionScheduleOp> = listOf(ADD_MISSION_SCHEDULE)
+    }
+}
+
+public object ProposalOpAddMissionScheduleOpSerializer : KSerializer<ProposalOpAddMissionScheduleOp> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProposalOpAddMissionScheduleOp", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ProposalOpAddMissionScheduleOp): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ProposalOpAddMissionScheduleOp = ProposalOpAddMissionScheduleOp(decoder.decodeString())
+}
+
+/**
+ * `ProposalOpAddSquad` model.
+ */
+@Serializable
+public data class ProposalOpAddSquad(
+    public val op: ProposalOpAddSquadOp,
+    /**
+     * A name later operations use as `$ref:<name>` for the id this one creates.
+     */
+    public val ref: String? = null,
+    /**
+     * The body of `POST /squads`.
+     */
+    public val squad: JsonObject,
+)
+
+/**
+ * `ProposalOpAddSquadOp` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ProposalOpAddSquadOpSerializer::class)
+@JvmInline
+public value class ProposalOpAddSquadOp(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ADD_SQUAD: ProposalOpAddSquadOp = ProposalOpAddSquadOp("add_squad")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ProposalOpAddSquadOp> = listOf(ADD_SQUAD)
+    }
+}
+
+public object ProposalOpAddSquadOpSerializer : KSerializer<ProposalOpAddSquadOp> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProposalOpAddSquadOp", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ProposalOpAddSquadOp): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ProposalOpAddSquadOp = ProposalOpAddSquadOp(decoder.decodeString())
+}
+
+/**
+ * One change a proposal makes, discriminated by `op`.
+ */
+public typealias ProposalOperation = JsonElement
+
+/**
+ * `ProposalOpRemoveAgent` model.
+ */
+@Serializable
+public data class ProposalOpRemoveAgent(
+    public val op: ProposalOpRemoveAgentOp,
+    /**
+     * An id, or `$ref:<name>` of an earlier operation.
+     */
+    @SerialName("agent_id")
+    public val agentId: String,
+)
+
+/**
+ * `ProposalOpRemoveAgentOp` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ProposalOpRemoveAgentOpSerializer::class)
+@JvmInline
+public value class ProposalOpRemoveAgentOp(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val REMOVE_AGENT: ProposalOpRemoveAgentOp = ProposalOpRemoveAgentOp("remove_agent")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ProposalOpRemoveAgentOp> = listOf(REMOVE_AGENT)
+    }
+}
+
+public object ProposalOpRemoveAgentOpSerializer : KSerializer<ProposalOpRemoveAgentOp> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProposalOpRemoveAgentOp", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ProposalOpRemoveAgentOp): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ProposalOpRemoveAgentOp = ProposalOpRemoveAgentOp(decoder.decodeString())
+}
+
+/**
+ * `ProposalOpRemoveMissionSchedule` model.
+ */
+@Serializable
+public data class ProposalOpRemoveMissionSchedule(
+    public val op: ProposalOpRemoveMissionScheduleOp,
+    /**
+     * An id, or `$ref:<name>` of an earlier operation.
+     */
+    @SerialName("schedule_id")
+    public val scheduleId: String,
+)
+
+/**
+ * `ProposalOpRemoveMissionScheduleOp` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ProposalOpRemoveMissionScheduleOpSerializer::class)
+@JvmInline
+public value class ProposalOpRemoveMissionScheduleOp(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val REMOVE_MISSION_SCHEDULE: ProposalOpRemoveMissionScheduleOp = ProposalOpRemoveMissionScheduleOp("remove_mission_schedule")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ProposalOpRemoveMissionScheduleOp> = listOf(REMOVE_MISSION_SCHEDULE)
+    }
+}
+
+public object ProposalOpRemoveMissionScheduleOpSerializer : KSerializer<ProposalOpRemoveMissionScheduleOp> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProposalOpRemoveMissionScheduleOp", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ProposalOpRemoveMissionScheduleOp): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ProposalOpRemoveMissionScheduleOp = ProposalOpRemoveMissionScheduleOp(decoder.decodeString())
+}
+
+/**
+ * `ProposalOpSetAgentSchedule` model.
+ */
+@Serializable
+public data class ProposalOpSetAgentSchedule(
+    public val op: ProposalOpSetAgentScheduleOp,
+    /**
+     * An id, or `$ref:<name>` of an earlier operation.
+     */
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val cron: String,
+    public val timezone: String? = null,
+    public val enabled: Boolean? = null,
+    public val message: String? = null,
+)
+
+/**
+ * `ProposalOpSetAgentScheduleOp` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ProposalOpSetAgentScheduleOpSerializer::class)
+@JvmInline
+public value class ProposalOpSetAgentScheduleOp(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val SET_AGENT_SCHEDULE: ProposalOpSetAgentScheduleOp = ProposalOpSetAgentScheduleOp("set_agent_schedule")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ProposalOpSetAgentScheduleOp> = listOf(SET_AGENT_SCHEDULE)
+    }
+}
+
+public object ProposalOpSetAgentScheduleOpSerializer : KSerializer<ProposalOpSetAgentScheduleOp> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProposalOpSetAgentScheduleOp", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ProposalOpSetAgentScheduleOp): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ProposalOpSetAgentScheduleOp = ProposalOpSetAgentScheduleOp(decoder.decodeString())
+}
+
+/**
+ * `ProposalOpSetApprovalPolicy` model.
+ */
+@Serializable
+public data class ProposalOpSetApprovalPolicy(
+    public val op: ProposalOpSetApprovalPolicyOp,
+    /**
+     * An id, or `$ref:<name>` of an earlier operation.
+     */
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("approval_required_tools")
+    public val approvalRequiredTools: List<String>? = null,
+    @SerialName("auto_approve_tools")
+    public val autoApproveTools: List<String>? = null,
+    public val autonomy: ProposalOpSetApprovalPolicyAutonomy? = null,
+)
+
+/**
+ * `ProposalOpSetApprovalPolicyAutonomy` model.
+ */
+@Serializable
+public data class ProposalOpSetApprovalPolicyAutonomy(
+    public val level: AgentAutonomyLevel? = null,
+)
+
+/**
+ * `ProposalOpSetApprovalPolicyOp` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ProposalOpSetApprovalPolicyOpSerializer::class)
+@JvmInline
+public value class ProposalOpSetApprovalPolicyOp(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val SET_APPROVAL_POLICY: ProposalOpSetApprovalPolicyOp = ProposalOpSetApprovalPolicyOp("set_approval_policy")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ProposalOpSetApprovalPolicyOp> = listOf(SET_APPROVAL_POLICY)
+    }
+}
+
+public object ProposalOpSetApprovalPolicyOpSerializer : KSerializer<ProposalOpSetApprovalPolicyOp> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProposalOpSetApprovalPolicyOp", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ProposalOpSetApprovalPolicyOp): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ProposalOpSetApprovalPolicyOp = ProposalOpSetApprovalPolicyOp(decoder.decodeString())
+}
+
+/**
+ * `ProposalOpSetBudget` model.
+ */
+@Serializable
+public data class ProposalOpSetBudget(
+    public val op: ProposalOpSetBudgetOp,
+    @SerialName("limit_usd")
+    public val limitUsd: Double,
+    public val period: GetBillingBudgetResponseBudgetPeriod? = null,
+    @SerialName("soft_threshold")
+    public val softThreshold: Double? = null,
+    @SerialName("hard_threshold")
+    public val hardThreshold: Double? = null,
+)
+
+/**
+ * `ProposalOpSetBudgetOp` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ProposalOpSetBudgetOpSerializer::class)
+@JvmInline
+public value class ProposalOpSetBudgetOp(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val SET_BUDGET: ProposalOpSetBudgetOp = ProposalOpSetBudgetOp("set_budget")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ProposalOpSetBudgetOp> = listOf(SET_BUDGET)
+    }
+}
+
+public object ProposalOpSetBudgetOpSerializer : KSerializer<ProposalOpSetBudgetOp> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProposalOpSetBudgetOp", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ProposalOpSetBudgetOp): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ProposalOpSetBudgetOp = ProposalOpSetBudgetOp(decoder.decodeString())
+}
+
+/**
+ * `ProposalOpSetSquadMembers` model.
+ */
+@Serializable
+public data class ProposalOpSetSquadMembers(
+    public val op: ProposalOpSetSquadMembersOp,
+    /**
+     * An id, or `$ref:<name>` of an earlier operation.
+     */
+    @SerialName("squad_id")
+    public val squadId: String,
+    public val workers: List<JsonObject>,
+)
+
+/**
+ * `ProposalOpSetSquadMembersOp` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ProposalOpSetSquadMembersOpSerializer::class)
+@JvmInline
+public value class ProposalOpSetSquadMembersOp(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val SET_SQUAD_MEMBERS: ProposalOpSetSquadMembersOp = ProposalOpSetSquadMembersOp("set_squad_members")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ProposalOpSetSquadMembersOp> = listOf(SET_SQUAD_MEMBERS)
+    }
+}
+
+public object ProposalOpSetSquadMembersOpSerializer : KSerializer<ProposalOpSetSquadMembersOp> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProposalOpSetSquadMembersOp", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ProposalOpSetSquadMembersOp): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ProposalOpSetSquadMembersOp = ProposalOpSetSquadMembersOp(decoder.decodeString())
+}
+
+/**
+ * `ProposalOpUpdateAgent` model.
+ */
+@Serializable
+public data class ProposalOpUpdateAgent(
+    public val op: ProposalOpUpdateAgentOp,
+    /**
+     * An id, or `$ref:<name>` of an earlier operation.
+     */
+    @SerialName("agent_id")
+    public val agentId: String,
+    /**
+     * The body of `PATCH /agents/{agentId}`.
+     */
+    public val changes: JsonObject,
+)
+
+/**
+ * `ProposalOpUpdateAgentOp` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ProposalOpUpdateAgentOpSerializer::class)
+@JvmInline
+public value class ProposalOpUpdateAgentOp(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val UPDATE_AGENT: ProposalOpUpdateAgentOp = ProposalOpUpdateAgentOp("update_agent")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ProposalOpUpdateAgentOp> = listOf(UPDATE_AGENT)
+    }
+}
+
+public object ProposalOpUpdateAgentOpSerializer : KSerializer<ProposalOpUpdateAgentOp> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProposalOpUpdateAgentOp", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ProposalOpUpdateAgentOp): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ProposalOpUpdateAgentOp = ProposalOpUpdateAgentOp(decoder.decodeString())
+}
+
+/**
+ * `ProposalOpUpdateCompany` model.
+ */
+@Serializable
+public data class ProposalOpUpdateCompany(
+    public val op: ProposalOpUpdateCompanyOp,
+    public val changes: ProposalOpUpdateCompanyChanges,
+)
+
+/**
+ * `ProposalOpUpdateCompanyChanges` model.
+ */
+@Serializable
+public data class ProposalOpUpdateCompanyChanges(
+    @SerialName("business_type")
+    public val businessType: String? = null,
+    public val objective: String? = null,
+    public val description: String? = null,
+    @SerialName("target_customer")
+    public val targetCustomer: String? = null,
+    public val timezone: String? = null,
+)
+
+/**
+ * `ProposalOpUpdateCompanyOp` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ProposalOpUpdateCompanyOpSerializer::class)
+@JvmInline
+public value class ProposalOpUpdateCompanyOp(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val UPDATE_COMPANY: ProposalOpUpdateCompanyOp = ProposalOpUpdateCompanyOp("update_company")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ProposalOpUpdateCompanyOp> = listOf(UPDATE_COMPANY)
+    }
+}
+
+public object ProposalOpUpdateCompanyOpSerializer : KSerializer<ProposalOpUpdateCompanyOp> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProposalOpUpdateCompanyOp", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ProposalOpUpdateCompanyOp): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ProposalOpUpdateCompanyOp = ProposalOpUpdateCompanyOp(decoder.decodeString())
+}
 
 /**
  * public.ts GET /public/agents/{agentId} — a hand-built projection, not the Agent record. Keys
@@ -27856,7 +29308,13 @@ public object ResourcePermissionActionSerializer : KSerializer<ResourcePermissio
 @Serializable
 public data class ResourceUsageEntry(
     public val count: Double,
-    public val limit: Double,
+    /**
+     * The plan's limit for this resource, or null when the plan does not define one. Null is NOT a
+     * limit of zero: `over_by` is 0 and the resource is simply not capped, while `limit: 0` means
+     * the plan allows none. A client that printed the two the same way told a founder "3 of 0"
+     * about a resource with no ceiling (macOS lane, measured 2026-10-12).
+     */
+    public val limit: Double? = null,
     @SerialName("over_by")
     public val overBy: Double,
 )
@@ -27999,6 +29457,14 @@ public object ResponsesOutputItemTypeSerializer : KSerializer<ResponsesOutputIte
     override fun serialize(encoder: Encoder, value: ResponsesOutputItemType): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): ResponsesOutputItemType = ResponsesOutputItemType(decoder.decodeString())
 }
+
+/**
+ * `RestoreTenantCompanyVersionRequest` model.
+ */
+@Serializable
+public data class RestoreTenantCompanyVersionRequest(
+    public val version: Long,
+)
 
 /**
  * `RestoreWorkspaceTrashRequest` model.
@@ -28499,6 +29965,10 @@ public data class Run(
  */
 @Serializable
 public data class RunApproval(
+    /**
+     * `revised` — the person declined the action and sent the run on with feedback (`POST
+     * /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback.
+     */
     public val decision: RunApprovalDecision,
     /**
      * Tools the run was waiting on when the decision was made.
@@ -28518,7 +29988,8 @@ public data class RunApproval(
 )
 
 /**
- * `RunApprovalDecision` values.
+ * `revised` — the person declined the action and sent the run on with feedback (`POST
+ * /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback.
  */
 ///
 /**
@@ -28533,9 +30004,10 @@ public value class RunApprovalDecision(public val value: String) {
     public companion object {
         public val APPROVED: RunApprovalDecision = RunApprovalDecision("approved")
         public val REJECTED: RunApprovalDecision = RunApprovalDecision("rejected")
+        public val REVISED: RunApprovalDecision = RunApprovalDecision("revised")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<RunApprovalDecision> = listOf(APPROVED, REJECTED)
+        public val knownValues: List<RunApprovalDecision> = listOf(APPROVED, REJECTED, REVISED)
     }
 }
 

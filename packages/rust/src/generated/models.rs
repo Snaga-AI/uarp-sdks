@@ -6069,6 +6069,13 @@ pub struct ApplyProgramResponse {
     pub todos: Vec<Todo>,
 }
 
+/// `ApplyTenantCompanyTemplateRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ApplyTenantCompanyTemplateRequest {
+    pub template_id: String,
+    pub inputs: serde_json::Map<String, serde_json::Value>,
+}
+
 /// `ApplyToJobRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ApplyToJobRequest {
@@ -7748,7 +7755,11 @@ pub struct CompanyActivityEntry {
     pub success: Option<bool>,
 }
 
-/// `CompanyChange` model.
+/// One accepted change. Render `summary` — it is the sentence, and for a proposal-sourced row
+/// it names the proposal applied. `fields` names what a DIRECT edit touched and is absent on a
+/// proposal, a pause and a launch; preferring `fields` everywhere turns "Applied proposal: Pin
+/// the objective" into "Changed what it is for" and loses the fact a person decided it (Android
+/// lane, measured on a device, 2026-10-12).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CompanyChange {
     pub version: i64,
@@ -7841,6 +7852,249 @@ pub struct CompanyCreateBudget {
     pub spent_usd: Option<f64>,
 }
 
+/// The company as structure. Secrets are not projected and every omission is listed in
+/// `excluded`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExport {
+    /// The manifest's own version; a clone refuses one it does not know.
+    pub schema_version: String,
+    pub exported_at: String,
+    pub company: CompanyExportCompany,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chief_of_staff_agent_id: Option<String>,
+    pub agents: Vec<CompanyExportAgent>,
+    pub departments: Vec<CompanyExportDepartment>,
+    pub schedules: Vec<CompanyExportSchedule>,
+    pub mission_schedules: Vec<CompanyExportMissionSchedule>,
+    #[serde(default)]
+    pub budget: Option<CompanyExportBudget>,
+    pub governance: CompanyExportGovernance,
+    /// Named, never configured.
+    pub integrations: Vec<CompanyExportIntegration>,
+    pub knowledge_sources: Vec<CompanyExportKnowledgeSource>,
+    pub excluded: Vec<ExportExcludedNote>,
+}
+
+/// `CompanyExportAgent` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExportAgent {
+    pub agent_id: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_mode: Option<String>,
+    /// System and developer prompts (the Agent schema's `prompts`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prompts: Option<serde_json::Map<String, serde_json::Value>>,
+    /// Installed SPECs as stored (spec_id, version).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub specs: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub built_in_tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval_required_tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auto_approve_tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub autonomy: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedule: Option<AgentScheduleConfig>,
+    /// Provider and model only — never the key reference or an endpoint.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<CompanyExportAgentModel>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mcp: Option<CompanyExportAgentMCP>,
+    pub is_chief_of_staff: bool,
+}
+
+/// `CompanyExportAgentMCP` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExportAgentMCP {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server_ids: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_resources: Option<Vec<String>>,
+}
+
+/// Provider and model only — never the key reference or an endpoint.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExportAgentModel {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_ref: Option<String>,
+}
+
+/// `CompanyExportBudget` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExportBudget {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit_usd: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub period: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub soft_threshold: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hard_threshold: Option<f64>,
+}
+
+/// `CompanyExportCompany` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExportCompany {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub business_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub objective: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_customer: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<CompanyProfileStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub template: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub launched_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
+}
+
+/// `CompanyExportDepartment` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExportDepartment {
+    pub squad_id: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub topology: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub delegation_strategy: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub merge_strategy: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lead_agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub members: Option<Vec<CompanyExportDepartmentMember>>,
+}
+
+/// `CompanyExportDepartmentMember` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExportDepartmentMember {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub permissions: Option<TeamWorkerPermissions>,
+}
+
+/// `CompanyExportGovernance` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExportGovernance {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval_required_tools: Option<Vec<String>>,
+}
+
+/// `CompanyExportIntegration` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExportIntegration {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<GetTenantBlueprintResponseIntegrationKind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connector_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+}
+
+/// `CompanyExportKnowledgeSource` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExportKnowledgeSource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub documents: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+}
+
+/// `CompanyExportMissionSchedule` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExportMissionSchedule {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedule_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cron: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shape: Option<ScheduleShape>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `CompanyExportSchedule` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyExportSchedule {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cron: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shape: Option<ScheduleShape>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
+/// The body of `POST /tenants/me/company/import`. Same shape as an export, but a REQUEST:
+/// unknown keys are ignored, and nothing here is a promise about what the import will apply —
+/// the stored proposal's diff is.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyImportRequest {
+    /// The manifest version this build understands; anything else is 422.
+    pub schema_version: ExportDataExplorerIncludeSensitive,
+    /// Profile fields to take over (`business_type`, `objective`, `description`, `target_customer`,
+    /// `timezone`). The company's name is not imported — a manifest cannot rename the tenant.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub company: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agents: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub departments: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedules: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mission_schedules: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    /// A spend cap to set (`limit_usd`, `period`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub budget: Option<serde_json::Map<String, serde_json::Value>>,
+    /// Named only — never imported, since a manifest carries no credentials. The proposal's
+    /// `rationale` lists what to connect.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+}
+
 /// The founder's company — which IS the tenant. Identity (`name`) comes from the tenant record;
 /// the rest is what the Company Builder adds. A tenant that never wrote a profile reads as an
 /// operating company: `status: active`, `version: 0`. `status` here is the founder's lifecycle
@@ -7883,8 +8137,7 @@ pub struct CompanyProfile {
     pub updated_by: Option<String>,
 }
 
-/// `draft` — being set up, no automated run starts (except the launch test run); `active` —
-/// operating; `paused` — every automated run stopped, a person's chat still answers.
+/// `CompanyProfileStatus` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum CompanyProfileStatus {
     #[default]
@@ -7945,12 +8198,15 @@ pub struct CompanyProposal {
     pub summary: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rationale: Option<String>,
-    pub operations: Vec<CompanyProposalOperation>,
+    pub operations: Vec<ProposalOperation>,
     /// The company version it was proposed against.
     pub base_version: i64,
     pub diff: Vec<CompanyProposalDiffItem>,
     pub required_role: CompanyProposalRequiredRole,
     pub proposed_by: CompanyProposalProposedBy,
+    /// Set when the proposal builds a company template; recorded on the company at apply.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub template: Option<CompanyProposalTemplate>,
     /// Not estimated yet (null) — arrives with plan fit.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub estimated_monthly_cost_usd: Option<f64>,
@@ -7983,6 +8239,10 @@ pub struct CompanyProposalDiffItem {
     pub summary: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub before: Option<serde_json::Map<String, serde_json::Value>>,
+    /// What the operation NAMES, not the whole record: the rest of the target keeps its stored
+    /// value (a schedule keeps its zone, message, concurrency and failure policy; the budget keeps
+    /// its period and thresholds). A client that renders `after` as the whole new state will invent
+    /// changes the apply does not make (measured 2026-10-12).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub after: Option<serde_json::Map<String, serde_json::Value>>,
     /// Removals: cannot be rolled back, applied last.
@@ -8019,88 +8279,6 @@ pub struct CompanyProposalFailure {
     /// used, limit}.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<serde_json::Map<String, serde_json::Value>>,
-}
-
-/// `CompanyProposalOperation` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct CompanyProposalOperation {
-    pub op: CompanyProposalOperationOp,
-}
-
-/// `CompanyProposalOperationOp` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum CompanyProposalOperationOp {
-    #[default]
-    #[serde(rename = "add_agent")]
-    AddAgent,
-    #[serde(rename = "update_agent")]
-    UpdateAgent,
-    #[serde(rename = "remove_agent")]
-    RemoveAgent,
-    #[serde(rename = "set_agent_schedule")]
-    SetAgentSchedule,
-    #[serde(rename = "set_approval_policy")]
-    SetApprovalPolicy,
-    #[serde(rename = "add_squad")]
-    AddSquad,
-    #[serde(rename = "set_squad_members")]
-    SetSquadMembers,
-    #[serde(rename = "update_company")]
-    UpdateCompany,
-    #[serde(rename = "set_budget")]
-    SetBudget,
-    #[serde(rename = "add_mission_schedule")]
-    AddMissionSchedule,
-    #[serde(rename = "remove_mission_schedule")]
-    RemoveMissionSchedule,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl CompanyProposalOperationOp {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::AddAgent => "add_agent",
-            Self::UpdateAgent => "update_agent",
-            Self::RemoveAgent => "remove_agent",
-            Self::SetAgentSchedule => "set_agent_schedule",
-            Self::SetApprovalPolicy => "set_approval_policy",
-            Self::AddSquad => "add_squad",
-            Self::SetSquadMembers => "set_squad_members",
-            Self::UpdateCompany => "update_company",
-            Self::SetBudget => "set_budget",
-            Self::AddMissionSchedule => "add_mission_schedule",
-            Self::RemoveMissionSchedule => "remove_mission_schedule",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for CompanyProposalOperationOp {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for CompanyProposalOperationOp {
-    fn from(value: &str) -> Self {
-        match value {
-            "add_agent" => Self::AddAgent,
-            "update_agent" => Self::UpdateAgent,
-            "remove_agent" => Self::RemoveAgent,
-            "set_agent_schedule" => Self::SetAgentSchedule,
-            "set_approval_policy" => Self::SetApprovalPolicy,
-            "add_squad" => Self::AddSquad,
-            "set_squad_members" => Self::SetSquadMembers,
-            "update_company" => Self::UpdateCompany,
-            "set_budget" => Self::SetBudget,
-            "add_mission_schedule" => Self::AddMissionSchedule,
-            "remove_mission_schedule" => Self::RemoveMissionSchedule,
-            other => Self::Other(other.to_string()),
-        }
-    }
 }
 
 /// `CompanyProposalProposedBy` model.
@@ -8259,6 +8437,15 @@ pub struct CompanyProposalStep {
     pub r#ref: Option<String>,
 }
 
+/// Set when the proposal builds a company template; recorded on the company at apply.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyProposalTemplate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+
 /// `CompanyReadinessItem` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CompanyReadinessItem {
@@ -8267,6 +8454,135 @@ pub struct CompanyReadinessItem {
     pub message: String,
     /// The API call that resolves it — a developer hint, not for display.
     pub fix: String,
+}
+
+/// `CompanyTemplate` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyTemplate {
+    pub template_id: String,
+    pub version: String,
+    pub name: String,
+    pub summary: String,
+    pub business_type: String,
+    pub agents: i64,
+    pub department_names: Vec<String>,
+    /// Platform features the template needs, e.g. `missions`.
+    pub requires: Vec<String>,
+    /// JSON Schema of the template's inputs, for rendering the form.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inputs_schema: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub roles: Option<Vec<CompanyTemplateRole>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub departments: Option<Vec<CompanyTemplateDepartment>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pipeline: Option<Vec<String>>,
+    /// Integrations the founder connects; never configured by the template.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connectors: Option<Vec<CompanyTemplateConnector>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub defaults: Option<CompanyTemplateDefaults>,
+}
+
+/// `CompanyTemplateCard` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyTemplateCard {
+    pub template_id: String,
+    pub version: String,
+    pub name: String,
+    pub summary: String,
+    pub business_type: String,
+    pub agents: i64,
+    pub department_names: Vec<String>,
+    /// Platform features the template needs, e.g. `missions`.
+    pub requires: Vec<String>,
+}
+
+/// `CompanyTemplateConnector` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyTemplateConnector {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub purpose: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required: Option<bool>,
+}
+
+/// `CompanyTemplateDefaults` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyTemplateDefaults {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cron: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub budget_usd: Option<f64>,
+}
+
+/// `CompanyTemplateDepartment` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyTemplateDepartment {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lead: Option<CompanyTemplateDepartmentLead>,
+    /// Role refs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub members: Option<Vec<String>>,
+}
+
+/// `CompanyTemplateDepartmentLead` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CompanyTemplateDepartmentLead {
+    #[default]
+    #[serde(rename = "chief_of_staff")]
+    ChiefOfStaff,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CompanyTemplateDepartmentLead {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::ChiefOfStaff => "chief_of_staff",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CompanyTemplateDepartmentLead {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CompanyTemplateDepartmentLead {
+    fn from(value: &str) -> Self {
+        match value {
+            "chief_of_staff" => Self::ChiefOfStaff,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `CompanyTemplateRole` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyTemplateRole {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#ref: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub department: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub does: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval_required_tools: Option<Vec<String>>,
 }
 
 /// `CompanyTestRun` model.
@@ -8312,6 +8628,20 @@ pub struct CompanyUpdate {
     pub strategic_goals: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `CompanyVersionRow` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyVersionRow {
+    pub version: i64,
+    pub at: String,
+    pub actor: String,
+    pub source: CompanyChangeSource,
+    pub summary: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fields: Option<Vec<String>>,
+    /// True when this version's structure can be restored.
+    pub has_snapshot: bool,
 }
 
 /// `CompleteMcpoAuthRequest` model.
@@ -10000,6 +10330,16 @@ pub struct CreateMyTenantRequest {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub slug: Option<String>,
+    /// Create the company from a template (`GET /company-templates`), e.g. `research-publishing` or
+    /// `research-publishing@1`. The company starts as a `draft` with its profile filled in, and its
+    /// structure is stored as a pending proposal (`proposal_id`) for the founder to review and
+    /// apply — nothing else is created. Since 2026-10-12.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub template_id: Option<String>,
+    /// The template's inputs (its `inputs_schema`). Checked before the company is created: a bad
+    /// input is 422 and nothing exists afterwards.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inputs: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `CreateMyTenantResponse` model.
@@ -10011,6 +10351,13 @@ pub struct CreateMyTenantResponse {
     pub slug: String,
     pub role: String,
     pub user_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub company: Option<CompanyProfile>,
+    /// With `template_id`: the pending proposal that builds the company.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub proposal_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub proposal_error: Option<Vec<String>>,
 }
 
 /// `CreatePlanStripePriceRequest` model.
@@ -11240,6 +11587,11 @@ pub struct DeleteSquadGraphNodeResponse {
 pub struct DeleteSquadResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deleted: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub team_id: Option<String>,
+    /// Agents of this squad that lost their OWN cron schedule with it (see DELETE /teams/{teamId}).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedules_removed: Option<Vec<String>>,
 }
 
 /// `DeleteTeamGraphEdgeResponse` model.
@@ -11265,6 +11617,11 @@ pub struct DeleteTeamGraphNodeResponse {
 pub struct DeleteTeamResponse {
     pub deleted: bool,
     pub team_id: String,
+    /// Agents of this squad that lost their OWN cron schedule with it — the supervisor and any
+    /// worker that had one. Disbanding a department stops those agents' scheduled runs while the
+    /// agents themselves stay; the field exists so that is not silent (since 2026-10-12).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedules_removed: Option<Vec<String>>,
 }
 
 /// `DeleteUserResponse` model.
@@ -13709,7 +14066,7 @@ pub struct ExportAdminConfigResponse {
     pub sections: serde_json::Map<String, serde_json::Value>,
 }
 
-/// `ExportDataExplorerIncludeSensitive` enumeration.
+/// The manifest version this build understands; anything else is 422.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum ExportDataExplorerIncludeSensitive {
     #[default]
@@ -13743,6 +14100,14 @@ impl From<&str> for ExportDataExplorerIncludeSensitive {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `ExportExcludedNote` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ExportExcludedNote {
+    pub code: String,
+    pub what: String,
+    pub why: String,
 }
 
 /// `ExportMyAccountFormat` enumeration.
@@ -14110,6 +14475,84 @@ pub struct FileRecord {
     pub size_bytes: i64,
     pub sha256: String,
     pub created_at: String,
+}
+
+/// `FitCompanyTemplateRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FitCompanyTemplateRequest {
+    pub inputs: serde_json::Map<String, serde_json::Value>,
+    /// Server default: `"new"`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<FitCompanyTemplateRequestTarget>,
+}
+
+/// `FitCompanyTemplateRequestTarget` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum FitCompanyTemplateRequestTarget {
+    #[default]
+    #[serde(rename = "new")]
+    New,
+    #[serde(rename = "current")]
+    Current,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl FitCompanyTemplateRequestTarget {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::New => "new",
+            Self::Current => "current",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for FitCompanyTemplateRequestTarget {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for FitCompanyTemplateRequestTarget {
+    fn from(value: &str) -> Self {
+        match value {
+            "new" => Self::New,
+            "current" => Self::Current,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// The `GET /tenants/me/fit` body plus `target` and `template`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FitCompanyTemplateResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<FitCompanyTemplateRequestTarget>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub template: Option<FitCompanyTemplateResponseTemplate>,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
+/// `FitCompanyTemplateResponseTemplate` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FitCompanyTemplateResponseTemplate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+
+/// `FitRange` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FitRange {
+    pub low: f64,
+    pub mid: f64,
+    pub high: f64,
 }
 
 /// The operator's canvas: where each agent sits, how they are wired, and the notes and
@@ -15206,7 +15649,8 @@ pub struct GetHealthResponse {
     /// when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
     /// `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
     /// `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
-    /// `company_launch`, `company_overview` (since 2026-10-12).
+    /// `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+    /// `company_import`, `company_versions` (since 2026-10-12).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<Vec<String>>,
     /// Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
@@ -15490,6 +15934,101 @@ pub struct GetMeResponseUser {
 pub struct GetMfaStatusResponse {
     pub enrolled: bool,
     pub recovery_remaining: i64,
+}
+
+/// `GetMissionPerformanceResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMissionPerformanceResponse {
+    pub window_days: i64,
+    pub missions: GetMissionPerformanceResponseMissions,
+    pub objectives: GetMissionPerformanceResponseObjectives,
+    /// The review record of objectives with `review_required` that settled.
+    pub reviews: GetMissionPerformanceResponseReviews,
+    /// How good the reviewed work was, on what the platform can see. `with_unsourced_links` counts
+    /// results citing a link no tool produced — the honest proxy for a factual error, since a model
+    /// cannot be asked whether it is right. Since 2026-10-12.
+    pub quality: GetMissionPerformanceResponseQuality,
+    /// Objectives ended because a person refused an action mid-run.
+    pub actions_rejected: i64,
+    pub cost_usd: f64,
+    #[serde(default)]
+    pub cost_per_completed_usd: Option<f64>,
+    #[serde(default)]
+    pub avg_minutes_to_complete: Option<f64>,
+    /// Objectives waiting for a person right now.
+    pub awaiting_review: i64,
+    /// The same figures per assignee (`team:\<id\>` for a squad).
+    pub by_agent: Vec<GetMissionPerformanceResponseByAgentItem>,
+}
+
+/// `GetMissionPerformanceResponseByAgentItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMissionPerformanceResponseByAgentItem {
+    pub agent_id: String,
+    pub objectives: i64,
+    pub completed: i64,
+    pub failed: i64,
+    pub cost_usd: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reviewed: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accepted_first_pass: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accepted_after_revision: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rejected: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub first_pass_rate: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub avg_revisions: Option<f64>,
+}
+
+/// `GetMissionPerformanceResponseMissions` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMissionPerformanceResponseMissions {
+    pub total: i64,
+    pub by_status: serde_json::Map<String, serde_json::Value>,
+}
+
+/// `GetMissionPerformanceResponseObjectives` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMissionPerformanceResponseObjectives {
+    pub total: i64,
+    pub by_status: serde_json::Map<String, serde_json::Value>,
+    /// Keyed by `abort_reason`, e.g. budget_exhausted, not_dispatchable, rejected_by_person.
+    pub failed_by_reason: serde_json::Map<String, serde_json::Value>,
+}
+
+/// How good the reviewed work was, on what the platform can see. `with_unsourced_links` counts
+/// results citing a link no tool produced — the honest proxy for a factual error, since a model
+/// cannot be asked whether it is right. Since 2026-10-12.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMissionPerformanceResponseQuality {
+    /// Reviewed results carrying a provenance record (`sources`).
+    pub with_sources: i64,
+    pub with_unsourced_links: i64,
+    /// with_unsourced_links / with_sources; null when nothing carried provenance — absent is not
+    /// zero.
+    #[serde(default)]
+    pub unsourced_link_rate: Option<f64>,
+    pub links_cited: i64,
+    pub unsourced_links: i64,
+    #[serde(default)]
+    pub revisions_per_accepted: Option<f64>,
+}
+
+/// The review record of objectives with `review_required` that settled.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMissionPerformanceResponseReviews {
+    pub reviewed: i64,
+    pub accepted_first_pass: i64,
+    pub accepted_after_revision: i64,
+    pub rejected: i64,
+    /// accepted_first_pass / reviewed; null when nothing was reviewed.
+    #[serde(default)]
+    pub first_pass_rate: Option<f64>,
+    #[serde(default)]
+    pub avg_revisions: Option<f64>,
 }
 
 /// `GetMyHeadAgentTemplateResponse` model.
@@ -16052,6 +16591,8 @@ pub struct GetRunResponse {
 /// `GetRunResponseApproval` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetRunResponseApproval {
+    /// `revised` — the person declined the action and sent the run on with feedback (`POST
+    /// /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback.
     pub decision: RunApprovalDecision,
     /// Tools the run was waiting on when the decision was made.
     pub tools: Vec<String>,
@@ -16913,6 +17454,241 @@ pub struct GetTenantDomainHealthResponse {
     pub cert: Option<DomainCertLifecycle>,
 }
 
+/// `GetTenantPlanFitResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetTenantPlanFitResponse {
+    pub plan: String,
+    pub fits: bool,
+    pub window_days: i64,
+    pub run_profile: GetTenantPlanFitResponseRunProfile,
+    pub needs: GetTenantPlanFitResponseNeeds,
+    pub schedules: Vec<GetTenantPlanFitResponseSchedule>,
+    pub checks: Vec<GetTenantPlanFitResponseCheck>,
+    pub monthly_cost_usd: FitRange,
+    /// The spend cap per month, or null when none is set.
+    #[serde(default)]
+    pub budget_limit_usd: Option<f64>,
+    pub assumptions: Vec<GetTenantPlanFitResponseAssumption>,
+    pub suggestions: Vec<GetTenantPlanFitResponseSuggestion>,
+}
+
+/// `GetTenantPlanFitResponseAssumption` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetTenantPlanFitResponseAssumption {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+}
+
+/// `GetTenantPlanFitResponseCheck` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetTenantPlanFitResponseCheck {
+    pub code: GetTenantPlanFitResponseCheckCode,
+    pub needed: f64,
+    #[serde(default)]
+    pub limit: Option<f64>,
+    pub status: GetTenantPlanFitResponseCheckStatus,
+}
+
+/// `GetTenantPlanFitResponseCheckCode` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GetTenantPlanFitResponseCheckCode {
+    #[default]
+    #[serde(rename = "AGENTS")]
+    Agents,
+    #[serde(rename = "SQUADS")]
+    Squads,
+    #[serde(rename = "MONTHLY_RUNS")]
+    MonthlyRuns,
+    #[serde(rename = "MONTHLY_TOKENS")]
+    MonthlyTokens,
+    #[serde(rename = "MONTHLY_TOOL_CALLS")]
+    MonthlyToolCalls,
+    #[serde(rename = "BUDGET")]
+    Budget,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GetTenantPlanFitResponseCheckCode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Agents => "AGENTS",
+            Self::Squads => "SQUADS",
+            Self::MonthlyRuns => "MONTHLY_RUNS",
+            Self::MonthlyTokens => "MONTHLY_TOKENS",
+            Self::MonthlyToolCalls => "MONTHLY_TOOL_CALLS",
+            Self::Budget => "BUDGET",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GetTenantPlanFitResponseCheckCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GetTenantPlanFitResponseCheckCode {
+    fn from(value: &str) -> Self {
+        match value {
+            "AGENTS" => Self::Agents,
+            "SQUADS" => Self::Squads,
+            "MONTHLY_RUNS" => Self::MonthlyRuns,
+            "MONTHLY_TOKENS" => Self::MonthlyTokens,
+            "MONTHLY_TOOL_CALLS" => Self::MonthlyToolCalls,
+            "BUDGET" => Self::Budget,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `GetTenantPlanFitResponseCheckStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GetTenantPlanFitResponseCheckStatus {
+    #[default]
+    #[serde(rename = "ok")]
+    Ok,
+    #[serde(rename = "tight")]
+    Tight,
+    #[serde(rename = "over")]
+    Over,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GetTenantPlanFitResponseCheckStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Ok => "ok",
+            Self::Tight => "tight",
+            Self::Over => "over",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GetTenantPlanFitResponseCheckStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GetTenantPlanFitResponseCheckStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "ok" => Self::Ok,
+            "tight" => Self::Tight,
+            "over" => Self::Over,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `GetTenantPlanFitResponseNeeds` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetTenantPlanFitResponseNeeds {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agents: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub squads: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runs_per_month: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens_per_month: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls_per_month: Option<FitRange>,
+}
+
+/// `GetTenantPlanFitResponseRunProfile` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetTenantPlanFitResponseRunProfile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_usd: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sample_runs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<GetTenantPlanFitResponseRunProfileSource>,
+}
+
+/// `GetTenantPlanFitResponseRunProfileSource` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GetTenantPlanFitResponseRunProfileSource {
+    #[default]
+    #[serde(rename = "history")]
+    History,
+    #[serde(rename = "default")]
+    Default,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GetTenantPlanFitResponseRunProfileSource {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::History => "history",
+            Self::Default => "default",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GetTenantPlanFitResponseRunProfileSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GetTenantPlanFitResponseRunProfileSource {
+    fn from(value: &str) -> Self {
+        match value {
+            "history" => Self::History,
+            "default" => Self::Default,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `GetTenantPlanFitResponseSchedule` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetTenantPlanFitResponseSchedule {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<GetTenantBlueprintResponseScheduleKind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cron: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runs_per_fire: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fires_per_month: Option<i64>,
+}
+
+/// `GetTenantPlanFitResponseSuggestion` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetTenantPlanFitResponseSuggestion {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
+}
+
 /// `GetTenantReadinessResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetTenantReadinessResponse {
@@ -17407,7 +18183,8 @@ pub struct HealthCheckV1aliasResponse {
     /// when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
     /// `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
     /// `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
-    /// `company_launch`, `company_overview` (since 2026-10-12).
+    /// `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+    /// `company_import`, `company_versions` (since 2026-10-12).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<Vec<String>>,
 }
@@ -19997,6 +20774,13 @@ pub struct ListCompaniesResponse {
     pub has_more: bool,
 }
 
+/// `ListCompanyTemplatesResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListCompanyTemplatesResponse {
+    pub items: Vec<CompanyTemplateCard>,
+    pub total: i64,
+}
+
 /// `ListContentReportsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListContentReportsResponse {
@@ -21108,7 +21892,23 @@ pub struct ListTeamsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListTenantCompanyChangesResponse {
     pub items: Vec<CompanyChange>,
+    /// Every row in the log, not the page — `items` honours `limit` while this counts them all, so
+    /// a client can say "N of M".
     pub total: i64,
+    /// The scan hit its cap (5000 rows), so `total` is a floor rather than a count.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub truncated: Option<bool>,
+}
+
+/// `ListTenantCompanyVersionsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListTenantCompanyVersionsResponse {
+    pub items: Vec<CompanyVersionRow>,
+    /// Every version in the log, not just the rows returned.
+    pub total: i64,
+    /// The scan hit its cap (5000 rows), so `total` is a floor rather than a count.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub truncated: Option<bool>,
 }
 
 /// `ListTenantProposalsResponse` model.
@@ -24710,6 +25510,30 @@ pub struct PatchTenantRequestMarketplaceListing {
 pub struct PauseCompanyResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    /// What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+    /// sentences; the counts and run ids are exact.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pause_scope: Option<PauseCompanyResponsePauseScope>,
+}
+
+/// What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+/// sentences; the counts and run ids are exact.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PauseCompanyResponsePauseScope {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stopped: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub not_stopped: Option<Vec<String>>,
+    /// Agents of the initiative, its strategist included.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agents: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub squads: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedules_held: Option<i64>,
+    /// Run ids.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runs_cancelled: Option<Vec<String>>,
 }
 
 /// `PauseInitiativeResponse` model.
@@ -24717,6 +25541,30 @@ pub struct PauseCompanyResponse {
 pub struct PauseInitiativeResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    /// What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+    /// sentences; the counts and run ids are exact.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pause_scope: Option<PauseInitiativeResponsePauseScope>,
+}
+
+/// What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+/// sentences; the counts and run ids are exact.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PauseInitiativeResponsePauseScope {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stopped: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub not_stopped: Option<Vec<String>>,
+    /// Agents of the initiative, its strategist included.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agents: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub squads: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedules_held: Option<i64>,
+    /// Run ids.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runs_cancelled: Option<Vec<String>>,
 }
 
 /// `PauseMissionResponse` model.
@@ -25735,6 +26583,544 @@ pub struct PromoCodeInput {
     /// Server default: `true`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub active: Option<bool>,
+}
+
+/// `ProposalOpAddAgent` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpAddAgent {
+    pub op: ProposalOpAddAgentOp,
+    /// A name later operations use as `$ref:\<name\>` for the id this one creates.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#ref: Option<String>,
+    /// The body of `POST /agents`.
+    pub agent: serde_json::Map<String, serde_json::Value>,
+}
+
+/// `ProposalOpAddAgentOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpAddAgentOp {
+    #[default]
+    #[serde(rename = "add_agent")]
+    AddAgent,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpAddAgentOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::AddAgent => "add_agent",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpAddAgentOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpAddAgentOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "add_agent" => Self::AddAgent,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ProposalOpAddMissionSchedule` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpAddMissionSchedule {
+    pub op: ProposalOpAddMissionScheduleOp,
+    /// A name later operations use as `$ref:\<name\>` for the id this one creates.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#ref: Option<String>,
+    /// The body of `POST /missions/schedules`.
+    pub schedule: serde_json::Map<String, serde_json::Value>,
+}
+
+/// `ProposalOpAddMissionScheduleOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpAddMissionScheduleOp {
+    #[default]
+    #[serde(rename = "add_mission_schedule")]
+    AddMissionSchedule,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpAddMissionScheduleOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::AddMissionSchedule => "add_mission_schedule",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpAddMissionScheduleOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpAddMissionScheduleOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "add_mission_schedule" => Self::AddMissionSchedule,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ProposalOpAddSquad` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpAddSquad {
+    pub op: ProposalOpAddSquadOp,
+    /// A name later operations use as `$ref:\<name\>` for the id this one creates.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#ref: Option<String>,
+    /// The body of `POST /squads`.
+    pub squad: serde_json::Map<String, serde_json::Value>,
+}
+
+/// `ProposalOpAddSquadOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpAddSquadOp {
+    #[default]
+    #[serde(rename = "add_squad")]
+    AddSquad,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpAddSquadOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::AddSquad => "add_squad",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpAddSquadOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpAddSquadOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "add_squad" => Self::AddSquad,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// One change a proposal makes, discriminated by `op`.
+pub type ProposalOperation = serde_json::Value;
+
+/// `ProposalOpRemoveAgent` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpRemoveAgent {
+    pub op: ProposalOpRemoveAgentOp,
+    /// An id, or `$ref:\<name\>` of an earlier operation.
+    pub agent_id: String,
+}
+
+/// `ProposalOpRemoveAgentOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpRemoveAgentOp {
+    #[default]
+    #[serde(rename = "remove_agent")]
+    RemoveAgent,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpRemoveAgentOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RemoveAgent => "remove_agent",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpRemoveAgentOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpRemoveAgentOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "remove_agent" => Self::RemoveAgent,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ProposalOpRemoveMissionSchedule` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpRemoveMissionSchedule {
+    pub op: ProposalOpRemoveMissionScheduleOp,
+    /// An id, or `$ref:\<name\>` of an earlier operation.
+    pub schedule_id: String,
+}
+
+/// `ProposalOpRemoveMissionScheduleOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpRemoveMissionScheduleOp {
+    #[default]
+    #[serde(rename = "remove_mission_schedule")]
+    RemoveMissionSchedule,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpRemoveMissionScheduleOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RemoveMissionSchedule => "remove_mission_schedule",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpRemoveMissionScheduleOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpRemoveMissionScheduleOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "remove_mission_schedule" => Self::RemoveMissionSchedule,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ProposalOpSetAgentSchedule` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpSetAgentSchedule {
+    pub op: ProposalOpSetAgentScheduleOp,
+    /// An id, or `$ref:\<name\>` of an earlier operation.
+    pub agent_id: String,
+    pub cron: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
+/// `ProposalOpSetAgentScheduleOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpSetAgentScheduleOp {
+    #[default]
+    #[serde(rename = "set_agent_schedule")]
+    SetAgentSchedule,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpSetAgentScheduleOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::SetAgentSchedule => "set_agent_schedule",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpSetAgentScheduleOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpSetAgentScheduleOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "set_agent_schedule" => Self::SetAgentSchedule,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ProposalOpSetApprovalPolicy` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpSetApprovalPolicy {
+    pub op: ProposalOpSetApprovalPolicyOp,
+    /// An id, or `$ref:\<name\>` of an earlier operation.
+    pub agent_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval_required_tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auto_approve_tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub autonomy: Option<ProposalOpSetApprovalPolicyAutonomy>,
+}
+
+/// `ProposalOpSetApprovalPolicyAutonomy` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpSetApprovalPolicyAutonomy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub level: Option<AgentAutonomyLevel>,
+}
+
+/// `ProposalOpSetApprovalPolicyOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpSetApprovalPolicyOp {
+    #[default]
+    #[serde(rename = "set_approval_policy")]
+    SetApprovalPolicy,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpSetApprovalPolicyOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::SetApprovalPolicy => "set_approval_policy",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpSetApprovalPolicyOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpSetApprovalPolicyOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "set_approval_policy" => Self::SetApprovalPolicy,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ProposalOpSetBudget` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpSetBudget {
+    pub op: ProposalOpSetBudgetOp,
+    pub limit_usd: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub period: Option<GetBillingBudgetResponseBudgetPeriod>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub soft_threshold: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hard_threshold: Option<f64>,
+}
+
+/// `ProposalOpSetBudgetOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpSetBudgetOp {
+    #[default]
+    #[serde(rename = "set_budget")]
+    SetBudget,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpSetBudgetOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::SetBudget => "set_budget",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpSetBudgetOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpSetBudgetOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "set_budget" => Self::SetBudget,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ProposalOpSetSquadMembers` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpSetSquadMembers {
+    pub op: ProposalOpSetSquadMembersOp,
+    /// An id, or `$ref:\<name\>` of an earlier operation.
+    pub squad_id: String,
+    pub workers: Vec<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `ProposalOpSetSquadMembersOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpSetSquadMembersOp {
+    #[default]
+    #[serde(rename = "set_squad_members")]
+    SetSquadMembers,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpSetSquadMembersOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::SetSquadMembers => "set_squad_members",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpSetSquadMembersOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpSetSquadMembersOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "set_squad_members" => Self::SetSquadMembers,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ProposalOpUpdateAgent` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpUpdateAgent {
+    pub op: ProposalOpUpdateAgentOp,
+    /// An id, or `$ref:\<name\>` of an earlier operation.
+    pub agent_id: String,
+    /// The body of `PATCH /agents/{agentId}`.
+    pub changes: serde_json::Map<String, serde_json::Value>,
+}
+
+/// `ProposalOpUpdateAgentOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpUpdateAgentOp {
+    #[default]
+    #[serde(rename = "update_agent")]
+    UpdateAgent,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpUpdateAgentOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::UpdateAgent => "update_agent",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpUpdateAgentOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpUpdateAgentOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "update_agent" => Self::UpdateAgent,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ProposalOpUpdateCompany` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpUpdateCompany {
+    pub op: ProposalOpUpdateCompanyOp,
+    pub changes: ProposalOpUpdateCompanyChanges,
+}
+
+/// `ProposalOpUpdateCompanyChanges` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpUpdateCompanyChanges {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub business_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub objective: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_customer: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+}
+
+/// `ProposalOpUpdateCompanyOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpUpdateCompanyOp {
+    #[default]
+    #[serde(rename = "update_company")]
+    UpdateCompany,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpUpdateCompanyOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::UpdateCompany => "update_company",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpUpdateCompanyOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpUpdateCompanyOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "update_company" => Self::UpdateCompany,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// public.ts GET /public/agents/{agentId} — a hand-built projection, not the Agent record. Keys
@@ -27677,7 +29063,12 @@ impl From<&str> for ResourcePermissionAction {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ResourceUsageEntry {
     pub count: f64,
-    pub limit: f64,
+    /// The plan's limit for this resource, or null when the plan does not define one. Null is NOT a
+    /// limit of zero: `over_by` is 0 and the resource is simply not capped, while `limit: 0` means
+    /// the plan allows none. A client that printed the two the same way told a founder "3 of 0"
+    /// about a resource with no ceiling (macOS lane, measured 2026-10-12).
+    #[serde(default)]
+    pub limit: Option<f64>,
     pub over_by: f64,
 }
 
@@ -27830,6 +29221,12 @@ impl From<&str> for ResponsesOutputItemType {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `RestoreTenantCompanyVersionRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RestoreTenantCompanyVersionRequest {
+    pub version: i64,
 }
 
 /// `RestoreWorkspaceTrashRequest` model.
@@ -28268,6 +29665,8 @@ pub struct Run {
 /// `RunApproval` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RunApproval {
+    /// `revised` — the person declined the action and sent the run on with feedback (`POST
+    /// /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback.
     pub decision: RunApprovalDecision,
     /// Tools the run was waiting on when the decision was made.
     pub tools: Vec<String>,
@@ -28280,7 +29679,8 @@ pub struct RunApproval {
     pub reason: Option<String>,
 }
 
-/// `RunApprovalDecision` enumeration.
+/// `revised` — the person declined the action and sent the run on with feedback (`POST
+/// /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum RunApprovalDecision {
     #[default]
@@ -28288,6 +29688,8 @@ pub enum RunApprovalDecision {
     Approved,
     #[serde(rename = "rejected")]
     Rejected,
+    #[serde(rename = "revised")]
+    Revised,
     /// A value the API introduced after this SDK was generated.
     #[serde(untagged)]
     Other(String),
@@ -28299,6 +29701,7 @@ impl RunApprovalDecision {
         match self {
             Self::Approved => "approved",
             Self::Rejected => "rejected",
+            Self::Revised => "revised",
             Self::Other(value) => value.as_str(),
         }
     }
@@ -28315,6 +29718,7 @@ impl From<&str> for RunApprovalDecision {
         match value {
             "approved" => Self::Approved,
             "rejected" => Self::Rejected,
+            "revised" => Self::Revised,
             other => Self::Other(other.to_string()),
         }
     }

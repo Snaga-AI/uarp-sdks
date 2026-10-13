@@ -1368,7 +1368,11 @@
                         "type": "number"
                     },
                     "limit": {
-                        "type": "number"
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "The plan's limit for this resource, or null when the plan does not define one. Null is NOT a limit of zero: `over_by` is 0 and the resource is simply not capped, while `limit: 0` means the plan allows none. A client that printed the two the same way told a founder \"3 of 0\" about a resource with no ceiling (macOS lane, measured 2026-10-12)."
                     },
                     "over_by": {
                         "type": "number"
@@ -8395,8 +8399,10 @@
                                     "type": "string",
                                     "enum": [
                                         "approved",
-                                        "rejected"
-                                    ]
+                                        "rejected",
+                                        "revised"
+                                    ],
+                                    "description": "`revised` — the person declined the action and sent the run on with feedback (`POST /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback."
                                 },
                                 "tools": {
                                     "type": "array",
@@ -17011,6 +17017,374 @@
                     "servers"
                 ]
             },
+            "ProposalOpAddAgent": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "op",
+                    "agent"
+                ],
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "enum": [
+                            "add_agent"
+                        ]
+                    },
+                    "ref": {
+                        "type": "string",
+                        "description": "A name later operations use as `$ref:<name>` for the id this one creates."
+                    },
+                    "agent": {
+                        "type": "object",
+                        "description": "The body of `POST /agents`."
+                    }
+                }
+            },
+            "ProposalOpUpdateAgent": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "op",
+                    "agent_id",
+                    "changes"
+                ],
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "enum": [
+                            "update_agent"
+                        ]
+                    },
+                    "agent_id": {
+                        "type": "string",
+                        "description": "An id, or `$ref:<name>` of an earlier operation."
+                    },
+                    "changes": {
+                        "type": "object",
+                        "description": "The body of `PATCH /agents/{agentId}`."
+                    }
+                }
+            },
+            "ProposalOpRemoveAgent": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "op",
+                    "agent_id"
+                ],
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "enum": [
+                            "remove_agent"
+                        ]
+                    },
+                    "agent_id": {
+                        "type": "string",
+                        "description": "An id, or `$ref:<name>` of an earlier operation."
+                    }
+                }
+            },
+            "ProposalOpSetAgentSchedule": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "op",
+                    "agent_id",
+                    "cron"
+                ],
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "enum": [
+                            "set_agent_schedule"
+                        ]
+                    },
+                    "agent_id": {
+                        "type": "string",
+                        "description": "An id, or `$ref:<name>` of an earlier operation."
+                    },
+                    "cron": {
+                        "type": "string"
+                    },
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "message": {
+                        "type": "string",
+                        "maxLength": 4000
+                    }
+                }
+            },
+            "ProposalOpSetApprovalPolicy": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "op",
+                    "agent_id"
+                ],
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "enum": [
+                            "set_approval_policy"
+                        ]
+                    },
+                    "agent_id": {
+                        "type": "string",
+                        "description": "An id, or `$ref:<name>` of an earlier operation."
+                    },
+                    "approval_required_tools": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "auto_approve_tools": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "autonomy": {
+                        "type": "object",
+                        "properties": {
+                            "level": {
+                                "type": "string",
+                                "enum": [
+                                    "manual",
+                                    "approve_risky",
+                                    "full_auto"
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            "ProposalOpAddSquad": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "op",
+                    "squad"
+                ],
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "enum": [
+                            "add_squad"
+                        ]
+                    },
+                    "ref": {
+                        "type": "string",
+                        "description": "A name later operations use as `$ref:<name>` for the id this one creates."
+                    },
+                    "squad": {
+                        "type": "object",
+                        "description": "The body of `POST /squads`."
+                    }
+                }
+            },
+            "ProposalOpSetSquadMembers": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "op",
+                    "squad_id",
+                    "workers"
+                ],
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "enum": [
+                            "set_squad_members"
+                        ]
+                    },
+                    "squad_id": {
+                        "type": "string",
+                        "description": "An id, or `$ref:<name>` of an earlier operation."
+                    },
+                    "workers": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "object",
+                            "description": "A squad worker: {agent_id, role, …}."
+                        }
+                    }
+                }
+            },
+            "ProposalOpUpdateCompany": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "op",
+                    "changes"
+                ],
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "enum": [
+                            "update_company"
+                        ]
+                    },
+                    "changes": {
+                        "type": "object",
+                        "properties": {
+                            "business_type": {
+                                "type": "string"
+                            },
+                            "objective": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "target_customer": {
+                                "type": "string"
+                            },
+                            "timezone": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "ProposalOpSetBudget": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "op",
+                    "limit_usd"
+                ],
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "enum": [
+                            "set_budget"
+                        ]
+                    },
+                    "limit_usd": {
+                        "type": "number"
+                    },
+                    "period": {
+                        "type": "string",
+                        "enum": [
+                            "monthly",
+                            "weekly",
+                            "daily"
+                        ]
+                    },
+                    "soft_threshold": {
+                        "type": "number"
+                    },
+                    "hard_threshold": {
+                        "type": "number"
+                    }
+                }
+            },
+            "ProposalOpAddMissionSchedule": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "op",
+                    "schedule"
+                ],
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "enum": [
+                            "add_mission_schedule"
+                        ]
+                    },
+                    "ref": {
+                        "type": "string",
+                        "description": "A name later operations use as `$ref:<name>` for the id this one creates."
+                    },
+                    "schedule": {
+                        "type": "object",
+                        "description": "The body of `POST /missions/schedules`."
+                    }
+                }
+            },
+            "ProposalOpRemoveMissionSchedule": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "op",
+                    "schedule_id"
+                ],
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "enum": [
+                            "remove_mission_schedule"
+                        ]
+                    },
+                    "schedule_id": {
+                        "type": "string",
+                        "description": "An id, or `$ref:<name>` of an earlier operation."
+                    }
+                }
+            },
+            "ProposalOperation": {
+                "description": "One change a proposal makes, discriminated by `op`.",
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/ProposalOpAddAgent"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ProposalOpUpdateAgent"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ProposalOpRemoveAgent"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ProposalOpSetAgentSchedule"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ProposalOpSetApprovalPolicy"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ProposalOpAddSquad"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ProposalOpSetSquadMembers"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ProposalOpUpdateCompany"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ProposalOpSetBudget"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ProposalOpAddMissionSchedule"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ProposalOpRemoveMissionSchedule"
+                    }
+                ],
+                "discriminator": {
+                    "propertyName": "op",
+                    "mapping": {
+                        "add_agent": "#/components/schemas/ProposalOpAddAgent",
+                        "update_agent": "#/components/schemas/ProposalOpUpdateAgent",
+                        "remove_agent": "#/components/schemas/ProposalOpRemoveAgent",
+                        "set_agent_schedule": "#/components/schemas/ProposalOpSetAgentSchedule",
+                        "set_approval_policy": "#/components/schemas/ProposalOpSetApprovalPolicy",
+                        "add_squad": "#/components/schemas/ProposalOpAddSquad",
+                        "set_squad_members": "#/components/schemas/ProposalOpSetSquadMembers",
+                        "update_company": "#/components/schemas/ProposalOpUpdateCompany",
+                        "set_budget": "#/components/schemas/ProposalOpSetBudget",
+                        "add_mission_schedule": "#/components/schemas/ProposalOpAddMissionSchedule",
+                        "remove_mission_schedule": "#/components/schemas/ProposalOpRemoveMissionSchedule"
+                    }
+                }
+            },
             "CompanyProposal": {
                 "type": "object",
                 "description": "A change to the company waiting for — or decided by — a person.",
@@ -17050,28 +17424,7 @@
                     "operations": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "required": [
-                                "op"
-                            ],
-                            "properties": {
-                                "op": {
-                                    "type": "string",
-                                    "enum": [
-                                        "add_agent",
-                                        "update_agent",
-                                        "remove_agent",
-                                        "set_agent_schedule",
-                                        "set_approval_policy",
-                                        "add_squad",
-                                        "set_squad_members",
-                                        "update_company",
-                                        "set_budget",
-                                        "add_mission_schedule",
-                                        "remove_mission_schedule"
-                                    ]
-                                }
-                            }
+                            "$ref": "#/components/schemas/ProposalOperation"
                         }
                     },
                     "base_version": {
@@ -17106,7 +17459,8 @@
                                     "type": "object"
                                 },
                                 "after": {
-                                    "type": "object"
+                                    "type": "object",
+                                    "description": "What the operation NAMES, not the whole record: the rest of the target keeps its stored value (a schedule keeps its zone, message, concurrency and failure policy; the budget keeps its period and thresholds). A client that renders `after` as the whole new state will invent changes the apply does not make (measured 2026-10-12)."
                                 },
                                 "irreversible": {
                                     "type": "boolean",
@@ -17159,6 +17513,18 @@
                             "session_id": {
                                 "type": "string",
                                 "description": "For an agent: the conversation it proposed in — show the card there."
+                            }
+                        }
+                    },
+                    "template": {
+                        "type": "object",
+                        "description": "Set when the proposal builds a company template; recorded on the company at apply.",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "version": {
+                                "type": "string"
                             }
                         }
                     },
@@ -17404,6 +17770,711 @@
                     }
                 }
             },
+            "FitRange": {
+                "type": "object",
+                "required": [
+                    "low",
+                    "mid",
+                    "high"
+                ],
+                "properties": {
+                    "low": {
+                        "type": "number"
+                    },
+                    "mid": {
+                        "type": "number"
+                    },
+                    "high": {
+                        "type": "number"
+                    }
+                }
+            },
+            "CompanyTemplateCard": {
+                "type": "object",
+                "required": [
+                    "template_id",
+                    "version",
+                    "name",
+                    "summary",
+                    "business_type",
+                    "agents",
+                    "department_names",
+                    "requires"
+                ],
+                "properties": {
+                    "template_id": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "business_type": {
+                        "type": "string"
+                    },
+                    "agents": {
+                        "type": "integer"
+                    },
+                    "department_names": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "requires": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Platform features the template needs, e.g. `missions`."
+                    }
+                }
+            },
+            "CompanyTemplate": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CompanyTemplateCard"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "inputs_schema": {
+                                "type": "object",
+                                "description": "JSON Schema of the template's inputs, for rendering the form."
+                            },
+                            "roles": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "ref": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "department": {
+                                            "type": "string"
+                                        },
+                                        "does": {
+                                            "type": "string"
+                                        },
+                                        "tools": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "approval_required_tools": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "departments": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "lead": {
+                                            "type": "string",
+                                            "enum": [
+                                                "chief_of_staff"
+                                            ]
+                                        },
+                                        "members": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "description": "Role refs."
+                                        }
+                                    }
+                                }
+                            },
+                            "pipeline": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "connectors": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "purpose": {
+                                            "type": "string"
+                                        },
+                                        "required": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                },
+                                "description": "Integrations the founder connects; never configured by the template."
+                            },
+                            "defaults": {
+                                "type": "object",
+                                "properties": {
+                                    "cron": {
+                                        "type": "string"
+                                    },
+                                    "timezone": {
+                                        "type": "string"
+                                    },
+                                    "budget_usd": {
+                                        "type": "number"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "ExportExcludedNote": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "what",
+                    "why"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "what": {
+                        "type": "string"
+                    },
+                    "why": {
+                        "type": "string"
+                    }
+                }
+            },
+            "CompanyExportAgent": {
+                "type": "object",
+                "required": [
+                    "agent_id",
+                    "name",
+                    "is_chief_of_staff"
+                ],
+                "properties": {
+                    "agent_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "string"
+                    },
+                    "execution_mode": {
+                        "type": "string"
+                    },
+                    "prompts": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "description": "System and developer prompts (the Agent schema's `prompts`)."
+                    },
+                    "specs": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                        },
+                        "description": "Installed SPECs as stored (spec_id, version)."
+                    },
+                    "built_in_tools": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "approval_required_tools": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "auto_approve_tools": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "autonomy": {
+                        "type": "object",
+                        "additionalProperties": true
+                    },
+                    "schedule": {
+                        "$ref": "#/components/schemas/AgentScheduleConfig"
+                    },
+                    "model": {
+                        "type": "object",
+                        "description": "Provider and model only — never the key reference or an endpoint.",
+                        "properties": {
+                            "provider": {
+                                "type": "string"
+                            },
+                            "model_ref": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "mcp": {
+                        "type": "object",
+                        "properties": {
+                            "server_ids": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "allowed_tools": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "allowed_resources": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "is_chief_of_staff": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "CompanyExportDepartment": {
+                "type": "object",
+                "required": [
+                    "squad_id",
+                    "name"
+                ],
+                "properties": {
+                    "squad_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "topology": {
+                        "type": "string"
+                    },
+                    "delegation_strategy": {
+                        "type": "string"
+                    },
+                    "merge_strategy": {
+                        "type": "string"
+                    },
+                    "lead_agent_id": {
+                        "type": "string"
+                    },
+                    "members": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "agent_id": {
+                                    "type": "string"
+                                },
+                                "role": {
+                                    "type": "string"
+                                },
+                                "permissions": {
+                                    "$ref": "#/components/schemas/TeamWorkerPermissions"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "CompanyImportRequest": {
+                "type": "object",
+                "description": "The body of `POST /tenants/me/company/import`. Same shape as an export, but a REQUEST: unknown keys are ignored, and nothing here is a promise about what the import will apply — the stored proposal's diff is.",
+                "required": [
+                    "schema_version"
+                ],
+                "properties": {
+                    "schema_version": {
+                        "type": "string",
+                        "enum": [
+                            "1"
+                        ],
+                        "description": "The manifest version this build understands; anything else is 422."
+                    },
+                    "company": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "description": "Profile fields to take over (`business_type`, `objective`, `description`, `target_customer`, `timezone`). The company's name is not imported — a manifest cannot rename the tenant."
+                    },
+                    "agents": {
+                        "type": "array",
+                        "maxItems": 50,
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "A `CompanyExportAgent`. The fields taken over: name, description, prompts, specs, built_in_tools, approval_required_tools, auto_approve_tools, autonomy."
+                        }
+                    },
+                    "departments": {
+                        "type": "array",
+                        "maxItems": 20,
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "A `CompanyExportDepartment`; members are resolved through the agents this import creates."
+                        }
+                    },
+                    "schedules": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "Agent schedules (`agent_id`, `cron`, `timezone`, `enabled`, `message`)."
+                        },
+                        "maxItems": 5242880
+                    },
+                    "mission_schedules": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "Mission schedules with their plan; an objective whose agent did not come along is dropped."
+                        },
+                        "maxItems": 5242880
+                    },
+                    "budget": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "additionalProperties": true,
+                        "description": "A spend cap to set (`limit_usd`, `period`)."
+                    },
+                    "integrations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                        },
+                        "description": "Named only — never imported, since a manifest carries no credentials. The proposal's `rationale` lists what to connect.",
+                        "maxItems": 5242880
+                    }
+                }
+            },
+            "CompanyExport": {
+                "type": "object",
+                "description": "The company as structure. Secrets are not projected and every omission is listed in `excluded`.",
+                "required": [
+                    "schema_version",
+                    "exported_at",
+                    "company",
+                    "agents",
+                    "departments",
+                    "schedules",
+                    "mission_schedules",
+                    "budget",
+                    "governance",
+                    "integrations",
+                    "knowledge_sources",
+                    "excluded"
+                ],
+                "properties": {
+                    "schema_version": {
+                        "type": "string",
+                        "description": "The manifest's own version; a clone refuses one it does not know."
+                    },
+                    "exported_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "company": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "business_type": {
+                                "type": "string"
+                            },
+                            "objective": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "target_customer": {
+                                "type": "string"
+                            },
+                            "timezone": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "draft",
+                                    "active",
+                                    "paused"
+                                ]
+                            },
+                            "version": {
+                                "type": "integer"
+                            },
+                            "template": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "launched_at": {
+                                "type": "string"
+                            },
+                            "plan": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        }
+                    },
+                    "chief_of_staff_agent_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "agents": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CompanyExportAgent"
+                        }
+                    },
+                    "departments": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CompanyExportDepartment"
+                        }
+                    },
+                    "schedules": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "agent_id": {
+                                    "type": "string"
+                                },
+                                "agent_name": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "cron": {
+                                    "type": "string"
+                                },
+                                "shape": {
+                                    "$ref": "#/components/schemas/ScheduleShape"
+                                },
+                                "timezone": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "enabled": {
+                                    "type": "boolean"
+                                },
+                                "message": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "mission_schedules": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "schedule_id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "cron": {
+                                    "type": "string"
+                                },
+                                "shape": {
+                                    "$ref": "#/components/schemas/ScheduleShape"
+                                },
+                                "timezone": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "plan": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            }
+                        }
+                    },
+                    "budget": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "limit_usd": {
+                                "type": "number"
+                            },
+                            "period": {
+                                "type": "string"
+                            },
+                            "soft_threshold": {
+                                "type": "number"
+                            },
+                            "hard_threshold": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "governance": {
+                        "type": "object",
+                        "properties": {
+                            "approval_required_tools": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "integrations": {
+                        "type": "array",
+                        "description": "Named, never configured.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                        "connector",
+                                        "mcp_server"
+                                    ]
+                                },
+                                "connector_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "knowledge_sources": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "documents": {
+                                    "type": "integer"
+                                },
+                                "status": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "excluded": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ExportExcludedNote"
+                        }
+                    }
+                }
+            },
+            "CompanyVersionRow": {
+                "type": "object",
+                "required": [
+                    "version",
+                    "at",
+                    "actor",
+                    "source",
+                    "summary",
+                    "has_snapshot"
+                ],
+                "properties": {
+                    "version": {
+                        "type": "integer"
+                    },
+                    "at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "actor": {
+                        "type": "string"
+                    },
+                    "source": {
+                        "type": "string",
+                        "enum": [
+                            "api",
+                            "proposal",
+                            "template",
+                            "pause",
+                            "launch"
+                        ]
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "fields": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "has_snapshot": {
+                        "type": "boolean",
+                        "description": "True when this version's structure can be restored."
+                    }
+                }
+            },
             "CompanyProfile": {
                 "type": "object",
                 "description": "The founder's company — which IS the tenant. Identity (`name`) comes from the tenant record; the rest is what the Company Builder adds. A tenant that never wrote a profile reads as an operating company: `status: active`, `version: 0`. `status` here is the founder's lifecycle and is NOT `tenant.status` (account/billing state).",
@@ -17490,6 +18561,7 @@
                 }
             },
             "CompanyChange": {
+                "description": "One accepted change. Render `summary` — it is the sentence, and for a proposal-sourced row it names the proposal applied. `fields` names what a DIRECT edit touched and is absent on a proposal, a pause and a launch; preferring `fields` everywhere turns \"Applied proposal: Pin the objective\" into \"Changed what it is for\" and loses the fact a person decided it (Android lane, measured on a device, 2026-10-12).",
                 "type": "object",
                 "required": [
                     "version",
@@ -24157,7 +25229,7 @@
                                             "items": {
                                                 "type": "string"
                                             },
-                                            "description": "What this build can do, by name — gate a feature on it instead of on a 404. Names are added when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`, `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`, `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`, `company_launch`, `company_overview` (since 2026-10-12)."
+                                            "description": "What this build can do, by name — gate a feature on it instead of on a 404. Names are added when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`, `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`, `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`, `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`, `company_import`, `company_versions` (since 2026-10-12)."
                                         },
                                         "runs_queued": {
                                             "type": "integer",
@@ -34069,6 +35141,939 @@
                 ]
             }
         },
+        "/api/v1/tenants/me/fit": {
+            "get": {
+                "operationId": "getTenantPlanFit",
+                "tags": [
+                    "Company"
+                ],
+                "summary": "Does the company fit its plan, and what will it cost a month",
+                "description": "An estimate, with its assumptions listed. One run's use is measured from this company's completed runs of the last 30 days (25th / 50th / 75th percentile of tokens, billed cost and tool calls); with fewer than 10, a platform default with a wide range (`run_profile.source: default`). Runs a month = every active schedule's fires over the next 30 days (as the scheduler counts them) × the runs one fire starts (a mission: its objectives) + the runs people started in the last 30 days; the high estimate adds 50% for retries and revisions. Cost is what this company is billed per run, never the provider's cost. `checks[].status`: `ok` fits with the high estimate, `tight` only the expected one, `over` not even that. `fits` is false when any check is `over`. Suggestion codes: UPGRADE_PLAN (with `plan`), REDUCE_WORKLOAD, RAISE_BUDGET, SET_BUDGET. Assumption codes: RUN_PROFILE_FROM_HISTORY, RUN_PROFILE_DEFAULT, SCHEDULES_OVER_30_DAYS, PERSON_RUNS_FROM_LAST_30_DAYS, RETRIES_HEADROOM, SCHEDULE_NOT_COUNTED. A weekly or daily spend cap is compared per month.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The estimate.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "plan",
+                                        "fits",
+                                        "window_days",
+                                        "run_profile",
+                                        "needs",
+                                        "schedules",
+                                        "checks",
+                                        "monthly_cost_usd",
+                                        "budget_limit_usd",
+                                        "assumptions",
+                                        "suggestions"
+                                    ],
+                                    "properties": {
+                                        "plan": {
+                                            "type": "string"
+                                        },
+                                        "fits": {
+                                            "type": "boolean"
+                                        },
+                                        "window_days": {
+                                            "type": "integer"
+                                        },
+                                        "run_profile": {
+                                            "type": "object",
+                                            "properties": {
+                                                "tokens": {
+                                                    "$ref": "#/components/schemas/FitRange"
+                                                },
+                                                "cost_usd": {
+                                                    "$ref": "#/components/schemas/FitRange"
+                                                },
+                                                "tool_calls": {
+                                                    "$ref": "#/components/schemas/FitRange"
+                                                },
+                                                "sample_runs": {
+                                                    "type": "integer"
+                                                },
+                                                "source": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "history",
+                                                        "default"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "needs": {
+                                            "type": "object",
+                                            "properties": {
+                                                "agents": {
+                                                    "type": "integer"
+                                                },
+                                                "squads": {
+                                                    "type": "integer"
+                                                },
+                                                "runs_per_month": {
+                                                    "$ref": "#/components/schemas/FitRange"
+                                                },
+                                                "tokens_per_month": {
+                                                    "$ref": "#/components/schemas/FitRange"
+                                                },
+                                                "tool_calls_per_month": {
+                                                    "$ref": "#/components/schemas/FitRange"
+                                                }
+                                            }
+                                        },
+                                        "schedules": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "agent",
+                                                            "mission"
+                                                        ]
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "cron": {
+                                                        "type": "string"
+                                                    },
+                                                    "timezone": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "runs_per_fire": {
+                                                        "type": "integer"
+                                                    },
+                                                    "fires_per_month": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "checks": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "code",
+                                                    "needed",
+                                                    "limit",
+                                                    "status"
+                                                ],
+                                                "properties": {
+                                                    "code": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "AGENTS",
+                                                            "SQUADS",
+                                                            "MONTHLY_RUNS",
+                                                            "MONTHLY_TOKENS",
+                                                            "MONTHLY_TOOL_CALLS",
+                                                            "BUDGET"
+                                                        ]
+                                                    },
+                                                    "needed": {
+                                                        "type": "number"
+                                                    },
+                                                    "limit": {
+                                                        "type": [
+                                                            "number",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "ok",
+                                                            "tight",
+                                                            "over"
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "monthly_cost_usd": {
+                                            "$ref": "#/components/schemas/FitRange"
+                                        },
+                                        "budget_limit_usd": {
+                                            "type": [
+                                                "number",
+                                                "null"
+                                            ],
+                                            "description": "The spend cap per month, or null when none is set."
+                                        },
+                                        "assumptions": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "code": {
+                                                        "type": "string"
+                                                    },
+                                                    "text": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "suggestions": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "code": {
+                                                        "type": "string"
+                                                    },
+                                                    "message": {
+                                                        "type": "string"
+                                                    },
+                                                    "plan": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:read"
+                ]
+            }
+        },
+        "/api/v1/company-templates": {
+            "get": {
+                "operationId": "listCompanyTemplates",
+                "tags": [
+                    "Company"
+                ],
+                "summary": "Company templates",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The catalogue.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "items",
+                                        "total"
+                                    ],
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CompanyTemplateCard"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:read"
+                ]
+            }
+        },
+        "/api/v1/company-templates/{templateId}": {
+            "get": {
+                "operationId": "getCompanyTemplate",
+                "tags": [
+                    "Company"
+                ],
+                "summary": "One template: roles, departments, pipeline, connectors, inputs",
+                "description": "`templateId` is `research-publishing` or pinned to a version, `research-publishing@1`; an unknown id or version is 404.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 65536
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The manifest.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CompanyTemplate"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "No such template or version."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:read"
+                ]
+            }
+        },
+        "/api/v1/company-templates/{templateId}/fit": {
+            "post": {
+                "operationId": "fitCompanyTemplate",
+                "tags": [
+                    "Company"
+                ],
+                "summary": "Will this template fit a plan, and what would it cost",
+                "description": "`target: new` (default) — as a NEW company: the free plan a new company starts on, the template's agents plus its Chief of Staff, the platform-default run profile. `target: current` — added to the active company: its plan, its workload and its run history. Same shape as `GET /tenants/me/fit`, plus `target` and `template`.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 65536
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "inputs"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                    "inputs": {
+                                        "type": "object"
+                                    },
+                                    "target": {
+                                        "type": "string",
+                                        "enum": [
+                                            "new",
+                                            "current"
+                                        ],
+                                        "default": "new"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The estimate.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "The `GET /tenants/me/fit` body plus `target` and `template`.",
+                                    "additionalProperties": true,
+                                    "properties": {
+                                        "target": {
+                                            "type": "string",
+                                            "enum": [
+                                                "new",
+                                                "current"
+                                            ]
+                                        },
+                                        "template": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "version": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "No such template."
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "The inputs do not satisfy the template's inputs_schema."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:read"
+                ]
+            }
+        },
+        "/api/v1/tenants/me/company/apply-template": {
+            "post": {
+                "operationId": "applyTenantCompanyTemplate",
+                "tags": [
+                    "Company"
+                ],
+                "summary": "Propose a template for the active company",
+                "description": "Builds the template's operations from `inputs` and stores them as a pending proposal (`template` set) — nothing is created until a person applies it with `POST /tenants/me/proposals/{proposalId}/apply`, which also records the template on the company. Developer + `agents:write`.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "template_id",
+                                    "inputs"
+                                ],
+                                "properties": {
+                                    "template_id": {
+                                        "type": "string",
+                                        "maxLength": 10485760
+                                    },
+                                    "inputs": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The pending proposal.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CompanyProposal"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "No such template, or the inputs do not satisfy it."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:write"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ],
+                "x-roles": [
+                    "developer"
+                ]
+            }
+        },
+        "/api/v1/tenants/me/company/versions": {
+            "get": {
+                "operationId": "listTenantCompanyVersions",
+                "tags": [
+                    "Company"
+                ],
+                "summary": "The company's versions, and which can be restored",
+                "description": "The change log, newest first, each row saying whether that version's STRUCTURE was written down. A snapshot is taken when a proposal is applied and when the company is launched — a profile edit alone is a change-log row without one, and `has_snapshot: false`. Note the version counts profile changes, so agents and schedules can change without it moving; what a restore would do is settled by its diff, not by the number.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The versions.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "items",
+                                        "total"
+                                    ],
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CompanyVersionRow"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "description": "Every version in the log, not just the rows returned."
+                                        },
+                                        "truncated": {
+                                            "type": "boolean",
+                                            "description": "The scan hit its cap (5000 rows), so `total` is a floor rather than a count."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:read"
+                ]
+            }
+        },
+        "/api/v1/tenants/me/company/restore": {
+            "post": {
+                "operationId": "restoreTenantCompanyVersion",
+                "tags": [
+                    "Company"
+                ],
+                "summary": "Put the company back to a version's structure — as a proposal",
+                "description": "Builds a pending proposal from that version's snapshot: an agent the snapshot knows is updated back to how it was, one that is gone is created again, what came after is REMOVED (agents, their own schedules, mission schedules) and removals run last and cannot be undone. Departments added since are left in place and the rationale says why — disbanding a department also stops its members' own schedules, which would undo the restore. Memory, run history, results and people are not in a snapshot and do not come back. 404 when that version has no snapshot; 422 when the plan would change nothing; admin or owner.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "version"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                    "version": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The pending proposal.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CompanyProposal"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "That version has no structure snapshot."
+                    },
+                    "409": {
+                        "description": "`VERSION_CONFLICT` — the company changed between the plan and the write."
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "Nothing to restore, or a bad body."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:write"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ],
+                "x-roles": [
+                    "admin"
+                ]
+            }
+        },
+        "/api/v1/tenants/me/company/export": {
+            "get": {
+                "operationId": "exportTenantCompany",
+                "tags": [
+                    "Company"
+                ],
+                "summary": "The company as a manifest without secrets",
+                "description": "Structure only: the profile, agents (prompts, SPECs, tools, approval policy, schedule; provider and model but never a key reference or endpoint), departments, schedules, mission plans, the budget, the governance tool list, and integrations and knowledge sources by name. Never a connector config, an MCP server's env or auth, a model key, any record's `metadata`, run history or memory — `excluded` lists each omission with the reason. For an audit, and the input a clone takes.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The manifest.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CompanyExport"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:read"
+                ]
+            }
+        },
+        "/api/v1/tenants/me/company/import": {
+            "post": {
+                "operationId": "importTenantCompany",
+                "tags": [
+                    "Company"
+                ],
+                "summary": "Build this company from a manifest",
+                "description": "The counterpart of `/company/export`: the body is a manifest of that shape (`schema_version` must be `\"1\"`, anything else is 422). It is stored as a PENDING PROPOSAL — nothing is created until a person applies it, with the usual plan limits and rollback. Every id in the manifest is rewritten to reference the agent this import creates, so a manifest from another company cannot address records here; the exceptions are the target company's own Chief of Staff (an imported one is not re-created, and a department is led by the target's) and nothing else. An objective whose agent did not come along is dropped, and a department member the manifest does not create is dropped. A manifest ADDS: importing a company's own export back into that same company proposes every agent again (it matches nothing by name) — for a round trip into the same company use `POST /tenants/me/company/restore`, which matches an agent the snapshot knows and updates it instead. Integrations are never imported: the manifest names them and the proposal's `rationale` says which the founder must connect. Up to 50 agents, 20 departments, 50 schedules.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CompanyImportRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The pending proposal.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CompanyProposal"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "description": "The body is not JSON."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "An unknown `schema_version`, a manifest that is too large, or one with nothing this company can take."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:write"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ],
+                "x-roles": [
+                    "developer"
+                ]
+            }
+        },
         "/api/v1/tenants/me/company": {
             "get": {
                 "operationId": "getTenantCompany",
@@ -34283,7 +36288,12 @@
                                             }
                                         },
                                         "total": {
-                                            "type": "integer"
+                                            "type": "integer",
+                                            "description": "Every row in the log, not the page — `items` honours `limit` while this counts them all, so a client can say \"N of M\"."
+                                        },
+                                        "truncated": {
+                                            "type": "boolean",
+                                            "description": "The scan hit its cap (5000 rows), so `total` is a floor rather than a count."
                                         }
                                     }
                                 }
@@ -42740,6 +44750,15 @@
                                     "slug": {
                                         "type": "string",
                                         "maxLength": 64
+                                    },
+                                    "template_id": {
+                                        "type": "string",
+                                        "description": "Create the company from a template (`GET /company-templates`), e.g. `research-publishing` or `research-publishing@1`. The company starts as a `draft` with its profile filled in, and its structure is stored as a pending proposal (`proposal_id`) for the founder to review and apply — nothing else is created. Since 2026-10-12.",
+                                        "maxLength": 10485760
+                                    },
+                                    "inputs": {
+                                        "type": "object",
+                                        "description": "The template's inputs (its `inputs_schema`). Checked before the company is created: a bad input is 422 and nothing exists afterwards."
                                     }
                                 },
                                 "required": [
@@ -42774,6 +44793,19 @@
                                         },
                                         "user_id": {
                                             "type": "string"
+                                        },
+                                        "company": {
+                                            "$ref": "#/components/schemas/CompanyProfile"
+                                        },
+                                        "proposal_id": {
+                                            "type": "string",
+                                            "description": "With `template_id`: the pending proposal that builds the company."
+                                        },
+                                        "proposal_error": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
                                         }
                                     },
                                     "required": [
@@ -45120,6 +47152,13 @@
                                         },
                                         "team_id": {
                                             "type": "string"
+                                        },
+                                        "schedules_removed": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "description": "Agents of this squad that lost their OWN cron schedule with it — the supervisor and any worker that had one. Disbanding a department stops those agents' scheduled runs while the agents themselves stay; the field exists so that is not silent (since 2026-10-12)."
                                         }
                                     },
                                     "required": [
@@ -59743,6 +61782,41 @@
                                     "properties": {
                                         "status": {
                                             "type": "string"
+                                        },
+                                        "pause_scope": {
+                                            "type": "object",
+                                            "description": "What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display sentences; the counts and run ids are exact.",
+                                            "properties": {
+                                                "stopped": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "not_stopped": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "agents": {
+                                                    "type": "integer",
+                                                    "description": "Agents of the initiative, its strategist included."
+                                                },
+                                                "squads": {
+                                                    "type": "integer"
+                                                },
+                                                "schedules_held": {
+                                                    "type": "integer"
+                                                },
+                                                "runs_cancelled": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Run ids."
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -70522,7 +72596,7 @@
                                             "items": {
                                                 "type": "string"
                                             },
-                                            "description": "What this build can do, by name — gate a feature on it instead of on a 404. Names are added when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`, `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`, `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`, `company_launch`, `company_overview` (since 2026-10-12)."
+                                            "description": "What this build can do, by name — gate a feature on it instead of on a 404. Names are added when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`, `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`, `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`, `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`, `company_import`, `company_versions` (since 2026-10-12)."
                                         }
                                     }
                                 }
@@ -104821,7 +106895,7 @@
                 "tags": [
                     "Analytics"
                 ],
-                "description": "Over missions created in the last `days` (default 30, 1–365): missions and objectives by status, failed objectives by reason, and the review record of objectives with `review_required` — `accepted_first_pass`, `accepted_after_revision`, `rejected`, `first_pass_rate` (first-pass / reviewed) and `avg_revisions`. `actions_rejected` counts objectives ended because a person refused an action mid-run. `cost_per_completed_usd` and `avg_minutes_to_complete` are over completed objectives. `by_agent` repeats the figures per assignee (`team:<id>` for a squad). Requires the `analytics:read` scope. Since 2026-10-12.",
+                "description": "Over missions created in the last `days` (default 30, 1–365): missions and objectives by status, failed objectives by reason, and the review record of objectives with `review_required` — `accepted_first_pass`, `accepted_after_revision`, `rejected`, `first_pass_rate` (first-pass / reviewed) and `avg_revisions`. `quality` reports what the platform can see about the work itself: how many reviewed results cite a link no tool produced (`with_unsourced_links`, `unsourced_link_rate` — null, not zero, when nothing carried provenance) and how many edits an accepted result took (`revisions_per_accepted`). `actions_rejected` counts objectives ended because a person refused an action mid-run. `cost_per_completed_usd` and `avg_minutes_to_complete` are over completed objectives. `by_agent` repeats the figures per assignee (`team:<id>` for a squad). Requires the `analytics:read` scope. Since 2026-10-12.",
                 "parameters": [
                     {
                         "name": "days",
@@ -104841,7 +106915,229 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "type": "object",
+                                    "required": [
+                                        "window_days",
+                                        "missions",
+                                        "objectives",
+                                        "reviews",
+                                        "quality",
+                                        "actions_rejected",
+                                        "cost_usd",
+                                        "cost_per_completed_usd",
+                                        "avg_minutes_to_complete",
+                                        "awaiting_review",
+                                        "by_agent"
+                                    ],
+                                    "properties": {
+                                        "window_days": {
+                                            "type": "integer"
+                                        },
+                                        "missions": {
+                                            "type": "object",
+                                            "required": [
+                                                "total",
+                                                "by_status"
+                                            ],
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer"
+                                                },
+                                                "by_status": {
+                                                    "type": "object",
+                                                    "additionalProperties": {
+                                                        "type": "integer",
+                                                        "description": "How many carry the status key they sit under."
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "objectives": {
+                                            "type": "object",
+                                            "required": [
+                                                "total",
+                                                "by_status",
+                                                "failed_by_reason"
+                                            ],
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer"
+                                                },
+                                                "by_status": {
+                                                    "type": "object",
+                                                    "additionalProperties": {
+                                                        "type": "integer",
+                                                        "description": "How many carry the status key they sit under."
+                                                    }
+                                                },
+                                                "failed_by_reason": {
+                                                    "type": "object",
+                                                    "additionalProperties": {
+                                                        "type": "integer",
+                                                        "description": "How many carry the status key they sit under."
+                                                    },
+                                                    "description": "Keyed by `abort_reason`, e.g. budget_exhausted, not_dispatchable, rejected_by_person."
+                                                }
+                                            }
+                                        },
+                                        "reviews": {
+                                            "type": "object",
+                                            "description": "The review record of objectives with `review_required` that settled.",
+                                            "required": [
+                                                "reviewed",
+                                                "accepted_first_pass",
+                                                "accepted_after_revision",
+                                                "rejected",
+                                                "first_pass_rate",
+                                                "avg_revisions"
+                                            ],
+                                            "properties": {
+                                                "reviewed": {
+                                                    "type": "integer"
+                                                },
+                                                "accepted_first_pass": {
+                                                    "type": "integer"
+                                                },
+                                                "accepted_after_revision": {
+                                                    "type": "integer"
+                                                },
+                                                "rejected": {
+                                                    "type": "integer"
+                                                },
+                                                "first_pass_rate": {
+                                                    "type": [
+                                                        "number",
+                                                        "null"
+                                                    ],
+                                                    "description": "accepted_first_pass / reviewed; null when nothing was reviewed."
+                                                },
+                                                "avg_revisions": {
+                                                    "type": [
+                                                        "number",
+                                                        "null"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "quality": {
+                                            "type": "object",
+                                            "description": "How good the reviewed work was, on what the platform can see. `with_unsourced_links` counts results citing a link no tool produced — the honest proxy for a factual error, since a model cannot be asked whether it is right. Since 2026-10-12.",
+                                            "required": [
+                                                "with_sources",
+                                                "with_unsourced_links",
+                                                "unsourced_link_rate",
+                                                "links_cited",
+                                                "unsourced_links",
+                                                "revisions_per_accepted"
+                                            ],
+                                            "properties": {
+                                                "with_sources": {
+                                                    "type": "integer",
+                                                    "description": "Reviewed results carrying a provenance record (`sources`)."
+                                                },
+                                                "with_unsourced_links": {
+                                                    "type": "integer"
+                                                },
+                                                "unsourced_link_rate": {
+                                                    "type": [
+                                                        "number",
+                                                        "null"
+                                                    ],
+                                                    "description": "with_unsourced_links / with_sources; null when nothing carried provenance — absent is not zero."
+                                                },
+                                                "links_cited": {
+                                                    "type": "integer"
+                                                },
+                                                "unsourced_links": {
+                                                    "type": "integer"
+                                                },
+                                                "revisions_per_accepted": {
+                                                    "type": [
+                                                        "number",
+                                                        "null"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "actions_rejected": {
+                                            "type": "integer",
+                                            "description": "Objectives ended because a person refused an action mid-run."
+                                        },
+                                        "cost_usd": {
+                                            "type": "number"
+                                        },
+                                        "cost_per_completed_usd": {
+                                            "type": [
+                                                "number",
+                                                "null"
+                                            ]
+                                        },
+                                        "avg_minutes_to_complete": {
+                                            "type": [
+                                                "number",
+                                                "null"
+                                            ]
+                                        },
+                                        "awaiting_review": {
+                                            "type": "integer",
+                                            "description": "Objectives waiting for a person right now."
+                                        },
+                                        "by_agent": {
+                                            "type": "array",
+                                            "description": "The same figures per assignee (`team:<id>` for a squad).",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "agent_id",
+                                                    "objectives",
+                                                    "completed",
+                                                    "failed",
+                                                    "cost_usd"
+                                                ],
+                                                "properties": {
+                                                    "agent_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "objectives": {
+                                                        "type": "integer"
+                                                    },
+                                                    "completed": {
+                                                        "type": "integer"
+                                                    },
+                                                    "failed": {
+                                                        "type": "integer"
+                                                    },
+                                                    "cost_usd": {
+                                                        "type": "number"
+                                                    },
+                                                    "reviewed": {
+                                                        "type": "integer"
+                                                    },
+                                                    "accepted_first_pass": {
+                                                        "type": "integer"
+                                                    },
+                                                    "accepted_after_revision": {
+                                                        "type": "integer"
+                                                    },
+                                                    "rejected": {
+                                                        "type": "integer"
+                                                    },
+                                                    "first_pass_rate": {
+                                                        "type": [
+                                                            "number",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "avg_revisions": {
+                                                        "type": [
+                                                            "number",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         },
@@ -105437,6 +107733,16 @@
                                     "properties": {
                                         "deleted": {
                                             "type": "boolean"
+                                        },
+                                        "team_id": {
+                                            "type": "string"
+                                        },
+                                        "schedules_removed": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "description": "Agents of this squad that lost their OWN cron schedule with it (see DELETE /teams/{teamId})."
                                         }
                                     }
                                 }
@@ -111447,6 +113753,41 @@
                                     "properties": {
                                         "status": {
                                             "type": "string"
+                                        },
+                                        "pause_scope": {
+                                            "type": "object",
+                                            "description": "What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display sentences; the counts and run ids are exact.",
+                                            "properties": {
+                                                "stopped": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "not_stopped": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "agents": {
+                                                    "type": "integer",
+                                                    "description": "Agents of the initiative, its strategist included."
+                                                },
+                                                "squads": {
+                                                    "type": "integer"
+                                                },
+                                                "schedules_held": {
+                                                    "type": "integer"
+                                                },
+                                                "runs_cancelled": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Run ids."
+                                                }
+                                            }
                                         }
                                     }
                                 }

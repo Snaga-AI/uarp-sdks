@@ -6,19 +6,20 @@ package body UARP.API.Analytics is
      (Self : Client_Type;
       Params : Get_Mission_Performance_Params := No_Get_Mission_Performance_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Get_Mission_Performance_Response
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
       if Params.Has_Days then
          UARP.Types.Add (Query, "days", Params.Days);
       end if;
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/analytics/missions",
-          Query => Query,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/analytics/missions",
+             Query => Query,
+             Options => Options));
    end Get_Mission_Performance;
 
    function Get_Public_Chat_Analytics

@@ -406,7 +406,15 @@ test('parses the production document into the expected shape', () => {
   // proposals, readiness, test run, launch, overview), eleven /initiatives
   // twins of /companies (which are now all deprecated), mission schedules
   // (three) and analytics, and a run's sources and revise.
-  assert.equal(ops.length, 823);
+  // 823 -> 832 on 2026-10-13 (build 435ca06c): nine and none removed — the
+  // second half of the Company Builder. The template catalogue
+  // (`GET /company-templates`, `GET /company-templates/{templateId}` and the
+  // `POST /company-templates/{templateId}/fit` beside it), the application of
+  // one (`POST /tenants/me/company/apply-template`), and the tenant's own
+  // export, import and version history (`/tenants/me/company/export`,
+  // `/import`, `/restore`, `/versions`) with the plan fit at
+  // `GET /tenants/me/fit`.
+  assert.equal(ops.length, 832);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -642,7 +650,18 @@ test('parses the production document into the expected shape', () => {
   // Company Builder shapes (company profile, changes, proposals and their
   // steps, readiness, test run, overview), the /initiatives twins, mission
   // schedules and analytics, run sources and revise.
-  assert.equal(spec.types.length, 1934);
+  // 1934 -> 2008 on 2026-10-13 (build 435ca06c): +76, −2. The two that leave
+  // are the break in this refresh, and neither is a document rename — the
+  // document never named them. `CompanyProposal.operations` held an INLINE
+  // object whose only property was `op`, hoisted as `CompanyProposalOperation`
+  // with `CompanyProposalOperationOp` beside it; it now `$ref`s
+  // `ProposalOperation`, a oneOf of eleven `ProposalOp*` variants
+  // discriminated by `op` — the first discriminated union this document
+  // declares. A `$ref` hoists neither name, so both go, and the element type
+  // of the array changes with them. Everything else is the template catalogue
+  // and the export/import shapes, the plan-fit answer and the mission
+  // performance report.
+  assert.equal(spec.types.length, 2008);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);

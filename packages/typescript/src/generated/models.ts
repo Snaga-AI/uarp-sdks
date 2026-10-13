@@ -3436,6 +3436,11 @@ export interface ApplyProgramResponse {
   todos: Todo[];
 }
 
+export interface ApplyTenantCompanyTemplateRequest {
+  template_id: string;
+  inputs: JsonObject;
+}
+
 export interface ApplyToJobRequest {
   name: string;
   email: string;
@@ -4355,6 +4360,13 @@ export interface CompanyActivityEntry {
   success?: boolean;
 }
 
+/**
+ * One accepted change. Render `summary` — it is the sentence, and for a proposal-sourced row
+ * it names the proposal applied. `fields` names what a DIRECT edit touched and is absent on a
+ * proposal, a pause and a launch; preferring `fields` everywhere turns "Applied proposal: Pin
+ * the objective" into "Changed what it is for" and loses the fact a person decided it (Android
+ * lane, measured on a device, 2026-10-12).
+ */
 export interface CompanyChange {
   version: number;
   at: string;
@@ -4401,6 +4413,177 @@ export interface CompanyCreateBudget {
 }
 
 /**
+ * The company as structure. Secrets are not projected and every omission is listed in
+ * `excluded`.
+ */
+export interface CompanyExport {
+  /**
+   * The manifest's own version; a clone refuses one it does not know.
+   */
+  schema_version: string;
+  exported_at: string;
+  company: CompanyExportCompany;
+  chief_of_staff_agent_id?: string | null;
+  agents: CompanyExportAgent[];
+  departments: CompanyExportDepartment[];
+  schedules: CompanyExportSchedule[];
+  mission_schedules: CompanyExportMissionSchedule[];
+  budget: CompanyExportBudget | null;
+  governance: CompanyExportGovernance;
+  /**
+   * Named, never configured.
+   */
+  integrations: CompanyExportIntegration[];
+  knowledge_sources: CompanyExportKnowledgeSource[];
+  excluded: ExportExcludedNote[];
+}
+
+export interface CompanyExportAgent {
+  agent_id: string;
+  name: string;
+  description?: string;
+  role?: string;
+  version?: string;
+  execution_mode?: string;
+  /**
+   * System and developer prompts (the Agent schema's `prompts`).
+   */
+  prompts?: JsonObject;
+  /**
+   * Installed SPECs as stored (spec_id, version).
+   */
+  specs?: JsonObject[];
+  built_in_tools?: string[];
+  approval_required_tools?: string[];
+  auto_approve_tools?: string[];
+  autonomy?: JsonObject;
+  schedule?: AgentScheduleConfig;
+  /**
+   * Provider and model only — never the key reference or an endpoint.
+   */
+  model?: CompanyExportAgentModel;
+  mcp?: CompanyExportAgentMCP;
+  is_chief_of_staff: boolean;
+}
+
+export interface CompanyExportAgentMCP {
+  server_ids?: string[];
+  allowed_tools?: string[];
+  allowed_resources?: string[];
+}
+
+/**
+ * Provider and model only — never the key reference or an endpoint.
+ */
+export interface CompanyExportAgentModel {
+  provider?: string;
+  model_ref?: string;
+}
+
+export interface CompanyExportBudget {
+  limit_usd?: number;
+  period?: string;
+  soft_threshold?: number;
+  hard_threshold?: number;
+}
+
+export interface CompanyExportCompany {
+  name?: string;
+  business_type?: string;
+  objective?: string;
+  description?: string;
+  target_customer?: string;
+  timezone?: string;
+  status?: CompanyProfileStatus;
+  version?: number;
+  template?: JsonObject;
+  launched_at?: string;
+  plan?: string | null;
+}
+
+export interface CompanyExportDepartment {
+  squad_id: string;
+  name: string;
+  topology?: string;
+  delegation_strategy?: string;
+  merge_strategy?: string;
+  lead_agent_id?: string;
+  members?: CompanyExportDepartmentMember[];
+}
+
+export interface CompanyExportDepartmentMember {
+  agent_id?: string;
+  role?: string;
+  permissions?: TeamWorkerPermissions;
+}
+
+export interface CompanyExportGovernance {
+  approval_required_tools?: string[];
+}
+
+export interface CompanyExportIntegration {
+  kind?: GetTenantBlueprintResponseIntegrationKind;
+  connector_id?: string | null;
+  name?: string;
+  status?: string;
+}
+
+export interface CompanyExportKnowledgeSource {
+  name?: string;
+  documents?: number;
+  status?: string;
+}
+
+export interface CompanyExportMissionSchedule {
+  schedule_id?: string;
+  name?: string;
+  cron?: string;
+  shape?: ScheduleShape;
+  timezone?: string | null;
+  plan?: JsonObject;
+}
+
+export interface CompanyExportSchedule {
+  agent_id?: string;
+  agent_name?: string | null;
+  cron?: string;
+  shape?: ScheduleShape;
+  timezone?: string | null;
+  enabled?: boolean;
+  message?: string | null;
+}
+
+/**
+ * The body of `POST /tenants/me/company/import`. Same shape as an export, but a REQUEST:
+ * unknown keys are ignored, and nothing here is a promise about what the import will apply —
+ * the stored proposal's diff is.
+ */
+export interface CompanyImportRequest {
+  /**
+   * The manifest version this build understands; anything else is 422.
+   */
+  schema_version: ExportDataExplorerIncludeSensitive;
+  /**
+   * Profile fields to take over (`business_type`, `objective`, `description`, `target_customer`,
+   * `timezone`). The company's name is not imported — a manifest cannot rename the tenant.
+   */
+  company?: JsonObject;
+  agents?: JsonObject[];
+  departments?: JsonObject[];
+  schedules?: JsonObject[];
+  mission_schedules?: JsonObject[];
+  /**
+   * A spend cap to set (`limit_usd`, `period`).
+   */
+  budget?: JsonObject | null;
+  /**
+   * Named only — never imported, since a manifest carries no credentials. The proposal's
+   * `rationale` lists what to connect.
+   */
+  integrations?: JsonObject[];
+}
+
+/**
  * The founder's company — which IS the tenant. Identity (`name`) comes from the tenant record;
  * the rest is what the Company Builder adds. A tenant that never wrote a profile reads as an
  * operating company: `status: active`, `version: 0`. `status` here is the founder's lifecycle
@@ -4441,10 +4624,6 @@ export interface CompanyProfile {
   updated_by?: string;
 }
 
-/**
- * `draft` — being set up, no automated run starts (except the launch test run); `active` —
- * operating; `paused` — every automated run stopped, a person's chat still answers.
- */
 export type CompanyProfileStatus = 'draft' | 'active' | 'paused';
 
 export const COMPANY_PROFILE_STATUS_VALUES = ['draft', 'active', 'paused'] as const;
@@ -4462,7 +4641,7 @@ export interface CompanyProposal {
   status: CompanyProposalStatus;
   summary: string;
   rationale?: string;
-  operations: CompanyProposalOperation[];
+  operations: ProposalOperation[];
   /**
    * The company version it was proposed against.
    */
@@ -4470,6 +4649,10 @@ export interface CompanyProposal {
   diff: CompanyProposalDiffItem[];
   required_role: CompanyProposalRequiredRole;
   proposed_by: CompanyProposalProposedBy;
+  /**
+   * Set when the proposal builds a company template; recorded on the company at apply.
+   */
+  template?: CompanyProposalTemplate;
   /**
    * Not estimated yet (null) — arrives with plan fit.
    */
@@ -4497,6 +4680,12 @@ export interface CompanyProposalDiffItem {
    */
   summary: string;
   before?: JsonObject;
+  /**
+   * What the operation NAMES, not the whole record: the rest of the target keeps its stored
+   * value (a schedule keeps its zone, message, concurrency and failure policy; the budget keeps
+   * its period and thresholds). A client that renders `after` as the whole new state will invent
+   * changes the apply does not make (measured 2026-10-12).
+   */
   after?: JsonObject;
   /**
    * Removals: cannot be rolled back, applied last.
@@ -4532,14 +4721,6 @@ export interface CompanyProposalFailure {
   details?: JsonObject;
 }
 
-export interface CompanyProposalOperation {
-  op: CompanyProposalOperationOp;
-}
-
-export type CompanyProposalOperationOp = 'add_agent' | 'update_agent' | 'remove_agent' | 'set_agent_schedule' | 'set_approval_policy' | 'add_squad' | 'set_squad_members' | 'update_company' | 'set_budget' | 'add_mission_schedule' | 'remove_mission_schedule';
-
-export const COMPANY_PROPOSAL_OPERATION_OP_VALUES = ['add_agent', 'update_agent', 'remove_agent', 'set_agent_schedule', 'set_approval_policy', 'add_squad', 'set_squad_members', 'update_company', 'set_budget', 'add_mission_schedule', 'remove_mission_schedule'] as const;
-
 export interface CompanyProposalProposedBy {
   kind: CompanyProposalProposedByKind;
   id: string;
@@ -4572,6 +4753,14 @@ export interface CompanyProposalStep {
   ref?: string;
 }
 
+/**
+ * Set when the proposal builds a company template; recorded on the company at apply.
+ */
+export interface CompanyProposalTemplate {
+  id?: string;
+  version?: string;
+}
+
 export interface CompanyReadinessItem {
   code: string;
   /**
@@ -4582,6 +4771,80 @@ export interface CompanyReadinessItem {
    * The API call that resolves it — a developer hint, not for display.
    */
   fix: string;
+}
+
+export interface CompanyTemplate {
+  template_id: string;
+  version: string;
+  name: string;
+  summary: string;
+  business_type: string;
+  agents: number;
+  department_names: string[];
+  /**
+   * Platform features the template needs, e.g. `missions`.
+   */
+  requires: string[];
+  /**
+   * JSON Schema of the template's inputs, for rendering the form.
+   */
+  inputs_schema?: JsonObject;
+  roles?: CompanyTemplateRole[];
+  departments?: CompanyTemplateDepartment[];
+  pipeline?: string[];
+  /**
+   * Integrations the founder connects; never configured by the template.
+   */
+  connectors?: CompanyTemplateConnector[];
+  defaults?: CompanyTemplateDefaults;
+}
+
+export interface CompanyTemplateCard {
+  template_id: string;
+  version: string;
+  name: string;
+  summary: string;
+  business_type: string;
+  agents: number;
+  department_names: string[];
+  /**
+   * Platform features the template needs, e.g. `missions`.
+   */
+  requires: string[];
+}
+
+export interface CompanyTemplateConnector {
+  id?: string;
+  purpose?: string;
+  required?: boolean;
+}
+
+export interface CompanyTemplateDefaults {
+  cron?: string;
+  timezone?: string;
+  budget_usd?: number;
+}
+
+export interface CompanyTemplateDepartment {
+  name?: string;
+  lead?: CompanyTemplateDepartmentLead;
+  /**
+   * Role refs.
+   */
+  members?: string[];
+}
+
+export type CompanyTemplateDepartmentLead = 'chief_of_staff';
+
+export const COMPANY_TEMPLATE_DEPARTMENT_LEAD_VALUES = ['chief_of_staff'] as const;
+
+export interface CompanyTemplateRole {
+  ref?: string;
+  name?: string;
+  department?: string;
+  does?: string;
+  tools?: string[];
+  approval_required_tools?: string[];
 }
 
 export interface CompanyTestRun {
@@ -4616,6 +4879,19 @@ export interface CompanyUpdate {
   description?: string;
   strategic_goals?: string[];
   config?: JsonObject;
+}
+
+export interface CompanyVersionRow {
+  version: number;
+  at: string;
+  actor: string;
+  source: CompanyChangeSource;
+  summary: string;
+  fields?: string[];
+  /**
+   * True when this version's structure can be restored.
+   */
+  has_snapshot: boolean;
 }
 
 export interface CompleteMcpoAuthRequest {
@@ -5538,6 +5814,18 @@ export interface CreateMissionScheduleResponse {
 export interface CreateMyTenantRequest {
   name: string;
   slug?: string;
+  /**
+   * Create the company from a template (`GET /company-templates`), e.g. `research-publishing` or
+   * `research-publishing@1`. The company starts as a `draft` with its profile filled in, and its
+   * structure is stored as a pending proposal (`proposal_id`) for the founder to review and
+   * apply — nothing else is created. Since 2026-10-12.
+   */
+  template_id?: string;
+  /**
+   * The template's inputs (its `inputs_schema`). Checked before the company is created: a bad
+   * input is 422 and nothing exists afterwards.
+   */
+  inputs?: JsonObject;
 }
 
 export interface CreateMyTenantResponse {
@@ -5547,6 +5835,12 @@ export interface CreateMyTenantResponse {
   slug: string;
   role: string;
   user_id: string;
+  company?: CompanyProfile;
+  /**
+   * With `template_id`: the pending proposal that builds the company.
+   */
+  proposal_id?: string;
+  proposal_error?: string[];
 }
 
 export interface CreatePlanStripePriceRequest {
@@ -6388,6 +6682,11 @@ export interface DeleteSquadGraphNodeResponse {
 
 export interface DeleteSquadResponse {
   deleted?: boolean;
+  team_id?: string;
+  /**
+   * Agents of this squad that lost their OWN cron schedule with it (see DELETE /teams/{teamId}).
+   */
+  schedules_removed?: string[];
 }
 
 export interface DeleteTeamGraphEdgeResponse {
@@ -6403,6 +6702,12 @@ export interface DeleteTeamGraphNodeResponse {
 export interface DeleteTeamResponse {
   deleted: boolean;
   team_id: string;
+  /**
+   * Agents of this squad that lost their OWN cron schedule with it — the supervisor and any
+   * worker that had one. Disbanding a department stops those agents' scheduled runs while the
+   * agents themselves stay; the field exists so that is not silent (since 2026-10-12).
+   */
+  schedules_removed?: string[];
 }
 
 export interface DeleteUserResponse {
@@ -7303,9 +7608,18 @@ export interface ExportAdminConfigResponse {
   sections: JsonObject;
 }
 
+/**
+ * The manifest version this build understands; anything else is 422.
+ */
 export type ExportDataExplorerIncludeSensitive = '1';
 
 export const EXPORT_DATA_EXPLORER_INCLUDE_SENSITIVE_VALUES = ['1'] as const;
+
+export interface ExportExcludedNote {
+  code: string;
+  what: string;
+  why: string;
+}
 
 export type ExportMyAccountFormat = 'zip' | 'json';
 
@@ -7423,6 +7737,41 @@ export interface FileRecord {
   size_bytes: number;
   sha256: string;
   created_at: string;
+}
+
+export interface FitCompanyTemplateRequest {
+  inputs: JsonObject;
+  /**
+   * @default "new"
+   */
+  target?: FitCompanyTemplateRequestTarget;
+}
+
+export type FitCompanyTemplateRequestTarget = 'new' | 'current';
+
+export const FIT_COMPANY_TEMPLATE_REQUEST_TARGET_VALUES = ['new', 'current'] as const;
+
+/**
+ * The `GET /tenants/me/fit` body plus `target` and `template`.
+ */
+export interface FitCompanyTemplateResponse {
+  target?: FitCompanyTemplateRequestTarget;
+  template?: FitCompanyTemplateResponseTemplate;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
+export interface FitCompanyTemplateResponseTemplate {
+  id?: string;
+  version?: string;
+}
+
+export interface FitRange {
+  low: number;
+  mid: number;
+  high: number;
 }
 
 /**
@@ -8150,7 +8499,8 @@ export interface GetHealthResponse {
    * when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
    * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
    * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
-   * `company_launch`, `company_overview` (since 2026-10-12).
+   * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+   * `company_import`, `company_versions` (since 2026-10-12).
    */
   capabilities?: string[];
   /**
@@ -8279,6 +8629,101 @@ export interface GetMeResponseUser {
 export interface GetMfaStatusResponse {
   enrolled: boolean;
   recovery_remaining: number;
+}
+
+export interface GetMissionPerformanceResponse {
+  window_days: number;
+  missions: GetMissionPerformanceResponseMissions;
+  objectives: GetMissionPerformanceResponseObjectives;
+  /**
+   * The review record of objectives with `review_required` that settled.
+   */
+  reviews: GetMissionPerformanceResponseReviews;
+  /**
+   * How good the reviewed work was, on what the platform can see. `with_unsourced_links` counts
+   * results citing a link no tool produced — the honest proxy for a factual error, since a model
+   * cannot be asked whether it is right. Since 2026-10-12.
+   */
+  quality: GetMissionPerformanceResponseQuality;
+  /**
+   * Objectives ended because a person refused an action mid-run.
+   */
+  actions_rejected: number;
+  cost_usd: number;
+  cost_per_completed_usd: number | null;
+  avg_minutes_to_complete: number | null;
+  /**
+   * Objectives waiting for a person right now.
+   */
+  awaiting_review: number;
+  /**
+   * The same figures per assignee (`team:<id>` for a squad).
+   */
+  by_agent: GetMissionPerformanceResponseByAgentItem[];
+}
+
+export interface GetMissionPerformanceResponseByAgentItem {
+  agent_id: string;
+  objectives: number;
+  completed: number;
+  failed: number;
+  cost_usd: number;
+  reviewed?: number;
+  accepted_first_pass?: number;
+  accepted_after_revision?: number;
+  rejected?: number;
+  first_pass_rate?: number | null;
+  avg_revisions?: number | null;
+}
+
+export interface GetMissionPerformanceResponseMissions {
+  total: number;
+  by_status: JsonObject;
+}
+
+export interface GetMissionPerformanceResponseObjectives {
+  total: number;
+  by_status: JsonObject;
+  /**
+   * Keyed by `abort_reason`, e.g. budget_exhausted, not_dispatchable, rejected_by_person.
+   */
+  failed_by_reason: JsonObject;
+}
+
+/**
+ * How good the reviewed work was, on what the platform can see. `with_unsourced_links` counts
+ * results citing a link no tool produced — the honest proxy for a factual error, since a model
+ * cannot be asked whether it is right. Since 2026-10-12.
+ */
+export interface GetMissionPerformanceResponseQuality {
+  /**
+   * Reviewed results carrying a provenance record (`sources`).
+   */
+  with_sources: number;
+  with_unsourced_links: number;
+  /**
+   * with_unsourced_links / with_sources; null when nothing carried provenance — absent is not
+   * zero.
+   */
+  unsourced_link_rate: number | null;
+  links_cited: number;
+  unsourced_links: number;
+  revisions_per_accepted: number | null;
+}
+
+/**
+ * The review record of objectives with `review_required` that settled.
+ */
+export interface GetMissionPerformanceResponseReviews {
+  reviewed: number;
+  accepted_first_pass: number;
+  accepted_after_revision: number;
+  rejected: number;
+  /**
+   * accepted_first_pass / reviewed; null when nothing was reviewed.
+   */
+  first_pass_rate: number | null;
+  avg_revisions: number | null;
 }
 
 export interface GetMyHeadAgentTemplateResponse {
@@ -8597,6 +9042,10 @@ export interface GetRunResponse {
 }
 
 export interface GetRunResponseApproval {
+  /**
+   * `revised` — the person declined the action and sent the run on with feedback (`POST
+   * /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback.
+   */
   decision: RunApprovalDecision;
   /**
    * Tools the run was waiting on when the decision was made.
@@ -9085,6 +9534,78 @@ export interface GetTenantDomainHealthResponse {
   cert?: DomainCertLifecycle;
 }
 
+export interface GetTenantPlanFitResponse {
+  plan: string;
+  fits: boolean;
+  window_days: number;
+  run_profile: GetTenantPlanFitResponseRunProfile;
+  needs: GetTenantPlanFitResponseNeeds;
+  schedules: GetTenantPlanFitResponseSchedule[];
+  checks: GetTenantPlanFitResponseCheck[];
+  monthly_cost_usd: FitRange;
+  /**
+   * The spend cap per month, or null when none is set.
+   */
+  budget_limit_usd: number | null;
+  assumptions: GetTenantPlanFitResponseAssumption[];
+  suggestions: GetTenantPlanFitResponseSuggestion[];
+}
+
+export interface GetTenantPlanFitResponseAssumption {
+  code?: string;
+  text?: string;
+}
+
+export interface GetTenantPlanFitResponseCheck {
+  code: GetTenantPlanFitResponseCheckCode;
+  needed: number;
+  limit: number | null;
+  status: GetTenantPlanFitResponseCheckStatus;
+}
+
+export type GetTenantPlanFitResponseCheckCode = 'AGENTS' | 'SQUADS' | 'MONTHLY_RUNS' | 'MONTHLY_TOKENS' | 'MONTHLY_TOOL_CALLS' | 'BUDGET';
+
+export const GET_TENANT_PLAN_FIT_RESPONSE_CHECK_CODE_VALUES = ['AGENTS', 'SQUADS', 'MONTHLY_RUNS', 'MONTHLY_TOKENS', 'MONTHLY_TOOL_CALLS', 'BUDGET'] as const;
+
+export type GetTenantPlanFitResponseCheckStatus = 'ok' | 'tight' | 'over';
+
+export const GET_TENANT_PLAN_FIT_RESPONSE_CHECK_STATUS_VALUES = ['ok', 'tight', 'over'] as const;
+
+export interface GetTenantPlanFitResponseNeeds {
+  agents?: number;
+  squads?: number;
+  runs_per_month?: FitRange;
+  tokens_per_month?: FitRange;
+  tool_calls_per_month?: FitRange;
+}
+
+export interface GetTenantPlanFitResponseRunProfile {
+  tokens?: FitRange;
+  cost_usd?: FitRange;
+  tool_calls?: FitRange;
+  sample_runs?: number;
+  source?: GetTenantPlanFitResponseRunProfileSource;
+}
+
+export type GetTenantPlanFitResponseRunProfileSource = 'history' | 'default';
+
+export const GET_TENANT_PLAN_FIT_RESPONSE_RUN_PROFILE_SOURCE_VALUES = ['history', 'default'] as const;
+
+export interface GetTenantPlanFitResponseSchedule {
+  kind?: GetTenantBlueprintResponseScheduleKind;
+  name?: string;
+  cron?: string;
+  timezone?: string | null;
+  runs_per_fire?: number;
+  fires_per_month?: number | null;
+}
+
+export interface GetTenantPlanFitResponseSuggestion {
+  code?: string;
+  message?: string;
+  plan?: string;
+}
+
 export interface GetTenantReadinessResponse {
   ready: boolean;
   status: CompanyProfileStatus;
@@ -9289,7 +9810,8 @@ export interface HealthCheckV1aliasResponse {
    * when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
    * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
    * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
-   * `company_launch`, `company_overview` (since 2026-10-12).
+   * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+   * `company_import`, `company_versions` (since 2026-10-12).
    */
   capabilities?: string[];
 }
@@ -10522,6 +11044,11 @@ export interface ListCompaniesResponse {
   has_more: boolean;
 }
 
+export interface ListCompanyTemplatesResponse {
+  items: CompanyTemplateCard[];
+  total: number;
+}
+
 export interface ListContentReportsResponse {
   items: ContentReport[];
   cursor: string | null;
@@ -11276,7 +11803,27 @@ export interface ListTeamsResponse {
 
 export interface ListTenantCompanyChangesResponse {
   items: CompanyChange[];
+  /**
+   * Every row in the log, not the page — `items` honours `limit` while this counts them all, so
+   * a client can say "N of M".
+   */
   total: number;
+  /**
+   * The scan hit its cap (5000 rows), so `total` is a floor rather than a count.
+   */
+  truncated?: boolean;
+}
+
+export interface ListTenantCompanyVersionsResponse {
+  items: CompanyVersionRow[];
+  /**
+   * Every version in the log, not just the rows returned.
+   */
+  total: number;
+  /**
+   * The scan hit its cap (5000 rows), so `total` is a floor rather than a count.
+   */
+  truncated?: boolean;
 }
 
 export interface ListTenantProposalsResponse {
@@ -13211,10 +13758,58 @@ export interface PatchTenantRequestMarketplaceListing {
 
 export interface PauseCompanyResponse {
   status?: string;
+  /**
+   * What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+   * sentences; the counts and run ids are exact.
+   */
+  pause_scope?: PauseCompanyResponsePauseScope;
+}
+
+/**
+ * What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+ * sentences; the counts and run ids are exact.
+ */
+export interface PauseCompanyResponsePauseScope {
+  stopped?: string[];
+  not_stopped?: string[];
+  /**
+   * Agents of the initiative, its strategist included.
+   */
+  agents?: number;
+  squads?: number;
+  schedules_held?: number;
+  /**
+   * Run ids.
+   */
+  runs_cancelled?: string[];
 }
 
 export interface PauseInitiativeResponse {
   status?: string;
+  /**
+   * What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+   * sentences; the counts and run ids are exact.
+   */
+  pause_scope?: PauseInitiativeResponsePauseScope;
+}
+
+/**
+ * What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+ * sentences; the counts and run ids are exact.
+ */
+export interface PauseInitiativeResponsePauseScope {
+  stopped?: string[];
+  not_stopped?: string[];
+  /**
+   * Agents of the initiative, its strategist included.
+   */
+  agents?: number;
+  squads?: number;
+  schedules_held?: number;
+  /**
+   * Run ids.
+   */
+  runs_cancelled?: string[];
 }
 
 export interface PauseMissionResponse {
@@ -13953,6 +14548,176 @@ export interface PromoCodeInput {
    */
   active?: boolean;
 }
+
+export interface ProposalOpAddAgent {
+  op: ProposalOpAddAgentOp;
+  /**
+   * A name later operations use as `$ref:<name>` for the id this one creates.
+   */
+  ref?: string;
+  /**
+   * The body of `POST /agents`.
+   */
+  agent: JsonObject;
+}
+
+export type ProposalOpAddAgentOp = 'add_agent';
+
+export const PROPOSAL_OP_ADD_AGENT_OP_VALUES = ['add_agent'] as const;
+
+export interface ProposalOpAddMissionSchedule {
+  op: ProposalOpAddMissionScheduleOp;
+  /**
+   * A name later operations use as `$ref:<name>` for the id this one creates.
+   */
+  ref?: string;
+  /**
+   * The body of `POST /missions/schedules`.
+   */
+  schedule: JsonObject;
+}
+
+export type ProposalOpAddMissionScheduleOp = 'add_mission_schedule';
+
+export const PROPOSAL_OP_ADD_MISSION_SCHEDULE_OP_VALUES = ['add_mission_schedule'] as const;
+
+export interface ProposalOpAddSquad {
+  op: ProposalOpAddSquadOp;
+  /**
+   * A name later operations use as `$ref:<name>` for the id this one creates.
+   */
+  ref?: string;
+  /**
+   * The body of `POST /squads`.
+   */
+  squad: JsonObject;
+}
+
+export type ProposalOpAddSquadOp = 'add_squad';
+
+export const PROPOSAL_OP_ADD_SQUAD_OP_VALUES = ['add_squad'] as const;
+
+/**
+ * One change a proposal makes, discriminated by `op`.
+ */
+export type ProposalOperation = ProposalOpAddAgent | ProposalOpUpdateAgent | ProposalOpRemoveAgent | ProposalOpSetAgentSchedule | ProposalOpSetApprovalPolicy | ProposalOpAddSquad | ProposalOpSetSquadMembers | ProposalOpUpdateCompany | ProposalOpSetBudget | ProposalOpAddMissionSchedule | ProposalOpRemoveMissionSchedule;
+
+export interface ProposalOpRemoveAgent {
+  op: ProposalOpRemoveAgentOp;
+  /**
+   * An id, or `$ref:<name>` of an earlier operation.
+   */
+  agent_id: string;
+}
+
+export type ProposalOpRemoveAgentOp = 'remove_agent';
+
+export const PROPOSAL_OP_REMOVE_AGENT_OP_VALUES = ['remove_agent'] as const;
+
+export interface ProposalOpRemoveMissionSchedule {
+  op: ProposalOpRemoveMissionScheduleOp;
+  /**
+   * An id, or `$ref:<name>` of an earlier operation.
+   */
+  schedule_id: string;
+}
+
+export type ProposalOpRemoveMissionScheduleOp = 'remove_mission_schedule';
+
+export const PROPOSAL_OP_REMOVE_MISSION_SCHEDULE_OP_VALUES = ['remove_mission_schedule'] as const;
+
+export interface ProposalOpSetAgentSchedule {
+  op: ProposalOpSetAgentScheduleOp;
+  /**
+   * An id, or `$ref:<name>` of an earlier operation.
+   */
+  agent_id: string;
+  cron: string;
+  timezone?: string;
+  enabled?: boolean;
+  message?: string;
+}
+
+export type ProposalOpSetAgentScheduleOp = 'set_agent_schedule';
+
+export const PROPOSAL_OP_SET_AGENT_SCHEDULE_OP_VALUES = ['set_agent_schedule'] as const;
+
+export interface ProposalOpSetApprovalPolicy {
+  op: ProposalOpSetApprovalPolicyOp;
+  /**
+   * An id, or `$ref:<name>` of an earlier operation.
+   */
+  agent_id: string;
+  approval_required_tools?: string[];
+  auto_approve_tools?: string[];
+  autonomy?: ProposalOpSetApprovalPolicyAutonomy;
+}
+
+export interface ProposalOpSetApprovalPolicyAutonomy {
+  level?: AgentAutonomyLevel;
+}
+
+export type ProposalOpSetApprovalPolicyOp = 'set_approval_policy';
+
+export const PROPOSAL_OP_SET_APPROVAL_POLICY_OP_VALUES = ['set_approval_policy'] as const;
+
+export interface ProposalOpSetBudget {
+  op: ProposalOpSetBudgetOp;
+  limit_usd: number;
+  period?: GetBillingBudgetResponseBudgetPeriod;
+  soft_threshold?: number;
+  hard_threshold?: number;
+}
+
+export type ProposalOpSetBudgetOp = 'set_budget';
+
+export const PROPOSAL_OP_SET_BUDGET_OP_VALUES = ['set_budget'] as const;
+
+export interface ProposalOpSetSquadMembers {
+  op: ProposalOpSetSquadMembersOp;
+  /**
+   * An id, or `$ref:<name>` of an earlier operation.
+   */
+  squad_id: string;
+  workers: JsonObject[];
+}
+
+export type ProposalOpSetSquadMembersOp = 'set_squad_members';
+
+export const PROPOSAL_OP_SET_SQUAD_MEMBERS_OP_VALUES = ['set_squad_members'] as const;
+
+export interface ProposalOpUpdateAgent {
+  op: ProposalOpUpdateAgentOp;
+  /**
+   * An id, or `$ref:<name>` of an earlier operation.
+   */
+  agent_id: string;
+  /**
+   * The body of `PATCH /agents/{agentId}`.
+   */
+  changes: JsonObject;
+}
+
+export type ProposalOpUpdateAgentOp = 'update_agent';
+
+export const PROPOSAL_OP_UPDATE_AGENT_OP_VALUES = ['update_agent'] as const;
+
+export interface ProposalOpUpdateCompany {
+  op: ProposalOpUpdateCompanyOp;
+  changes: ProposalOpUpdateCompanyChanges;
+}
+
+export interface ProposalOpUpdateCompanyChanges {
+  business_type?: string;
+  objective?: string;
+  description?: string;
+  target_customer?: string;
+  timezone?: string;
+}
+
+export type ProposalOpUpdateCompanyOp = 'update_company';
+
+export const PROPOSAL_OP_UPDATE_COMPANY_OP_VALUES = ['update_company'] as const;
 
 /**
  * public.ts GET /public/agents/{agentId} — a hand-built projection, not the Agent record. Keys
@@ -15119,7 +15884,13 @@ export const RESOURCE_PERMISSION_ACTION_VALUES = ['read', 'write', 'delete', 'ex
 
 export interface ResourceUsageEntry {
   count: number;
-  limit: number;
+  /**
+   * The plan's limit for this resource, or null when the plan does not define one. Null is NOT a
+   * limit of zero: `over_by` is 0 and the resource is simply not capped, while `limit: 0` means
+   * the plan allows none. A client that printed the two the same way told a founder "3 of 0"
+   * about a resource with no ceiling (macOS lane, measured 2026-10-12).
+   */
+  limit: number | null;
   over_by: number;
 }
 
@@ -15169,6 +15940,10 @@ export const RESPONSES_OUTPUT_ITEM_CONTENT_ITEM_TYPE_VALUES = ['output_text'] as
 export type ResponsesOutputItemType = 'message';
 
 export const RESPONSES_OUTPUT_ITEM_TYPE_VALUES = ['message'] as const;
+
+export interface RestoreTenantCompanyVersionRequest {
+  version: number;
+}
 
 export interface RestoreWorkspaceTrashRequest {
   /**
@@ -15469,6 +16244,10 @@ export interface Run {
 }
 
 export interface RunApproval {
+  /**
+   * `revised` — the person declined the action and sent the run on with feedback (`POST
+   * /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback.
+   */
   decision: RunApprovalDecision;
   /**
    * Tools the run was waiting on when the decision was made.
@@ -15485,9 +16264,13 @@ export interface RunApproval {
   reason?: string;
 }
 
-export type RunApprovalDecision = 'approved' | 'rejected';
+/**
+ * `revised` — the person declined the action and sent the run on with feedback (`POST
+ * /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback.
+ */
+export type RunApprovalDecision = 'approved' | 'rejected' | 'revised';
 
-export const RUN_APPROVAL_DECISION_VALUES = ['approved', 'rejected'] as const;
+export const RUN_APPROVAL_DECISION_VALUES = ['approved', 'rejected', 'revised'] as const;
 
 /**
  * The body is optional and carries at most a `response` for the agent. An unknown field is

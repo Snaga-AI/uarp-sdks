@@ -8,11 +8,84 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
-Build `ef5b646d`, canonical digest `afe1d029d7e8030d`. Against 0.10.0: 585 →
-613 paths, 789 → 823 operations (+34, −0), 382 → 389 schemas, 50 → 52 groups,
-1845 → 1934 named types (+89, −0). Nothing is removed or renamed and no field
-becomes required, so code written against 0.10.0 keeps building. The eleven
-`/companies` operations now warn at compile time.
+Build `435ca06c`, canonical digest `94a26fa577b7a4a8`. Two platform builds are
+collected here: `ef5b646d` (2026-10-12) and `435ca06c` (2026-10-13). Against
+0.10.0: 585 → 622 paths, 789 → 832 operations (+43, −0), 382 → 410 schemas
+(+28, −0), 50 → 52 groups, 1845 → 2008 named types (+165, −2). The two that
+leave are named below; everything else is additive, and no field becomes
+required. The eleven `/companies` operations now warn at compile time.
+
+**The minor moves** because `CompanyProposal.operations` changes type (below):
+the document stops inlining the element and `$ref`s a named one, so the type
+every SDK generated for it changes, and two generated names leave. Under 1.0 a
+caret does not cross the minor, so `^0.10` keeps building against 0.10.x.
+
+### Changed — `CompanyProposal.operations` is a discriminated union
+
+Nothing in the document is renamed. In `ef5b646d` the array's items were an
+inline object whose only property was `op`; in `435ca06c` they are a `$ref` to
+`ProposalOperation`, a schema this build adds — a `oneOf` of eleven
+`ProposalOp*` variants (`add_agent`, `update_agent`, `remove_agent`,
+`set_agent_schedule`, `set_approval_policy`, `add_squad`, `set_squad_members`,
+`update_company`, `set_budget`, `add_mission_schedule`,
+`remove_mission_schedule`) discriminated by `op`, each variant declaring `op`
+as a single-value enum. So the wire gains the fields each operation carries,
+which the inline shape never described anywhere in any SDK.
+
+The names that move are the generator's. The inline item was hoisted as
+`CompanyProposalOperation` and its enum as `CompanyProposalOperationOp`; a
+`$ref` hoists neither, and both leave the generated surface along with the
+`COMPANY_PROPOSAL_OPERATION_OP_VALUES` const TypeScript exported beside them.
+`operations` becomes `ProposalOperation[]`. A client that read
+`operations[].op` keeps compiling; a client that named the old type, or built
+an operation literal, does not.
+
+Only TypeScript gets the union. The generator renders `oneOf` as a union in one
+target, so Rust and Swift and Kotlin type the element as raw JSON
+(`serde_json::Value`, `JSONValue`, `JsonElement`) and Ada as `JSON_Value`,
+checked in the generated output of all five. A discriminated union in every
+target is generator work nobody has commissioned.
+
+### Added — the Company Builder, second half (build `435ca06c`)
+
+- The template catalogue: `listCompanyTemplates` and `getCompanyTemplate`
+  (`GET /company-templates`, `/company-templates/{templateId}`), which need no
+  tenant, and `fitCompanyTemplate` (`POST /company-templates/{templateId}/fit`),
+  which scores a template against a stated need. Schemas `CompanyTemplate`
+  (with its departments, roles, connectors and defaults), `CompanyTemplateCard`
+  and `FitRange`.
+- `applyTenantCompanyTemplate` (`POST /tenants/me/company/apply-template`) takes
+  a `template_id` and its `inputs` and answers 201 with the **proposal** those
+  inputs would produce — nothing is applied. Same shape for
+  `importTenantCompany` (`POST /tenants/me/company/import`, body
+  `CompanyImportRequest`, only `schema_version` required) and
+  `restoreTenantCompanyVersion` (`POST /tenants/me/company/restore`, body
+  `{version}`): all three propose, and a person applies. Reading the name as a
+  write is the mistake to avoid here.
+- The tenant's own copy: `exportTenantCompany` (`GET /tenants/me/company/export`)
+  returns the manifest — `CompanyExport`, with `ExportExcludedNote` naming what
+  an export leaves out — and `listTenantCompanyVersions`
+  (`GET /tenants/me/company/versions`) lists the versions a restore can name.
+- `getTenantPlanFit` (`GET /tenants/me/fit`): whether this plan fits a stated
+  run profile, per check, with `GetTenantPlanFitResponseCheckStatus` and
+  `...CheckCode` saying what failed and `FitRange` giving the band a check
+  compares against.
+
+### Added — response fields, both builds
+
+- `ResourceUsageEntry.limit` is now `number | null`, on `count`/`limit`/
+  `over_by` entries from the usage surface. **Null is not zero**: it means the
+  plan defines no limit for that resource, and `over_by` is 0 beside it, while
+  `limit: 0` means the plan allows none. A client that printed the two the same
+  way told a founder "3 of 0" about a resource with no ceiling (macOS lane,
+  measured 2026-10-12). The field is still required and still may be null.
+- `truncated` on the answers of `listTenantCompanyChanges` and
+  `listTenantCompanyVersions`: the list was cut at `limit`.
+- `schedules_removed` on `DELETE /squads/{squadId}`: deleting a squad takes its
+  schedules with it, and the number says how many.
+- `proposals` and `counts.proposal` on the inbox (`getTenantInbox`).
+- `"revised"` in `Run.approvals[].decision`: the person declined the action and
+  sent the run on with feedback, instead of `approved` or `rejected`.
 
 ### Added — the Company Builder (`company` group)
 
@@ -53,12 +126,42 @@ answers them as an alias.
 The validation 422 now carries `code: VALIDATION_ERROR`, a value `ErrorCode`
 already had, so no SDK type changes for it.
 
+### Read on the wire
+
+Six of the nine new operations were called on production (`c005edcb`, tenant
+Gliese LLC) by the API lane, whose key this checkout does not hold, and the
+captured bodies were then decoded here against the types above: 0 mismatches —
+no required field absent, no null where the document declares otherwise, no
+primitive of the wrong type, and no key on the wire that the document does not
+mention. The six were `listCompanyTemplates` (1 template),
+`getCompanyTemplate` (14/14 fields), `fitCompanyTemplate`,
+`getTenantPlanFit`, `exportTenantCompany` (13/13 fields, 13 agents, secrets
+excluded) and `listTenantCompanyVersions` (`{items: [], total: 0, truncated:
+false}` — empty, and that tenant has no change journal to be empty of, so the
+zero is honest but unproven). `getTenantPlanFit` settled the one that mattered:
+`budget_limit_usd` is `null` beside `fits: true` on `enterprise`, so null
+really does mean "no limit defined" rather than zero.
+
+The three writes were not run: a proposal is still a row in a tenant, so they
+wait, and they will not be run on `e2e-canon`.
+
+Reading turned up one document defect, which is API's to fix and not ours to
+work around: `fitCompanyTemplate`'s 200 declares `target`, `template` and
+`additionalProperties: true`. The body carries thirteen keys — those two plus
+exactly the eleven of `GET /tenants/me/fit` — so nothing is wrong on the wire,
+but only the *description* says so, and the generated `FitCompanyTemplateResponse`
+is therefore `{target?, template?, [key: string]: unknown}`: a caller reading
+`fits` or `checks` gets `unknown` and has to cast. API is replacing the schema
+with an `allOf` of the fit body and those two fields; regenerating when it
+lands types the eleven properly.
+
 ### Not verified on the wire
 
-Every new operation needs a key, and none is available where this was cut.
-Their names, methods and paths come from the served document (checked against
-`GET /health` → `build_sha ef5b646d`), but none of their responses was read
-here.
+The three write operations — `applyTenantCompanyTemplate`,
+`importTenantCompany`, `restoreTenantCompanyVersion` — have never been called
+from here. They propose rather than apply, so what is unread is the proposal
+they answer with, not a mutation. The `CompanyProposal` shape they return is
+the one `createTenantProposal` returns, which the contract's own examples cover.
 
 ## 0.10.0 — 2026-10-12
 

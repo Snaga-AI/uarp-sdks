@@ -13,15 +13,19 @@ public struct AnalyticsAPI: Sendable {
     /// Over missions created in the last `days` (default 30, 1–365): missions and objectives by
     /// status, failed objectives by reason, and the review record of objectives with
     /// `review_required` — `accepted_first_pass`, `accepted_after_revision`, `rejected`,
-    /// `first_pass_rate` (first-pass / reviewed) and `avg_revisions`. `actions_rejected` counts
-    /// objectives ended because a person refused an action mid-run. `cost_per_completed_usd` and
-    /// `avg_minutes_to_complete` are over completed objectives. `by_agent` repeats the figures per
-    /// assignee (`team:<id>` for a squad). Requires the `analytics:read` scope. Since 2026-10-12.
+    /// `first_pass_rate` (first-pass / reviewed) and `avg_revisions`. `quality` reports what the
+    /// platform can see about the work itself: how many reviewed results cite a link no tool
+    /// produced (`with_unsourced_links`, `unsourced_link_rate` — null, not zero, when nothing
+    /// carried provenance) and how many edits an accepted result took (`revisions_per_accepted`).
+    /// `actions_rejected` counts objectives ended because a person refused an action mid-run.
+    /// `cost_per_completed_usd` and `avg_minutes_to_complete` are over completed objectives.
+    /// `by_agent` repeats the figures per assignee (`team:<id>` for a squad). Requires the
+    /// `analytics:read` scope. Since 2026-10-12.
     ///
     /// `GET /api/v1/analytics/missions`
     ///
     /// Required scopes: `analytics:read`.
-    public func getMissionPerformance(days: Int? = nil, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getMissionPerformance(days: Int? = nil, options: RequestOptions = .init()) async throws -> GetMissionPerformanceResponse {
         var query: [URLQueryItem] = []
         if let days {
             query.append(URLQueryItem(name: "days", value: String(days)))
