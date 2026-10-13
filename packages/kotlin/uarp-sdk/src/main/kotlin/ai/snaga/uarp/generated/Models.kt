@@ -8343,7 +8343,8 @@ public data class CompanyImportRequest(
     public val budget: JsonObject? = null,
     /**
      * Named only — never imported, since a manifest carries no credentials. The proposal's
-     * `rationale` lists what to connect.
+     * `rationale` lists what to connect. The `maxItems` on this field is the 10 MiB body cap, not
+     * an item count: this build enforces no limit on how many integrations a manifest names.
      */
     public val integrations: List<JsonObject>? = null,
 )
@@ -14239,64 +14240,114 @@ public object FitCompanyTemplateRequestTargetSerializer : KSerializer<FitCompany
 }
 
 /**
- * The `GET /tenants/me/fit` body plus `target` and `template`.
+ * `FitCompanyTemplateResponse` model.
  */
-@Serializable(with = FitCompanyTemplateResponseSerializer::class)
+@Serializable
 public data class FitCompanyTemplateResponse(
-    public val target: FitCompanyTemplateRequestTarget? = null,
-    public val template: FitCompanyTemplateResponseTemplate? = null,
+    public val plan: String,
+    public val fits: Boolean,
+    @SerialName("window_days")
+    public val windowDays: Long,
+    @SerialName("run_profile")
+    public val runProfile: FitCompanyTemplateResponseRunProfile,
+    public val needs: FitCompanyTemplateResponseNeeds,
+    public val schedules: List<FitCompanyTemplateResponseSchedule>,
+    public val checks: List<FitCompanyTemplateResponseCheck>,
+    @SerialName("monthly_cost_usd")
+    public val monthlyCostUsd: FitRange,
     /**
-     * Properties the server returned that this SDK does not model.
+     * The spend cap per month, or null when none is set.
      */
-    public val additionalProperties: JsonObject = JsonObject(emptyMap()),
+    @SerialName("budget_limit_usd")
+    public val budgetLimitUsd: Double? = null,
+    public val assumptions: List<FitCompanyTemplateResponseAssumption>,
+    public val suggestions: List<FitCompanyTemplateResponseSuggestion>,
+    public val target: FitCompanyTemplateRequestTarget,
+    public val template: FitCompanyTemplateResponseTemplate,
 )
 
 /**
- * Serializer for \[FitCompanyTemplateResponse\] that preserves unmodelled properties.
+ * `FitCompanyTemplateResponseAssumption` model.
  */
-public object FitCompanyTemplateResponseSerializer : KSerializer<FitCompanyTemplateResponse> {
-    @Serializable
-    @SerialName("FitCompanyTemplateResponse")
-    private data class Surrogate(
-        val target: FitCompanyTemplateRequestTarget? = null,
-        val template: FitCompanyTemplateResponseTemplate? = null,
-    )
+@Serializable
+public data class FitCompanyTemplateResponseAssumption(
+    public val code: String? = null,
+    public val text: String? = null,
+)
 
-    private val declaredNames: Set<String> = setOf("target", "template")
+/**
+ * `FitCompanyTemplateResponseCheck` model.
+ */
+@Serializable
+public data class FitCompanyTemplateResponseCheck(
+    public val code: GetTenantPlanFitResponseCheckCode,
+    public val needed: Double,
+    public val limit: Double? = null,
+    public val status: GetTenantPlanFitResponseCheckStatus,
+)
 
-    override val descriptor: SerialDescriptor = Surrogate.serializer().descriptor
+/**
+ * `FitCompanyTemplateResponseNeeds` model.
+ */
+@Serializable
+public data class FitCompanyTemplateResponseNeeds(
+    public val agents: Long? = null,
+    public val squads: Long? = null,
+    @SerialName("runs_per_month")
+    public val runsPerMonth: FitRange? = null,
+    @SerialName("tokens_per_month")
+    public val tokensPerMonth: FitRange? = null,
+    @SerialName("tool_calls_per_month")
+    public val toolCallsPerMonth: FitRange? = null,
+)
 
-    override fun deserialize(decoder: Decoder): FitCompanyTemplateResponse {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("FitCompanyTemplateResponse can only be read from JSON")
-        val node = input.decodeJsonElement().jsonObject
-        val declared = input.json.decodeFromJsonElement(Surrogate.serializer(), node)
-        return FitCompanyTemplateResponse(
-            target = declared.target,
-            template = declared.template,
-            additionalProperties = JsonObject(node.filterKeys { it !in declaredNames }),
-        )
-    }
+/**
+ * `FitCompanyTemplateResponseRunProfile` model.
+ */
+@Serializable
+public data class FitCompanyTemplateResponseRunProfile(
+    public val tokens: FitRange? = null,
+    @SerialName("cost_usd")
+    public val costUsd: FitRange? = null,
+    @SerialName("tool_calls")
+    public val toolCalls: FitRange? = null,
+    @SerialName("sample_runs")
+    public val sampleRuns: Long? = null,
+    public val source: GetTenantPlanFitResponseRunProfileSource? = null,
+)
 
-    override fun serialize(encoder: Encoder, value: FitCompanyTemplateResponse) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("FitCompanyTemplateResponse can only be written as JSON")
-        val declared = Surrogate(
-            target = value.target,
-            template = value.template,
-        )
-        val rendered = output.json.encodeToJsonElement(Surrogate.serializer(), declared).jsonObject
-        output.encodeJsonElement(JsonObject(rendered + value.additionalProperties))
-    }
-}
+/**
+ * `FitCompanyTemplateResponseSchedule` model.
+ */
+@Serializable
+public data class FitCompanyTemplateResponseSchedule(
+    public val kind: GetTenantBlueprintResponseScheduleKind? = null,
+    public val name: String? = null,
+    public val cron: String? = null,
+    public val timezone: String? = null,
+    @SerialName("runs_per_fire")
+    public val runsPerFire: Long? = null,
+    @SerialName("fires_per_month")
+    public val firesPerMonth: Long? = null,
+)
+
+/**
+ * `FitCompanyTemplateResponseSuggestion` model.
+ */
+@Serializable
+public data class FitCompanyTemplateResponseSuggestion(
+    public val code: String? = null,
+    public val message: String? = null,
+    public val plan: String? = null,
+)
 
 /**
  * `FitCompanyTemplateResponseTemplate` model.
  */
 @Serializable
 public data class FitCompanyTemplateResponseTemplate(
-    public val id: String? = null,
-    public val version: String? = null,
+    public val id: String,
+    public val version: String,
 )
 
 /**
@@ -15470,7 +15521,25 @@ public data class GetHealthResponse(
      * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
      * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
      * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-     * `company_import`, `company_versions` (since 2026-10-12).
+     * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+     * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+     * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+     * `initiatives` = `/initiatives&#47;*` (`/companies` is its deprecated old name);
+     * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+     * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+     * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+     * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+     * `reviews\[\]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+     * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+     * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+     * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+     * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+     * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+     * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+     * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+     * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+     * /company/versions` AND `POST /company/restore` — there is deliberately no separate
+     * `company_restore`, since a snapshot and the rollback to it ship together.
      */
     public val capabilities: List<String>? = null,
     /**
@@ -17344,51 +17413,6 @@ public data class GetTenantDomainHealthResponse(
 )
 
 /**
- * `GetTenantPlanFitResponse` model.
- */
-@Serializable
-public data class GetTenantPlanFitResponse(
-    public val plan: String,
-    public val fits: Boolean,
-    @SerialName("window_days")
-    public val windowDays: Long,
-    @SerialName("run_profile")
-    public val runProfile: GetTenantPlanFitResponseRunProfile,
-    public val needs: GetTenantPlanFitResponseNeeds,
-    public val schedules: List<GetTenantPlanFitResponseSchedule>,
-    public val checks: List<GetTenantPlanFitResponseCheck>,
-    @SerialName("monthly_cost_usd")
-    public val monthlyCostUsd: FitRange,
-    /**
-     * The spend cap per month, or null when none is set.
-     */
-    @SerialName("budget_limit_usd")
-    public val budgetLimitUsd: Double? = null,
-    public val assumptions: List<GetTenantPlanFitResponseAssumption>,
-    public val suggestions: List<GetTenantPlanFitResponseSuggestion>,
-)
-
-/**
- * `GetTenantPlanFitResponseAssumption` model.
- */
-@Serializable
-public data class GetTenantPlanFitResponseAssumption(
-    public val code: String? = null,
-    public val text: String? = null,
-)
-
-/**
- * `GetTenantPlanFitResponseCheck` model.
- */
-@Serializable
-public data class GetTenantPlanFitResponseCheck(
-    public val code: GetTenantPlanFitResponseCheckCode,
-    public val needed: Double,
-    public val limit: Double? = null,
-    public val status: GetTenantPlanFitResponseCheckStatus,
-)
-
-/**
  * `GetTenantPlanFitResponseCheckCode` values.
  */
 ///
@@ -17450,36 +17474,6 @@ public object GetTenantPlanFitResponseCheckStatusSerializer : KSerializer<GetTen
 }
 
 /**
- * `GetTenantPlanFitResponseNeeds` model.
- */
-@Serializable
-public data class GetTenantPlanFitResponseNeeds(
-    public val agents: Long? = null,
-    public val squads: Long? = null,
-    @SerialName("runs_per_month")
-    public val runsPerMonth: FitRange? = null,
-    @SerialName("tokens_per_month")
-    public val tokensPerMonth: FitRange? = null,
-    @SerialName("tool_calls_per_month")
-    public val toolCallsPerMonth: FitRange? = null,
-)
-
-/**
- * `GetTenantPlanFitResponseRunProfile` model.
- */
-@Serializable
-public data class GetTenantPlanFitResponseRunProfile(
-    public val tokens: FitRange? = null,
-    @SerialName("cost_usd")
-    public val costUsd: FitRange? = null,
-    @SerialName("tool_calls")
-    public val toolCalls: FitRange? = null,
-    @SerialName("sample_runs")
-    public val sampleRuns: Long? = null,
-    public val source: GetTenantPlanFitResponseRunProfileSource? = null,
-)
-
-/**
  * `GetTenantPlanFitResponseRunProfileSource` values.
  */
 ///
@@ -17506,31 +17500,6 @@ public object GetTenantPlanFitResponseRunProfileSourceSerializer : KSerializer<G
     override fun serialize(encoder: Encoder, value: GetTenantPlanFitResponseRunProfileSource): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): GetTenantPlanFitResponseRunProfileSource = GetTenantPlanFitResponseRunProfileSource(decoder.decodeString())
 }
-
-/**
- * `GetTenantPlanFitResponseSchedule` model.
- */
-@Serializable
-public data class GetTenantPlanFitResponseSchedule(
-    public val kind: GetTenantBlueprintResponseScheduleKind? = null,
-    public val name: String? = null,
-    public val cron: String? = null,
-    public val timezone: String? = null,
-    @SerialName("runs_per_fire")
-    public val runsPerFire: Long? = null,
-    @SerialName("fires_per_month")
-    public val firesPerMonth: Long? = null,
-)
-
-/**
- * `GetTenantPlanFitResponseSuggestion` model.
- */
-@Serializable
-public data class GetTenantPlanFitResponseSuggestion(
-    public val code: String? = null,
-    public val message: String? = null,
-    public val plan: String? = null,
-)
 
 /**
  * `GetTenantReadinessResponse` model.
@@ -17975,7 +17944,25 @@ public data class HealthCheckV1aliasResponse(
      * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
      * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
      * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-     * `company_import`, `company_versions` (since 2026-10-12).
+     * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+     * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+     * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+     * `initiatives` = `/initiatives&#47;*` (`/companies` is its deprecated old name);
+     * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+     * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+     * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+     * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+     * `reviews\[\]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+     * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+     * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+     * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+     * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+     * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+     * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+     * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+     * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+     * /company/versions` AND `POST /company/restore` — there is deliberately no separate
+     * `company_restore`, since a snapshot and the rollback to it ship together.
      */
     public val capabilities: List<String>? = null,
 )
@@ -34937,6 +34924,106 @@ public data class TenantOverviewUsage(
     public val runsUsed: Long,
     @SerialName("cost_mtd_usd")
     public val costMtdUsd: Double,
+)
+
+/**
+ * `TenantPlanFit` model.
+ */
+@Serializable
+public data class TenantPlanFit(
+    public val plan: String,
+    public val fits: Boolean,
+    @SerialName("window_days")
+    public val windowDays: Long,
+    @SerialName("run_profile")
+    public val runProfile: TenantPlanFitRunProfile,
+    public val needs: TenantPlanFitNeeds,
+    public val schedules: List<TenantPlanFitSchedule>,
+    public val checks: List<TenantPlanFitCheck>,
+    @SerialName("monthly_cost_usd")
+    public val monthlyCostUsd: FitRange,
+    /**
+     * The spend cap per month, or null when none is set.
+     */
+    @SerialName("budget_limit_usd")
+    public val budgetLimitUsd: Double? = null,
+    public val assumptions: List<TenantPlanFitAssumption>,
+    public val suggestions: List<TenantPlanFitSuggestion>,
+)
+
+/**
+ * `TenantPlanFitAssumption` model.
+ */
+@Serializable
+public data class TenantPlanFitAssumption(
+    public val code: String? = null,
+    public val text: String? = null,
+)
+
+/**
+ * `TenantPlanFitCheck` model.
+ */
+@Serializable
+public data class TenantPlanFitCheck(
+    public val code: GetTenantPlanFitResponseCheckCode,
+    public val needed: Double,
+    public val limit: Double? = null,
+    public val status: GetTenantPlanFitResponseCheckStatus,
+)
+
+/**
+ * `TenantPlanFitNeeds` model.
+ */
+@Serializable
+public data class TenantPlanFitNeeds(
+    public val agents: Long? = null,
+    public val squads: Long? = null,
+    @SerialName("runs_per_month")
+    public val runsPerMonth: FitRange? = null,
+    @SerialName("tokens_per_month")
+    public val tokensPerMonth: FitRange? = null,
+    @SerialName("tool_calls_per_month")
+    public val toolCallsPerMonth: FitRange? = null,
+)
+
+/**
+ * `TenantPlanFitRunProfile` model.
+ */
+@Serializable
+public data class TenantPlanFitRunProfile(
+    public val tokens: FitRange? = null,
+    @SerialName("cost_usd")
+    public val costUsd: FitRange? = null,
+    @SerialName("tool_calls")
+    public val toolCalls: FitRange? = null,
+    @SerialName("sample_runs")
+    public val sampleRuns: Long? = null,
+    public val source: GetTenantPlanFitResponseRunProfileSource? = null,
+)
+
+/**
+ * `TenantPlanFitSchedule` model.
+ */
+@Serializable
+public data class TenantPlanFitSchedule(
+    public val kind: GetTenantBlueprintResponseScheduleKind? = null,
+    public val name: String? = null,
+    public val cron: String? = null,
+    public val timezone: String? = null,
+    @SerialName("runs_per_fire")
+    public val runsPerFire: Long? = null,
+    @SerialName("fires_per_month")
+    public val firesPerMonth: Long? = null,
+)
+
+/**
+ * `TenantPlanFitSuggestion` model.
+ */
+@Serializable
+public data class TenantPlanFitSuggestion(
+    public val code: String? = null,
+    public val message: String? = null,
+    public val plan: String? = null,
 )
 
 /**

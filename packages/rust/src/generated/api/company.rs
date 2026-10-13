@@ -283,7 +283,7 @@ impl CompanyApi {
     /// `GET /api/v1/tenants/me/fit`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get_tenant_plan_fit(&self) -> Result<models::GetTenantPlanFitResponse> {
+    pub async fn get_tenant_plan_fit(&self) -> Result<models::TenantPlanFit> {
         self.client
             .request_json(Request {
                 method: Method::GET,

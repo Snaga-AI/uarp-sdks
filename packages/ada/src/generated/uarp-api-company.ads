@@ -206,7 +206,7 @@ package UARP.API.Company is
    function Get_Tenant_Plan_Fit
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Tenant_Plan_Fit_Response;
+      return UARP.Models.Tenant_Plan_Fit;
 
    --  One proposal
    --

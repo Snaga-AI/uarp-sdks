@@ -210,7 +210,7 @@ public struct CompanyAPI: Sendable {
     /// `GET /api/v1/tenants/me/fit`
     ///
     /// Required scopes: `agents:read`.
-    public func getTenantPlanFit(options: RequestOptions = .init()) async throws -> GetTenantPlanFitResponse {
+    public func getTenantPlanFit(options: RequestOptions = .init()) async throws -> TenantPlanFit {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/tenants/me/fit",

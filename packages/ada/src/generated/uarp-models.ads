@@ -8915,7 +8915,8 @@ package UARP.Models is
       Has_Budget : Boolean := False;
       Budget : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       --  Named only - never imported, since a manifest carries no credentials. The proposal's
-      --  `rationale` lists what to connect.
+      --  `rationale` lists what to connect. The `maxItems` on this field is the 10 MiB body cap, not
+      --  an item count: this build enforces no limit on how many integrations a manifest names.
       Has_Integrations : Boolean := False;
       Integrations : UARP.JSON_Support.JSON_Value;
    end record;
@@ -14829,30 +14830,6 @@ package UARP.Models is
    function To_JSON (Model : Fit_Company_Template_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fit_Company_Template_Request;
 
-   --  `FitCompanyTemplateResponseTemplate` model.
-   type Fit_Company_Template_Response_Template is record
-      Has_Id : Boolean := False;
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Version : Boolean := False;
-      Version : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Fit_Company_Template_Response_Template) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fit_Company_Template_Response_Template;
-
-   --  The `GET /tenants/me/fit` body plus `target` and `template`.
-   type Fit_Company_Template_Response is record
-      Has_Target : Boolean := False;
-      Target : UARP.Models.Fit_Company_Template_Request_Target;
-      Has_Template : Boolean := False;
-      Template : UARP.Models.Fit_Company_Template_Response_Template;
-      --  Properties the server returned that this SDK does not model.
-      Extra : JSON_Value := UARP.JSON_Support.Null_Value;
-   end record;
-
-   function To_JSON (Model : Fit_Company_Template_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fit_Company_Template_Response;
-
    --  `FitRange` model.
    type Fit_Range is record
       Low : UARP.Types.Float_Value := 0.0;
@@ -14862,6 +14839,219 @@ package UARP.Models is
 
    function To_JSON (Model : Fit_Range) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fit_Range;
+
+   --  Values of `GetTenantPlanFitResponseRunProfileSource`.
+   --  A value the API introduces later decodes as Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Unrecognized
+   --  with the original text kept in Raw.
+   type Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Kind is
+     (Get_Tenant_Plan_Fit_Response_Run_Profile_Source_History,
+   Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Default,
+   Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Unrecognized);
+
+   type Get_Tenant_Plan_Fit_Response_Run_Profile_Source is record
+      Kind : Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Kind := Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Get_Tenant_Plan_Fit_Response_Run_Profile_Source (Value : String) return Get_Tenant_Plan_Fit_Response_Run_Profile_Source;
+   function To_Get_Tenant_Plan_Fit_Response_Run_Profile_Source (Kind : Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Kind) return Get_Tenant_Plan_Fit_Response_Run_Profile_Source;
+   function Image (Model : Get_Tenant_Plan_Fit_Response_Run_Profile_Source) return String;
+   function To_JSON (Model : Get_Tenant_Plan_Fit_Response_Run_Profile_Source) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response_Run_Profile_Source;
+
+   --  `FitCompanyTemplateResponseRunProfile` model.
+   type Fit_Company_Template_Response_Run_Profile is record
+      Has_Tokens : Boolean := False;
+      Tokens : UARP.Models.Fit_Range;
+      Has_Cost_Usd : Boolean := False;
+      Cost_Usd : UARP.Models.Fit_Range;
+      Has_Tool_Calls : Boolean := False;
+      Tool_Calls : UARP.Models.Fit_Range;
+      Has_Sample_Runs : Boolean := False;
+      Sample_Runs : UARP.Types.Integer_Value := 0;
+      Has_Source : Boolean := False;
+      Source : UARP.Models.Get_Tenant_Plan_Fit_Response_Run_Profile_Source;
+   end record;
+
+   function To_JSON (Model : Fit_Company_Template_Response_Run_Profile) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fit_Company_Template_Response_Run_Profile;
+
+   --  `FitCompanyTemplateResponseNeeds` model.
+   type Fit_Company_Template_Response_Needs is record
+      Has_Agents : Boolean := False;
+      Agents : UARP.Types.Integer_Value := 0;
+      Has_Squads : Boolean := False;
+      Squads : UARP.Types.Integer_Value := 0;
+      Has_Runs_Per_Month : Boolean := False;
+      Runs_Per_Month : UARP.Models.Fit_Range;
+      Has_Tokens_Per_Month : Boolean := False;
+      Tokens_Per_Month : UARP.Models.Fit_Range;
+      Has_Tool_Calls_Per_Month : Boolean := False;
+      Tool_Calls_Per_Month : UARP.Models.Fit_Range;
+   end record;
+
+   function To_JSON (Model : Fit_Company_Template_Response_Needs) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fit_Company_Template_Response_Needs;
+
+   --  Values of `GetTenantBlueprintResponseScheduleKind`.
+   --  A value the API introduces later decodes as Get_Tenant_Blueprint_Response_Schedule_Kind_Unrecognized
+   --  with the original text kept in Raw.
+   type Get_Tenant_Blueprint_Response_Schedule_Kind_Kind is
+     (Get_Tenant_Blueprint_Response_Schedule_Kind_Agent,
+   Get_Tenant_Blueprint_Response_Schedule_Kind_Mission,
+   Get_Tenant_Blueprint_Response_Schedule_Kind_Unrecognized);
+
+   type Get_Tenant_Blueprint_Response_Schedule_Kind is record
+      Kind : Get_Tenant_Blueprint_Response_Schedule_Kind_Kind := Get_Tenant_Blueprint_Response_Schedule_Kind_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Get_Tenant_Blueprint_Response_Schedule_Kind (Value : String) return Get_Tenant_Blueprint_Response_Schedule_Kind;
+   function To_Get_Tenant_Blueprint_Response_Schedule_Kind (Kind : Get_Tenant_Blueprint_Response_Schedule_Kind_Kind) return Get_Tenant_Blueprint_Response_Schedule_Kind;
+   function Image (Model : Get_Tenant_Blueprint_Response_Schedule_Kind) return String;
+   function To_JSON (Model : Get_Tenant_Blueprint_Response_Schedule_Kind) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Blueprint_Response_Schedule_Kind;
+
+   --  `FitCompanyTemplateResponseSchedule` model.
+   type Fit_Company_Template_Response_Schedule is record
+      Has_Kind : Boolean := False;
+      Kind : UARP.Models.Get_Tenant_Blueprint_Response_Schedule_Kind;
+      Has_Name : Boolean := False;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Cron : Boolean := False;
+      Cron : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Timezone : Boolean := False;
+      Timezone : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Runs_Per_Fire : Boolean := False;
+      Runs_Per_Fire : UARP.Types.Integer_Value := 0;
+      Has_Fires_Per_Month : Boolean := False;
+      Fires_Per_Month : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Fit_Company_Template_Response_Schedule) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fit_Company_Template_Response_Schedule;
+
+   package Fit_Company_Template_Response_Schedule_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Fit_Company_Template_Response_Schedule);
+
+   --  Values of `GetTenantPlanFitResponseCheckCode`.
+   --  A value the API introduces later decodes as Get_Tenant_Plan_Fit_Response_Check_Code_Unrecognized
+   --  with the original text kept in Raw.
+   type Get_Tenant_Plan_Fit_Response_Check_Code_Kind is
+     (Get_Tenant_Plan_Fit_Response_Check_Code_Agents,
+   Get_Tenant_Plan_Fit_Response_Check_Code_Squads,
+   Get_Tenant_Plan_Fit_Response_Check_Code_Monthly_Runs,
+   Get_Tenant_Plan_Fit_Response_Check_Code_Monthly_Tokens,
+   Get_Tenant_Plan_Fit_Response_Check_Code_Monthly_Tool_Calls,
+   Get_Tenant_Plan_Fit_Response_Check_Code_Budget,
+   Get_Tenant_Plan_Fit_Response_Check_Code_Unrecognized);
+
+   type Get_Tenant_Plan_Fit_Response_Check_Code is record
+      Kind : Get_Tenant_Plan_Fit_Response_Check_Code_Kind := Get_Tenant_Plan_Fit_Response_Check_Code_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Get_Tenant_Plan_Fit_Response_Check_Code (Value : String) return Get_Tenant_Plan_Fit_Response_Check_Code;
+   function To_Get_Tenant_Plan_Fit_Response_Check_Code (Kind : Get_Tenant_Plan_Fit_Response_Check_Code_Kind) return Get_Tenant_Plan_Fit_Response_Check_Code;
+   function Image (Model : Get_Tenant_Plan_Fit_Response_Check_Code) return String;
+   function To_JSON (Model : Get_Tenant_Plan_Fit_Response_Check_Code) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response_Check_Code;
+
+   --  Values of `GetTenantPlanFitResponseCheckStatus`.
+   --  A value the API introduces later decodes as Get_Tenant_Plan_Fit_Response_Check_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Get_Tenant_Plan_Fit_Response_Check_Status_Kind is
+     (Get_Tenant_Plan_Fit_Response_Check_Status_Ok,
+   Get_Tenant_Plan_Fit_Response_Check_Status_Tight,
+   Get_Tenant_Plan_Fit_Response_Check_Status_Over,
+   Get_Tenant_Plan_Fit_Response_Check_Status_Unrecognized);
+
+   type Get_Tenant_Plan_Fit_Response_Check_Status is record
+      Kind : Get_Tenant_Plan_Fit_Response_Check_Status_Kind := Get_Tenant_Plan_Fit_Response_Check_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Get_Tenant_Plan_Fit_Response_Check_Status (Value : String) return Get_Tenant_Plan_Fit_Response_Check_Status;
+   function To_Get_Tenant_Plan_Fit_Response_Check_Status (Kind : Get_Tenant_Plan_Fit_Response_Check_Status_Kind) return Get_Tenant_Plan_Fit_Response_Check_Status;
+   function Image (Model : Get_Tenant_Plan_Fit_Response_Check_Status) return String;
+   function To_JSON (Model : Get_Tenant_Plan_Fit_Response_Check_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response_Check_Status;
+
+   --  `FitCompanyTemplateResponseCheck` model.
+   type Fit_Company_Template_Response_Check is record
+      Code : UARP.Models.Get_Tenant_Plan_Fit_Response_Check_Code;
+      Needed : UARP.Types.Float_Value := 0.0;
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Float_Value := 0.0;
+      Status : UARP.Models.Get_Tenant_Plan_Fit_Response_Check_Status;
+   end record;
+
+   function To_JSON (Model : Fit_Company_Template_Response_Check) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fit_Company_Template_Response_Check;
+
+   package Fit_Company_Template_Response_Check_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Fit_Company_Template_Response_Check);
+
+   --  `FitCompanyTemplateResponseAssumption` model.
+   type Fit_Company_Template_Response_Assumption is record
+      Has_Code : Boolean := False;
+      Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Text : Boolean := False;
+      Text : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Fit_Company_Template_Response_Assumption) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fit_Company_Template_Response_Assumption;
+
+   package Fit_Company_Template_Response_Assumption_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Fit_Company_Template_Response_Assumption);
+
+   --  `FitCompanyTemplateResponseSuggestion` model.
+   type Fit_Company_Template_Response_Suggestion is record
+      Has_Code : Boolean := False;
+      Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Message : Boolean := False;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Plan : Boolean := False;
+      Plan : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Fit_Company_Template_Response_Suggestion) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fit_Company_Template_Response_Suggestion;
+
+   package Fit_Company_Template_Response_Suggestion_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Fit_Company_Template_Response_Suggestion);
+
+   --  `FitCompanyTemplateResponseTemplate` model.
+   type Fit_Company_Template_Response_Template is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Version : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Fit_Company_Template_Response_Template) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fit_Company_Template_Response_Template;
+
+   --  `FitCompanyTemplateResponse` model.
+   type Fit_Company_Template_Response is record
+      Plan : UARP.Types.Text := UARP.Types.Empty_Text;
+      Fits : Standard.Boolean := False;
+      Window_Days : UARP.Types.Integer_Value := 0;
+      Run_Profile : UARP.Models.Fit_Company_Template_Response_Run_Profile;
+      Needs : UARP.Models.Fit_Company_Template_Response_Needs;
+      Schedules : UARP.Models.Fit_Company_Template_Response_Schedule_Vectors.Vector;
+      Checks : UARP.Models.Fit_Company_Template_Response_Check_Vectors.Vector;
+      Monthly_Cost_Usd : UARP.Models.Fit_Range;
+      --  The spend cap per month, or null when none is set.
+      Has_Budget_Limit_Usd : Boolean := False;
+      Budget_Limit_Usd : UARP.Types.Float_Value := 0.0;
+      Assumptions : UARP.Models.Fit_Company_Template_Response_Assumption_Vectors.Vector;
+      Suggestions : UARP.Models.Fit_Company_Template_Response_Suggestion_Vectors.Vector;
+      Target : UARP.Models.Fit_Company_Template_Request_Target;
+      Template : UARP.Models.Fit_Company_Template_Response_Template;
+   end record;
+
+   function To_JSON (Model : Fit_Company_Template_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fit_Company_Template_Response;
 
    --  `FleetLayoutPositionsValue` model.
    type Fleet_Layout_Positions_Value is record
@@ -16238,7 +16428,25 @@ package UARP.Models is
       --  `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
       --  `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
       --  `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-      --  `company_import`, `company_versions` (since 2026-10-12).
+      --  `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+      --  COVERS, so here is the coverage - added 2026-10-13 because a client asked which name gates
+      --  `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+      --  `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+      --  `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+      --  `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+      --  /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+      --  `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+      --  `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+      --  `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+      --  /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+      --  `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+      --  `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+      --  `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+      --  `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+      --  /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+      --  `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+      --  /company/versions` AND `POST /company/restore` - there is deliberately no separate
+      --  `company_restore`, since a snapshot and the rollback to it ship together.
       Has_Capabilities : Boolean := False;
       Capabilities : UARP.Types.Text_Vectors.Vector;
       --  Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
@@ -18283,25 +18491,6 @@ package UARP.Models is
    function To_JSON (Model : Get_Tenant_Blueprint_Response_Missions) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Blueprint_Response_Missions;
 
-   --  Values of `GetTenantBlueprintResponseScheduleKind`.
-   --  A value the API introduces later decodes as Get_Tenant_Blueprint_Response_Schedule_Kind_Unrecognized
-   --  with the original text kept in Raw.
-   type Get_Tenant_Blueprint_Response_Schedule_Kind_Kind is
-     (Get_Tenant_Blueprint_Response_Schedule_Kind_Agent,
-   Get_Tenant_Blueprint_Response_Schedule_Kind_Mission,
-   Get_Tenant_Blueprint_Response_Schedule_Kind_Unrecognized);
-
-   type Get_Tenant_Blueprint_Response_Schedule_Kind is record
-      Kind : Get_Tenant_Blueprint_Response_Schedule_Kind_Kind := Get_Tenant_Blueprint_Response_Schedule_Kind_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Get_Tenant_Blueprint_Response_Schedule_Kind (Value : String) return Get_Tenant_Blueprint_Response_Schedule_Kind;
-   function To_Get_Tenant_Blueprint_Response_Schedule_Kind (Kind : Get_Tenant_Blueprint_Response_Schedule_Kind_Kind) return Get_Tenant_Blueprint_Response_Schedule_Kind;
-   function Image (Model : Get_Tenant_Blueprint_Response_Schedule_Kind) return String;
-   function To_JSON (Model : Get_Tenant_Blueprint_Response_Schedule_Kind) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Blueprint_Response_Schedule_Kind;
-
    --  `GetTenantBlueprintResponseSchedule` model.
    type Get_Tenant_Blueprint_Response_Schedule is record
       Has_Kind : Boolean := False;
@@ -18708,189 +18897,6 @@ package UARP.Models is
    function To_JSON (Model : Get_Tenant_Domain_Health_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Domain_Health_Response;
 
-   --  Values of `GetTenantPlanFitResponseRunProfileSource`.
-   --  A value the API introduces later decodes as Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Unrecognized
-   --  with the original text kept in Raw.
-   type Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Kind is
-     (Get_Tenant_Plan_Fit_Response_Run_Profile_Source_History,
-   Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Default,
-   Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Unrecognized);
-
-   type Get_Tenant_Plan_Fit_Response_Run_Profile_Source is record
-      Kind : Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Kind := Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Get_Tenant_Plan_Fit_Response_Run_Profile_Source (Value : String) return Get_Tenant_Plan_Fit_Response_Run_Profile_Source;
-   function To_Get_Tenant_Plan_Fit_Response_Run_Profile_Source (Kind : Get_Tenant_Plan_Fit_Response_Run_Profile_Source_Kind) return Get_Tenant_Plan_Fit_Response_Run_Profile_Source;
-   function Image (Model : Get_Tenant_Plan_Fit_Response_Run_Profile_Source) return String;
-   function To_JSON (Model : Get_Tenant_Plan_Fit_Response_Run_Profile_Source) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response_Run_Profile_Source;
-
-   --  `GetTenantPlanFitResponseRunProfile` model.
-   type Get_Tenant_Plan_Fit_Response_Run_Profile is record
-      Has_Tokens : Boolean := False;
-      Tokens : UARP.Models.Fit_Range;
-      Has_Cost_Usd : Boolean := False;
-      Cost_Usd : UARP.Models.Fit_Range;
-      Has_Tool_Calls : Boolean := False;
-      Tool_Calls : UARP.Models.Fit_Range;
-      Has_Sample_Runs : Boolean := False;
-      Sample_Runs : UARP.Types.Integer_Value := 0;
-      Has_Source : Boolean := False;
-      Source : UARP.Models.Get_Tenant_Plan_Fit_Response_Run_Profile_Source;
-   end record;
-
-   function To_JSON (Model : Get_Tenant_Plan_Fit_Response_Run_Profile) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response_Run_Profile;
-
-   --  `GetTenantPlanFitResponseNeeds` model.
-   type Get_Tenant_Plan_Fit_Response_Needs is record
-      Has_Agents : Boolean := False;
-      Agents : UARP.Types.Integer_Value := 0;
-      Has_Squads : Boolean := False;
-      Squads : UARP.Types.Integer_Value := 0;
-      Has_Runs_Per_Month : Boolean := False;
-      Runs_Per_Month : UARP.Models.Fit_Range;
-      Has_Tokens_Per_Month : Boolean := False;
-      Tokens_Per_Month : UARP.Models.Fit_Range;
-      Has_Tool_Calls_Per_Month : Boolean := False;
-      Tool_Calls_Per_Month : UARP.Models.Fit_Range;
-   end record;
-
-   function To_JSON (Model : Get_Tenant_Plan_Fit_Response_Needs) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response_Needs;
-
-   --  `GetTenantPlanFitResponseSchedule` model.
-   type Get_Tenant_Plan_Fit_Response_Schedule is record
-      Has_Kind : Boolean := False;
-      Kind : UARP.Models.Get_Tenant_Blueprint_Response_Schedule_Kind;
-      Has_Name : Boolean := False;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Cron : Boolean := False;
-      Cron : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Timezone : Boolean := False;
-      Timezone : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Runs_Per_Fire : Boolean := False;
-      Runs_Per_Fire : UARP.Types.Integer_Value := 0;
-      Has_Fires_Per_Month : Boolean := False;
-      Fires_Per_Month : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Get_Tenant_Plan_Fit_Response_Schedule) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response_Schedule;
-
-   package Get_Tenant_Plan_Fit_Response_Schedule_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Get_Tenant_Plan_Fit_Response_Schedule);
-
-   --  Values of `GetTenantPlanFitResponseCheckCode`.
-   --  A value the API introduces later decodes as Get_Tenant_Plan_Fit_Response_Check_Code_Unrecognized
-   --  with the original text kept in Raw.
-   type Get_Tenant_Plan_Fit_Response_Check_Code_Kind is
-     (Get_Tenant_Plan_Fit_Response_Check_Code_Agents,
-   Get_Tenant_Plan_Fit_Response_Check_Code_Squads,
-   Get_Tenant_Plan_Fit_Response_Check_Code_Monthly_Runs,
-   Get_Tenant_Plan_Fit_Response_Check_Code_Monthly_Tokens,
-   Get_Tenant_Plan_Fit_Response_Check_Code_Monthly_Tool_Calls,
-   Get_Tenant_Plan_Fit_Response_Check_Code_Budget,
-   Get_Tenant_Plan_Fit_Response_Check_Code_Unrecognized);
-
-   type Get_Tenant_Plan_Fit_Response_Check_Code is record
-      Kind : Get_Tenant_Plan_Fit_Response_Check_Code_Kind := Get_Tenant_Plan_Fit_Response_Check_Code_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Get_Tenant_Plan_Fit_Response_Check_Code (Value : String) return Get_Tenant_Plan_Fit_Response_Check_Code;
-   function To_Get_Tenant_Plan_Fit_Response_Check_Code (Kind : Get_Tenant_Plan_Fit_Response_Check_Code_Kind) return Get_Tenant_Plan_Fit_Response_Check_Code;
-   function Image (Model : Get_Tenant_Plan_Fit_Response_Check_Code) return String;
-   function To_JSON (Model : Get_Tenant_Plan_Fit_Response_Check_Code) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response_Check_Code;
-
-   --  Values of `GetTenantPlanFitResponseCheckStatus`.
-   --  A value the API introduces later decodes as Get_Tenant_Plan_Fit_Response_Check_Status_Unrecognized
-   --  with the original text kept in Raw.
-   type Get_Tenant_Plan_Fit_Response_Check_Status_Kind is
-     (Get_Tenant_Plan_Fit_Response_Check_Status_Ok,
-   Get_Tenant_Plan_Fit_Response_Check_Status_Tight,
-   Get_Tenant_Plan_Fit_Response_Check_Status_Over,
-   Get_Tenant_Plan_Fit_Response_Check_Status_Unrecognized);
-
-   type Get_Tenant_Plan_Fit_Response_Check_Status is record
-      Kind : Get_Tenant_Plan_Fit_Response_Check_Status_Kind := Get_Tenant_Plan_Fit_Response_Check_Status_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Get_Tenant_Plan_Fit_Response_Check_Status (Value : String) return Get_Tenant_Plan_Fit_Response_Check_Status;
-   function To_Get_Tenant_Plan_Fit_Response_Check_Status (Kind : Get_Tenant_Plan_Fit_Response_Check_Status_Kind) return Get_Tenant_Plan_Fit_Response_Check_Status;
-   function Image (Model : Get_Tenant_Plan_Fit_Response_Check_Status) return String;
-   function To_JSON (Model : Get_Tenant_Plan_Fit_Response_Check_Status) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response_Check_Status;
-
-   --  `GetTenantPlanFitResponseCheck` model.
-   type Get_Tenant_Plan_Fit_Response_Check is record
-      Code : UARP.Models.Get_Tenant_Plan_Fit_Response_Check_Code;
-      Needed : UARP.Types.Float_Value := 0.0;
-      Has_Limit : Boolean := False;
-      Limit : UARP.Types.Float_Value := 0.0;
-      Status : UARP.Models.Get_Tenant_Plan_Fit_Response_Check_Status;
-   end record;
-
-   function To_JSON (Model : Get_Tenant_Plan_Fit_Response_Check) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response_Check;
-
-   package Get_Tenant_Plan_Fit_Response_Check_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Get_Tenant_Plan_Fit_Response_Check);
-
-   --  `GetTenantPlanFitResponseAssumption` model.
-   type Get_Tenant_Plan_Fit_Response_Assumption is record
-      Has_Code : Boolean := False;
-      Code : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Text : Boolean := False;
-      Text : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Get_Tenant_Plan_Fit_Response_Assumption) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response_Assumption;
-
-   package Get_Tenant_Plan_Fit_Response_Assumption_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Get_Tenant_Plan_Fit_Response_Assumption);
-
-   --  `GetTenantPlanFitResponseSuggestion` model.
-   type Get_Tenant_Plan_Fit_Response_Suggestion is record
-      Has_Code : Boolean := False;
-      Code : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Message : Boolean := False;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Plan : Boolean := False;
-      Plan : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Get_Tenant_Plan_Fit_Response_Suggestion) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response_Suggestion;
-
-   package Get_Tenant_Plan_Fit_Response_Suggestion_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Get_Tenant_Plan_Fit_Response_Suggestion);
-
-   --  `GetTenantPlanFitResponse` model.
-   type Get_Tenant_Plan_Fit_Response is record
-      Plan : UARP.Types.Text := UARP.Types.Empty_Text;
-      Fits : Standard.Boolean := False;
-      Window_Days : UARP.Types.Integer_Value := 0;
-      Run_Profile : UARP.Models.Get_Tenant_Plan_Fit_Response_Run_Profile;
-      Needs : UARP.Models.Get_Tenant_Plan_Fit_Response_Needs;
-      Schedules : UARP.Models.Get_Tenant_Plan_Fit_Response_Schedule_Vectors.Vector;
-      Checks : UARP.Models.Get_Tenant_Plan_Fit_Response_Check_Vectors.Vector;
-      Monthly_Cost_Usd : UARP.Models.Fit_Range;
-      --  The spend cap per month, or null when none is set.
-      Has_Budget_Limit_Usd : Boolean := False;
-      Budget_Limit_Usd : UARP.Types.Float_Value := 0.0;
-      Assumptions : UARP.Models.Get_Tenant_Plan_Fit_Response_Assumption_Vectors.Vector;
-      Suggestions : UARP.Models.Get_Tenant_Plan_Fit_Response_Suggestion_Vectors.Vector;
-   end record;
-
-   function To_JSON (Model : Get_Tenant_Plan_Fit_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Plan_Fit_Response;
-
    --  `GetTenantReadinessResponse` model.
    type Get_Tenant_Readiness_Response is record
       Ready : Standard.Boolean := False;
@@ -19124,7 +19130,25 @@ package UARP.Models is
       --  `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
       --  `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
       --  `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-      --  `company_import`, `company_versions` (since 2026-10-12).
+      --  `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+      --  COVERS, so here is the coverage - added 2026-10-13 because a client asked which name gates
+      --  `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+      --  `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+      --  `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+      --  `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+      --  /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+      --  `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+      --  `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+      --  `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+      --  /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+      --  `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+      --  `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+      --  `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+      --  `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+      --  /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+      --  `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+      --  /company/versions` AND `POST /company/restore` - there is deliberately no separate
+      --  `company_restore`, since a snapshot and the rollback to it ship together.
       Has_Capabilities : Boolean := False;
       Capabilities : UARP.Types.Text_Vectors.Vector;
    end record;
@@ -31214,6 +31238,127 @@ package UARP.Models is
 
    function To_JSON (Model : Tenant_Overview) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Overview;
+
+   --  `TenantPlanFitRunProfile` model.
+   type Tenant_Plan_Fit_Run_Profile is record
+      Has_Tokens : Boolean := False;
+      Tokens : UARP.Models.Fit_Range;
+      Has_Cost_Usd : Boolean := False;
+      Cost_Usd : UARP.Models.Fit_Range;
+      Has_Tool_Calls : Boolean := False;
+      Tool_Calls : UARP.Models.Fit_Range;
+      Has_Sample_Runs : Boolean := False;
+      Sample_Runs : UARP.Types.Integer_Value := 0;
+      Has_Source : Boolean := False;
+      Source : UARP.Models.Get_Tenant_Plan_Fit_Response_Run_Profile_Source;
+   end record;
+
+   function To_JSON (Model : Tenant_Plan_Fit_Run_Profile) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Plan_Fit_Run_Profile;
+
+   --  `TenantPlanFitNeeds` model.
+   type Tenant_Plan_Fit_Needs is record
+      Has_Agents : Boolean := False;
+      Agents : UARP.Types.Integer_Value := 0;
+      Has_Squads : Boolean := False;
+      Squads : UARP.Types.Integer_Value := 0;
+      Has_Runs_Per_Month : Boolean := False;
+      Runs_Per_Month : UARP.Models.Fit_Range;
+      Has_Tokens_Per_Month : Boolean := False;
+      Tokens_Per_Month : UARP.Models.Fit_Range;
+      Has_Tool_Calls_Per_Month : Boolean := False;
+      Tool_Calls_Per_Month : UARP.Models.Fit_Range;
+   end record;
+
+   function To_JSON (Model : Tenant_Plan_Fit_Needs) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Plan_Fit_Needs;
+
+   --  `TenantPlanFitSchedule` model.
+   type Tenant_Plan_Fit_Schedule is record
+      Has_Kind : Boolean := False;
+      Kind : UARP.Models.Get_Tenant_Blueprint_Response_Schedule_Kind;
+      Has_Name : Boolean := False;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Cron : Boolean := False;
+      Cron : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Timezone : Boolean := False;
+      Timezone : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Runs_Per_Fire : Boolean := False;
+      Runs_Per_Fire : UARP.Types.Integer_Value := 0;
+      Has_Fires_Per_Month : Boolean := False;
+      Fires_Per_Month : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Tenant_Plan_Fit_Schedule) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Plan_Fit_Schedule;
+
+   package Tenant_Plan_Fit_Schedule_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Tenant_Plan_Fit_Schedule);
+
+   --  `TenantPlanFitCheck` model.
+   type Tenant_Plan_Fit_Check is record
+      Code : UARP.Models.Get_Tenant_Plan_Fit_Response_Check_Code;
+      Needed : UARP.Types.Float_Value := 0.0;
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Float_Value := 0.0;
+      Status : UARP.Models.Get_Tenant_Plan_Fit_Response_Check_Status;
+   end record;
+
+   function To_JSON (Model : Tenant_Plan_Fit_Check) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Plan_Fit_Check;
+
+   package Tenant_Plan_Fit_Check_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Tenant_Plan_Fit_Check);
+
+   --  `TenantPlanFitAssumption` model.
+   type Tenant_Plan_Fit_Assumption is record
+      Has_Code : Boolean := False;
+      Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Text : Boolean := False;
+      Text : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Tenant_Plan_Fit_Assumption) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Plan_Fit_Assumption;
+
+   package Tenant_Plan_Fit_Assumption_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Tenant_Plan_Fit_Assumption);
+
+   --  `TenantPlanFitSuggestion` model.
+   type Tenant_Plan_Fit_Suggestion is record
+      Has_Code : Boolean := False;
+      Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Message : Boolean := False;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Plan : Boolean := False;
+      Plan : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Tenant_Plan_Fit_Suggestion) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Plan_Fit_Suggestion;
+
+   package Tenant_Plan_Fit_Suggestion_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Tenant_Plan_Fit_Suggestion);
+
+   --  `TenantPlanFit` model.
+   type Tenant_Plan_Fit is record
+      Plan : UARP.Types.Text := UARP.Types.Empty_Text;
+      Fits : Standard.Boolean := False;
+      Window_Days : UARP.Types.Integer_Value := 0;
+      Run_Profile : UARP.Models.Tenant_Plan_Fit_Run_Profile;
+      Needs : UARP.Models.Tenant_Plan_Fit_Needs;
+      Schedules : UARP.Models.Tenant_Plan_Fit_Schedule_Vectors.Vector;
+      Checks : UARP.Models.Tenant_Plan_Fit_Check_Vectors.Vector;
+      Monthly_Cost_Usd : UARP.Models.Fit_Range;
+      --  The spend cap per month, or null when none is set.
+      Has_Budget_Limit_Usd : Boolean := False;
+      Budget_Limit_Usd : UARP.Types.Float_Value := 0.0;
+      Assumptions : UARP.Models.Tenant_Plan_Fit_Assumption_Vectors.Vector;
+      Suggestions : UARP.Models.Tenant_Plan_Fit_Suggestion_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Tenant_Plan_Fit) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Plan_Fit;
 
    --  `TerminateAgentResponse` model.
    type Terminate_Agent_Response is record

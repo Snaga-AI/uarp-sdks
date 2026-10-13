@@ -18151,21 +18151,21 @@
                     },
                     "schedules": {
                         "type": "array",
+                        "maxItems": 50,
                         "items": {
                             "type": "object",
                             "additionalProperties": true,
                             "description": "Agent schedules (`agent_id`, `cron`, `timezone`, `enabled`, `message`)."
-                        },
-                        "maxItems": 5242880
+                        }
                     },
                     "mission_schedules": {
                         "type": "array",
+                        "maxItems": 50,
                         "items": {
                             "type": "object",
                             "additionalProperties": true,
-                            "description": "Mission schedules with their plan; an objective whose agent did not come along is dropped."
-                        },
-                        "maxItems": 5242880
+                            "description": "Mission schedules with their plan; an objective whose agent did not come along is dropped. Counted together with `schedules`: at most 50 of the two."
+                        }
                     },
                     "budget": {
                         "type": [
@@ -18181,8 +18181,198 @@
                             "type": "object",
                             "additionalProperties": true
                         },
-                        "description": "Named only — never imported, since a manifest carries no credentials. The proposal's `rationale` lists what to connect.",
+                        "description": "Named only — never imported, since a manifest carries no credentials. The proposal's `rationale` lists what to connect. The `maxItems` on this field is the 10 MiB body cap, not an item count: this build enforces no limit on how many integrations a manifest names.",
                         "maxItems": 5242880
+                    }
+                }
+            },
+            "TenantPlanFit": {
+                "type": "object",
+                "required": [
+                    "plan",
+                    "fits",
+                    "window_days",
+                    "run_profile",
+                    "needs",
+                    "schedules",
+                    "checks",
+                    "monthly_cost_usd",
+                    "budget_limit_usd",
+                    "assumptions",
+                    "suggestions"
+                ],
+                "properties": {
+                    "plan": {
+                        "type": "string"
+                    },
+                    "fits": {
+                        "type": "boolean"
+                    },
+                    "window_days": {
+                        "type": "integer"
+                    },
+                    "run_profile": {
+                        "type": "object",
+                        "properties": {
+                            "tokens": {
+                                "$ref": "#/components/schemas/FitRange"
+                            },
+                            "cost_usd": {
+                                "$ref": "#/components/schemas/FitRange"
+                            },
+                            "tool_calls": {
+                                "$ref": "#/components/schemas/FitRange"
+                            },
+                            "sample_runs": {
+                                "type": "integer"
+                            },
+                            "source": {
+                                "type": "string",
+                                "enum": [
+                                    "history",
+                                    "default"
+                                ]
+                            }
+                        }
+                    },
+                    "needs": {
+                        "type": "object",
+                        "properties": {
+                            "agents": {
+                                "type": "integer"
+                            },
+                            "squads": {
+                                "type": "integer"
+                            },
+                            "runs_per_month": {
+                                "$ref": "#/components/schemas/FitRange"
+                            },
+                            "tokens_per_month": {
+                                "$ref": "#/components/schemas/FitRange"
+                            },
+                            "tool_calls_per_month": {
+                                "$ref": "#/components/schemas/FitRange"
+                            }
+                        }
+                    },
+                    "schedules": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                        "agent",
+                                        "mission"
+                                    ]
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "cron": {
+                                    "type": "string"
+                                },
+                                "timezone": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "runs_per_fire": {
+                                    "type": "integer"
+                                },
+                                "fires_per_month": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "checks": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "code",
+                                "needed",
+                                "limit",
+                                "status"
+                            ],
+                            "properties": {
+                                "code": {
+                                    "type": "string",
+                                    "enum": [
+                                        "AGENTS",
+                                        "SQUADS",
+                                        "MONTHLY_RUNS",
+                                        "MONTHLY_TOKENS",
+                                        "MONTHLY_TOOL_CALLS",
+                                        "BUDGET"
+                                    ]
+                                },
+                                "needed": {
+                                    "type": "number"
+                                },
+                                "limit": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ]
+                                },
+                                "status": {
+                                    "type": "string",
+                                    "enum": [
+                                        "ok",
+                                        "tight",
+                                        "over"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "monthly_cost_usd": {
+                        "$ref": "#/components/schemas/FitRange"
+                    },
+                    "budget_limit_usd": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "The spend cap per month, or null when none is set."
+                    },
+                    "assumptions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "string"
+                                },
+                                "text": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "suggestions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "string"
+                                },
+                                "message": {
+                                    "type": "string"
+                                },
+                                "plan": {
+                                    "type": "string"
+                                }
+                            }
+                        }
                     }
                 }
             },
@@ -25229,7 +25419,7 @@
                                             "items": {
                                                 "type": "string"
                                             },
-                                            "description": "What this build can do, by name — gate a feature on it instead of on a 404. Names are added when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`, `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`, `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`, `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`, `company_import`, `company_versions` (since 2026-10-12)."
+                                            "description": "What this build can do, by name — gate a feature on it instead of on a 404. Names are added when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`, `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`, `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`, `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`, `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates `POST /tenants/me/company/restore` and the answer existed only in prose no client can read: `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name); `initiative_pause` = pausing an initiative; `mission_review` = objectives with `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` = `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`; `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`; `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` = `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`; `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`); `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` = `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET /company/versions` AND `POST /company/restore` — there is deliberately no separate `company_restore`, since a snapshot and the rollback to it ship together."
                                         },
                                         "runs_queued": {
                                             "type": "integer",
@@ -33545,6 +33735,7 @@
         "/api/v1/tenants/me/blueprint": {
             "get": {
                 "operationId": "getTenantBlueprint",
+                "x-capability": "company_blueprint",
                 "tags": [
                     "Company"
                 ],
@@ -34046,6 +34237,7 @@
         "/api/v1/tenants/me/proposals": {
             "get": {
                 "operationId": "listTenantProposals",
+                "x-capability": "company_proposals",
                 "tags": [
                     "Company"
                 ],
@@ -34128,6 +34320,7 @@
             },
             "post": {
                 "operationId": "createTenantProposal",
+                "x-capability": "company_proposals",
                 "tags": [
                     "Company"
                 ],
@@ -34247,6 +34440,7 @@
         "/api/v1/tenants/me/proposals/{proposalId}": {
             "get": {
                 "operationId": "getTenantProposal",
+                "x-capability": "company_proposals",
                 "tags": [
                     "Company"
                 ],
@@ -34313,6 +34507,7 @@
         "/api/v1/tenants/me/proposals/{proposalId}/apply": {
             "post": {
                 "operationId": "applyTenantProposal",
+                "x-capability": "company_proposals",
                 "tags": [
                     "Company"
                 ],
@@ -34408,6 +34603,7 @@
         "/api/v1/tenants/me/proposals/{proposalId}/reject": {
             "post": {
                 "operationId": "rejectTenantProposal",
+                "x-capability": "company_proposals",
                 "tags": [
                     "Company"
                 ],
@@ -34525,6 +34721,7 @@
         "/api/v1/tenants/me/readiness": {
             "get": {
                 "operationId": "getTenantReadiness",
+                "x-capability": "company_launch",
                 "tags": [
                     "Company"
                 ],
@@ -34618,6 +34815,7 @@
         "/api/v1/tenants/me/test-run": {
             "post": {
                 "operationId": "startTenantTestRun",
+                "x-capability": "company_launch",
                 "tags": [
                     "Company"
                 ],
@@ -34732,6 +34930,7 @@
         "/api/v1/tenants/me/launch": {
             "post": {
                 "operationId": "launchTenantCompany",
+                "x-capability": "company_launch",
                 "tags": [
                     "Company"
                 ],
@@ -34834,6 +35033,7 @@
         "/api/v1/tenants/me/overview": {
             "get": {
                 "operationId": "getTenantCompanyOverview",
+                "x-capability": "company_overview",
                 "tags": [
                     "Company"
                 ],
@@ -35144,6 +35344,7 @@
         "/api/v1/tenants/me/fit": {
             "get": {
                 "operationId": "getTenantPlanFit",
+                "x-capability": "company_fit",
                 "tags": [
                     "Company"
                 ],
@@ -35160,194 +35361,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "plan",
-                                        "fits",
-                                        "window_days",
-                                        "run_profile",
-                                        "needs",
-                                        "schedules",
-                                        "checks",
-                                        "monthly_cost_usd",
-                                        "budget_limit_usd",
-                                        "assumptions",
-                                        "suggestions"
-                                    ],
-                                    "properties": {
-                                        "plan": {
-                                            "type": "string"
-                                        },
-                                        "fits": {
-                                            "type": "boolean"
-                                        },
-                                        "window_days": {
-                                            "type": "integer"
-                                        },
-                                        "run_profile": {
-                                            "type": "object",
-                                            "properties": {
-                                                "tokens": {
-                                                    "$ref": "#/components/schemas/FitRange"
-                                                },
-                                                "cost_usd": {
-                                                    "$ref": "#/components/schemas/FitRange"
-                                                },
-                                                "tool_calls": {
-                                                    "$ref": "#/components/schemas/FitRange"
-                                                },
-                                                "sample_runs": {
-                                                    "type": "integer"
-                                                },
-                                                "source": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "history",
-                                                        "default"
-                                                    ]
-                                                }
-                                            }
-                                        },
-                                        "needs": {
-                                            "type": "object",
-                                            "properties": {
-                                                "agents": {
-                                                    "type": "integer"
-                                                },
-                                                "squads": {
-                                                    "type": "integer"
-                                                },
-                                                "runs_per_month": {
-                                                    "$ref": "#/components/schemas/FitRange"
-                                                },
-                                                "tokens_per_month": {
-                                                    "$ref": "#/components/schemas/FitRange"
-                                                },
-                                                "tool_calls_per_month": {
-                                                    "$ref": "#/components/schemas/FitRange"
-                                                }
-                                            }
-                                        },
-                                        "schedules": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "kind": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "agent",
-                                                            "mission"
-                                                        ]
-                                                    },
-                                                    "name": {
-                                                        "type": "string"
-                                                    },
-                                                    "cron": {
-                                                        "type": "string"
-                                                    },
-                                                    "timezone": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ]
-                                                    },
-                                                    "runs_per_fire": {
-                                                        "type": "integer"
-                                                    },
-                                                    "fires_per_month": {
-                                                        "type": [
-                                                            "integer",
-                                                            "null"
-                                                        ]
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "checks": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "required": [
-                                                    "code",
-                                                    "needed",
-                                                    "limit",
-                                                    "status"
-                                                ],
-                                                "properties": {
-                                                    "code": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "AGENTS",
-                                                            "SQUADS",
-                                                            "MONTHLY_RUNS",
-                                                            "MONTHLY_TOKENS",
-                                                            "MONTHLY_TOOL_CALLS",
-                                                            "BUDGET"
-                                                        ]
-                                                    },
-                                                    "needed": {
-                                                        "type": "number"
-                                                    },
-                                                    "limit": {
-                                                        "type": [
-                                                            "number",
-                                                            "null"
-                                                        ]
-                                                    },
-                                                    "status": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "ok",
-                                                            "tight",
-                                                            "over"
-                                                        ]
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "monthly_cost_usd": {
-                                            "$ref": "#/components/schemas/FitRange"
-                                        },
-                                        "budget_limit_usd": {
-                                            "type": [
-                                                "number",
-                                                "null"
-                                            ],
-                                            "description": "The spend cap per month, or null when none is set."
-                                        },
-                                        "assumptions": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "code": {
-                                                        "type": "string"
-                                                    },
-                                                    "text": {
-                                                        "type": "string"
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "suggestions": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "code": {
-                                                        "type": "string"
-                                                    },
-                                                    "message": {
-                                                        "type": "string"
-                                                    },
-                                                    "plan": {
-                                                        "type": "string"
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/TenantPlanFit"
                                 }
                             }
                         },
@@ -35384,6 +35398,7 @@
         "/api/v1/company-templates": {
             "get": {
                 "operationId": "listCompanyTemplates",
+                "x-capability": "company_templates",
                 "tags": [
                     "Company"
                 ],
@@ -35451,6 +35466,7 @@
         "/api/v1/company-templates/{templateId}": {
             "get": {
                 "operationId": "getCompanyTemplate",
+                "x-capability": "company_templates",
                 "tags": [
                     "Company"
                 ],
@@ -35518,6 +35534,7 @@
         "/api/v1/company-templates/{templateId}/fit": {
             "post": {
                 "operationId": "fitCompanyTemplate",
+                "x-capability": "company_templates",
                 "tags": [
                     "Company"
                 ],
@@ -35575,29 +35592,42 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "description": "The `GET /tenants/me/fit` body plus `target` and `template`.",
-                                    "additionalProperties": true,
-                                    "properties": {
-                                        "target": {
-                                            "type": "string",
-                                            "enum": [
-                                                "new",
-                                                "current"
-                                            ]
+                                    "allOf": [
+                                        {
+                                            "$ref": "#/components/schemas/TenantPlanFit"
                                         },
-                                        "template": {
+                                        {
                                             "type": "object",
+                                            "required": [
+                                                "target",
+                                                "template"
+                                            ],
                                             "properties": {
-                                                "id": {
-                                                    "type": "string"
+                                                "target": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "new",
+                                                        "current"
+                                                    ]
                                                 },
-                                                "version": {
-                                                    "type": "string"
+                                                "template": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "id",
+                                                        "version"
+                                                    ],
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "string"
+                                                        },
+                                                        "version": {
+                                                            "type": "string"
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
+                                    ]
                                 }
                             }
                         },
@@ -35655,6 +35685,7 @@
         "/api/v1/tenants/me/company/apply-template": {
             "post": {
                 "operationId": "applyTenantCompanyTemplate",
+                "x-capability": "company_templates",
                 "tags": [
                     "Company"
                 ],
@@ -35757,6 +35788,7 @@
         "/api/v1/tenants/me/company/versions": {
             "get": {
                 "operationId": "listTenantCompanyVersions",
+                "x-capability": "company_versions",
                 "tags": [
                     "Company"
                 ],
@@ -35830,6 +35862,7 @@
         "/api/v1/tenants/me/company/restore": {
             "post": {
                 "operationId": "restoreTenantCompanyVersion",
+                "x-capability": "company_versions",
                 "tags": [
                     "Company"
                 ],
@@ -35935,6 +35968,7 @@
         "/api/v1/tenants/me/company/export": {
             "get": {
                 "operationId": "exportTenantCompany",
+                "x-capability": "company_export",
                 "tags": [
                     "Company"
                 ],
@@ -35988,6 +36022,7 @@
         "/api/v1/tenants/me/company/import": {
             "post": {
                 "operationId": "importTenantCompany",
+                "x-capability": "company_import",
                 "tags": [
                     "Company"
                 ],
@@ -36077,6 +36112,7 @@
         "/api/v1/tenants/me/company": {
             "get": {
                 "operationId": "getTenantCompany",
+                "x-capability": "company_profile",
                 "tags": [
                     "Company"
                 ],
@@ -36128,6 +36164,7 @@
             },
             "patch": {
                 "operationId": "updateTenantCompany",
+                "x-capability": "company_profile",
                 "tags": [
                     "Company"
                 ],
@@ -36248,6 +36285,7 @@
         "/api/v1/tenants/me/company/changes": {
             "get": {
                 "operationId": "listTenantCompanyChanges",
+                "x-capability": "company_profile",
                 "tags": [
                     "Company"
                 ],
@@ -36332,6 +36370,7 @@
         "/api/v1/tenants/me/company/pause-scope": {
             "get": {
                 "operationId": "previewTenantCompanyPause",
+                "x-capability": "company_pause_preview",
                 "tags": [
                     "Company"
                 ],
@@ -36478,6 +36517,7 @@
         "/api/v1/tenants/me/company/pause": {
             "post": {
                 "operationId": "pauseTenantCompany",
+                "x-capability": "company_pause",
                 "tags": [
                     "Company"
                 ],
@@ -36672,6 +36712,7 @@
         "/api/v1/tenants/me/company/resume": {
             "post": {
                 "operationId": "resumeTenantCompany",
+                "x-capability": "company_pause",
                 "tags": [
                     "Company"
                 ],
@@ -44731,6 +44772,7 @@
         "/api/v1/me/tenants/create": {
             "post": {
                 "operationId": "createMyTenant",
+                "x-capability": "company_templates",
                 "summary": "Create a new tenant with the caller as owner",
                 "description": "Provisions a brand-new tenant on the `free` plan (or `enterprise` for super-admin). The caller becomes the founding owner. The Head Agent is provisioned server-side before the 201 is sent, so one `GET /tenants/me` (with `X-Active-Tenant` set to the new `tenant_id`) shows `head_agent_id`; nothing sets it later. Provisioning is best-effort: if it failed the tenant still exists without one, and the client sets one up with `POST /agents` then `PATCH /tenants/me {head_agent_id}`. The 201 body does not carry `head_agent_id`.",
                 "tags": [
@@ -47227,6 +47269,7 @@
         "/api/v1/companies": {
             "get": {
                 "operationId": "listCompanies",
+                "x-capability": "initiatives",
                 "tags": [
                     "Companies"
                 ],
@@ -47339,6 +47382,7 @@
             },
             "post": {
                 "operationId": "createCompany",
+                "x-capability": "initiatives",
                 "tags": [
                     "Companies"
                 ],
@@ -47448,6 +47492,7 @@
             ],
             "get": {
                 "operationId": "getCompany",
+                "x-capability": "initiatives",
                 "tags": [
                     "Companies"
                 ],
@@ -47503,6 +47548,7 @@
             },
             "put": {
                 "operationId": "updateCompany",
+                "x-capability": "initiatives",
                 "tags": [
                     "Companies"
                 ],
@@ -47601,6 +47647,7 @@
             },
             "delete": {
                 "operationId": "deleteCompany",
+                "x-capability": "initiatives",
                 "tags": [
                     "Companies"
                 ],
@@ -61753,6 +61800,7 @@
         "/api/v1/companies/{companyId}/pause": {
             "post": {
                 "operationId": "pauseCompany",
+                "x-capability": "initiatives",
                 "tags": [
                     "Companies"
                 ],
@@ -61879,6 +61927,7 @@
         "/api/v1/companies/{companyId}/resume": {
             "post": {
                 "operationId": "resumeCompany",
+                "x-capability": "initiatives",
                 "tags": [
                     "Companies"
                 ],
@@ -61970,6 +62019,7 @@
         "/api/v1/companies/{companyId}/objectives": {
             "get": {
                 "operationId": "getCompanyObjectives",
+                "x-capability": "initiatives",
                 "tags": [
                     "Companies"
                 ],
@@ -62052,6 +62102,7 @@
         "/api/v1/companies/{companyId}/activity": {
             "get": {
                 "operationId": "getCompanyActivity",
+                "x-capability": "initiatives",
                 "tags": [
                     "Companies"
                 ],
@@ -63206,6 +63257,7 @@
         "/api/v1/companies/{companyId}/events": {
             "get": {
                 "operationId": "streamCompanyEvents",
+                "x-capability": "initiatives",
                 "tags": [
                     "Companies"
                 ],
@@ -63284,6 +63336,7 @@
         "/api/v1/companies/{companyId}/budget": {
             "get": {
                 "operationId": "getCompanyBudget",
+                "x-capability": "initiatives",
                 "tags": [
                     "Companies"
                 ],
@@ -72596,7 +72649,7 @@
                                             "items": {
                                                 "type": "string"
                                             },
-                                            "description": "What this build can do, by name — gate a feature on it instead of on a 404. Names are added when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`, `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`, `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`, `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`, `company_import`, `company_versions` (since 2026-10-12)."
+                                            "description": "What this build can do, by name — gate a feature on it instead of on a 404. Names are added when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`, `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`, `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`, `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`, `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates `POST /tenants/me/company/restore` and the answer existed only in prose no client can read: `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name); `initiative_pause` = pausing an initiative; `mission_review` = objectives with `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` = `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`; `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`; `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` = `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`; `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`); `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` = `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET /company/versions` AND `POST /company/restore` — there is deliberately no separate `company_restore`, since a snapshot and the rollback to it ship together."
                                         }
                                     }
                                 }
@@ -107179,6 +107232,7 @@
         "/api/v1/analytics/inbox": {
             "get": {
                 "operationId": "getTenantInbox",
+                "x-capability": "mission_analytics",
                 "summary": "Runs waiting on a human",
                 "tags": [
                     "Analytics"
@@ -113288,6 +113342,7 @@
         "/api/v1/initiatives": {
             "get": {
                 "operationId": "listInitiatives",
+                "x-capability": "initiatives",
                 "tags": [
                     "Initiatives"
                 ],
@@ -113399,6 +113454,7 @@
             },
             "post": {
                 "operationId": "createInitiative",
+                "x-capability": "initiatives",
                 "tags": [
                     "Initiatives"
                 ],
@@ -113507,6 +113563,7 @@
             ],
             "get": {
                 "operationId": "getInitiative",
+                "x-capability": "initiatives",
                 "tags": [
                     "Initiatives"
                 ],
@@ -113561,6 +113618,7 @@
             },
             "put": {
                 "operationId": "updateInitiative",
+                "x-capability": "initiatives",
                 "tags": [
                     "Initiatives"
                 ],
@@ -113658,6 +113716,7 @@
             },
             "delete": {
                 "operationId": "deleteInitiative",
+                "x-capability": "initiatives",
                 "tags": [
                     "Initiatives"
                 ],
@@ -113724,6 +113783,7 @@
         "/api/v1/initiatives/{initiativeId}/pause": {
             "post": {
                 "operationId": "pauseInitiative",
+                "x-capability": "initiatives",
                 "tags": [
                     "Initiatives"
                 ],
@@ -113849,6 +113909,7 @@
         "/api/v1/initiatives/{initiativeId}/resume": {
             "post": {
                 "operationId": "resumeInitiative",
+                "x-capability": "initiatives",
                 "tags": [
                     "Initiatives"
                 ],
@@ -113939,6 +114000,7 @@
         "/api/v1/initiatives/{initiativeId}/objectives": {
             "get": {
                 "operationId": "getInitiativeObjectives",
+                "x-capability": "initiatives",
                 "tags": [
                     "Initiatives"
                 ],
@@ -114020,6 +114082,7 @@
         "/api/v1/initiatives/{initiativeId}/activity": {
             "get": {
                 "operationId": "getInitiativeActivity",
+                "x-capability": "initiatives",
                 "tags": [
                     "Initiatives"
                 ],
@@ -114095,6 +114158,7 @@
         "/api/v1/initiatives/{initiativeId}/events": {
             "get": {
                 "operationId": "streamInitiativeEvents",
+                "x-capability": "initiatives",
                 "tags": [
                     "Initiatives"
                 ],
@@ -114172,6 +114236,7 @@
         "/api/v1/initiatives/{initiativeId}/budget": {
             "get": {
                 "operationId": "getInitiativeBudget",
+                "x-capability": "initiatives",
                 "tags": [
                     "Initiatives"
                 ],

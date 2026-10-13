@@ -661,7 +661,14 @@ test('parses the production document into the expected shape', () => {
   // of the array changes with them. Everything else is the template catalogue
   // and the export/import shapes, the plan-fit answer and the mission
   // performance report.
-  assert.equal(spec.types.length, 2008);
+  // 2008 -> 2014 on 2026-10-13 (build 199b0863): +6, none removed. The plan-fit
+  // body moved into its own component, `TenantPlanFit`, so `GET /tenants/me/fit`
+  // and the template fit now share it — and the template fit's eleven keys,
+  // which the document had left to `additionalProperties`, are typed instead of
+  // `unknown`. The names it hoists change with it (`GetTenantPlanFitResponse*`
+  // -> `TenantPlanFit*`), which is a rename inside an unreleased batch: no
+  // consumer of 0.10.0 ever saw those names.
+  assert.equal(spec.types.length, 2014);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);

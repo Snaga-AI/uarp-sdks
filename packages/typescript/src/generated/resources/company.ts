@@ -17,7 +17,6 @@ import type {
   FitCompanyTemplateResponse,
   GetTenantBlueprintResponse,
   GetTenantCompanyOverviewResponse,
-  GetTenantPlanFitResponse,
   GetTenantReadinessResponse,
   LaunchTenantCompanyRequest,
   ListCompanyTemplatesResponse,
@@ -30,6 +29,7 @@ import type {
   RejectTenantProposalRequest,
   RestoreTenantCompanyVersionRequest,
   StartTenantTestRunRequest,
+  TenantPlanFit,
   UpdateTenantCompanyRequest,
 } from '../models.js';
 
@@ -276,7 +276,7 @@ export class CompanyResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  getTenantPlanFit(options?: RequestOptions): Promise<GetTenantPlanFitResponse> {
+  getTenantPlanFit(options?: RequestOptions): Promise<TenantPlanFit> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/tenants/me/fit',

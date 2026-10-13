@@ -8,23 +8,55 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
-Build `435ca06c`, canonical digest `94a26fa577b7a4a8`. Two platform builds are
-collected here: `ef5b646d` (2026-10-12) and `435ca06c` (2026-10-13). Against
-0.10.0: 585 → 622 paths, 789 → 832 operations (+43, −0), 382 → 410 schemas
-(+28, −0), 50 → 52 groups, 1845 → 2008 named types (+165, −2). The two that
-leave are named below; everything else is additive, and no field becomes
-required. The eleven `/companies` operations now warn at compile time.
+Build `199b0863`, canonical digest `0e288bf8e8934686`. Three platform builds are
+collected here: `ef5b646d` (2026-10-12), `435ca06c` and `199b0863` (2026-10-13).
+Against 0.10.0: 585 → 622 paths, 789 → 832 operations (+43, −0), 382 → 411
+schemas (+29, −0), 50 → 52 groups, 1845 → 2014 named types (+169, −0).
 
-**The minor moves** because `CompanyProposal.operations` changes type (below):
-the document stops inlining the element and `$ref`s a named one, so the type
-every SDK generated for it changes, and two generated names leave. Under 1.0 a
-caret does not cross the minor, so `^0.10` keeps building against 0.10.x.
+**No exported name leaves.** Measured against the released 0.10.0 rather than
+against the intermediate drafts: 192 names are added, none is removed, so every
+import that compiled against 0.10.0 still resolves. The eleven `/companies`
+operations warn at compile time rather than break.
+
+**The minor moves** because two types that 0.10.0 already exported change shape
+under their own names — `ResourceUsageEntry.limit` becomes nullable and
+`RunEventType` renames seven values (both below). Under 1.0 a caret does not
+cross the minor, so `^0.10` keeps building against 0.10.x.
+
+### Changed — `ResourceUsageEntry.limit` is nullable
+
+The field is still required and its type is now `number | null`. **Null is not
+zero**: it means the plan defines no limit for that resource, and `over_by` is
+0 beside it, while `limit: 0` means the plan allows none. A client that printed
+the two the same way told a founder "3 of 0" about a resource with no ceiling
+(macOS lane, measured 2026-10-12). In TypeScript a comparison against `limit`
+now needs the null case handled; in Rust, Swift, Kotlin and Ada the field goes
+from a plain number to an optional one. That is the break, it is one field, and
+it is the reason this release is not a patch.
+
+### Changed — `RunEventType` renames seven values
+
+Seven `company.*` event types become `initiative.*`: `tick_start`, `tick_end`,
+`paused`, `resumed`, `budget_updated`, `escalation`, `objective_updated`. A
+consumer comparing an emitted `RunEvent.type` against the old literals stops
+matching — in TypeScript at compile time, which is the good case.
+
+Worth knowing for anyone filtering a stream: the `types` query parameter of
+`streamActivityFeed` is a free-form string, not this enum, so a filter is an
+exact match with nothing checking it. `types=company.tick_start` does not fail;
+it returns an empty stream, which reads exactly like "nothing happened".
+`FeedEntryEventType` and `WebhookDeliveryAttemptEventType` keep the old
+spellings and gain the new ones, so historical deliveries still decode.
 
 ### Changed — `CompanyProposal.operations` is a discriminated union
 
+This one is internal to the collected drafts and invisible to 0.10.0, which
+never had the Company Builder: it is recorded because it moved the generated
+surface between `ef5b646d` and `435ca06c`.
+
 Nothing in the document is renamed. In `ef5b646d` the array's items were an
 inline object whose only property was `op`; in `435ca06c` they are a `$ref` to
-`ProposalOperation`, a schema this build adds — a `oneOf` of eleven
+`ProposalOperation`, a schema that build adds — a `oneOf` of eleven
 `ProposalOp*` variants (`add_agent`, `update_agent`, `remove_agent`,
 `set_agent_schedule`, `set_approval_policy`, `add_squad`, `set_squad_members`,
 `update_company`, `set_budget`, `add_mission_schedule`,
@@ -69,16 +101,17 @@ target is generator work nobody has commissioned.
 - `getTenantPlanFit` (`GET /tenants/me/fit`): whether this plan fits a stated
   run profile, per check, with `GetTenantPlanFitResponseCheckStatus` and
   `...CheckCode` saying what failed and `FitRange` giving the band a check
-  compares against.
+  compares against. In build `199b0863` this body became the shared component
+  `TenantPlanFit`, which the template fit `$ref`s too; the method returns that
+  type now. Both names are inside this unreleased batch, so nothing a 0.10.0
+  consumer imported moves.
+- `POST /company/import` bounds `schedules` and `mission_schedules` at 50
+  items each, where the document had said 5 242 880 — a byte ceiling wearing a
+  count. The export measured at 244 384 bytes for 13 agents, so a 50-agent
+  manifest lands near 1 MB and fits one response.
 
 ### Added — response fields, both builds
 
-- `ResourceUsageEntry.limit` is now `number | null`, on `count`/`limit`/
-  `over_by` entries from the usage surface. **Null is not zero**: it means the
-  plan defines no limit for that resource, and `over_by` is 0 beside it, while
-  `limit: 0` means the plan allows none. A client that printed the two the same
-  way told a founder "3 of 0" about a resource with no ceiling (macOS lane,
-  measured 2026-10-12). The field is still required and still may be null.
 - `truncated` on the answers of `listTenantCompanyChanges` and
   `listTenantCompanyVersions`: the list was cut at `limit`.
 - `schedules_removed` on `DELETE /squads/{squadId}`: deleting a squad takes its
@@ -86,6 +119,15 @@ target is generator work nobody has commissioned.
 - `proposals` and `counts.proposal` on the inbox (`getTenantInbox`).
 - `"revised"` in `Run.approvals[].decision`: the person declined the action and
   sent the run on with feedback, instead of `approved` or `rejected`.
+- `initiative_id` on `Agent`, `AgentUpdate` and `Company`: which initiative an
+  agent belongs to, now that `/initiatives` is the canonical surface.
+- `review_required`, `review`, `revisions` and `sources` on objectives, so a
+  mission result waiting on a person's verdict is readable from the object.
+- `proposal_error` on `CreateMyTenantResponse`, and `template_id` with `inputs`
+  on `CreateMyTenantRequest`: creating a company from a template. `x-capability`
+  now marks 49 operations, and the `capabilities` list in `getHealth` says what
+  each name covers — including that `company_versions` gates
+  `POST /company/restore` — so a client can gate a screen without inferring.
 
 ### Added — the Company Builder (`company` group)
 
@@ -145,15 +187,20 @@ really does mean "no limit defined" rather than zero.
 The three writes were not run: a proposal is still a row in a tenant, so they
 wait, and they will not be run on `e2e-canon`.
 
-Reading turned up one document defect, which is API's to fix and not ours to
-work around: `fitCompanyTemplate`'s 200 declares `target`, `template` and
-`additionalProperties: true`. The body carries thirteen keys — those two plus
-exactly the eleven of `GET /tenants/me/fit` — so nothing is wrong on the wire,
-but only the *description* says so, and the generated `FitCompanyTemplateResponse`
-is therefore `{target?, template?, [key: string]: unknown}`: a caller reading
-`fits` or `checks` gets `unknown` and has to cast. API is replacing the schema
-with an `allOf` of the fit body and those two fields; regenerating when it
-lands types the eleven properly.
+Reading turned up one document defect, which API fixed in build `199b0863`
+rather than leaving it to be worked around: `fitCompanyTemplate`'s 200 declared
+`target`, `template` and `additionalProperties: true`, so the generated
+`FitCompanyTemplateResponse` was `{target?, template?, [key: string]: unknown}`
+and a caller reading `fits` or `checks` got `unknown` and had to cast. The
+captured body said what the shape really was — thirteen keys, byte-for-byte the
+eleven of `GET /tenants/me/fit` plus those two — and the fix is exactly that:
+the plan-fit body moved into a component, `TenantPlanFit`, that both operations
+now `$ref`, and this build's `FitCompanyTemplateResponse` declares all thirteen
+fields with `target` and `template` required.
+
+Verified after the fix, against the same captured bytes and the regenerated
+types: 0 mismatches, and the fit-template response now reports 13 keys against
+13 declared fields rather than 2.
 
 ### Not verified on the wire
 

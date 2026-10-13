@@ -10986,7 +10986,8 @@ public struct CompanyImportRequest: Codable, Hashable, Sendable {
     /// A spend cap to set (`limit_usd`, `period`).
     public var budget: JSONObject?
     /// Named only — never imported, since a manifest carries no credentials. The proposal's
-    /// `rationale` lists what to connect.
+    /// `rationale` lists what to connect. The `maxItems` on this field is the 10 MiB body cap, not
+    /// an item count: this build enforces no limit on how many integrations a manifest names.
     public var integrations: [JSONObject]?
 
     public init(schemaVersion: ExportDataExplorerIncludeSensitive, company: JSONObject? = nil, agents: [JSONObject]? = nil, departments: [JSONObject]? = nil, schedules: [JSONObject]? = nil, missionSchedules: [JSONObject]? = nil, budget: JSONObject? = nil, integrations: [JSONObject]? = nil) {
@@ -18811,61 +18812,197 @@ public struct FitCompanyTemplateRequestTarget: RawRepresentable, Codable, Hashab
     public static let knownValues: [FitCompanyTemplateRequestTarget] = [.new, .current]
 }
 
-/// The `GET /tenants/me/fit` body plus `target` and `template`.
+/// `FitCompanyTemplateResponse` model.
 public struct FitCompanyTemplateResponse: Codable, Hashable, Sendable {
-    public var target: FitCompanyTemplateRequestTarget?
-    public var template: FitCompanyTemplateResponseTemplate?
-    /// Properties the server returned that this SDK does not model.
-    public var additionalProperties: [String: JSONValue]
+    public var plan: String
+    public var fits: Bool
+    public var windowDays: Int
+    public var runProfile: FitCompanyTemplateResponseRunProfile
+    public var needs: FitCompanyTemplateResponseNeeds
+    public var schedules: [FitCompanyTemplateResponseSchedule]
+    public var checks: [FitCompanyTemplateResponseCheck]
+    public var monthlyCostUsd: FitRange
+    /// The spend cap per month, or null when none is set.
+    public var budgetLimitUsd: Double?
+    public var assumptions: [FitCompanyTemplateResponseAssumption]
+    public var suggestions: [FitCompanyTemplateResponseSuggestion]
+    public var target: FitCompanyTemplateRequestTarget
+    public var template: FitCompanyTemplateResponseTemplate
 
-    public init(target: FitCompanyTemplateRequestTarget? = nil, template: FitCompanyTemplateResponseTemplate? = nil, additionalProperties: [String: JSONValue] = [:]) {
+    public init(plan: String, fits: Bool, windowDays: Int, runProfile: FitCompanyTemplateResponseRunProfile, needs: FitCompanyTemplateResponseNeeds, schedules: [FitCompanyTemplateResponseSchedule], checks: [FitCompanyTemplateResponseCheck], monthlyCostUsd: FitRange, budgetLimitUsd: Double? = nil, assumptions: [FitCompanyTemplateResponseAssumption], suggestions: [FitCompanyTemplateResponseSuggestion], target: FitCompanyTemplateRequestTarget, template: FitCompanyTemplateResponseTemplate) {
+        self.plan = plan
+        self.fits = fits
+        self.windowDays = windowDays
+        self.runProfile = runProfile
+        self.needs = needs
+        self.schedules = schedules
+        self.checks = checks
+        self.monthlyCostUsd = monthlyCostUsd
+        self.budgetLimitUsd = budgetLimitUsd
+        self.assumptions = assumptions
+        self.suggestions = suggestions
         self.target = target
         self.template = template
-        self.additionalProperties = additionalProperties
     }
 
     private enum CodingKeys: String, CodingKey {
+        case plan = "plan"
+        case fits = "fits"
+        case windowDays = "window_days"
+        case runProfile = "run_profile"
+        case needs = "needs"
+        case schedules = "schedules"
+        case checks = "checks"
+        case monthlyCostUsd = "monthly_cost_usd"
+        case budgetLimitUsd = "budget_limit_usd"
+        case assumptions = "assumptions"
+        case suggestions = "suggestions"
         case target = "target"
         case template = "template"
     }
+}
 
-    private struct DynamicKey: CodingKey {
-        let stringValue: String
-        var intValue: Int? { nil }
-        init(stringValue: String) { self.stringValue = stringValue }
-        init?(intValue: Int) { nil }
+/// `FitCompanyTemplateResponseAssumption` model.
+public struct FitCompanyTemplateResponseAssumption: Codable, Hashable, Sendable {
+    public var code: String?
+    public var text: String?
+
+    public init(code: String? = nil, text: String? = nil) {
+        self.code = code
+        self.text = text
     }
 
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.target = try container.decodeIfPresent(FitCompanyTemplateRequestTarget.self, forKey: .target)
-        self.template = try container.decodeIfPresent(FitCompanyTemplateResponseTemplate.self, forKey: .template)
-        let dynamic = try decoder.container(keyedBy: DynamicKey.self)
-        let known: Set<String> = ["target", "template"]
-        var extra: [String: JSONValue] = [:]
-        for key in dynamic.allKeys where !known.contains(key.stringValue) {
-            extra[key.stringValue] = try dynamic.decode(JSONValue.self, forKey: key)
-        }
-        self.additionalProperties = extra
+    private enum CodingKeys: String, CodingKey {
+        case code = "code"
+        case text = "text"
+    }
+}
+
+/// `FitCompanyTemplateResponseCheck` model.
+public struct FitCompanyTemplateResponseCheck: Codable, Hashable, Sendable {
+    public var code: GetTenantPlanFitResponseCheckCode
+    public var needed: Double
+    public var limit: Double?
+    public var status: GetTenantPlanFitResponseCheckStatus
+
+    public init(code: GetTenantPlanFitResponseCheckCode, needed: Double, limit: Double? = nil, status: GetTenantPlanFitResponseCheckStatus) {
+        self.code = code
+        self.needed = needed
+        self.limit = limit
+        self.status = status
     }
 
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(target, forKey: .target)
-        try container.encodeIfPresent(template, forKey: .template)
-        var dynamic = encoder.container(keyedBy: DynamicKey.self)
-        for (key, value) in additionalProperties {
-            try dynamic.encode(value, forKey: DynamicKey(stringValue: key))
-        }
+    private enum CodingKeys: String, CodingKey {
+        case code = "code"
+        case needed = "needed"
+        case limit = "limit"
+        case status = "status"
+    }
+}
+
+/// `FitCompanyTemplateResponseNeeds` model.
+public struct FitCompanyTemplateResponseNeeds: Codable, Hashable, Sendable {
+    public var agents: Int?
+    public var squads: Int?
+    public var runsPerMonth: FitRange?
+    public var tokensPerMonth: FitRange?
+    public var toolCallsPerMonth: FitRange?
+
+    public init(agents: Int? = nil, squads: Int? = nil, runsPerMonth: FitRange? = nil, tokensPerMonth: FitRange? = nil, toolCallsPerMonth: FitRange? = nil) {
+        self.agents = agents
+        self.squads = squads
+        self.runsPerMonth = runsPerMonth
+        self.tokensPerMonth = tokensPerMonth
+        self.toolCallsPerMonth = toolCallsPerMonth
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agents = "agents"
+        case squads = "squads"
+        case runsPerMonth = "runs_per_month"
+        case tokensPerMonth = "tokens_per_month"
+        case toolCallsPerMonth = "tool_calls_per_month"
+    }
+}
+
+/// `FitCompanyTemplateResponseRunProfile` model.
+public struct FitCompanyTemplateResponseRunProfile: Codable, Hashable, Sendable {
+    public var tokens: FitRange?
+    public var costUsd: FitRange?
+    public var toolCalls: FitRange?
+    public var sampleRuns: Int?
+    public var source: GetTenantPlanFitResponseRunProfileSource?
+
+    public init(tokens: FitRange? = nil, costUsd: FitRange? = nil, toolCalls: FitRange? = nil, sampleRuns: Int? = nil, source: GetTenantPlanFitResponseRunProfileSource? = nil) {
+        self.tokens = tokens
+        self.costUsd = costUsd
+        self.toolCalls = toolCalls
+        self.sampleRuns = sampleRuns
+        self.source = source
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tokens = "tokens"
+        case costUsd = "cost_usd"
+        case toolCalls = "tool_calls"
+        case sampleRuns = "sample_runs"
+        case source = "source"
+    }
+}
+
+/// `FitCompanyTemplateResponseSchedule` model.
+public struct FitCompanyTemplateResponseSchedule: Codable, Hashable, Sendable {
+    public var kind: GetTenantBlueprintResponseScheduleKind?
+    public var name: String?
+    public var cron: String?
+    public var timezone: String?
+    public var runsPerFire: Int?
+    public var firesPerMonth: Int?
+
+    public init(kind: GetTenantBlueprintResponseScheduleKind? = nil, name: String? = nil, cron: String? = nil, timezone: String? = nil, runsPerFire: Int? = nil, firesPerMonth: Int? = nil) {
+        self.kind = kind
+        self.name = name
+        self.cron = cron
+        self.timezone = timezone
+        self.runsPerFire = runsPerFire
+        self.firesPerMonth = firesPerMonth
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case name = "name"
+        case cron = "cron"
+        case timezone = "timezone"
+        case runsPerFire = "runs_per_fire"
+        case firesPerMonth = "fires_per_month"
+    }
+}
+
+/// `FitCompanyTemplateResponseSuggestion` model.
+public struct FitCompanyTemplateResponseSuggestion: Codable, Hashable, Sendable {
+    public var code: String?
+    public var message: String?
+    public var plan: String?
+
+    public init(code: String? = nil, message: String? = nil, plan: String? = nil) {
+        self.code = code
+        self.message = message
+        self.plan = plan
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case code = "code"
+        case message = "message"
+        case plan = "plan"
     }
 }
 
 /// `FitCompanyTemplateResponseTemplate` model.
 public struct FitCompanyTemplateResponseTemplate: Codable, Hashable, Sendable {
-    public var id: String?
-    public var version: String?
+    public var id: String
+    public var version: String
 
-    public init(id: String? = nil, version: String? = nil) {
+    public init(id: String, version: String) {
         self.id = id
         self.version = version
     }
@@ -20571,7 +20708,25 @@ public struct GetHealthResponse: Codable, Hashable, Sendable {
     /// `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
     /// `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
     /// `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-    /// `company_import`, `company_versions` (since 2026-10-12).
+    /// `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+    /// COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+    /// `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+    /// `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+    /// `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+    /// `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+    /// /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+    /// `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+    /// `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+    /// `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+    /// /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+    /// `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+    /// `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+    /// `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+    /// `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+    /// /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+    /// `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+    /// /company/versions` AND `POST /company/restore` — there is deliberately no separate
+    /// `company_restore`, since a snapshot and the rollback to it ship together.
     public var capabilities: [String]?
     /// Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
     /// falls as they are picked up — but it is a queue depth, not a count of recoveries.
@@ -23216,88 +23371,6 @@ public struct GetTenantDomainHealthResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `GetTenantPlanFitResponse` model.
-public struct GetTenantPlanFitResponse: Codable, Hashable, Sendable {
-    public var plan: String
-    public var fits: Bool
-    public var windowDays: Int
-    public var runProfile: GetTenantPlanFitResponseRunProfile
-    public var needs: GetTenantPlanFitResponseNeeds
-    public var schedules: [GetTenantPlanFitResponseSchedule]
-    public var checks: [GetTenantPlanFitResponseCheck]
-    public var monthlyCostUsd: FitRange
-    /// The spend cap per month, or null when none is set.
-    public var budgetLimitUsd: Double?
-    public var assumptions: [GetTenantPlanFitResponseAssumption]
-    public var suggestions: [GetTenantPlanFitResponseSuggestion]
-
-    public init(plan: String, fits: Bool, windowDays: Int, runProfile: GetTenantPlanFitResponseRunProfile, needs: GetTenantPlanFitResponseNeeds, schedules: [GetTenantPlanFitResponseSchedule], checks: [GetTenantPlanFitResponseCheck], monthlyCostUsd: FitRange, budgetLimitUsd: Double? = nil, assumptions: [GetTenantPlanFitResponseAssumption], suggestions: [GetTenantPlanFitResponseSuggestion]) {
-        self.plan = plan
-        self.fits = fits
-        self.windowDays = windowDays
-        self.runProfile = runProfile
-        self.needs = needs
-        self.schedules = schedules
-        self.checks = checks
-        self.monthlyCostUsd = monthlyCostUsd
-        self.budgetLimitUsd = budgetLimitUsd
-        self.assumptions = assumptions
-        self.suggestions = suggestions
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case plan = "plan"
-        case fits = "fits"
-        case windowDays = "window_days"
-        case runProfile = "run_profile"
-        case needs = "needs"
-        case schedules = "schedules"
-        case checks = "checks"
-        case monthlyCostUsd = "monthly_cost_usd"
-        case budgetLimitUsd = "budget_limit_usd"
-        case assumptions = "assumptions"
-        case suggestions = "suggestions"
-    }
-}
-
-/// `GetTenantPlanFitResponseAssumption` model.
-public struct GetTenantPlanFitResponseAssumption: Codable, Hashable, Sendable {
-    public var code: String?
-    public var text: String?
-
-    public init(code: String? = nil, text: String? = nil) {
-        self.code = code
-        self.text = text
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case code = "code"
-        case text = "text"
-    }
-}
-
-/// `GetTenantPlanFitResponseCheck` model.
-public struct GetTenantPlanFitResponseCheck: Codable, Hashable, Sendable {
-    public var code: GetTenantPlanFitResponseCheckCode
-    public var needed: Double
-    public var limit: Double?
-    public var status: GetTenantPlanFitResponseCheckStatus
-
-    public init(code: GetTenantPlanFitResponseCheckCode, needed: Double, limit: Double? = nil, status: GetTenantPlanFitResponseCheckStatus) {
-        self.code = code
-        self.needed = needed
-        self.limit = limit
-        self.status = status
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case code = "code"
-        case needed = "needed"
-        case limit = "limit"
-        case status = "status"
-    }
-}
-
 /// `GetTenantPlanFitResponseCheckCode` values.
 ///
 /// Values the API adds later decode into this type unchanged, so a new
@@ -23349,56 +23422,6 @@ public struct GetTenantPlanFitResponseCheckStatus: RawRepresentable, Codable, Ha
     public static let knownValues: [GetTenantPlanFitResponseCheckStatus] = [.ok, .tight, .over]
 }
 
-/// `GetTenantPlanFitResponseNeeds` model.
-public struct GetTenantPlanFitResponseNeeds: Codable, Hashable, Sendable {
-    public var agents: Int?
-    public var squads: Int?
-    public var runsPerMonth: FitRange?
-    public var tokensPerMonth: FitRange?
-    public var toolCallsPerMonth: FitRange?
-
-    public init(agents: Int? = nil, squads: Int? = nil, runsPerMonth: FitRange? = nil, tokensPerMonth: FitRange? = nil, toolCallsPerMonth: FitRange? = nil) {
-        self.agents = agents
-        self.squads = squads
-        self.runsPerMonth = runsPerMonth
-        self.tokensPerMonth = tokensPerMonth
-        self.toolCallsPerMonth = toolCallsPerMonth
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case agents = "agents"
-        case squads = "squads"
-        case runsPerMonth = "runs_per_month"
-        case tokensPerMonth = "tokens_per_month"
-        case toolCallsPerMonth = "tool_calls_per_month"
-    }
-}
-
-/// `GetTenantPlanFitResponseRunProfile` model.
-public struct GetTenantPlanFitResponseRunProfile: Codable, Hashable, Sendable {
-    public var tokens: FitRange?
-    public var costUsd: FitRange?
-    public var toolCalls: FitRange?
-    public var sampleRuns: Int?
-    public var source: GetTenantPlanFitResponseRunProfileSource?
-
-    public init(tokens: FitRange? = nil, costUsd: FitRange? = nil, toolCalls: FitRange? = nil, sampleRuns: Int? = nil, source: GetTenantPlanFitResponseRunProfileSource? = nil) {
-        self.tokens = tokens
-        self.costUsd = costUsd
-        self.toolCalls = toolCalls
-        self.sampleRuns = sampleRuns
-        self.source = source
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case tokens = "tokens"
-        case costUsd = "cost_usd"
-        case toolCalls = "tool_calls"
-        case sampleRuns = "sample_runs"
-        case source = "source"
-    }
-}
-
 /// `GetTenantPlanFitResponseRunProfileSource` values.
 ///
 /// Values the API adds later decode into this type unchanged, so a new
@@ -23420,53 +23443,6 @@ public struct GetTenantPlanFitResponseRunProfileSource: RawRepresentable, Codabl
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [GetTenantPlanFitResponseRunProfileSource] = [.history, .`default`]
-}
-
-/// `GetTenantPlanFitResponseSchedule` model.
-public struct GetTenantPlanFitResponseSchedule: Codable, Hashable, Sendable {
-    public var kind: GetTenantBlueprintResponseScheduleKind?
-    public var name: String?
-    public var cron: String?
-    public var timezone: String?
-    public var runsPerFire: Int?
-    public var firesPerMonth: Int?
-
-    public init(kind: GetTenantBlueprintResponseScheduleKind? = nil, name: String? = nil, cron: String? = nil, timezone: String? = nil, runsPerFire: Int? = nil, firesPerMonth: Int? = nil) {
-        self.kind = kind
-        self.name = name
-        self.cron = cron
-        self.timezone = timezone
-        self.runsPerFire = runsPerFire
-        self.firesPerMonth = firesPerMonth
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case kind = "kind"
-        case name = "name"
-        case cron = "cron"
-        case timezone = "timezone"
-        case runsPerFire = "runs_per_fire"
-        case firesPerMonth = "fires_per_month"
-    }
-}
-
-/// `GetTenantPlanFitResponseSuggestion` model.
-public struct GetTenantPlanFitResponseSuggestion: Codable, Hashable, Sendable {
-    public var code: String?
-    public var message: String?
-    public var plan: String?
-
-    public init(code: String? = nil, message: String? = nil, plan: String? = nil) {
-        self.code = code
-        self.message = message
-        self.plan = plan
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case code = "code"
-        case message = "message"
-        case plan = "plan"
-    }
 }
 
 /// `GetTenantReadinessResponse` model.
@@ -23999,7 +23975,25 @@ public struct HealthCheckV1aliasResponse: Codable, Hashable, Sendable {
     /// `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
     /// `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
     /// `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-    /// `company_import`, `company_versions` (since 2026-10-12).
+    /// `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+    /// COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+    /// `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+    /// `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+    /// `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+    /// `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+    /// /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+    /// `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+    /// `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+    /// `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+    /// /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+    /// `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+    /// `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+    /// `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+    /// `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+    /// /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+    /// `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+    /// /company/versions` AND `POST /company/restore` — there is deliberately no separate
+    /// `company_restore`, since a snapshot and the rollback to it ship together.
     public var capabilities: [String]?
 
     public init(status: GetHealthResponseStatus? = nil, timestamp: String? = nil, kvConnected: Bool? = nil, uptimeSeconds: Double? = nil, version: String? = nil, buildSha: String? = nil, buildTime: String? = nil, pendingResumes: Int? = nil, runsQueued: Int? = nil, capabilities: [String]? = nil) {
@@ -45237,6 +45231,185 @@ public struct TenantOverviewUsage: Codable, Hashable, Sendable {
         case tokensUsed = "tokens_used"
         case runsUsed = "runs_used"
         case costMtdUsd = "cost_mtd_usd"
+    }
+}
+
+/// `TenantPlanFit` model.
+public struct TenantPlanFit: Codable, Hashable, Sendable {
+    public var plan: String
+    public var fits: Bool
+    public var windowDays: Int
+    public var runProfile: TenantPlanFitRunProfile
+    public var needs: TenantPlanFitNeeds
+    public var schedules: [TenantPlanFitSchedule]
+    public var checks: [TenantPlanFitCheck]
+    public var monthlyCostUsd: FitRange
+    /// The spend cap per month, or null when none is set.
+    public var budgetLimitUsd: Double?
+    public var assumptions: [TenantPlanFitAssumption]
+    public var suggestions: [TenantPlanFitSuggestion]
+
+    public init(plan: String, fits: Bool, windowDays: Int, runProfile: TenantPlanFitRunProfile, needs: TenantPlanFitNeeds, schedules: [TenantPlanFitSchedule], checks: [TenantPlanFitCheck], monthlyCostUsd: FitRange, budgetLimitUsd: Double? = nil, assumptions: [TenantPlanFitAssumption], suggestions: [TenantPlanFitSuggestion]) {
+        self.plan = plan
+        self.fits = fits
+        self.windowDays = windowDays
+        self.runProfile = runProfile
+        self.needs = needs
+        self.schedules = schedules
+        self.checks = checks
+        self.monthlyCostUsd = monthlyCostUsd
+        self.budgetLimitUsd = budgetLimitUsd
+        self.assumptions = assumptions
+        self.suggestions = suggestions
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case plan = "plan"
+        case fits = "fits"
+        case windowDays = "window_days"
+        case runProfile = "run_profile"
+        case needs = "needs"
+        case schedules = "schedules"
+        case checks = "checks"
+        case monthlyCostUsd = "monthly_cost_usd"
+        case budgetLimitUsd = "budget_limit_usd"
+        case assumptions = "assumptions"
+        case suggestions = "suggestions"
+    }
+}
+
+/// `TenantPlanFitAssumption` model.
+public struct TenantPlanFitAssumption: Codable, Hashable, Sendable {
+    public var code: String?
+    public var text: String?
+
+    public init(code: String? = nil, text: String? = nil) {
+        self.code = code
+        self.text = text
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case code = "code"
+        case text = "text"
+    }
+}
+
+/// `TenantPlanFitCheck` model.
+public struct TenantPlanFitCheck: Codable, Hashable, Sendable {
+    public var code: GetTenantPlanFitResponseCheckCode
+    public var needed: Double
+    public var limit: Double?
+    public var status: GetTenantPlanFitResponseCheckStatus
+
+    public init(code: GetTenantPlanFitResponseCheckCode, needed: Double, limit: Double? = nil, status: GetTenantPlanFitResponseCheckStatus) {
+        self.code = code
+        self.needed = needed
+        self.limit = limit
+        self.status = status
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case code = "code"
+        case needed = "needed"
+        case limit = "limit"
+        case status = "status"
+    }
+}
+
+/// `TenantPlanFitNeeds` model.
+public struct TenantPlanFitNeeds: Codable, Hashable, Sendable {
+    public var agents: Int?
+    public var squads: Int?
+    public var runsPerMonth: FitRange?
+    public var tokensPerMonth: FitRange?
+    public var toolCallsPerMonth: FitRange?
+
+    public init(agents: Int? = nil, squads: Int? = nil, runsPerMonth: FitRange? = nil, tokensPerMonth: FitRange? = nil, toolCallsPerMonth: FitRange? = nil) {
+        self.agents = agents
+        self.squads = squads
+        self.runsPerMonth = runsPerMonth
+        self.tokensPerMonth = tokensPerMonth
+        self.toolCallsPerMonth = toolCallsPerMonth
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agents = "agents"
+        case squads = "squads"
+        case runsPerMonth = "runs_per_month"
+        case tokensPerMonth = "tokens_per_month"
+        case toolCallsPerMonth = "tool_calls_per_month"
+    }
+}
+
+/// `TenantPlanFitRunProfile` model.
+public struct TenantPlanFitRunProfile: Codable, Hashable, Sendable {
+    public var tokens: FitRange?
+    public var costUsd: FitRange?
+    public var toolCalls: FitRange?
+    public var sampleRuns: Int?
+    public var source: GetTenantPlanFitResponseRunProfileSource?
+
+    public init(tokens: FitRange? = nil, costUsd: FitRange? = nil, toolCalls: FitRange? = nil, sampleRuns: Int? = nil, source: GetTenantPlanFitResponseRunProfileSource? = nil) {
+        self.tokens = tokens
+        self.costUsd = costUsd
+        self.toolCalls = toolCalls
+        self.sampleRuns = sampleRuns
+        self.source = source
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tokens = "tokens"
+        case costUsd = "cost_usd"
+        case toolCalls = "tool_calls"
+        case sampleRuns = "sample_runs"
+        case source = "source"
+    }
+}
+
+/// `TenantPlanFitSchedule` model.
+public struct TenantPlanFitSchedule: Codable, Hashable, Sendable {
+    public var kind: GetTenantBlueprintResponseScheduleKind?
+    public var name: String?
+    public var cron: String?
+    public var timezone: String?
+    public var runsPerFire: Int?
+    public var firesPerMonth: Int?
+
+    public init(kind: GetTenantBlueprintResponseScheduleKind? = nil, name: String? = nil, cron: String? = nil, timezone: String? = nil, runsPerFire: Int? = nil, firesPerMonth: Int? = nil) {
+        self.kind = kind
+        self.name = name
+        self.cron = cron
+        self.timezone = timezone
+        self.runsPerFire = runsPerFire
+        self.firesPerMonth = firesPerMonth
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case name = "name"
+        case cron = "cron"
+        case timezone = "timezone"
+        case runsPerFire = "runs_per_fire"
+        case firesPerMonth = "fires_per_month"
+    }
+}
+
+/// `TenantPlanFitSuggestion` model.
+public struct TenantPlanFitSuggestion: Codable, Hashable, Sendable {
+    public var code: String?
+    public var message: String?
+    public var plan: String?
+
+    public init(code: String? = nil, message: String? = nil, plan: String? = nil) {
+        self.code = code
+        self.message = message
+        self.plan = plan
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case code = "code"
+        case message = "message"
+        case plan = "plan"
     }
 }
 

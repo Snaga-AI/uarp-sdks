@@ -4578,7 +4578,8 @@ export interface CompanyImportRequest {
   budget?: JsonObject | null;
   /**
    * Named only — never imported, since a manifest carries no credentials. The proposal's
-   * `rationale` lists what to connect.
+   * `rationale` lists what to connect. The `maxItems` on this field is the 10 MiB body cap, not
+   * an item count: this build enforces no limit on how many integrations a manifest names.
    */
   integrations?: JsonObject[];
 }
@@ -7751,21 +7752,71 @@ export type FitCompanyTemplateRequestTarget = 'new' | 'current';
 
 export const FIT_COMPANY_TEMPLATE_REQUEST_TARGET_VALUES = ['new', 'current'] as const;
 
-/**
- * The `GET /tenants/me/fit` body plus `target` and `template`.
- */
 export interface FitCompanyTemplateResponse {
-  target?: FitCompanyTemplateRequestTarget;
-  template?: FitCompanyTemplateResponseTemplate;
+  plan: string;
+  fits: boolean;
+  window_days: number;
+  run_profile: FitCompanyTemplateResponseRunProfile;
+  needs: FitCompanyTemplateResponseNeeds;
+  schedules: FitCompanyTemplateResponseSchedule[];
+  checks: FitCompanyTemplateResponseCheck[];
+  monthly_cost_usd: FitRange;
   /**
-   * Additional free-form properties (`JsonValue` on the wire).
+   * The spend cap per month, or null when none is set.
    */
-  [key: string]: unknown;
+  budget_limit_usd: number | null;
+  assumptions: FitCompanyTemplateResponseAssumption[];
+  suggestions: FitCompanyTemplateResponseSuggestion[];
+  target: FitCompanyTemplateRequestTarget;
+  template: FitCompanyTemplateResponseTemplate;
+}
+
+export interface FitCompanyTemplateResponseAssumption {
+  code?: string;
+  text?: string;
+}
+
+export interface FitCompanyTemplateResponseCheck {
+  code: GetTenantPlanFitResponseCheckCode;
+  needed: number;
+  limit: number | null;
+  status: GetTenantPlanFitResponseCheckStatus;
+}
+
+export interface FitCompanyTemplateResponseNeeds {
+  agents?: number;
+  squads?: number;
+  runs_per_month?: FitRange;
+  tokens_per_month?: FitRange;
+  tool_calls_per_month?: FitRange;
+}
+
+export interface FitCompanyTemplateResponseRunProfile {
+  tokens?: FitRange;
+  cost_usd?: FitRange;
+  tool_calls?: FitRange;
+  sample_runs?: number;
+  source?: GetTenantPlanFitResponseRunProfileSource;
+}
+
+export interface FitCompanyTemplateResponseSchedule {
+  kind?: GetTenantBlueprintResponseScheduleKind;
+  name?: string;
+  cron?: string;
+  timezone?: string | null;
+  runs_per_fire?: number;
+  fires_per_month?: number | null;
+}
+
+export interface FitCompanyTemplateResponseSuggestion {
+  code?: string;
+  message?: string;
+  plan?: string;
 }
 
 export interface FitCompanyTemplateResponseTemplate {
-  id?: string;
-  version?: string;
+  id: string;
+  version: string;
 }
 
 export interface FitRange {
@@ -8500,7 +8551,25 @@ export interface GetHealthResponse {
    * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
    * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
    * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-   * `company_import`, `company_versions` (since 2026-10-12).
+   * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+   * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+   * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+   * `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+   * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+   * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+   * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+   * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+   * `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+   * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+   * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+   * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+   * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+   * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+   * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+   * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+   * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+   * /company/versions` AND `POST /company/restore` — there is deliberately no separate
+   * `company_restore`, since a snapshot and the rollback to it ship together.
    */
   capabilities?: string[];
   /**
@@ -9534,35 +9603,6 @@ export interface GetTenantDomainHealthResponse {
   cert?: DomainCertLifecycle;
 }
 
-export interface GetTenantPlanFitResponse {
-  plan: string;
-  fits: boolean;
-  window_days: number;
-  run_profile: GetTenantPlanFitResponseRunProfile;
-  needs: GetTenantPlanFitResponseNeeds;
-  schedules: GetTenantPlanFitResponseSchedule[];
-  checks: GetTenantPlanFitResponseCheck[];
-  monthly_cost_usd: FitRange;
-  /**
-   * The spend cap per month, or null when none is set.
-   */
-  budget_limit_usd: number | null;
-  assumptions: GetTenantPlanFitResponseAssumption[];
-  suggestions: GetTenantPlanFitResponseSuggestion[];
-}
-
-export interface GetTenantPlanFitResponseAssumption {
-  code?: string;
-  text?: string;
-}
-
-export interface GetTenantPlanFitResponseCheck {
-  code: GetTenantPlanFitResponseCheckCode;
-  needed: number;
-  limit: number | null;
-  status: GetTenantPlanFitResponseCheckStatus;
-}
-
 export type GetTenantPlanFitResponseCheckCode = 'AGENTS' | 'SQUADS' | 'MONTHLY_RUNS' | 'MONTHLY_TOKENS' | 'MONTHLY_TOOL_CALLS' | 'BUDGET';
 
 export const GET_TENANT_PLAN_FIT_RESPONSE_CHECK_CODE_VALUES = ['AGENTS', 'SQUADS', 'MONTHLY_RUNS', 'MONTHLY_TOKENS', 'MONTHLY_TOOL_CALLS', 'BUDGET'] as const;
@@ -9571,40 +9611,9 @@ export type GetTenantPlanFitResponseCheckStatus = 'ok' | 'tight' | 'over';
 
 export const GET_TENANT_PLAN_FIT_RESPONSE_CHECK_STATUS_VALUES = ['ok', 'tight', 'over'] as const;
 
-export interface GetTenantPlanFitResponseNeeds {
-  agents?: number;
-  squads?: number;
-  runs_per_month?: FitRange;
-  tokens_per_month?: FitRange;
-  tool_calls_per_month?: FitRange;
-}
-
-export interface GetTenantPlanFitResponseRunProfile {
-  tokens?: FitRange;
-  cost_usd?: FitRange;
-  tool_calls?: FitRange;
-  sample_runs?: number;
-  source?: GetTenantPlanFitResponseRunProfileSource;
-}
-
 export type GetTenantPlanFitResponseRunProfileSource = 'history' | 'default';
 
 export const GET_TENANT_PLAN_FIT_RESPONSE_RUN_PROFILE_SOURCE_VALUES = ['history', 'default'] as const;
-
-export interface GetTenantPlanFitResponseSchedule {
-  kind?: GetTenantBlueprintResponseScheduleKind;
-  name?: string;
-  cron?: string;
-  timezone?: string | null;
-  runs_per_fire?: number;
-  fires_per_month?: number | null;
-}
-
-export interface GetTenantPlanFitResponseSuggestion {
-  code?: string;
-  message?: string;
-  plan?: string;
-}
 
 export interface GetTenantReadinessResponse {
   ready: boolean;
@@ -9811,7 +9820,25 @@ export interface HealthCheckV1aliasResponse {
    * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
    * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
    * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-   * `company_import`, `company_versions` (since 2026-10-12).
+   * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+   * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+   * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+   * `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+   * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+   * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+   * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+   * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+   * `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+   * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+   * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+   * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+   * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+   * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+   * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+   * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+   * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+   * /company/versions` AND `POST /company/restore` — there is deliberately no separate
+   * `company_restore`, since a snapshot and the rollback to it ship together.
    */
   capabilities?: string[];
 }
@@ -18859,6 +18886,66 @@ export interface TenantOverviewUsage {
   tokens_used: number;
   runs_used: number;
   cost_mtd_usd: number;
+}
+
+export interface TenantPlanFit {
+  plan: string;
+  fits: boolean;
+  window_days: number;
+  run_profile: TenantPlanFitRunProfile;
+  needs: TenantPlanFitNeeds;
+  schedules: TenantPlanFitSchedule[];
+  checks: TenantPlanFitCheck[];
+  monthly_cost_usd: FitRange;
+  /**
+   * The spend cap per month, or null when none is set.
+   */
+  budget_limit_usd: number | null;
+  assumptions: TenantPlanFitAssumption[];
+  suggestions: TenantPlanFitSuggestion[];
+}
+
+export interface TenantPlanFitAssumption {
+  code?: string;
+  text?: string;
+}
+
+export interface TenantPlanFitCheck {
+  code: GetTenantPlanFitResponseCheckCode;
+  needed: number;
+  limit: number | null;
+  status: GetTenantPlanFitResponseCheckStatus;
+}
+
+export interface TenantPlanFitNeeds {
+  agents?: number;
+  squads?: number;
+  runs_per_month?: FitRange;
+  tokens_per_month?: FitRange;
+  tool_calls_per_month?: FitRange;
+}
+
+export interface TenantPlanFitRunProfile {
+  tokens?: FitRange;
+  cost_usd?: FitRange;
+  tool_calls?: FitRange;
+  sample_runs?: number;
+  source?: GetTenantPlanFitResponseRunProfileSource;
+}
+
+export interface TenantPlanFitSchedule {
+  kind?: GetTenantBlueprintResponseScheduleKind;
+  name?: string;
+  cron?: string;
+  timezone?: string | null;
+  runs_per_fire?: number;
+  fires_per_month?: number | null;
+}
+
+export interface TenantPlanFitSuggestion {
+  code?: string;
+  message?: string;
+  plan?: string;
 }
 
 export interface TenantPublicSettings {

@@ -8090,7 +8090,8 @@ pub struct CompanyImportRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub budget: Option<serde_json::Map<String, serde_json::Value>>,
     /// Named only — never imported, since a manifest carries no credentials. The proposal's
-    /// `rationale` lists what to connect.
+    /// `rationale` lists what to connect. The `maxItems` on this field is the 10 MiB body cap, not
+    /// an item count: this build enforces no limit on how many integrations a manifest names.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub integrations: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
 }
@@ -14526,25 +14527,108 @@ impl From<&str> for FitCompanyTemplateRequestTarget {
     }
 }
 
-/// The `GET /tenants/me/fit` body plus `target` and `template`.
+/// `FitCompanyTemplateResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FitCompanyTemplateResponse {
+    pub plan: String,
+    pub fits: bool,
+    pub window_days: i64,
+    pub run_profile: FitCompanyTemplateResponseRunProfile,
+    pub needs: FitCompanyTemplateResponseNeeds,
+    pub schedules: Vec<FitCompanyTemplateResponseSchedule>,
+    pub checks: Vec<FitCompanyTemplateResponseCheck>,
+    pub monthly_cost_usd: FitRange,
+    /// The spend cap per month, or null when none is set.
+    #[serde(default)]
+    pub budget_limit_usd: Option<f64>,
+    pub assumptions: Vec<FitCompanyTemplateResponseAssumption>,
+    pub suggestions: Vec<FitCompanyTemplateResponseSuggestion>,
+    pub target: FitCompanyTemplateRequestTarget,
+    pub template: FitCompanyTemplateResponseTemplate,
+}
+
+/// `FitCompanyTemplateResponseAssumption` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FitCompanyTemplateResponseAssumption {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<FitCompanyTemplateRequestTarget>,
+    pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub template: Option<FitCompanyTemplateResponseTemplate>,
-    /// Any additional properties the server returned.
-    #[serde(flatten)]
-    pub extra: HashMap<String, serde_json::Value>,
+    pub text: Option<String>,
+}
+
+/// `FitCompanyTemplateResponseCheck` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FitCompanyTemplateResponseCheck {
+    pub code: GetTenantPlanFitResponseCheckCode,
+    pub needed: f64,
+    #[serde(default)]
+    pub limit: Option<f64>,
+    pub status: GetTenantPlanFitResponseCheckStatus,
+}
+
+/// `FitCompanyTemplateResponseNeeds` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FitCompanyTemplateResponseNeeds {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agents: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub squads: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runs_per_month: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens_per_month: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls_per_month: Option<FitRange>,
+}
+
+/// `FitCompanyTemplateResponseRunProfile` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FitCompanyTemplateResponseRunProfile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_usd: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sample_runs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<GetTenantPlanFitResponseRunProfileSource>,
+}
+
+/// `FitCompanyTemplateResponseSchedule` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FitCompanyTemplateResponseSchedule {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<GetTenantBlueprintResponseScheduleKind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cron: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runs_per_fire: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fires_per_month: Option<i64>,
+}
+
+/// `FitCompanyTemplateResponseSuggestion` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FitCompanyTemplateResponseSuggestion {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
 }
 
 /// `FitCompanyTemplateResponseTemplate` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FitCompanyTemplateResponseTemplate {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
+    pub id: String,
+    pub version: String,
 }
 
 /// `FitRange` model.
@@ -15650,7 +15734,25 @@ pub struct GetHealthResponse {
     /// `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
     /// `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
     /// `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-    /// `company_import`, `company_versions` (since 2026-10-12).
+    /// `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+    /// COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+    /// `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+    /// `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+    /// `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+    /// `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+    /// /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+    /// `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+    /// `reviews\[\]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+    /// `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+    /// /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+    /// `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+    /// `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+    /// `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+    /// `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+    /// /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+    /// `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+    /// /company/versions` AND `POST /company/restore` — there is deliberately no separate
+    /// `company_restore`, since a snapshot and the rollback to it ship together.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<Vec<String>>,
     /// Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
@@ -17454,43 +17556,6 @@ pub struct GetTenantDomainHealthResponse {
     pub cert: Option<DomainCertLifecycle>,
 }
 
-/// `GetTenantPlanFitResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetTenantPlanFitResponse {
-    pub plan: String,
-    pub fits: bool,
-    pub window_days: i64,
-    pub run_profile: GetTenantPlanFitResponseRunProfile,
-    pub needs: GetTenantPlanFitResponseNeeds,
-    pub schedules: Vec<GetTenantPlanFitResponseSchedule>,
-    pub checks: Vec<GetTenantPlanFitResponseCheck>,
-    pub monthly_cost_usd: FitRange,
-    /// The spend cap per month, or null when none is set.
-    #[serde(default)]
-    pub budget_limit_usd: Option<f64>,
-    pub assumptions: Vec<GetTenantPlanFitResponseAssumption>,
-    pub suggestions: Vec<GetTenantPlanFitResponseSuggestion>,
-}
-
-/// `GetTenantPlanFitResponseAssumption` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetTenantPlanFitResponseAssumption {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub text: Option<String>,
-}
-
-/// `GetTenantPlanFitResponseCheck` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetTenantPlanFitResponseCheck {
-    pub code: GetTenantPlanFitResponseCheckCode,
-    pub needed: f64,
-    #[serde(default)]
-    pub limit: Option<f64>,
-    pub status: GetTenantPlanFitResponseCheckStatus,
-}
-
 /// `GetTenantPlanFitResponseCheckCode` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum GetTenantPlanFitResponseCheckCode {
@@ -17591,36 +17656,6 @@ impl From<&str> for GetTenantPlanFitResponseCheckStatus {
     }
 }
 
-/// `GetTenantPlanFitResponseNeeds` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetTenantPlanFitResponseNeeds {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub agents: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub squads: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub runs_per_month: Option<FitRange>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tokens_per_month: Option<FitRange>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tool_calls_per_month: Option<FitRange>,
-}
-
-/// `GetTenantPlanFitResponseRunProfile` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetTenantPlanFitResponseRunProfile {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tokens: Option<FitRange>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cost_usd: Option<FitRange>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tool_calls: Option<FitRange>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sample_runs: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<GetTenantPlanFitResponseRunProfileSource>,
-}
-
 /// `GetTenantPlanFitResponseRunProfileSource` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum GetTenantPlanFitResponseRunProfileSource {
@@ -17659,34 +17694,6 @@ impl From<&str> for GetTenantPlanFitResponseRunProfileSource {
             other => Self::Other(other.to_string()),
         }
     }
-}
-
-/// `GetTenantPlanFitResponseSchedule` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetTenantPlanFitResponseSchedule {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<GetTenantBlueprintResponseScheduleKind>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cron: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timezone: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub runs_per_fire: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub fires_per_month: Option<i64>,
-}
-
-/// `GetTenantPlanFitResponseSuggestion` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetTenantPlanFitResponseSuggestion {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan: Option<String>,
 }
 
 /// `GetTenantReadinessResponse` model.
@@ -18184,7 +18191,25 @@ pub struct HealthCheckV1aliasResponse {
     /// `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
     /// `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
     /// `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-    /// `company_import`, `company_versions` (since 2026-10-12).
+    /// `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+    /// COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+    /// `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+    /// `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+    /// `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+    /// `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+    /// /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+    /// `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+    /// `reviews\[\]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+    /// `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+    /// /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+    /// `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+    /// `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+    /// `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+    /// `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+    /// /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+    /// `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+    /// /company/versions` AND `POST /company/restore` — there is deliberately no separate
+    /// `company_restore`, since a snapshot and the rollback to it ship together.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<Vec<String>>,
 }
@@ -35007,6 +35032,101 @@ pub struct TenantOverviewUsage {
     pub tokens_used: i64,
     pub runs_used: i64,
     pub cost_mtd_usd: f64,
+}
+
+/// `TenantPlanFit` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantPlanFit {
+    pub plan: String,
+    pub fits: bool,
+    pub window_days: i64,
+    pub run_profile: TenantPlanFitRunProfile,
+    pub needs: TenantPlanFitNeeds,
+    pub schedules: Vec<TenantPlanFitSchedule>,
+    pub checks: Vec<TenantPlanFitCheck>,
+    pub monthly_cost_usd: FitRange,
+    /// The spend cap per month, or null when none is set.
+    #[serde(default)]
+    pub budget_limit_usd: Option<f64>,
+    pub assumptions: Vec<TenantPlanFitAssumption>,
+    pub suggestions: Vec<TenantPlanFitSuggestion>,
+}
+
+/// `TenantPlanFitAssumption` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantPlanFitAssumption {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+}
+
+/// `TenantPlanFitCheck` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantPlanFitCheck {
+    pub code: GetTenantPlanFitResponseCheckCode,
+    pub needed: f64,
+    #[serde(default)]
+    pub limit: Option<f64>,
+    pub status: GetTenantPlanFitResponseCheckStatus,
+}
+
+/// `TenantPlanFitNeeds` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantPlanFitNeeds {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agents: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub squads: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runs_per_month: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens_per_month: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls_per_month: Option<FitRange>,
+}
+
+/// `TenantPlanFitRunProfile` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantPlanFitRunProfile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_usd: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls: Option<FitRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sample_runs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<GetTenantPlanFitResponseRunProfileSource>,
+}
+
+/// `TenantPlanFitSchedule` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantPlanFitSchedule {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<GetTenantBlueprintResponseScheduleKind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cron: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runs_per_fire: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fires_per_month: Option<i64>,
+}
+
+/// `TenantPlanFitSuggestion` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantPlanFitSuggestion {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
 }
 
 /// `TenantPublicSettings` model.

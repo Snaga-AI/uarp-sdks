@@ -262,8 +262,8 @@ public class CompanyApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun getTenantPlanFit(options: RequestOptions = RequestOptions()): GetTenantPlanFitResponse {
-        return client.request<GetTenantPlanFitResponse>(
+    public suspend fun getTenantPlanFit(options: RequestOptions = RequestOptions()): TenantPlanFit {
+        return client.request<TenantPlanFit>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/tenants/me/fit",
