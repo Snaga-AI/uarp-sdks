@@ -20,6 +20,26 @@ export interface Envelope {
   [key: string]: unknown;
 }
 
+export interface Owner {
+  name: string;
+}
+
+/**
+ * Null until the first rehearsal.
+ */
+export interface Rehearsal {
+  run_id: string;
+}
+
+/**
+ * Null when the cron has no simple shape.
+ */
+export type Shape = ShapeVariant2;
+
+export interface ShapeVariant2 {
+  every: string;
+}
+
 /**
  * Every shape of optionality the spec uses.
  */
@@ -42,6 +62,18 @@ export interface Thing {
    */
   deprecated_field?: string;
   kind?: 'thing';
+  /**
+   * A plain reference: always an object.
+   */
+  owner: Owner;
+  /**
+   * The component itself admits null, so the reference does too.
+   */
+  rehearsal: Rehearsal | null;
+  /**
+   * Null spelled as a oneOf member on the component.
+   */
+  shape: Shape | null;
 }
 
 ==> src/generated/resources/things.ts <==

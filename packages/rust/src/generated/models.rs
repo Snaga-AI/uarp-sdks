@@ -17705,7 +17705,8 @@ pub struct GetTenantReadinessResponse {
     pub version: i64,
     pub blockers: Vec<CompanyReadinessItem>,
     pub warnings: Vec<CompanyReadinessItem>,
-    pub test_run: CompanyTestRun,
+    #[serde(default)]
+    pub test_run: Option<CompanyTestRun>,
 }
 
 /// `GetTenantUsageResponse` model.

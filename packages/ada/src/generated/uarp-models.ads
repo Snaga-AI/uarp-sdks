@@ -18905,6 +18905,7 @@ package UARP.Models is
       Version : UARP.Types.Integer_Value := 0;
       Blockers : UARP.Models.Company_Readiness_Item_Vectors.Vector;
       Warnings : UARP.Models.Company_Readiness_Item_Vectors.Vector;
+      Has_Test_Run : Boolean := False;
       Test_Run : UARP.Models.Company_Test_Run;
    end record;
 

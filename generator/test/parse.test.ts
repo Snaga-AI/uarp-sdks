@@ -51,6 +51,23 @@ test('required, optional and nullable are three different things', () => {
   assert.equal(property(spec, 'Thing', 'legacy_nullable').nullable, true);
 });
 
+test('a $ref to a component that admits null is nullable where it is referenced', () => {
+  const spec = fixture('nullability');
+
+  // The control: a reference to an ordinary component stays non-null.
+  assert.equal(property(spec, 'Thing', 'owner').nullable, false);
+
+  // `type: ["object", "null"]` on the component — what `CompanyTestRun` declares,
+  // and what made `readiness.test_run: null` throw in Rust, Swift and Kotlin.
+  const rehearsal = property(spec, 'Thing', 'rehearsal');
+  assert.equal(rehearsal.required, true);
+  assert.equal(rehearsal.nullable, true);
+  assert.deepEqual(rehearsal.type, { kind: 'named', name: 'Rehearsal' });
+
+  // The same, spelled as a `oneOf` member on the component (`ScheduleShape`).
+  assert.equal(property(spec, 'Thing', 'shape').nullable, true);
+});
+
 test('maps scalar formats onto distinct primitives', () => {
   const spec = fixture('nullability');
   assert.deepEqual(property(spec, 'Thing', 'id').type, { kind: 'prim', prim: 'uuid' });

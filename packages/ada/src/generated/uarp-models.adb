@@ -47807,7 +47807,9 @@ package body UARP.Models is
          end loop;
          JS.Set (Result, "warnings", Items);
       end;
-      JS.Set (Result, "test_run", To_JSON (Model.Test_Run));
+      if Model.Has_Test_Run then
+         JS.Set (Result, "test_run", To_JSON (Model.Test_Run));
+      end if;
       return Result;
    end To_JSON;
 
@@ -47842,6 +47844,7 @@ package body UARP.Models is
          end;
       end if;
       if JS.Present (Node, "test_run") then
+         Result.Has_Test_Run := True;
          Result.Test_Run := From_JSON (JS.Get_Value (Node, "test_run"));
       end if;
       return Result;

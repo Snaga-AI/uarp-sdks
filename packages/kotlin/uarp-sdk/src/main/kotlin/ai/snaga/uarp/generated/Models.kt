@@ -17515,7 +17515,7 @@ public data class GetTenantReadinessResponse(
     public val blockers: List<CompanyReadinessItem>,
     public val warnings: List<CompanyReadinessItem>,
     @SerialName("test_run")
-    public val testRun: CompanyTestRun,
+    public val testRun: CompanyTestRun? = null,
 )
 
 /**

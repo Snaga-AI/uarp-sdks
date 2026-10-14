@@ -71,6 +71,48 @@ public struct Envelope: Codable, Hashable, Sendable {
     }
 }
 
+/// `Owner` model.
+public struct Owner: Codable, Hashable, Sendable {
+    public var name: String
+
+    public init(name: String) {
+        self.name = name
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case name = "name"
+    }
+}
+
+/// Null until the first rehearsal.
+public struct Rehearsal: Codable, Hashable, Sendable {
+    public var runId: String
+
+    public init(runId: String) {
+        self.runId = runId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case runId = "run_id"
+    }
+}
+
+/// Null when the cron has no simple shape.
+public typealias Shape = ShapeVariant2
+
+/// `ShapeVariant2` model.
+public struct ShapeVariant2: Codable, Hashable, Sendable {
+    public var every: String
+
+    public init(every: String) {
+        self.every = every
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case every = "every"
+    }
+}
+
 /// Every shape of optionality the spec uses.
 public struct Thing: Codable, Hashable, Sendable {
     public var id: String
@@ -87,8 +129,14 @@ public struct Thing: Codable, Hashable, Sendable {
     /// - Warning: Deprecated by the API.
     public var deprecatedField: String?
     public var kind: String?
+    /// A plain reference: always an object.
+    public var owner: Owner
+    /// The component itself admits null, so the reference does too.
+    public var rehearsal: Rehearsal?
+    /// Null spelled as a oneOf member on the component.
+    public var shape: Shape?
 
-    public init(id: String, requiredNullable: String? = nil, count: Int, optionalPlain: Double? = nil, optionalNullable: Bool? = nil, legacyNullable: JSONObject? = nil, createdAt: String? = nil, tags: [String]? = nil, freeForm: JSONObject? = nil, anything: JSONObject? = nil, deprecatedField: String? = nil, kind: String? = nil) {
+    public init(id: String, requiredNullable: String? = nil, count: Int, optionalPlain: Double? = nil, optionalNullable: Bool? = nil, legacyNullable: JSONObject? = nil, createdAt: String? = nil, tags: [String]? = nil, freeForm: JSONObject? = nil, anything: JSONObject? = nil, deprecatedField: String? = nil, kind: String? = nil, owner: Owner, rehearsal: Rehearsal? = nil, shape: Shape? = nil) {
         self.id = id
         self.requiredNullable = requiredNullable
         self.count = count
@@ -101,6 +149,9 @@ public struct Thing: Codable, Hashable, Sendable {
         self.anything = anything
         self.deprecatedField = deprecatedField
         self.kind = kind
+        self.owner = owner
+        self.rehearsal = rehearsal
+        self.shape = shape
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -116,6 +167,9 @@ public struct Thing: Codable, Hashable, Sendable {
         case anything = "anything"
         case deprecatedField = "deprecated_field"
         case kind = "kind"
+        case owner = "owner"
+        case rehearsal = "rehearsal"
+        case shape = "shape"
     }
 }
 

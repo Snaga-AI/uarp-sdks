@@ -4538,7 +4538,7 @@ export interface CompanyExportMissionSchedule {
   schedule_id?: string;
   name?: string;
   cron?: string;
-  shape?: ScheduleShape;
+  shape?: ScheduleShape | null;
   timezone?: string | null;
   plan?: JsonObject;
 }
@@ -4547,7 +4547,7 @@ export interface CompanyExportSchedule {
   agent_id?: string;
   agent_name?: string | null;
   cron?: string;
-  shape?: ScheduleShape;
+  shape?: ScheduleShape | null;
   timezone?: string | null;
   enabled?: boolean;
   message?: string | null;
@@ -4701,7 +4701,7 @@ export interface CompanyProposalDiffItem {
    * supervisor_agent_id, workers[].agent_id, …) → its name.
    */
   names?: JsonObject;
-  schedule_shape?: ScheduleShape;
+  schedule_shape?: ScheduleShape | null;
 }
 
 export interface CompanyProposalFailure {
@@ -9482,7 +9482,7 @@ export interface GetTenantBlueprintResponseSchedule {
   schedule_id?: string;
   name?: string;
   cron?: string | null;
-  shape?: ScheduleShape;
+  shape?: ScheduleShape | null;
   timezone?: string | null;
   status?: string;
   next_fire_at?: string | null;
@@ -9555,7 +9555,7 @@ export interface GetTenantCompanyOverviewResponseNextItem {
   name?: string;
   next_fire_at?: string;
   cron?: string | null;
-  shape?: ScheduleShape;
+  shape?: ScheduleShape | null;
 }
 
 export interface GetTenantCompanyOverviewResponseProblems {
@@ -9624,7 +9624,7 @@ export interface GetTenantReadinessResponse {
   version: number;
   blockers: CompanyReadinessItem[];
   warnings: CompanyReadinessItem[];
-  test_run: CompanyTestRun;
+  test_run: CompanyTestRun | null;
 }
 
 export interface GetTenantUsageResponse {

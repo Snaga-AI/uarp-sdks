@@ -78,7 +78,10 @@
         "required": [
           "id",
           "required_nullable",
-          "count"
+          "count",
+          "owner",
+          "rehearsal",
+          "shape"
         ],
         "properties": {
           "id": {
@@ -132,6 +135,18 @@
           "kind": {
             "type": "string",
             "const": "thing"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/Owner",
+            "description": "A plain reference: always an object."
+          },
+          "rehearsal": {
+            "$ref": "#/components/schemas/Rehearsal",
+            "description": "The component itself admits null, so the reference does too."
+          },
+          "shape": {
+            "$ref": "#/components/schemas/Shape",
+            "description": "Null spelled as a oneOf member on the component."
           }
         }
       },
@@ -150,6 +165,51 @@
             "type": "string"
           }
         }
+      },
+      "Owner": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "Rehearsal": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "description": "Null until the first rehearsal.",
+        "required": [
+          "run_id"
+        ],
+        "properties": {
+          "run_id": {
+            "type": "string"
+          }
+        }
+      },
+      "Shape": {
+        "description": "Null when the cron has no simple shape.",
+        "oneOf": [
+          {
+            "type": "null"
+          },
+          {
+            "type": "object",
+            "required": [
+              "every"
+            ],
+            "properties": {
+              "every": {
+                "type": "string"
+              }
+            }
+          }
+        ]
       }
     }
   }

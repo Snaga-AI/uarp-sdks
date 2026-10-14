@@ -249,6 +249,15 @@ class Parser {
     return node ?? {};
   }
 
+  /** Whether a (dereferenced) schema admits JSON `null`, in any of the spellings #schemaTypeNullable reads. */
+  #permitsNull(schemaIn: Json): boolean {
+    const schema = this.#flattenAllOf(schemaIn);
+    if (schema.nullable === true) return true;
+    if (Array.isArray(schema.type) && schema.type.includes('null')) return true;
+    const composite = (schema.oneOf ?? schema.anyOf) as Json[] | undefined;
+    return Array.isArray(composite) && composite.some((member) => this.#deref(member).type === 'null');
+  }
+
   #lookupRef(ref: string): Json | undefined {
     if (!ref.startsWith('#/')) return undefined;
     let node: any = this.#doc;
@@ -267,10 +276,15 @@ class Parser {
   #schemaTypeNullable(schemaIn: Json | undefined, hint: string): { type: TypeRef; nullable: boolean } {
     if (!schemaIn || typeof schemaIn !== 'object') return { type: PRIM_JSON, nullable: false };
 
-    // A direct $ref keeps the component's identity instead of being hoisted.
+    // A direct $ref keeps the component's identity instead of being hoisted —
+    // but not by dropping what the component says about null. A component
+    // declared `type: ["object", "null"]` (or `oneOf` with a `null` member) is
+    // null wherever it is referenced; reading the reference as non-null made
+    // three clients throw on `readiness.test_run: null` for a company that has
+    // never rehearsed.
     if (typeof schemaIn.$ref === 'string') {
       const m = /^#\/components\/schemas\/(.+)$/.exec(schemaIn.$ref);
-      if (m) return { type: this.#componentType(m[1]!), nullable: false };
+      if (m) return { type: this.#componentType(m[1]!), nullable: this.#permitsNull(this.#deref(schemaIn)) };
       return this.#schemaTypeNullable(this.#deref(schemaIn), hint);
     }
 

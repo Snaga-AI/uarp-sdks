@@ -14,13 +14,14 @@ Against 0.10.0: 585 → 622 paths, 789 → 832 operations (+43, −0), 382 → 4
 schemas (+29, −0), 50 → 52 groups, 1845 → 2014 named types (+169, −0).
 
 **No exported name leaves.** Measured against the released 0.10.0 rather than
-against the intermediate drafts: 192 names are added, none is removed, so every
+against the intermediate drafts: 198 names are added, none is removed, so every
 import that compiled against 0.10.0 still resolves. The eleven `/companies`
 operations warn at compile time rather than break.
 
-**The minor moves** because two types that 0.10.0 already exported change shape
-under their own names — `ResourceUsageEntry.limit` becomes nullable and
-`RunEventType` renames seven values (both below). Under 1.0 a caret does not
+**The minor moves** because three types that 0.10.0 already exported change
+shape under their own names — `ResourceUsageEntry.limit` becomes nullable,
+`RunEventType` renames seven values, and the workspace copy and move requests
+stop requiring their paths (all three below). Under 1.0 a caret does not
 cross the minor, so `^0.10` keeps building against 0.10.x.
 
 ### Changed — `ResourceUsageEntry.limit` is nullable
@@ -32,7 +33,7 @@ the two the same way told a founder "3 of 0" about a resource with no ceiling
 (macOS lane, measured 2026-10-12). In TypeScript a comparison against `limit`
 now needs the null case handled; in Rust, Swift, Kotlin and Ada the field goes
 from a plain number to an optional one. That is the break, it is one field, and
-it is the reason this release is not a patch.
+one of the reasons this release is not a patch.
 
 ### Changed — `RunEventType` renames seven values
 
@@ -47,6 +48,37 @@ exact match with nothing checking it. `types=company.tick_start` does not fail;
 it returns an empty stream, which reads exactly like "nothing happened".
 `FeedEntryEventType` and `WebhookDeliveryAttemptEventType` keep the old
 spellings and gain the new ones, so historical deliveries still decode.
+
+### Changed — workspace copy and move no longer require their paths
+
+`CopyWorkspaceFileRequest.source_path`/`dest_path` and
+`MoveWorkspaceFileRequest.from_path`/`to_path` go from required to optional
+(build `ef5b646d`). Sending them is unchanged in TypeScript, Swift and Kotlin,
+whose constructors take the old arguments as before. In Rust the fields become
+`Option<String>`, so a struct literal that set `source_path: "a".into()` stops
+compiling and needs `Some(…)`; in Kotlin and Swift, code that *reads* the field
+back gets an optional. Found on 2026-10-14 by diffing the IR of the released
+0.10.0 document against this one, after the two breaks above had already been
+written down as the whole list.
+
+### Fixed — a `$ref` to a component that admits null is nullable
+
+The generator took a property's nullability from the property alone, so a
+`$ref` to a component declared `type: ["object", "null"]` — or with a
+`{"type": "null"}` member in its `oneOf` — came out non-null. `CompanyTestRun`
+is declared that way, and `GET /tenants/me/readiness` answers `test_run: null`
+for a company that has never rehearsed: Rust failed with `invalid type: null,
+expected struct CompanyTestRun`, Swift with `valueNotFound … test_run`, Kotlin
+with `Expected start of the object '{'`. `test_run` is now optional in all
+five; the five `ScheduleShape` sites become `ScheduleShape | null` in
+TypeScript (the other four already decoded null into their JSON value type).
+Nothing that 0.10.0 exported changes: neither component existed there.
+
+One site stays as it was, on purpose: the `202` body of
+`startTenantTestRun` is a whole-body `$ref` to `CompanyTestRun`, and the
+generator has no notion of a nullable response body. The route answers
+"Started." with the run it started, so it is typed non-null; if the platform
+ever answers it with `null`, that is a defect to raise, not a shape to model.
 
 ### Changed — `CompanyProposal.operations` is a discriminated union
 

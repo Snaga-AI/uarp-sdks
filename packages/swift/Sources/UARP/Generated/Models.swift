@@ -23453,9 +23453,9 @@ public struct GetTenantReadinessResponse: Codable, Hashable, Sendable {
     public var version: Int
     public var blockers: [CompanyReadinessItem]
     public var warnings: [CompanyReadinessItem]
-    public var testRun: CompanyTestRun
+    public var testRun: CompanyTestRun?
 
-    public init(ready: Bool, status: CompanyProfileStatus, version: Int, blockers: [CompanyReadinessItem], warnings: [CompanyReadinessItem], testRun: CompanyTestRun) {
+    public init(ready: Bool, status: CompanyProfileStatus, version: Int, blockers: [CompanyReadinessItem], warnings: [CompanyReadinessItem], testRun: CompanyTestRun? = nil) {
         self.ready = ready
         self.status = status
         self.version = version
