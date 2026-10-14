@@ -30,7 +30,11 @@ const SECRET_KEYS = [
 /** Property names replaced because they identify a person, not because of risk. */
 const PERSONAL_KEYS = ['email', 'phone', 'phone_number', 'address', 'ip', 'ip_address', 'full_name'];
 
-const KEY_PATTERN = /uarp_[a-z0-9]{6,}_[a-z0-9]{8,}/gi;
+//  The platform mints `uarp_<8 hex>_<32 hex>` (packages/api/middleware/auth.ts).
+//  The looser `uarp_[a-z0-9]{6,}_[a-z0-9]{8,}` this replaced also matched field
+//  names such as `uarp_response_…` in a2a task metadata on e2e-canon, and the
+//  write guard then refused a whole run over a key that was never there.
+const KEY_PATTERN = /uarp_[0-9a-f]{8}_[0-9a-f]{32}/gi;
 const BEARER_PATTERN = /(Bearer\s+)[A-Za-z0-9._~+/-]{8,}=*/g;
 const JWT_PATTERN = /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g;
 

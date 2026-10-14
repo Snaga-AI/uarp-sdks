@@ -28,7 +28,13 @@
     "deleteDataExplorerValue": "deletes an arbitrary key from live storage",
     "bulkDeleteNotifications": "deletes notifications this run did not create",
     "emptyWorkspaceTrash": "permanently destroys items the tenant put in the trash",
-    "adminPutVoicePresets": "overwrites the platform voice presets with synthesised values"
+    "adminPutVoicePresets": "overwrites the platform voice presets with synthesised values",
+    "verifyEmail": "a GET that writes: consumes a one-time token and creates a tenant",
+    "startOAuthLogin": "a GET that writes: stores a one-shot OAuth state record",
+    "completeOAuthLogin": "a GET that writes: the end of a browser OAuth login, not a read",
+    "oauthCallback": "a GET that writes: an integration's OAuth redirect, which exchanges a code",
+    "mcpOAuthCallback": "a GET that writes: an MCP server's OAuth redirect, which exchanges a code",
+    "internalVerifyDomain": "internal: called by the edge, not by a client"
   },
   "caution": {
     "$comment": "These run, but have effects outside the platform and are called out in the report.",

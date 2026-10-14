@@ -25,6 +25,8 @@ export interface PlannedCall {
   needs: string[];
   /** Path-parameter names to register from this call's response. */
   captures: string[];
+  /** For a collection path, the parameter its children are keyed by. */
+  childParam?: string;
   quarantined?: string;
   caution?: string;
 }
@@ -172,6 +174,7 @@ export function buildPlan(spec: Spec, quarantine: Quarantine): Plan {
       echoFrom: echo?.id,
       needs: paramsOf(op.path),
       captures: captured && (op.method === 'POST' || op.method === 'PUT') ? [captured] : [],
+      childParam: captured,
       quarantined: quarantine.operations[op.id],
       caution: quarantine.caution[op.id],
     });
@@ -218,6 +221,19 @@ export function captureId(body: unknown, paramName: string): string | undefined 
       const nested = fromRecord(value as Record<string, unknown>);
       if (nested) return nested;
     }
+  }
+  return undefined;
+}
+
+/**
+ * The first element of a page: a bare array, or the first array-valued property
+ * of an envelope (`{items: […]}`, `{agents: […], cursor}`).
+ */
+export function firstItem(body: unknown): unknown {
+  if (Array.isArray(body)) return body[0];
+  if (body === null || typeof body !== 'object') return undefined;
+  for (const value of Object.values(body as Record<string, unknown>)) {
+    if (Array.isArray(value)) return value[0];
   }
   return undefined;
 }
