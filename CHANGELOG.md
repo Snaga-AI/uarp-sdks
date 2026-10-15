@@ -8,20 +8,22 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
-Build `199b0863`, canonical digest `0e288bf8e8934686`. Three platform builds are
-collected here: `ef5b646d` (2026-10-12), `435ca06c` and `199b0863` (2026-10-13).
-Against 0.10.0: 585 → 622 paths, 789 → 832 operations (+43, −0), 382 → 411
-schemas (+29, −0), 50 → 52 groups, 1845 → 2014 named types (+169, −0).
+Build `b108e9a9`, canonical digest `9a1d32cee90cc481`. Four platform builds are
+collected here: `ef5b646d` (2026-10-12), `435ca06c` and `199b0863` (2026-10-13),
+`b108e9a9` (2026-10-15). Against 0.10.0: 585 → 622 paths, 789 → 832 operations
+(+43, −0), 382 → 411 schemas (+29, −0), 50 → 52 groups, 1845 → 2024 named types
+(+179, −0).
 
 **No exported name leaves.** Measured against the released 0.10.0 rather than
-against the intermediate drafts: 198 names are added, none is removed, so every
+against the intermediate drafts: 212 names are added, none is removed, so every
 import that compiled against 0.10.0 still resolves. The eleven `/companies`
 operations warn at compile time rather than break.
 
-**The minor moves** because three types that 0.10.0 already exported change
-shape under their own names — `ResourceUsageEntry.limit` becomes nullable,
-`RunEventType` renames seven values, and the workspace copy and move requests
-stop requiring their paths (all three below). Under 1.0 a caret does not
+**The minor moves** because types that 0.10.0 already exported change shape
+under their own names — `ResourceUsageEntry.limit` becomes nullable,
+`RunEventType` renames seven values, the workspace copy and move requests stop
+requiring their paths, and build `b108e9a9` corrects eight of them to the wire
+(all below). Under 1.0 a caret does not
 cross the minor, so `^0.10` keeps building against 0.10.x.
 
 ### Changed — `ResourceUsageEntry.limit` is nullable
@@ -60,6 +62,56 @@ compiling and needs `Some(…)`; in Kotlin and Swift, code that *reads* the fiel
 back gets an optional. Found on 2026-10-14 by diffing the IR of the released
 0.10.0 document against this one, after the two breaks above had already been
 written down as the whole list.
+
+### Changed — build `b108e9a9`: eight types follow the wire
+
+Every one of these is the document catching up with what the server already
+sent or required, measured before the deploy: on build `199b0863` the Rust SDK
+failed to decode eight live canon bodies, and after regenerating it decodes all
+eight, re-fetched from `b108e9a9` and as captured before it. A consumer of
+0.10.0 that hit these operations was already getting an error, which is why
+fixing them breaks code that compiles rather than code that worked.
+
+- **`CreateVotingProposalRequest`**: the field is `type`, typed by the
+  `CreateVotingProposalRequestType` enum. The server has required `type` since
+  2026-08-31 and dropped `proposal_type`, so 0.10.0's required `proposal_type`
+  got a 422 on every call; from this build the server also reads
+  `proposal_type` as a deprecated alias when `type` is absent. Both are
+  optional in the type, since either one satisfies the server. In Rust a struct
+  literal setting `proposal_type: "…".into()` needs `Some(…)`.
+- **`GetTeamChatHistoryResponse.chat_state`** and the squad equivalent: an
+  object in 0.10.0, a string on the wire (`IDLE`, `RUNNING`, `DONE` and three
+  more), now the `GetTeamChatHistoryResponseChatState` enum.
+- **`TeamRunDetail.runs`**: `Run[]` → `TeamRunDetailRun[]`, a projection
+  without `tenant_id`, which the route never sent.
+- **`Goal.agent_id`, `ArbiterCase.filed_by` / `against_agent_id` / `rule_ids`,
+  `VotingProposal.type` / `proposed_by`, `AuthProvider.email`**: required →
+  optional. An unlinked auth provider has no email; the governance rows did not
+  carry the others. In Rust, Swift and Kotlin these become optionals for code
+  that reads them.
+- **Added**: `next_step` on the tenant company overview (with
+  `GetTenantCompanyOverviewResponseNextStepKind`: `setup`, `resume`, `decide`,
+  `problem`, `wait`) and `company.objective` (`string | null`), both optional,
+  because a server before this build does not send them. `SESSION_NOT_ACTIVE`
+  joins `ErrorCode`. Nine operations gain `x-capability`.
+
+### Changed — `createTask` and memory search take typed bodies
+
+`createTask` and memory `search` took `JsonValue` in 0.10.0 and now take
+`CreateTaskRequest` and `SearchMemoryRequest`. The document has declared their
+properties throughout; next to them, it had an `anyOf` whose members only list
+`required` keys ("one of `agent_id`, `agent_ids`, `team_id`", "`text` or
+`query`"), and the generator read that rule as a union of shapes, failed to
+type it, and fell back to JSON. It is now read as what it is: a rule about the
+object's own properties, which a type cannot enforce, so every property in it is
+optional.
+
+The fix was forced by this build: the document added the same kind of rule to
+the workspace copy and move bodies, and without it `CopyWorkspaceFileRequest`
+and `MoveWorkspaceFileRequest` disappeared from all five SDKs, their methods
+falling back to `JsonValue`. That would have been the one removal in this
+release. In TypeScript the change only narrows what is accepted; in Rust, Swift
+and Kotlin a caller building a JSON value has to build the struct instead.
 
 ### Fixed — a `$ref` to a component that admits null is nullable
 

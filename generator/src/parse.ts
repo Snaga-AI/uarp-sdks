@@ -303,7 +303,13 @@ class Parser {
       }
     }
 
-    const composite = (schema.oneOf ?? schema.anyOf) as Json[] | undefined;
+    // A member that only says which keys are `required` is not an alternative
+    // shape but a rule about the object's own properties ("one of these pairs
+    // must be present"). Read as a union, it erased the copy and move bodies to
+    // untyped JSON at build b108e9a9; it constrains, it does not type.
+    const composite = ((schema.oneOf ?? schema.anyOf) as Json[] | undefined)?.filter(
+      (member) => !isConstraintOnly(member),
+    );
     if (composite && composite.length > 0) {
       const variants: TypeRef[] = [];
       for (const [i, member] of composite.entries()) {
@@ -718,6 +724,13 @@ function itemHintFor(hint: string): string {
   const sing = singular(last);
   if (sing !== last) return pascal([...parts.slice(0, -1), sing].join(' '));
   return hint + 'Item';
+}
+
+/** A composite member that names no shape: only `required`, `not`, or prose. */
+function isConstraintOnly(member: Json): boolean {
+  if (!member || typeof member !== 'object') return false;
+  const keys = Object.keys(member);
+  return keys.length > 0 && keys.every((key) => key === 'required' || key === 'not' || key === 'description');
 }
 
 function dedupeRefs(refs: TypeRef[]): TypeRef[] {

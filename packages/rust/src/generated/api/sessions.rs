@@ -387,7 +387,7 @@ impl SessionsApi {
     /// `POST /api/v1/todos`
     ///
     /// Required scopes: `runs:create`, `sessions:write`.
-    pub async fn create_task(&self, body: &serde_json::Value) -> Result<models::CreatedTask> {
+    pub async fn create_task(&self, body: &models::CreateTaskRequest) -> Result<models::CreatedTask> {
         self.client
             .request_json(Request {
                 method: Method::POST,

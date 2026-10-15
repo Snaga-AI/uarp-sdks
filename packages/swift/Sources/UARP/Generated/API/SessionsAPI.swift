@@ -231,7 +231,7 @@ public struct SessionsAPI: Sendable {
     /// `POST /api/v1/todos`
     ///
     /// Required scopes: `runs:create`, `sessions:write`.
-    public func createTask(body: JSONValue, options: RequestOptions = .init()) async throws -> CreatedTask {
+    public func createTask(body: CreateTaskRequest, options: RequestOptions = .init()) async throws -> CreatedTask {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/todos",

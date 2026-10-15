@@ -283,7 +283,7 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:create`, `sessions:write`.
      */
-    public suspend fun createTask(body: JsonElement, options: RequestOptions = RequestOptions()): CreatedTask {
+    public suspend fun createTask(body: CreateTaskRequest, options: RequestOptions = RequestOptions()): CreatedTask {
         return client.request<CreatedTask>(
             RequestSpec(
                 method = "POST",

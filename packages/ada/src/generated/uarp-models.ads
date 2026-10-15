@@ -6951,8 +6951,11 @@ package UARP.Models is
    type Arbiter_Case is record
       Case_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Filed_By : Boolean := False;
       Filed_By : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Against_Agent_Id : Boolean := False;
       Against_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Rule_Ids : Boolean := False;
       Rule_Ids : UARP.Types.Text_Vectors.Vector;
       Description : UARP.Types.Text := UARP.Types.Empty_Text;
       Evidence : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
@@ -7044,6 +7047,7 @@ package UARP.Models is
 
    --  `AuthProvider` model.
    type Auth_Provider is record
+      Has_Email : Boolean := False;
       Email : UARP.Types.Text := UARP.Types.Empty_Text;
       Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Linked : Standard.Boolean := False;
@@ -8453,6 +8457,9 @@ package UARP.Models is
    type Company_Change is record
       Version : UARP.Types.Integer_Value := 0;
       At_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Who made the change: the person's `user_id` when the credential names one (a session, or a
+      --  key minted for a user), otherwise the key's `key_id`. Match it against `GET /users` before
+      --  showing it as a name; an id that is no member is a key.
       Actor : UARP.Types.Text := UARP.Types.Empty_Text;
       Source : UARP.Models.Company_Change_Source;
       Summary : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -9776,6 +9783,9 @@ package UARP.Models is
    type Company_Version_Row is record
       Version : UARP.Types.Integer_Value := 0;
       At_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Who made the change: the person's `user_id` when the credential names one (a session, or a
+      --  key minted for a user), otherwise the key's `key_id`. Match it against `GET /users` before
+      --  showing it as a name; an id that is no member is a key.
       Actor : UARP.Types.Text := UARP.Types.Empty_Text;
       Source : UARP.Models.Company_Change_Source;
       Summary : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -12463,6 +12473,52 @@ package UARP.Models is
    function To_JSON (Model : Create_Spec_Package_Checkout_Session_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Spec_Package_Checkout_Session_Response;
 
+   --  `CreateTaskRequestRecurrence` model.
+   type Create_Task_Request_Recurrence is record
+      Has_Cron : Boolean := False;
+      Cron : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Timezone : Boolean := False;
+      Timezone : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Create_Task_Request_Recurrence) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Task_Request_Recurrence;
+
+   --  `CreateTaskRequestDelivery` model.
+   type Create_Task_Request_Delivery is record
+      Has_Channels : Boolean := False;
+      Channels : UARP.Models.Todo_Delivery_Channel_Vectors.Vector;
+      Has_Target : Boolean := False;
+      Target : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Create_Task_Request_Delivery) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Task_Request_Delivery;
+
+   --  `CreateTaskRequest` model.
+   type Create_Task_Request is record
+      Title : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Instructions : Boolean := False;
+      Instructions : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Due_At : Boolean := False;
+      Due_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Recurrence : Boolean := False;
+      Recurrence : UARP.Models.Create_Task_Request_Recurrence;
+      Has_Require_Confirmation : Boolean := False;
+      Require_Confirmation : Standard.Boolean := False;
+      Has_Delivery : Boolean := False;
+      Delivery : UARP.Models.Create_Task_Request_Delivery;
+      Has_Agent_Id : Boolean := False;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Agent_Ids : Boolean := False;
+      Agent_Ids : UARP.Types.Text_Vectors.Vector;
+      Has_Team_Id : Boolean := False;
+      Team_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Create_Task_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Task_Request;
+
    --  `CreateTenantProposalRequest` model.
    type Create_Tenant_Proposal_Request is record
       Summary : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -12670,11 +12726,40 @@ package UARP.Models is
    function To_JSON (Model : Create_Tenant_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Tenant_Request;
 
-   --  `CreateVotingProposalRequest` model.
+   --  Values of `CreateVotingProposalRequestType`.
+   --  A value the API introduces later decodes as Create_Voting_Proposal_Request_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Create_Voting_Proposal_Request_Type_Kind is
+     (Create_Voting_Proposal_Request_Type_New_Goal,
+   Create_Voting_Proposal_Request_Type_Policy_Change,
+   Create_Voting_Proposal_Request_Type_Agent_Termination,
+   Create_Voting_Proposal_Request_Type_Constitution_Amendment,
+   Create_Voting_Proposal_Request_Type_Agent_Design,
+   Create_Voting_Proposal_Request_Type_Arbiter_Appointment,
+   Create_Voting_Proposal_Request_Type_Unrecognized);
+
+   type Create_Voting_Proposal_Request_Type is record
+      Kind : Create_Voting_Proposal_Request_Type_Kind := Create_Voting_Proposal_Request_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Create_Voting_Proposal_Request_Type (Value : String) return Create_Voting_Proposal_Request_Type;
+   function To_Create_Voting_Proposal_Request_Type (Kind : Create_Voting_Proposal_Request_Type_Kind) return Create_Voting_Proposal_Request_Type;
+   function Image (Model : Create_Voting_Proposal_Request_Type) return String;
+   function To_JSON (Model : Create_Voting_Proposal_Request_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Voting_Proposal_Request_Type;
+
+   --  The field is `type`. This document said `proposal_type` until 2026-10-14; the server refused
+   --  it 422 from 2026-08-31 and, since 2026-10-14, reads it as the old name of `type` (`type`
+   --  wins when both are sent), so a client built from the old document works.
    type Create_Voting_Proposal_Request is record
+      Has_Type : Boolean := False;
+      Type_K : UARP.Models.Create_Voting_Proposal_Request_Type;
+      --  Old name of `type`, read when `type` is absent.
+      Has_Proposal_Type : Boolean := False;
+      Proposal_Type : UARP.Types.Text := UARP.Types.Empty_Text;
       Title : UARP.Types.Text := UARP.Types.Empty_Text;
       Description : UARP.Types.Text := UARP.Types.Empty_Text;
-      Proposal_Type : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Create_Voting_Proposal_Request) return UARP.JSON_Support.JSON_Value;
@@ -14135,6 +14220,7 @@ package UARP.Models is
    Error_Code_Search_Provider_Not_Configured,
    Error_Code_Search_Upstream_Failed,
    Error_Code_Search_Upstream_Timeout,
+   Error_Code_Session_Not_Active,
    Error_Code_Share_List_Conflict,
    Error_Code_Size_Limit,
    Error_Code_Spec_Not_Found,
@@ -18163,6 +18249,31 @@ package UARP.Models is
    package Team_Chat_Turn_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Team_Chat_Turn);
 
+   --  Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+   --  string - this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+   --  found "DONE".
+   --  A value the API introduces later decodes as Get_Team_Chat_History_Response_Chat_State_Unrecognized
+   --  with the original text kept in Raw.
+   type Get_Team_Chat_History_Response_Chat_State_Kind is
+     (Get_Team_Chat_History_Response_Chat_State_Idle,
+   Get_Team_Chat_History_Response_Chat_State_Addressing,
+   Get_Team_Chat_History_Response_Chat_State_Running,
+   Get_Team_Chat_History_Response_Chat_State_Merging,
+   Get_Team_Chat_History_Response_Chat_State_Awaiting_User,
+   Get_Team_Chat_History_Response_Chat_State_Done,
+   Get_Team_Chat_History_Response_Chat_State_Unrecognized);
+
+   type Get_Team_Chat_History_Response_Chat_State is record
+      Kind : Get_Team_Chat_History_Response_Chat_State_Kind := Get_Team_Chat_History_Response_Chat_State_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Get_Team_Chat_History_Response_Chat_State (Value : String) return Get_Team_Chat_History_Response_Chat_State;
+   function To_Get_Team_Chat_History_Response_Chat_State (Kind : Get_Team_Chat_History_Response_Chat_State_Kind) return Get_Team_Chat_History_Response_Chat_State;
+   function Image (Model : Get_Team_Chat_History_Response_Chat_State) return String;
+   function To_JSON (Model : Get_Team_Chat_History_Response_Chat_State) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Team_Chat_History_Response_Chat_State;
+
    --  `GetSquadChatHistoryResponse` model.
    type Get_Squad_Chat_History_Response is record
       Has_Team_Id : Boolean := False;
@@ -18171,8 +18282,11 @@ package UARP.Models is
       Conversation_History : UARP.Models.Team_Chat_Turn_Vectors.Vector;
       Has_Total : Boolean := False;
       Total : UARP.Types.Integer_Value := 0;
+      --  Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+      --  string - this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+      --  found "DONE".
       Has_Chat_State : Boolean := False;
-      Chat_State : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Chat_State : UARP.Models.Get_Team_Chat_History_Response_Chat_State;
       --  Present only when `limit` was sent: whether another page follows.
       Has_Has_More : Boolean := False;
       Has_More : Standard.Boolean := False;
@@ -18325,8 +18439,11 @@ package UARP.Models is
       Conversation_History : UARP.Models.Team_Chat_Turn_Vectors.Vector;
       Has_Total : Boolean := False;
       Total : UARP.Types.Integer_Value := 0;
+      --  Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+      --  string - this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+      --  found "DONE".
       Has_Chat_State : Boolean := False;
-      Chat_State : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Chat_State : UARP.Models.Get_Team_Chat_History_Response_Chat_State;
       --  Present only when `limit` was sent: whether another page follows.
       Has_Has_More : Boolean := False;
       Has_More : Standard.Boolean := False;
@@ -18699,12 +18816,66 @@ package UARP.Models is
    function To_JSON (Model : Get_Tenant_Blueprint_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Blueprint_Response;
 
+   --  Values of `GetTenantCompanyOverviewResponseNextStepKind`.
+   --  A value the API introduces later decodes as Get_Tenant_Company_Overview_Response_Next_Step_Kind_Unrecognized
+   --  with the original text kept in Raw.
+   type Get_Tenant_Company_Overview_Response_Next_Step_Kind_Kind is
+     (Get_Tenant_Company_Overview_Response_Next_Step_Kind_Setup,
+   Get_Tenant_Company_Overview_Response_Next_Step_Kind_Resume,
+   Get_Tenant_Company_Overview_Response_Next_Step_Kind_Decide,
+   Get_Tenant_Company_Overview_Response_Next_Step_Kind_Problem,
+   Get_Tenant_Company_Overview_Response_Next_Step_Kind_Wait,
+   Get_Tenant_Company_Overview_Response_Next_Step_Kind_Unrecognized);
+
+   type Get_Tenant_Company_Overview_Response_Next_Step_Kind is record
+      Kind : Get_Tenant_Company_Overview_Response_Next_Step_Kind_Kind := Get_Tenant_Company_Overview_Response_Next_Step_Kind_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Get_Tenant_Company_Overview_Response_Next_Step_Kind (Value : String) return Get_Tenant_Company_Overview_Response_Next_Step_Kind;
+   function To_Get_Tenant_Company_Overview_Response_Next_Step_Kind (Kind : Get_Tenant_Company_Overview_Response_Next_Step_Kind_Kind) return Get_Tenant_Company_Overview_Response_Next_Step_Kind;
+   function Image (Model : Get_Tenant_Company_Overview_Response_Next_Step_Kind) return String;
+   function To_JSON (Model : Get_Tenant_Company_Overview_Response_Next_Step_Kind) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Company_Overview_Response_Next_Step_Kind;
+
+   --  The ONE thing to do next, chosen by the server so every client shows the same step in the
+   --  same order (shared UX structure, 2026-10-14). Present on every answer of a server from this
+   --  release on; optional in this document because an older server does not send it - read it as
+   --  `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
+   --  method and path, as readiness gives). Order: a `draft` ? its first readiness blocker (`kind`
+   --  setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` ? `COMPANY_PAUSED`;
+   --  then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
+   --  with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
+   --  when nothing else applies.
+   type Get_Tenant_Company_Overview_Response_Next_Step is record
+      Kind : UARP.Models.Get_Tenant_Company_Overview_Response_Next_Step_Kind;
+      Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Fix : Boolean := False;
+      Fix : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Count : Boolean := False;
+      Count : UARP.Types.Integer_Value := 0;
+      Has_Run_Id : Boolean := False;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Error_Code : Boolean := False;
+      Error_Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Name : Boolean := False;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Next_Fire_At : Boolean := False;
+      Next_Fire_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Get_Tenant_Company_Overview_Response_Next_Step) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Tenant_Company_Overview_Response_Next_Step;
+
    --  `GetTenantCompanyOverviewResponseCompany` model.
    type Get_Tenant_Company_Overview_Response_Company is record
       Has_Company_Id : Boolean := False;
       Company_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Name : Boolean := False;
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  What the company is for; null until one is written.
+      Has_Objective : Boolean := False;
+      Objective : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Status : Boolean := False;
       Status : UARP.Models.Company_Profile_Status;
       Has_Version : Boolean := False;
@@ -18861,6 +19032,17 @@ package UARP.Models is
 
    --  `GetTenantCompanyOverviewResponse` model.
    type Get_Tenant_Company_Overview_Response is record
+      --  The ONE thing to do next, chosen by the server so every client shows the same step in the
+      --  same order (shared UX structure, 2026-10-14). Present on every answer of a server from this
+      --  release on; optional in this document because an older server does not send it - read it as
+      --  `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
+      --  method and path, as readiness gives). Order: a `draft` ? its first readiness blocker (`kind`
+      --  setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` ? `COMPANY_PAUSED`;
+      --  then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
+      --  with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
+      --  when nothing else applies.
+      Has_Next_Step : Boolean := False;
+      Next_Step : UARP.Models.Get_Tenant_Company_Overview_Response_Next_Step;
       Generated_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Window_Days : UARP.Types.Integer_Value := 0;
       Company : UARP.Models.Get_Tenant_Company_Overview_Response_Company;
@@ -19011,6 +19193,7 @@ package UARP.Models is
    type Goal is record
       Goal_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Agent_Id : Boolean := False;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Title : Boolean := False;
       Title : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -24365,9 +24548,11 @@ package UARP.Models is
    type Voting_Proposal is record
       Proposal_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Type : Boolean := False;
       Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
       Title : UARP.Types.Text := UARP.Types.Empty_Text;
       Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Proposed_By : Boolean := False;
       Proposed_By : UARP.Types.Text := UARP.Types.Empty_Text;
       Payload : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Quorum : UARP.Types.Float_Value := 0.0;
@@ -29330,6 +29515,47 @@ package UARP.Models is
    function To_JSON (Model : Search_Marketplace_Sort) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Search_Marketplace_Sort;
 
+   --  Values of `SearchMemoryRequestStrategy`.
+   --  A value the API introduces later decodes as Search_Memory_Request_Strategy_Unrecognized
+   --  with the original text kept in Raw.
+   type Search_Memory_Request_Strategy_Kind is
+     (Search_Memory_Request_Strategy_Recency,
+   Search_Memory_Request_Strategy_Hybrid,
+   Search_Memory_Request_Strategy_Unrecognized);
+
+   type Search_Memory_Request_Strategy is record
+      Kind : Search_Memory_Request_Strategy_Kind := Search_Memory_Request_Strategy_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Search_Memory_Request_Strategy (Value : String) return Search_Memory_Request_Strategy;
+   function To_Search_Memory_Request_Strategy (Kind : Search_Memory_Request_Strategy_Kind) return Search_Memory_Request_Strategy;
+   function Image (Model : Search_Memory_Request_Strategy) return String;
+   function To_JSON (Model : Search_Memory_Request_Strategy) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Search_Memory_Request_Strategy;
+
+   --  `SearchMemoryRequest` model.
+   type Search_Memory_Request is record
+      Has_Text : Boolean := False;
+      Text : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Alias for `text`; `text` wins when both are sent.
+      Has_Query : Boolean := False;
+      Query : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Strategy : Boolean := False;
+      Strategy : UARP.Models.Search_Memory_Request_Strategy;
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  Alias of `limit`, the name most vector APIs use (memory.ts MemorySearchSchema); `limit` wins
+      --  when both are sent.
+      Has_Top_K : Boolean := False;
+      Top_K : UARP.Types.Integer_Value := 0;
+      Has_Types : Boolean := False;
+      Types : UARP.Models.Agent_Update_Memory_Type_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Search_Memory_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Search_Memory_Request;
+
    --  `SearchMemoryResponse` model.
    type Search_Memory_Response is record
       Memories : UARP.Models.Memory_Entry_Vectors.Vector;
@@ -30837,6 +31063,30 @@ package UARP.Models is
    function To_JSON (Model : Team_Create) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Create;
 
+   --  `TeamRunDetailRun` model.
+   type Team_Run_Detail_Run is record
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Started_At : Boolean := False;
+      Started_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Completed_At : Boolean := False;
+      Completed_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Output : Boolean := False;
+      Output : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Has_Metrics : Boolean := False;
+      Metrics : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Error : Boolean := False;
+      Error : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Team_Run_Detail_Run) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Run_Detail_Run;
+
+   package Team_Run_Detail_Run_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Team_Run_Detail_Run);
+
    --  GET /teams/{teamId}/runs/{teamRunId} and GET /squads/{squadId}/runs/{teamRunId} (measured
    --  2026-09-10 on e2e-canon, identical on both routes): the team run and the member runs it
    --  spawned.
@@ -30844,7 +31094,10 @@ package UARP.Models is
       Team_Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Team_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      Runs : UARP.Models.Run_Vectors.Vector;
+      --  Each member run as a projection (routes/teams.ts loadTeamRunVerdict), not a full Run: no
+      --  `tenant_id`, `input` or `steps`. This pointed at `Run` until 2026-10-14, and the SDK's
+      --  decode failed on the absent `tenant_id`.
+      Runs : UARP.Models.Team_Run_Detail_Run_Vectors.Vector;
       Total_Runs : UARP.Types.Integer_Value := 0;
    end record;
 

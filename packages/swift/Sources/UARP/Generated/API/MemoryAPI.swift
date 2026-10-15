@@ -193,7 +193,7 @@ public struct MemoryAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/memory/search`
     ///
     /// Required scopes: `memory:write`.
-    public func search(agentId: String, body: JSONValue, options: RequestOptions = .init()) async throws -> SearchMemoryResponse {
+    public func search(agentId: String, body: SearchMemoryRequest, options: RequestOptions = .init()) async throws -> SearchMemoryResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/memory/search",

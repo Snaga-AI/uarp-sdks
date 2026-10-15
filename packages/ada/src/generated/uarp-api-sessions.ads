@@ -326,7 +326,7 @@ package UARP.API.Sessions is
    --  Required scopes: runs:create, sessions:write.
    function Create_Task
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Create_Task_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Created_Task;
 

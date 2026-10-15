@@ -192,6 +192,19 @@ test('turns oneOf into a union', () => {
   ]);
 });
 
+test('an anyOf of required-only members constrains the object instead of typing it', () => {
+  const spec = fixture('composition');
+  const body = operation(spec, 'copyFile').body!.type;
+  assert.equal(body.kind, 'named');
+  const copy = object(spec, (body as { name: string }).name);
+  assert.deepEqual(
+    copy.properties.map((p) => p.wire).sort(),
+    ['dest_path', 'from_path', 'source_path', 'to_path'],
+  );
+  // Either pair satisfies the rule, so neither can be required by the type.
+  assert.ok(copy.properties.every((p) => !p.required));
+});
+
 // -------------------------------------------------------------------- bodies
 
 test('describes multipart bodies part by part', () => {
@@ -685,7 +698,15 @@ test('parses the production document into the expected shape', () => {
   // `unknown`. The names it hoists change with it (`GetTenantPlanFitResponse*`
   // -> `TenantPlanFit*`), which is a rename inside an unreleased batch: no
   // consumer of 0.10.0 ever saw those names.
-  assert.equal(spec.types.length, 2014);
+  // 2014 -> 2024 on 2026-10-15 (build b108e9a9): +10, none removed. Five are the
+  // document's: the overview's `next_step` and its kind, the chat state and the
+  // proposal type as enums, and `TeamRunDetailRun`. Five are the parser's: an
+  // `anyOf` whose members only list `required` keys no longer reads as a union,
+  // so `createTask` and memory search get typed bodies (with three nested enums
+  // and objects) where 0.10.0 took `JsonValue`. The copy and move bodies would
+  // have gone the other way — the document added the same kind of rule to them,
+  // and without the fix they fell back to `JsonValue` and lost both names.
+  assert.equal(spec.types.length, 2024);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);

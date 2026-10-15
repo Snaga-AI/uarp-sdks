@@ -20,6 +20,7 @@ import type {
   CreateSessionShareRequest,
   CreateSessionShareResponse,
   CreateSessionTodoRequest,
+  CreateTaskRequest,
   CreatedTask,
   DeleteSessionBranchResponse,
   DeleteSessionTodoResponse,
@@ -28,7 +29,6 @@ import type {
   GetSessionMessagesResponse,
   GetSessionShareResponse,
   ImportSessionRequest,
-  JsonValue,
   ListSessionAnnotationsResponse,
   ListSessionAnnotationsResponseItem,
   ListSessionArtifactsResponse,
@@ -429,7 +429,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `runs:create`, `sessions:write`.
    */
-  createTask(body: JsonValue, options?: RequestOptions): Promise<CreatedTask> {
+  createTask(body: CreateTaskRequest, options?: RequestOptions): Promise<CreatedTask> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/todos',

@@ -3492,9 +3492,9 @@ export interface ApproveRunResponse {
 export interface ArbiterCase {
   case_id: string;
   tenant_id: string;
-  filed_by: string;
-  against_agent_id: string;
-  rule_ids: string[];
+  filed_by?: string;
+  against_agent_id?: string;
+  rule_ids?: string[];
   description: string;
   evidence: JsonObject;
   status: ArbiterCaseStatus;
@@ -3551,7 +3551,7 @@ export interface AuditLogEntry {
 }
 
 export interface AuthProvider {
-  email: string;
+  email?: string;
   id: string;
   linked: boolean;
   linked_at?: string;
@@ -4370,6 +4370,11 @@ export interface CompanyActivityEntry {
 export interface CompanyChange {
   version: number;
   at: string;
+  /**
+   * Who made the change: the person's `user_id` when the credential names one (a session, or a
+   * key minted for a user), otherwise the key's `key_id`. Match it against `GET /users` before
+   * showing it as a name; an id that is no member is a key.
+   */
   actor: string;
   source: CompanyChangeSource;
   summary: string;
@@ -4885,6 +4890,11 @@ export interface CompanyUpdate {
 export interface CompanyVersionRow {
   version: number;
   at: string;
+  /**
+   * Who made the change: the person's `user_id` when the credential names one (a session, or a
+   * key minted for a user), otherwise the key's `key_id`. Match it against `GET /users` before
+   * showing it as a name; an id that is no member is a key.
+   */
   actor: string;
   source: CompanyChangeSource;
   summary: string;
@@ -6193,6 +6203,28 @@ export interface CreateSpecPackageCheckoutSessionResponse {
   retry_after_seconds: number;
 }
 
+export interface CreateTaskRequest {
+  title: string;
+  instructions?: string;
+  due_at?: string | null;
+  recurrence?: CreateTaskRequestRecurrence;
+  require_confirmation?: boolean;
+  delivery?: CreateTaskRequestDelivery;
+  agent_id?: string;
+  agent_ids?: string[];
+  team_id?: string;
+}
+
+export interface CreateTaskRequestDelivery {
+  channels?: TodoDeliveryChannel[];
+  target?: string;
+}
+
+export interface CreateTaskRequestRecurrence {
+  cron?: string;
+  timezone?: string;
+}
+
 export interface CreateTenantProposalRequest {
   summary: string;
   rationale?: string;
@@ -6286,11 +6318,26 @@ export type CreateTenantRequestStatus = 'active' | 'suspended' | 'trial' | 'dele
 
 export const CREATE_TENANT_REQUEST_STATUS_VALUES = ['active', 'suspended', 'trial', 'deleted'] as const;
 
+/**
+ * The field is `type`. This document said `proposal_type` until 2026-10-14; the server refused
+ * it 422 from 2026-08-31 and, since 2026-10-14, reads it as the old name of `type` (`type`
+ * wins when both are sent), so a client built from the old document works.
+ */
 export interface CreateVotingProposalRequest {
+  type?: CreateVotingProposalRequestType;
+  /**
+   * Old name of `type`, read when `type` is absent.
+   *
+   * @deprecated
+   */
+  proposal_type?: string;
   title: string;
   description: string;
-  proposal_type: string;
 }
+
+export type CreateVotingProposalRequestType = 'new_goal' | 'policy_change' | 'agent_termination' | 'constitution_amendment' | 'agent_design' | 'arbiter_appointment';
+
+export const CREATE_VOTING_PROPOSAL_REQUEST_TYPE_VALUES = ['new_goal', 'policy_change', 'agent_termination', 'constitution_amendment', 'agent_design', 'arbiter_appointment'] as const;
 
 export interface CreateWebhookRequest {
   url: string;
@@ -7427,9 +7474,9 @@ export interface Error {
  * code only when its call site names one. Other statuses: absent when there is no
  * machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURE_DISABLED' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURE_DISABLED' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SESSION_NOT_ACTIVE' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURE_DISABLED', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURE_DISABLED', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SESSION_NOT_ACTIVE', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -9277,7 +9324,12 @@ export interface GetSquadChatHistoryResponse {
   team_id?: string;
   conversation_history?: TeamChatTurn[];
   total?: number;
-  chat_state?: JsonObject;
+  /**
+   * Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+   * string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+   * found "DONE".
+   */
+  chat_state?: GetTeamChatHistoryResponseChatState;
   /**
    * Present only when `limit` was sent: whether another page follows.
    */
@@ -9307,7 +9359,12 @@ export interface GetTeamChatHistoryResponse {
   team_id?: string;
   conversation_history?: TeamChatTurn[];
   total?: number;
-  chat_state?: JsonObject;
+  /**
+   * Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+   * string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+   * found "DONE".
+   */
+  chat_state?: GetTeamChatHistoryResponseChatState;
   /**
    * Present only when `limit` was sent: whether another page follows.
    */
@@ -9319,6 +9376,15 @@ export interface GetTeamChatHistoryResponse {
    */
   cursor?: string;
 }
+
+/**
+ * Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+ * string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+ * found "DONE".
+ */
+export type GetTeamChatHistoryResponseChatState = 'IDLE' | 'ADDRESSING' | 'RUNNING' | 'MERGING' | 'AWAITING_USER' | 'DONE';
+
+export const GET_TEAM_CHAT_HISTORY_RESPONSE_CHAT_STATE_VALUES = ['IDLE', 'ADDRESSING', 'RUNNING', 'MERGING', 'AWAITING_USER', 'DONE'] as const;
 
 export interface GetTeamGraphResponse {
   nodes?: TeamGraphNode[];
@@ -9493,6 +9559,18 @@ export type GetTenantBlueprintResponseScheduleKind = 'agent' | 'mission';
 export const GET_TENANT_BLUEPRINT_RESPONSE_SCHEDULE_KIND_VALUES = ['agent', 'mission'] as const;
 
 export interface GetTenantCompanyOverviewResponse {
+  /**
+   * The ONE thing to do next, chosen by the server so every client shows the same step in the
+   * same order (shared UX structure, 2026-10-14). Present on every answer of a server from this
+   * release on; optional in this document because an older server does not send it — read it as
+   * `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
+   * method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
+   * setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
+   * then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
+   * with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
+   * when nothing else applies.
+   */
+  next_step?: GetTenantCompanyOverviewResponseNextStep;
   generated_at: string;
   window_days: number;
   company: GetTenantCompanyOverviewResponseCompany;
@@ -9534,6 +9612,10 @@ export interface GetTenantCompanyOverviewResponseActivityByDayItem {
 export interface GetTenantCompanyOverviewResponseCompany {
   company_id?: string;
   name?: string;
+  /**
+   * What the company is for; null until one is written.
+   */
+  objective?: string | null;
   status?: CompanyProfileStatus;
   version?: number;
   launched_at?: string | null;
@@ -9557,6 +9639,32 @@ export interface GetTenantCompanyOverviewResponseNextItem {
   cron?: string | null;
   shape?: ScheduleShape | null;
 }
+
+/**
+ * The ONE thing to do next, chosen by the server so every client shows the same step in the
+ * same order (shared UX structure, 2026-10-14). Present on every answer of a server from this
+ * release on; optional in this document because an older server does not send it — read it as
+ * `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
+ * method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
+ * setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
+ * then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
+ * with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
+ * when nothing else applies.
+ */
+export interface GetTenantCompanyOverviewResponseNextStep {
+  kind: GetTenantCompanyOverviewResponseNextStepKind;
+  code: string;
+  fix?: string;
+  count?: number;
+  run_id?: string;
+  error_code?: string | null;
+  name?: string;
+  next_fire_at?: string;
+}
+
+export type GetTenantCompanyOverviewResponseNextStepKind = 'setup' | 'resume' | 'decide' | 'problem' | 'wait';
+
+export const GET_TENANT_COMPANY_OVERVIEW_RESPONSE_NEXT_STEP_KIND_VALUES = ['setup', 'resume', 'decide', 'problem', 'wait'] as const;
 
 export interface GetTenantCompanyOverviewResponseProblems {
   failed_runs?: number;
@@ -9667,7 +9775,7 @@ export interface GetUsageTimeseriesResponseDataItem {
 export interface Goal {
   goal_id: string;
   tenant_id: string;
-  agent_id: string;
+  agent_id?: string;
   title?: string;
   description?: string;
   rationale?: string;
@@ -17088,6 +17196,32 @@ export type SearchMarketplaceSort = 'rating' | 'popularity' | 'recency';
 
 export const SEARCH_MARKETPLACE_SORT_VALUES = ['rating', 'popularity', 'recency'] as const;
 
+export interface SearchMemoryRequest {
+  text?: string;
+  /**
+   * Alias for `text`; `text` wins when both are sent.
+   */
+  query?: string;
+  /**
+   * @default "hybrid"
+   */
+  strategy?: SearchMemoryRequestStrategy;
+  /**
+   * @default 20
+   */
+  limit?: number;
+  /**
+   * Alias of `limit`, the name most vector APIs use (memory.ts MemorySearchSchema); `limit` wins
+   * when both are sent.
+   */
+  top_k?: number;
+  types?: AgentUpdateMemoryType[];
+}
+
+export type SearchMemoryRequestStrategy = 'recency' | 'hybrid';
+
+export const SEARCH_MEMORY_REQUEST_STRATEGY_VALUES = ['recency', 'hybrid'] as const;
+
 export interface SearchMemoryResponse {
   memories: MemoryEntry[];
   total: number;
@@ -18357,8 +18491,25 @@ export interface TeamRunDetail {
   team_run_id: string;
   team_id: string;
   status: string;
-  runs: Run[];
+  /**
+   * Each member run as a projection (routes/teams.ts loadTeamRunVerdict), not a full Run: no
+   * `tenant_id`, `input` or `steps`. This pointed at `Run` until 2026-10-14, and the SDK's
+   * decode failed on the absent `tenant_id`.
+   */
+  runs: TeamRunDetailRun[];
   total_runs: number;
+}
+
+export interface TeamRunDetailRun {
+  run_id: string;
+  agent_id: string;
+  status: string;
+  created_at: string;
+  started_at?: string;
+  completed_at?: string;
+  output?: JsonValue;
+  metrics?: JsonObject;
+  error?: JsonValue;
 }
 
 export interface TeamRunSummary {
@@ -21369,10 +21520,10 @@ export const VOTE_RESULT_STATUS_VALUES = ['passed', 'rejected', 'expired', 'veto
 export interface VotingProposal {
   proposal_id: string;
   tenant_id: string;
-  type: string;
+  type?: string;
   title: string;
   description: string;
-  proposed_by: string;
+  proposed_by?: string;
   payload: JsonObject;
   quorum: number;
   status: VotingProposalStatus;

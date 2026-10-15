@@ -63,8 +63,11 @@ export class CompanyResource extends APIResource {
    *
    * Builds the template's operations from `inputs` and stores them as a pending proposal
    * (`template` set) — nothing is created until a person applies it with `POST
-   * /tenants/me/proposals/{proposalId}/apply`, which also records the template on the company.
-   * Developer + `agents:write`.
+   * /tenants/me/proposals/{proposalId}/apply`, which also records the template on the company. A
+   * company that has never been launched and has no agent besides its Chief of Staff becomes a
+   * `draft` here (its profile filled from the template), so it goes through test run and launch
+   * like one founded with `template_id`; a company already working stays as it is (since
+   * 2026-10-14). Developer + `agents:write`.
    *
    * `POST /api/v1/tenants/me/company/apply-template`
    *
@@ -86,9 +89,12 @@ export class CompanyResource extends APIResource {
    * Runs each operation through the route a person would call, with the caller's rights
    * (validation, plan quotas, schedule floors). Removals run last. If a step fails, what the
    * proposal created is deleted and what it changed is restored; the answer is 422 with `status:
-   * failed`, `failure` and `rolled_back`. Company fields are written once, at the end, with one
-   * version bump. An agent's credential is refused (403) even with an owner's role. Applying an
-   * applied proposal answers it again (200) and changes nothing. Admin or owner.
+   * failed`, `failure` and `rolled_back`. The one exception is a plan ceiling (`failure.code` =
+   * `resource_limit_reached`): the proposal stays `pending` with `failure` beside it, so the
+   * person can upgrade (`failure.details` names the resource, used, limit and current_plan) and
+   * apply the SAME proposal (since 2026-10-14). Company fields are written once, at the end,
+   * with one version bump. An agent's credential is refused (403) even with an owner's role.
+   * Applying an applied proposal answers it again (200) and changes nothing. Admin or owner.
    *
    * `POST /api/v1/tenants/me/proposals/{proposalId}/apply`
    *
@@ -140,7 +146,10 @@ export class CompanyResource extends APIResource {
    * plans, the budget, the governance tool list, and integrations and knowledge sources by name.
    * Never a connector config, an MCP server's env or auth, a model key, any record's `metadata`,
    * run history or memory — `excluded` lists each omission with the reason. For an audit, and
-   * the input a clone takes.
+   * the input a clone takes. Size: no byte limit and no paging — one answer holds every agent
+   * (up to 5 000), department (up to 2 000) and mission schedule (up to 2 000); the template
+   * company is about 28 KB (measured 2026-10-14). An import takes at most 50 agents, 20
+   * departments and 50 schedules, so a larger export cannot be cloned in one manifest.
    *
    * `GET /api/v1/tenants/me/company/export`
    *

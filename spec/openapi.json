@@ -290,8 +290,43 @@
                     },
                     "runs": {
                         "type": "array",
+                        "description": "Each member run as a projection (routes/teams.ts loadTeamRunVerdict), not a full Run: no `tenant_id`, `input` or `steps`. This pointed at `Run` until 2026-10-14, and the SDK's decode failed on the absent `tenant_id`.",
                         "items": {
-                            "$ref": "#/components/schemas/Run"
+                            "type": "object",
+                            "properties": {
+                                "run_id": {
+                                    "type": "string"
+                                },
+                                "agent_id": {
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "type": "string"
+                                },
+                                "created_at": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "started_at": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "completed_at": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "output": {},
+                                "metrics": {
+                                    "type": "object"
+                                },
+                                "error": {}
+                            },
+                            "required": [
+                                "run_id",
+                                "agent_id",
+                                "status",
+                                "created_at"
+                            ]
                         }
                     },
                     "total_runs": {
@@ -5884,6 +5919,7 @@
                             "SEARCH_PROVIDER_NOT_CONFIGURED",
                             "SEARCH_UPSTREAM_FAILED",
                             "SEARCH_UPSTREAM_TIMEOUT",
+                            "SESSION_NOT_ACTIVE",
                             "SHARE_LIST_CONFLICT",
                             "SIZE_LIMIT",
                             "SPEC_NOT_FOUND",
@@ -10236,7 +10272,6 @@
                 "required": [
                     "goal_id",
                     "tenant_id",
-                    "agent_id",
                     "status",
                     "created_at"
                 ]
@@ -10560,7 +10595,6 @@
             "AuthProvider": {
                 "type": "object",
                 "required": [
-                    "email",
                     "id",
                     "linked"
                 ],
@@ -14257,10 +14291,8 @@
                 "required": [
                     "proposal_id",
                     "tenant_id",
-                    "type",
                     "title",
                     "description",
-                    "proposed_by",
                     "payload",
                     "quorum",
                     "status",
@@ -14365,9 +14397,6 @@
                 "required": [
                     "case_id",
                     "tenant_id",
-                    "filed_by",
-                    "against_agent_id",
-                    "rule_ids",
                     "description",
                     "evidence",
                     "status",
@@ -18638,7 +18667,8 @@
                         "format": "date-time"
                     },
                     "actor": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Who made the change: the person's `user_id` when the credential names one (a session, or a key minted for a user), otherwise the key's `key_id`. Match it against `GET /users` before showing it as a name; an id that is no member is a key."
                     },
                     "source": {
                         "type": "string",
@@ -18769,7 +18799,8 @@
                         "format": "date-time"
                     },
                     "actor": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Who made the change: the person's `user_id` when the credential names one (a session, or a key minted for a user), otherwise the key's `key_id`. Match it against `GET /users` before showing it as a name; an id that is no member is a key."
                     },
                     "source": {
                         "type": "string",
@@ -34512,7 +34543,7 @@
                     "Company"
                 ],
                 "summary": "Apply a proposal — a person only",
-                "description": "Runs each operation through the route a person would call, with the caller's rights (validation, plan quotas, schedule floors). Removals run last. If a step fails, what the proposal created is deleted and what it changed is restored; the answer is 422 with `status: failed`, `failure` and `rolled_back`. Company fields are written once, at the end, with one version bump. An agent's credential is refused (403) even with an owner's role. Applying an applied proposal answers it again (200) and changes nothing. Admin or owner.",
+                "description": "Runs each operation through the route a person would call, with the caller's rights (validation, plan quotas, schedule floors). Removals run last. If a step fails, what the proposal created is deleted and what it changed is restored; the answer is 422 with `status: failed`, `failure` and `rolled_back`. The one exception is a plan ceiling (`failure.code` = `resource_limit_reached`): the proposal stays `pending` with `failure` beside it, so the person can upgrade (`failure.details` names the resource, used, limit and current_plan) and apply the SAME proposal (since 2026-10-14). Company fields are written once, at the end, with one version bump. An agent's credential is refused (403) even with an owner's role. Applying an applied proposal answers it again (200) and changes nothing. Admin or owner.",
                 "security": [
                     {
                         "bearerAuth": []
@@ -35076,6 +35107,51 @@
                                         "next"
                                     ],
                                     "properties": {
+                                        "next_step": {
+                                            "type": "object",
+                                            "description": "The ONE thing to do next, chosen by the server so every client shows the same step in the same order (shared UX structure, 2026-10-14). Present on every answer of a server from this release on; optional in this document because an older server does not send it — read it as `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind` setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`; then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window, with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing else applies.",
+                                            "required": [
+                                                "kind",
+                                                "code"
+                                            ],
+                                            "properties": {
+                                                "kind": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "setup",
+                                                        "resume",
+                                                        "decide",
+                                                        "problem",
+                                                        "wait"
+                                                    ]
+                                                },
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "fix": {
+                                                    "type": "string"
+                                                },
+                                                "count": {
+                                                    "type": "integer"
+                                                },
+                                                "run_id": {
+                                                    "type": "string"
+                                                },
+                                                "error_code": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "next_fire_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            }
+                                        },
                                         "generated_at": {
                                             "type": "string",
                                             "format": "date-time"
@@ -35091,6 +35167,13 @@
                                                 },
                                                 "name": {
                                                     "type": "string"
+                                                },
+                                                "objective": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "What the company is for; null until one is written."
                                                 },
                                                 "status": {
                                                     "type": "string",
@@ -35690,7 +35773,7 @@
                     "Company"
                 ],
                 "summary": "Propose a template for the active company",
-                "description": "Builds the template's operations from `inputs` and stores them as a pending proposal (`template` set) — nothing is created until a person applies it with `POST /tenants/me/proposals/{proposalId}/apply`, which also records the template on the company. Developer + `agents:write`.",
+                "description": "Builds the template's operations from `inputs` and stores them as a pending proposal (`template` set) — nothing is created until a person applies it with `POST /tenants/me/proposals/{proposalId}/apply`, which also records the template on the company. A company that has never been launched and has no agent besides its Chief of Staff becomes a `draft` here (its profile filled from the template), so it goes through test run and launch like one founded with `template_id`; a company already working stays as it is (since 2026-10-14). Developer + `agents:write`.",
                 "security": [
                     {
                         "bearerAuth": []
@@ -35973,7 +36056,7 @@
                     "Company"
                 ],
                 "summary": "The company as a manifest without secrets",
-                "description": "Structure only: the profile, agents (prompts, SPECs, tools, approval policy, schedule; provider and model but never a key reference or endpoint), departments, schedules, mission plans, the budget, the governance tool list, and integrations and knowledge sources by name. Never a connector config, an MCP server's env or auth, a model key, any record's `metadata`, run history or memory — `excluded` lists each omission with the reason. For an audit, and the input a clone takes.",
+                "description": "Structure only: the profile, agents (prompts, SPECs, tools, approval policy, schedule; provider and model but never a key reference or endpoint), departments, schedules, mission plans, the budget, the governance tool list, and integrations and knowledge sources by name. Never a connector config, an MCP server's env or auth, a model key, any record's `metadata`, run history or memory — `excluded` lists each omission with the reason. For an audit, and the input a clone takes. Size: no byte limit and no paging — one answer holds every agent (up to 5 000), department (up to 2 000) and mission schedule (up to 2 000); the template company is about 28 KB (measured 2026-10-14). An import takes at most 50 agents, 20 departments and 50 schedules, so a larger export cannot be cloned in one manifest.",
                 "security": [
                     {
                         "bearerAuth": []
@@ -42105,6 +42188,7 @@
         "/api/v1/runs/{runId}/sources": {
             "get": {
                 "operationId": "getRunSources",
+                "x-capability": "run_sources",
                 "summary": "Where a run's facts came from",
                 "description": "Derived from the run's own tool events and its answer — nothing is stored, so every run has one. Each source is a URL with `kind` `read` (the agent opened it: the `url` of a fetch / browse / read_feed call) or `found` (it appeared in a tool's result, e.g. a search hit, without being opened), the `tool`, and `cited` (the answer links to it); cited first, then read. `unsourced_links` are links IN the answer that no tool call or result contained — the ones to check first, since nothing the agent read holds them. URLs are compared without trailing punctuation, trailing slash or fragment. At most 300 sources (`truncated`). Tool results are recorded truncated, so a link deep in a very long result may be missed. `404` when the run does not exist. Since 2026-10-12.",
                 "tags": [
@@ -42223,6 +42307,7 @@
         "/api/v1/runs/{runId}/revise": {
             "post": {
                 "operationId": "reviseRun",
+                "x-capability": "run_revise",
                 "summary": "Decline the pending action with feedback, and let the run go on",
                 "description": "The third answer to a run waiting on approval, beside approve and reject: the person declines the action AND says what to change, and the run continues. Every tool call the run was waiting on is answered with a result saying it was NOT carried out, carrying `feedback`; the model reads that as the outcome of what it tried and revises its work. Recorded on the run's `approvals` as `decision: revised` with the feedback as `reason`. Requires the `runs.approve` permission. `404` when the run does not exist; `409` unless its status is `awaiting_approval`, for a run on a local bridge (decided on that machine — approve or reject it), and when a concurrent write wins. `422` without `feedback`. Since 2026-10-12; before, the only refusal (`reject`) failed the run.",
                 "tags": [
@@ -51503,6 +51588,20 @@
                         "application/json": {
                             "schema": {
                                 "type": "object",
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "from_path",
+                                            "to_path"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "source_path",
+                                            "dest_path"
+                                        ]
+                                    }
+                                ],
                                 "description": "`from_path` and `to_path`; the copy route's spelling `source_path` / `dest_path` is accepted too (since 2026-10-12). One of each pair is required — 422 otherwise.",
                                 "properties": {
                                     "from_path": {
@@ -61800,7 +61899,7 @@
         "/api/v1/companies/{companyId}/pause": {
             "post": {
                 "operationId": "pauseCompany",
-                "x-capability": "initiatives",
+                "x-capability": "initiative_pause",
                 "tags": [
                     "Companies"
                 ],
@@ -61927,7 +62026,7 @@
         "/api/v1/companies/{companyId}/resume": {
             "post": {
                 "operationId": "resumeCompany",
-                "x-capability": "initiatives",
+                "x-capability": "initiative_pause",
                 "tags": [
                     "Companies"
                 ],
@@ -64097,6 +64196,20 @@
                         "application/json": {
                             "schema": {
                                 "type": "object",
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "source_path",
+                                            "dest_path"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "from_path",
+                                            "to_path"
+                                        ]
+                                    }
+                                ],
                                 "description": "`source_path` and `dest_path`; the move route's spelling `from_path` / `to_path` is accepted too (since 2026-10-12). One of each pair is required — 422 otherwise.",
                                 "properties": {
                                     "source_path": {
@@ -67416,7 +67529,16 @@
                                             "type": "integer"
                                         },
                                         "chat_state": {
-                                            "type": "object"
+                                            "type": "string",
+                                            "enum": [
+                                                "IDLE",
+                                                "ADDRESSING",
+                                                "RUNNING",
+                                                "MERGING",
+                                                "AWAITING_USER",
+                                                "DONE"
+                                            ],
+                                            "description": "Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant found \"DONE\"."
                                         },
                                         "has_more": {
                                             "type": "boolean",
@@ -69013,9 +69135,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "File content",
+                        "description": "File content, served with the file's own stored `mime_type` as Content-Type (a Markdown file is `text/markdown`, a PDF `application/pdf`). Read it as bytes whatever the type. Until 2026-10-14 this listed only `application/octet-stream`, which no stored file is served as.",
                         "content": {
-                            "application/octet-stream": {
+                            "*/*": {
                                 "schema": {
                                     "type": "string",
                                     "format": "binary"
@@ -76565,7 +76687,8 @@
                         "schema": {
                             "type": "string",
                             "maxLength": 65536
-                        }
+                        },
+                        "description": "The id of an INITIATIVE. The name is deliberately NOT renamed to `initiative_id`: in this stream `company` is the resource that was renamed on 2026-10-12, never the tenant, and the field of the same name on each entry carries the same id. A naming sweep that cannot tell those two meanings apart would delete a parameter four shipped call sites depend on — measured 2026-10-13, the web client sends exactly this name."
                     },
                     {
                         "name": "team_id",
@@ -76581,7 +76704,8 @@
                         "schema": {
                             "type": "string",
                             "maxLength": 65536
-                        }
+                        },
+                        "description": "Comma-separated `event_type` values, matched exactly. The initiative lifecycle events were renamed on 2026-10-12 (`company.tick_*` → `initiative.tick_*`) and the filter is an exact-match set, so a legacy name is widened to the event it was renamed to — asking for `company.tick_start` also matches `initiative.tick_start`. Rows stored under the old name are still matched by the old name; asking for the current name does not reach back to them."
                     }
                 ],
                 "responses": {
@@ -94723,24 +94847,37 @@
                         "application/json": {
                             "schema": {
                                 "type": "object",
+                                "description": "The field is `type`. This document said `proposal_type` until 2026-10-14; the server refused it 422 from 2026-08-31 and, since 2026-10-14, reads it as the old name of `type` (`type` wins when both are sent), so a client built from the old document works.",
                                 "properties": {
-                                    "title": {
+                                    "type": {
                                         "type": "string",
-                                        "maxLength": 10485760
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                        "maxLength": 10485760
+                                        "enum": [
+                                            "new_goal",
+                                            "policy_change",
+                                            "agent_termination",
+                                            "constitution_amendment",
+                                            "agent_design",
+                                            "arbiter_appointment"
+                                        ]
                                     },
                                     "proposal_type": {
                                         "type": "string",
+                                        "deprecated": true,
+                                        "description": "Old name of `type`, read when `type` is absent.",
                                         "maxLength": 10485760
+                                    },
+                                    "title": {
+                                        "type": "string",
+                                        "maxLength": 500
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "maxLength": 50000
                                     }
                                 },
                                 "required": [
                                     "title",
-                                    "description",
-                                    "proposal_type"
+                                    "description"
                                 ]
                             }
                         }
@@ -105921,6 +106058,7 @@
         "/api/v1/missions/{missionId}/objectives/{objectiveId}/review": {
             "post": {
                 "operationId": "reviewMissionObjective",
+                "x-capability": "mission_review",
                 "summary": "Accept, revise or reject an objective's result",
                 "description": "A person's verdict on a result held at `awaiting_review` (an objective with `review_required`). `accept` completes it and the mission moves on; `revise` sends it back — the agent is re-run with its previous version and `feedback`, which is not counted as a failed attempt (at most 10 revisions, then `revision_limit_10`); `reject` fails it with `abort_reason: rejected_by_person`. Answers the objective with `review` set; the mission clears it once acted on. `409` unless the objective is `awaiting_review`, and while an earlier verdict is still unread; `422` for an unknown `decision`, for `revise` without `feedback`, and for feedback over 10 000 characters; `404` for a mission or objective that does not exist or does not belong to it. Only POST is allowed (`405`). Since 2026-10-12.\n\nMEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When either is off the route answers **404** with a plain body.",
                 "tags": [
@@ -106064,6 +106202,7 @@
         "/api/v1/missions/schedules": {
             "get": {
                 "operationId": "listMissionSchedules",
+                "x-capability": "mission_schedules",
                 "summary": "Mission plans on a cron",
                 "tags": [
                     "Missions"
@@ -106115,6 +106254,7 @@
             },
             "post": {
                 "operationId": "createMissionSchedule",
+                "x-capability": "mission_schedules",
                 "summary": "Run a mission plan on a cron",
                 "tags": [
                     "Missions"
@@ -106253,6 +106393,7 @@
         "/api/v1/missions/schedules/{scheduleId}": {
             "delete": {
                 "operationId": "deleteMissionSchedule",
+                "x-capability": "mission_schedules",
                 "security": [
                     {
                         "bearerAuth": []
@@ -106944,6 +107085,7 @@
         "/api/v1/analytics/missions": {
             "get": {
                 "operationId": "getMissionPerformance",
+                "x-capability": "mission_analytics",
                 "summary": "How well the work goes — acceptance, revisions, cost, time",
                 "tags": [
                     "Analytics"
@@ -109121,7 +109263,16 @@
                                             "type": "integer"
                                         },
                                         "chat_state": {
-                                            "type": "object"
+                                            "type": "string",
+                                            "enum": [
+                                                "IDLE",
+                                                "ADDRESSING",
+                                                "RUNNING",
+                                                "MERGING",
+                                                "AWAITING_USER",
+                                                "DONE"
+                                            ],
+                                            "description": "Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant found \"DONE\"."
                                         },
                                         "has_more": {
                                             "type": "boolean",
@@ -113783,7 +113934,7 @@
         "/api/v1/initiatives/{initiativeId}/pause": {
             "post": {
                 "operationId": "pauseInitiative",
-                "x-capability": "initiatives",
+                "x-capability": "initiative_pause",
                 "tags": [
                     "Initiatives"
                 ],
@@ -113909,7 +114060,7 @@
         "/api/v1/initiatives/{initiativeId}/resume": {
             "post": {
                 "operationId": "resumeInitiative",
-                "x-capability": "initiatives",
+                "x-capability": "initiative_pause",
                 "tags": [
                     "Initiatives"
                 ],

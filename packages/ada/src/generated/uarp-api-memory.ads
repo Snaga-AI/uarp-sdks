@@ -3,7 +3,6 @@
 --  Agent memory management
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.Types;
 package UARP.API.Memory is
@@ -186,7 +185,7 @@ package UARP.API.Memory is
    function Search
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Search_Memory_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Search_Memory_Response;
 

@@ -17,8 +17,22 @@ export interface GetActivityFeedParams {
   limit?: number;
   cursor?: string;
   agent_id?: string;
+  /**
+   * The id of an INITIATIVE. The name is deliberately NOT renamed to `initiative_id`: in this
+   * stream `company` is the resource that was renamed on 2026-10-12, never the tenant, and the
+   * field of the same name on each entry carries the same id. A naming sweep that cannot tell
+   * those two meanings apart would delete a parameter four shipped call sites depend on —
+   * measured 2026-10-13, the web client sends exactly this name.
+   */
   company_id?: string;
   team_id?: string;
+  /**
+   * Comma-separated `event_type` values, matched exactly. The initiative lifecycle events were
+   * renamed on 2026-10-12 (`company.tick_*` → `initiative.tick_*`) and the filter is an
+   * exact-match set, so a legacy name is widened to the event it was renamed to — asking for
+   * `company.tick_start` also matches `initiative.tick_start`. Rows stored under the old name
+   * are still matched by the old name; asking for the current name does not reach back to them.
+   */
   types?: string;
 }
 

@@ -6412,11 +6412,11 @@ public data class ArbiterCase(
     @SerialName("tenant_id")
     public val tenantId: String,
     @SerialName("filed_by")
-    public val filedBy: String,
+    public val filedBy: String? = null,
     @SerialName("against_agent_id")
-    public val againstAgentId: String,
+    public val againstAgentId: String? = null,
     @SerialName("rule_ids")
-    public val ruleIds: List<String>,
+    public val ruleIds: List<String>? = null,
     public val description: String,
     public val evidence: JsonObject,
     public val status: ArbiterCaseStatus,
@@ -6541,7 +6541,7 @@ public data class AuditLogEntry(
  */
 @Serializable
 public data class AuthProvider(
-    public val email: String,
+    public val email: String? = null,
     public val id: String,
     public val linked: Boolean,
     @SerialName("linked_at")
@@ -8020,6 +8020,11 @@ public data class CompanyActivityEntry(
 public data class CompanyChange(
     public val version: Long,
     public val at: String,
+    /**
+     * Who made the change: the person's `user_id` when the credential names one (a session, or a
+     * key minted for a user), otherwise the key's `key_id`. Match it against `GET /users` before
+     * showing it as a name; an id that is no member is a key.
+     */
     public val actor: String,
     public val source: CompanyChangeSource,
     public val summary: String,
@@ -8873,6 +8878,11 @@ public data class CompanyUpdate(
 public data class CompanyVersionRow(
     public val version: Long,
     public val at: String,
+    /**
+     * Who made the change: the person's `user_id` when the credential names one (a session, or a
+     * key minted for a user), otherwise the key's `key_id`. Match it against `GET /users` before
+     * showing it as a name; an id that is no member is a key.
+     */
     public val actor: String,
     public val source: CompanyChangeSource,
     public val summary: String,
@@ -11137,6 +11147,45 @@ public data class CreateSpecPackageCheckoutSessionResponse(
 )
 
 /**
+ * `CreateTaskRequest` model.
+ */
+@Serializable
+public data class CreateTaskRequest(
+    public val title: String,
+    public val instructions: String? = null,
+    @SerialName("due_at")
+    public val dueAt: String? = null,
+    public val recurrence: CreateTaskRequestRecurrence? = null,
+    @SerialName("require_confirmation")
+    public val requireConfirmation: Boolean? = null,
+    public val delivery: CreateTaskRequestDelivery? = null,
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    @SerialName("agent_ids")
+    public val agentIds: List<String>? = null,
+    @SerialName("team_id")
+    public val teamId: String? = null,
+)
+
+/**
+ * `CreateTaskRequestDelivery` model.
+ */
+@Serializable
+public data class CreateTaskRequestDelivery(
+    public val channels: List<TodoDeliveryChannel>? = null,
+    public val target: String? = null,
+)
+
+/**
+ * `CreateTaskRequestRecurrence` model.
+ */
+@Serializable
+public data class CreateTaskRequestRecurrence(
+    public val cron: String? = null,
+    public val timezone: String? = null,
+)
+
+/**
  * `CreateTenantProposalRequest` model.
  */
 @Serializable
@@ -11330,15 +11379,53 @@ public object CreateTenantRequestStatusSerializer : KSerializer<CreateTenantRequ
 }
 
 /**
- * `CreateVotingProposalRequest` model.
+ * The field is `type`. This document said `proposal_type` until 2026-10-14; the server refused
+ * it 422 from 2026-08-31 and, since 2026-10-14, reads it as the old name of `type` (`type`
+ * wins when both are sent), so a client built from the old document works.
  */
 @Serializable
 public data class CreateVotingProposalRequest(
+    public val type: CreateVotingProposalRequestType? = null,
+    /**
+     * Old name of `type`, read when `type` is absent. Deprecated by the API.
+     */
+    @SerialName("proposal_type")
+    public val proposalType: String? = null,
     public val title: String,
     public val description: String,
-    @SerialName("proposal_type")
-    public val proposalType: String,
 )
+
+/**
+ * `CreateVotingProposalRequestType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = CreateVotingProposalRequestTypeSerializer::class)
+@JvmInline
+public value class CreateVotingProposalRequestType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val NEW_GOAL: CreateVotingProposalRequestType = CreateVotingProposalRequestType("new_goal")
+        public val POLICY_CHANGE: CreateVotingProposalRequestType = CreateVotingProposalRequestType("policy_change")
+        public val AGENT_TERMINATION: CreateVotingProposalRequestType = CreateVotingProposalRequestType("agent_termination")
+        public val CONSTITUTION_AMENDMENT: CreateVotingProposalRequestType = CreateVotingProposalRequestType("constitution_amendment")
+        public val AGENT_DESIGN: CreateVotingProposalRequestType = CreateVotingProposalRequestType("agent_design")
+        public val ARBITER_APPOINTMENT: CreateVotingProposalRequestType = CreateVotingProposalRequestType("arbiter_appointment")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<CreateVotingProposalRequestType> = listOf(NEW_GOAL, POLICY_CHANGE, AGENT_TERMINATION, CONSTITUTION_AMENDMENT, AGENT_DESIGN, ARBITER_APPOINTMENT)
+    }
+}
+
+public object CreateVotingProposalRequestTypeSerializer : KSerializer<CreateVotingProposalRequestType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CreateVotingProposalRequestType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: CreateVotingProposalRequestType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): CreateVotingProposalRequestType = CreateVotingProposalRequestType(decoder.decodeString())
+}
 
 /**
  * `CreateWebhookRequest` model.
@@ -13407,6 +13494,7 @@ public value class ErrorCode(public val value: String) {
         public val SEARCH_PROVIDER_NOT_CONFIGURED: ErrorCode = ErrorCode("SEARCH_PROVIDER_NOT_CONFIGURED")
         public val SEARCH_UPSTREAM_FAILED: ErrorCode = ErrorCode("SEARCH_UPSTREAM_FAILED")
         public val SEARCH_UPSTREAM_TIMEOUT: ErrorCode = ErrorCode("SEARCH_UPSTREAM_TIMEOUT")
+        public val SESSION_NOT_ACTIVE: ErrorCode = ErrorCode("SESSION_NOT_ACTIVE")
         public val SHARE_LIST_CONFLICT: ErrorCode = ErrorCode("SHARE_LIST_CONFLICT")
         public val SIZE_LIMIT: ErrorCode = ErrorCode("SIZE_LIMIT")
         public val SPEC_NOT_FOUND: ErrorCode = ErrorCode("SPEC_NOT_FOUND")
@@ -13472,7 +13560,7 @@ public value class ErrorCode(public val value: String) {
         public val VIDEO_SLOT_INVALID: ErrorCode = ErrorCode("video_slot_invalid")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, COMPANY_NOT_READY, COMPANY_PAUSED, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FEATURE_DISABLED, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_KEY_REUSED, INITIATIVE_BUDGET_EXHAUSTED, INITIATIVE_PAUSED, INVALID_BODY, INVALID_CURSOR, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, METHOD_NOT_ALLOWED, MIGRATION_CONFLICT, MISSING_FIELD, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, PROPOSAL_EXPIRED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, STARTED_BY_ANOTHER_USER, STRATEGIST_MODEL_UNCONFIGURED, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
+        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, COMPANY_NOT_READY, COMPANY_PAUSED, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FEATURE_DISABLED, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_KEY_REUSED, INITIATIVE_BUDGET_EXHAUSTED, INITIATIVE_PAUSED, INVALID_BODY, INVALID_CURSOR, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, METHOD_NOT_ALLOWED, MIGRATION_CONFLICT, MISSING_FIELD, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, PROPOSAL_EXPIRED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SESSION_NOT_ACTIVE, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, STARTED_BY_ANOTHER_USER, STRATEGIST_MODEL_UNCONFIGURED, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
     }
 }
 
@@ -16799,8 +16887,13 @@ public data class GetSquadChatHistoryResponse(
     @SerialName("conversation_history")
     public val conversationHistory: List<TeamChatTurn>? = null,
     public val total: Long? = null,
+    /**
+     * Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+     * string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+     * found "DONE".
+     */
     @SerialName("chat_state")
-    public val chatState: JsonObject? = null,
+    public val chatState: GetTeamChatHistoryResponseChatState? = null,
     /**
      * Present only when `limit` was sent: whether another page follows.
      */
@@ -16848,8 +16941,13 @@ public data class GetTeamChatHistoryResponse(
     @SerialName("conversation_history")
     public val conversationHistory: List<TeamChatTurn>? = null,
     public val total: Long? = null,
+    /**
+     * Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+     * string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+     * found "DONE".
+     */
     @SerialName("chat_state")
-    public val chatState: JsonObject? = null,
+    public val chatState: GetTeamChatHistoryResponseChatState? = null,
     /**
      * Present only when `limit` was sent: whether another page follows.
      */
@@ -16862,6 +16960,40 @@ public data class GetTeamChatHistoryResponse(
      */
     public val cursor: String? = null,
 )
+
+/**
+ * Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+ * string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+ * found "DONE".
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = GetTeamChatHistoryResponseChatStateSerializer::class)
+@JvmInline
+public value class GetTeamChatHistoryResponseChatState(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val IDLE: GetTeamChatHistoryResponseChatState = GetTeamChatHistoryResponseChatState("IDLE")
+        public val ADDRESSING: GetTeamChatHistoryResponseChatState = GetTeamChatHistoryResponseChatState("ADDRESSING")
+        public val RUNNING: GetTeamChatHistoryResponseChatState = GetTeamChatHistoryResponseChatState("RUNNING")
+        public val MERGING: GetTeamChatHistoryResponseChatState = GetTeamChatHistoryResponseChatState("MERGING")
+        public val AWAITING_USER: GetTeamChatHistoryResponseChatState = GetTeamChatHistoryResponseChatState("AWAITING_USER")
+        public val DONE: GetTeamChatHistoryResponseChatState = GetTeamChatHistoryResponseChatState("DONE")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<GetTeamChatHistoryResponseChatState> = listOf(IDLE, ADDRESSING, RUNNING, MERGING, AWAITING_USER, DONE)
+    }
+}
+
+public object GetTeamChatHistoryResponseChatStateSerializer : KSerializer<GetTeamChatHistoryResponseChatState> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetTeamChatHistoryResponseChatState", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: GetTeamChatHistoryResponseChatState): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): GetTeamChatHistoryResponseChatState = GetTeamChatHistoryResponseChatState(decoder.decodeString())
+}
 
 /**
  * `GetTeamGraphResponse` model.
@@ -17243,6 +17375,19 @@ public object GetTenantBlueprintResponseScheduleKindSerializer : KSerializer<Get
  */
 @Serializable
 public data class GetTenantCompanyOverviewResponse(
+    /**
+     * The ONE thing to do next, chosen by the server so every client shows the same step in the
+     * same order (shared UX structure, 2026-10-14). Present on every answer of a server from this
+     * release on; optional in this document because an older server does not send it — read it as
+     * `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
+     * method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
+     * setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
+     * then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
+     * with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
+     * when nothing else applies.
+     */
+    @SerialName("next_step")
+    public val nextStep: GetTenantCompanyOverviewResponseNextStep? = null,
     @SerialName("generated_at")
     public val generatedAt: String,
     @SerialName("window_days")
@@ -17300,6 +17445,10 @@ public data class GetTenantCompanyOverviewResponseCompany(
     @SerialName("company_id")
     public val companyId: String? = null,
     public val name: String? = null,
+    /**
+     * What the company is for; null until one is written.
+     */
+    public val objective: String? = null,
     public val status: CompanyProfileStatus? = null,
     public val version: Long? = null,
     @SerialName("launched_at")
@@ -17335,6 +17484,63 @@ public data class GetTenantCompanyOverviewResponseNextItem(
     public val cron: String? = null,
     public val shape: ScheduleShape? = null,
 )
+
+/**
+ * The ONE thing to do next, chosen by the server so every client shows the same step in the
+ * same order (shared UX structure, 2026-10-14). Present on every answer of a server from this
+ * release on; optional in this document because an older server does not send it — read it as
+ * `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
+ * method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
+ * setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
+ * then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
+ * with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
+ * when nothing else applies.
+ */
+@Serializable
+public data class GetTenantCompanyOverviewResponseNextStep(
+    public val kind: GetTenantCompanyOverviewResponseNextStepKind,
+    public val code: String,
+    public val fix: String? = null,
+    public val count: Long? = null,
+    @SerialName("run_id")
+    public val runId: String? = null,
+    @SerialName("error_code")
+    public val errorCode: String? = null,
+    public val name: String? = null,
+    @SerialName("next_fire_at")
+    public val nextFireAt: String? = null,
+)
+
+/**
+ * `GetTenantCompanyOverviewResponseNextStepKind` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = GetTenantCompanyOverviewResponseNextStepKindSerializer::class)
+@JvmInline
+public value class GetTenantCompanyOverviewResponseNextStepKind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val SETUP: GetTenantCompanyOverviewResponseNextStepKind = GetTenantCompanyOverviewResponseNextStepKind("setup")
+        public val RESUME: GetTenantCompanyOverviewResponseNextStepKind = GetTenantCompanyOverviewResponseNextStepKind("resume")
+        public val DECIDE: GetTenantCompanyOverviewResponseNextStepKind = GetTenantCompanyOverviewResponseNextStepKind("decide")
+        public val PROBLEM: GetTenantCompanyOverviewResponseNextStepKind = GetTenantCompanyOverviewResponseNextStepKind("problem")
+        public val WAIT: GetTenantCompanyOverviewResponseNextStepKind = GetTenantCompanyOverviewResponseNextStepKind("wait")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<GetTenantCompanyOverviewResponseNextStepKind> = listOf(SETUP, RESUME, DECIDE, PROBLEM, WAIT)
+    }
+}
+
+public object GetTenantCompanyOverviewResponseNextStepKindSerializer : KSerializer<GetTenantCompanyOverviewResponseNextStepKind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetTenantCompanyOverviewResponseNextStepKind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: GetTenantCompanyOverviewResponseNextStepKind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): GetTenantCompanyOverviewResponseNextStepKind = GetTenantCompanyOverviewResponseNextStepKind(decoder.decodeString())
+}
 
 /**
  * `GetTenantCompanyOverviewResponseProblems` model.
@@ -17607,7 +17813,7 @@ public data class Goal(
     @SerialName("tenant_id")
     public val tenantId: String,
     @SerialName("agent_id")
-    public val agentId: String,
+    public val agentId: String? = null,
     public val title: String? = null,
     public val description: String? = null,
     public val rationale: String? = null,
@@ -31652,6 +31858,55 @@ public object SearchMarketplaceSortSerializer : KSerializer<SearchMarketplaceSor
 }
 
 /**
+ * `SearchMemoryRequest` model.
+ */
+@Serializable
+public data class SearchMemoryRequest(
+    public val text: String? = null,
+    /**
+     * Alias for `text`; `text` wins when both are sent.
+     */
+    public val query: String? = null,
+    public val strategy: SearchMemoryRequestStrategy? = null,
+    public val limit: Long? = null,
+    /**
+     * Alias of `limit`, the name most vector APIs use (memory.ts MemorySearchSchema); `limit` wins
+     * when both are sent.
+     */
+    @SerialName("top_k")
+    public val topK: Long? = null,
+    public val types: List<AgentUpdateMemoryType>? = null,
+)
+
+/**
+ * `SearchMemoryRequestStrategy` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = SearchMemoryRequestStrategySerializer::class)
+@JvmInline
+public value class SearchMemoryRequestStrategy(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RECENCY: SearchMemoryRequestStrategy = SearchMemoryRequestStrategy("recency")
+        public val HYBRID: SearchMemoryRequestStrategy = SearchMemoryRequestStrategy("hybrid")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<SearchMemoryRequestStrategy> = listOf(RECENCY, HYBRID)
+    }
+}
+
+public object SearchMemoryRequestStrategySerializer : KSerializer<SearchMemoryRequestStrategy> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SearchMemoryRequestStrategy", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: SearchMemoryRequestStrategy): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): SearchMemoryRequestStrategy = SearchMemoryRequestStrategy(decoder.decodeString())
+}
+
+/**
  * `SearchMemoryResponse` model.
  */
 @Serializable
@@ -34018,9 +34273,35 @@ public data class TeamRunDetail(
     @SerialName("team_id")
     public val teamId: String,
     public val status: String,
-    public val runs: List<Run>,
+    /**
+     * Each member run as a projection (routes/teams.ts loadTeamRunVerdict), not a full Run: no
+     * `tenant_id`, `input` or `steps`. This pointed at `Run` until 2026-10-14, and the SDK's
+     * decode failed on the absent `tenant_id`.
+     */
+    public val runs: List<TeamRunDetailRun>,
     @SerialName("total_runs")
     public val totalRuns: Long,
+)
+
+/**
+ * `TeamRunDetailRun` model.
+ */
+@Serializable
+public data class TeamRunDetailRun(
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val status: String,
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("started_at")
+    public val startedAt: String? = null,
+    @SerialName("completed_at")
+    public val completedAt: String? = null,
+    public val output: JsonElement? = null,
+    public val metrics: JsonObject? = null,
+    public val error: JsonElement? = null,
 )
 
 /**
@@ -39601,11 +39882,11 @@ public data class VotingProposal(
     public val proposalId: String,
     @SerialName("tenant_id")
     public val tenantId: String,
-    public val type: String,
+    public val type: String? = null,
     public val title: String,
     public val description: String,
     @SerialName("proposed_by")
-    public val proposedBy: String,
+    public val proposedBy: String? = null,
     public val payload: JsonObject,
     public val quorum: Double,
     public val status: VotingProposalStatus,

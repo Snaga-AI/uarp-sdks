@@ -6134,9 +6134,12 @@ pub struct ApproveRunResponse {
 pub struct ArbiterCase {
     pub case_id: String,
     pub tenant_id: String,
-    pub filed_by: String,
-    pub against_agent_id: String,
-    pub rule_ids: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filed_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub against_agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rule_ids: Option<Vec<String>>,
     pub description: String,
     pub evidence: serde_json::Map<String, serde_json::Value>,
     pub status: ArbiterCaseStatus,
@@ -6260,7 +6263,8 @@ pub struct AuditLogEntry {
 /// `AuthProvider` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AuthProvider {
-    pub email: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
     pub id: String,
     pub linked: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7764,6 +7768,9 @@ pub struct CompanyActivityEntry {
 pub struct CompanyChange {
     pub version: i64,
     pub at: String,
+    /// Who made the change: the person's `user_id` when the credential names one (a session, or a
+    /// key minted for a user), otherwise the key's `key_id`. Match it against `GET /users` before
+    /// showing it as a name; an id that is no member is a key.
     pub actor: String,
     pub source: CompanyChangeSource,
     pub summary: String,
@@ -8636,6 +8643,9 @@ pub struct CompanyUpdate {
 pub struct CompanyVersionRow {
     pub version: i64,
     pub at: String,
+    /// Who made the change: the person's `user_id` when the credential names one (a session, or a
+    /// key minted for a user), otherwise the key's `key_id`. Match it against `GET /users` before
+    /// showing it as a name; an id that is no member is a key.
     pub actor: String,
     pub source: CompanyChangeSource,
     pub summary: String,
@@ -10870,6 +10880,46 @@ pub struct CreateSpecPackageCheckoutSessionResponse {
     pub retry_after_seconds: i64,
 }
 
+/// `CreateTaskRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateTaskRequest {
+    pub title: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub instructions: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub due_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recurrence: Option<CreateTaskRequestRecurrence>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub require_confirmation: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub delivery: Option<CreateTaskRequestDelivery>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_ids: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub team_id: Option<String>,
+}
+
+/// `CreateTaskRequestDelivery` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateTaskRequestDelivery {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub channels: Option<Vec<TodoDeliveryChannel>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+}
+
+/// `CreateTaskRequestRecurrence` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateTaskRequestRecurrence {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cron: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+}
+
 /// `CreateTenantProposalRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateTenantProposalRequest {
@@ -11053,12 +11103,74 @@ impl From<&str> for CreateTenantRequestStatus {
     }
 }
 
-/// `CreateVotingProposalRequest` model.
+/// The field is `type`. This document said `proposal_type` until 2026-10-14; the server refused
+/// it 422 from 2026-08-31 and, since 2026-10-14, reads it as the old name of `type` (`type`
+/// wins when both are sent), so a client built from the old document works.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateVotingProposalRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<CreateVotingProposalRequestType>,
+    /// Old name of `type`, read when `type` is absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub proposal_type: Option<String>,
     pub title: String,
     pub description: String,
-    pub proposal_type: String,
+}
+
+/// `CreateVotingProposalRequestType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CreateVotingProposalRequestType {
+    #[default]
+    #[serde(rename = "new_goal")]
+    NewGoal,
+    #[serde(rename = "policy_change")]
+    PolicyChange,
+    #[serde(rename = "agent_termination")]
+    AgentTermination,
+    #[serde(rename = "constitution_amendment")]
+    ConstitutionAmendment,
+    #[serde(rename = "agent_design")]
+    AgentDesign,
+    #[serde(rename = "arbiter_appointment")]
+    ArbiterAppointment,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CreateVotingProposalRequestType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::NewGoal => "new_goal",
+            Self::PolicyChange => "policy_change",
+            Self::AgentTermination => "agent_termination",
+            Self::ConstitutionAmendment => "constitution_amendment",
+            Self::AgentDesign => "agent_design",
+            Self::ArbiterAppointment => "arbiter_appointment",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CreateVotingProposalRequestType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CreateVotingProposalRequestType {
+    fn from(value: &str) -> Self {
+        match value {
+            "new_goal" => Self::NewGoal,
+            "policy_change" => Self::PolicyChange,
+            "agent_termination" => Self::AgentTermination,
+            "constitution_amendment" => Self::ConstitutionAmendment,
+            "agent_design" => Self::AgentDesign,
+            "arbiter_appointment" => Self::ArbiterAppointment,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `CreateWebhookRequest` model.
@@ -13182,6 +13294,8 @@ pub enum ErrorCode {
     SearchUpstreamFailed,
     #[serde(rename = "SEARCH_UPSTREAM_TIMEOUT")]
     SearchUpstreamTimeout,
+    #[serde(rename = "SESSION_NOT_ACTIVE")]
+    SessionNotActive,
     #[serde(rename = "SHARE_LIST_CONFLICT")]
     ShareListConflict,
     #[serde(rename = "SIZE_LIMIT")]
@@ -13393,6 +13507,7 @@ impl ErrorCode {
             Self::SearchProviderNotConfigured => "SEARCH_PROVIDER_NOT_CONFIGURED",
             Self::SearchUpstreamFailed => "SEARCH_UPSTREAM_FAILED",
             Self::SearchUpstreamTimeout => "SEARCH_UPSTREAM_TIMEOUT",
+            Self::SessionNotActive => "SESSION_NOT_ACTIVE",
             Self::ShareListConflict => "SHARE_LIST_CONFLICT",
             Self::SizeLimit => "SIZE_LIMIT",
             Self::SpecNotFound => "SPEC_NOT_FOUND",
@@ -13546,6 +13661,7 @@ impl From<&str> for ErrorCode {
             "SEARCH_PROVIDER_NOT_CONFIGURED" => Self::SearchProviderNotConfigured,
             "SEARCH_UPSTREAM_FAILED" => Self::SearchUpstreamFailed,
             "SEARCH_UPSTREAM_TIMEOUT" => Self::SearchUpstreamTimeout,
+            "SESSION_NOT_ACTIVE" => Self::SessionNotActive,
             "SHARE_LIST_CONFLICT" => Self::ShareListConflict,
             "SIZE_LIMIT" => Self::SizeLimit,
             "SPEC_NOT_FOUND" => Self::SpecNotFound,
@@ -16905,8 +17021,11 @@ pub struct GetSquadChatHistoryResponse {
     pub conversation_history: Option<Vec<TeamChatTurn>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
+    /// Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+    /// string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+    /// found "DONE".
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub chat_state: Option<serde_json::Map<String, serde_json::Value>>,
+    pub chat_state: Option<GetTeamChatHistoryResponseChatState>,
     /// Present only when `limit` was sent: whether another page follows.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub has_more: Option<bool>,
@@ -16945,8 +17064,11 @@ pub struct GetTeamChatHistoryResponse {
     pub conversation_history: Option<Vec<TeamChatTurn>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
+    /// Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+    /// string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+    /// found "DONE".
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub chat_state: Option<serde_json::Map<String, serde_json::Value>>,
+    pub chat_state: Option<GetTeamChatHistoryResponseChatState>,
     /// Present only when `limit` was sent: whether another page follows.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub has_more: Option<bool>,
@@ -16955,6 +17077,64 @@ pub struct GetTeamChatHistoryResponse {
     /// of turns in this answer.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
+}
+
+/// Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+/// string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+/// found "DONE".
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GetTeamChatHistoryResponseChatState {
+    #[default]
+    #[serde(rename = "IDLE")]
+    Idle,
+    #[serde(rename = "ADDRESSING")]
+    Addressing,
+    #[serde(rename = "RUNNING")]
+    Running,
+    #[serde(rename = "MERGING")]
+    Merging,
+    #[serde(rename = "AWAITING_USER")]
+    AwaitingUser,
+    #[serde(rename = "DONE")]
+    Done,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GetTeamChatHistoryResponseChatState {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Idle => "IDLE",
+            Self::Addressing => "ADDRESSING",
+            Self::Running => "RUNNING",
+            Self::Merging => "MERGING",
+            Self::AwaitingUser => "AWAITING_USER",
+            Self::Done => "DONE",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GetTeamChatHistoryResponseChatState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GetTeamChatHistoryResponseChatState {
+    fn from(value: &str) -> Self {
+        match value {
+            "IDLE" => Self::Idle,
+            "ADDRESSING" => Self::Addressing,
+            "RUNNING" => Self::Running,
+            "MERGING" => Self::Merging,
+            "AWAITING_USER" => Self::AwaitingUser,
+            "DONE" => Self::Done,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `GetTeamGraphResponse` model.
@@ -17395,6 +17575,17 @@ impl From<&str> for GetTenantBlueprintResponseScheduleKind {
 /// `GetTenantCompanyOverviewResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetTenantCompanyOverviewResponse {
+    /// The ONE thing to do next, chosen by the server so every client shows the same step in the
+    /// same order (shared UX structure, 2026-10-14). Present on every answer of a server from this
+    /// release on; optional in this document because an older server does not send it — read it as
+    /// `next_step ?? \<the same rule computed locally\>`. Localize from `code`; act on `fix` (a
+    /// method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
+    /// setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
+    /// then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
+    /// with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
+    /// when nothing else applies.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_step: Option<GetTenantCompanyOverviewResponseNextStep>,
     pub generated_at: String,
     pub window_days: i64,
     pub company: GetTenantCompanyOverviewResponseCompany,
@@ -17440,6 +17631,9 @@ pub struct GetTenantCompanyOverviewResponseCompany {
     pub company_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    /// What the company is for; null until one is written.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub objective: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<CompanyProfileStatus>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -17482,6 +17676,85 @@ pub struct GetTenantCompanyOverviewResponseNextItem {
     pub cron: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub shape: Option<ScheduleShape>,
+}
+
+/// The ONE thing to do next, chosen by the server so every client shows the same step in the
+/// same order (shared UX structure, 2026-10-14). Present on every answer of a server from this
+/// release on; optional in this document because an older server does not send it — read it as
+/// `next_step ?? \<the same rule computed locally\>`. Localize from `code`; act on `fix` (a
+/// method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
+/// setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
+/// then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
+/// with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
+/// when nothing else applies.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetTenantCompanyOverviewResponseNextStep {
+    pub kind: GetTenantCompanyOverviewResponseNextStepKind,
+    pub code: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fix: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_fire_at: Option<String>,
+}
+
+/// `GetTenantCompanyOverviewResponseNextStepKind` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GetTenantCompanyOverviewResponseNextStepKind {
+    #[default]
+    #[serde(rename = "setup")]
+    Setup,
+    #[serde(rename = "resume")]
+    Resume,
+    #[serde(rename = "decide")]
+    Decide,
+    #[serde(rename = "problem")]
+    Problem,
+    #[serde(rename = "wait")]
+    Wait,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GetTenantCompanyOverviewResponseNextStepKind {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Setup => "setup",
+            Self::Resume => "resume",
+            Self::Decide => "decide",
+            Self::Problem => "problem",
+            Self::Wait => "wait",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GetTenantCompanyOverviewResponseNextStepKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GetTenantCompanyOverviewResponseNextStepKind {
+    fn from(value: &str) -> Self {
+        match value {
+            "setup" => Self::Setup,
+            "resume" => Self::Resume,
+            "decide" => Self::Decide,
+            "problem" => Self::Problem,
+            "wait" => Self::Wait,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `GetTenantCompanyOverviewResponseProblems` model.
@@ -17799,7 +18072,8 @@ pub struct GetUsageTimeseriesResponseDataItem {
 pub struct Goal {
     pub goal_id: String,
     pub tenant_id: String,
-    pub agent_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -31868,6 +32142,68 @@ impl From<&str> for SearchMarketplaceSort {
     }
 }
 
+/// `SearchMemoryRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SearchMemoryRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    /// Alias for `text`; `text` wins when both are sent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<String>,
+    /// Server default: `"hybrid"`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub strategy: Option<SearchMemoryRequestStrategy>,
+    /// Server default: `20`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// Alias of `limit`, the name most vector APIs use (memory.ts MemorySearchSchema); `limit` wins
+    /// when both are sent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub top_k: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub types: Option<Vec<AgentUpdateMemoryType>>,
+}
+
+/// `SearchMemoryRequestStrategy` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum SearchMemoryRequestStrategy {
+    #[default]
+    #[serde(rename = "recency")]
+    Recency,
+    #[serde(rename = "hybrid")]
+    Hybrid,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl SearchMemoryRequestStrategy {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Recency => "recency",
+            Self::Hybrid => "hybrid",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for SearchMemoryRequestStrategy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for SearchMemoryRequestStrategy {
+    fn from(value: &str) -> Self {
+        match value {
+            "recency" => Self::Recency,
+            "hybrid" => Self::Hybrid,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `SearchMemoryResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SearchMemoryResponse {
@@ -34164,8 +34500,30 @@ pub struct TeamRunDetail {
     pub team_run_id: String,
     pub team_id: String,
     pub status: String,
-    pub runs: Vec<Run>,
+    /// Each member run as a projection (routes/teams.ts loadTeamRunVerdict), not a full Run: no
+    /// `tenant_id`, `input` or `steps`. This pointed at `Run` until 2026-10-14, and the SDK's
+    /// decode failed on the absent `tenant_id`.
+    pub runs: Vec<TeamRunDetailRun>,
     pub total_runs: i64,
+}
+
+/// `TeamRunDetailRun` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamRunDetailRun {
+    pub run_id: String,
+    pub agent_id: String,
+    pub status: String,
+    pub created_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub started_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub completed_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<serde_json::Value>,
 }
 
 /// `TeamRunSummary` model.
@@ -39382,10 +39740,12 @@ impl From<&str> for VoteResultStatus {
 pub struct VotingProposal {
     pub proposal_id: String,
     pub tenant_id: String,
-    pub r#type: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
     pub title: String,
     pub description: String,
-    pub proposed_by: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub proposed_by: Option<String>,
     pub payload: serde_json::Map<String, serde_json::Value>,
     pub quorum: f64,
     pub status: VotingProposalStatus,
