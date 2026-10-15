@@ -345,6 +345,13 @@ procedure UARP_SDK_Tests is
                       +Canon_501.Correlation_Id, "01a13c8d-1f16-732c-8884-727d6fb7bcdb");
          Check_Equal ("the code is parsed", +Live_401.Code, "AUTH_ERROR");
          Check_Equal ("correlation_id is read", +Live_401.Correlation_Id, "sdk-probe-0001");
+         Check_Equal ("SESSION_NOT_ACTIVE is read",
+                      +UARP.Client.To_Problem
+                        ("{""type"":""about:blank"",""title"":""Validation Error"",""status"":422,"
+                         & """detail"":""Session is not active"","
+                         & """correlationId"":""01a13f4a-fb5a-7d99-9d94-910550f34d83"","
+                         & """correlation_id"":""01a13f4a-fb5a-7d99-9d94-910550f34d83"","
+                         & """code"":""SESSION_NOT_ACTIVE"",""session_status"":""closed""}").Code, "SESSION_NOT_ACTIVE");
       end;
       Check ("404 classifies as Not_Found", Classify (404) = Not_Found);
       Check ("429 classifies as Rate_Limit", Classify (429) = Rate_Limit);

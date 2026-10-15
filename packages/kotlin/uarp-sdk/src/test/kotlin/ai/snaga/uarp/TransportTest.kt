@@ -1077,6 +1077,16 @@ class ProblemDecodingTest {
         assertEquals("01a13c8d-1f16-732c-8884-727d6fb7bcdb", error.correlationId)
     }
 
+    /** Real bytes: the 422 the session route answers for a closed session, captured by the API lane from handleRequest on the code deployed as b108e9a9 (2026-10-15). */
+    private val sessionNotActive422 = """{"type":"about:blank","title":"Validation Error","status":422,"detail":"Session is not active","correlationId":"01a13f4a-fb5a-7d99-9d94-910550f34d83","correlation_id":"01a13f4a-fb5a-7d99-9d94-910550f34d83","code":"SESSION_NOT_ACTIVE","session_status":"closed"}"""
+
+    @Test
+    fun `an extension member reaches the caller beside the code`() {
+        val error = ApiException(422, parseProblem(sessionNotActive422), emptyMap(), sessionNotActive422)
+        assertEquals("SESSION_NOT_ACTIVE", error.code)
+        assertEquals(mapOf("session_status" to kotlinx.serialization.json.JsonPrimitive("closed")), error.problem.extensions)
+    }
+
     @Test
     fun `the request id header is the fallback`() {
         val body = """{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}"""

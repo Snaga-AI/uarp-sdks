@@ -581,3 +581,15 @@ test('the request id header is the fallback', async () => {
   const error = await apiErrorFor(raw(404, body, { 'x-request-id': 'req-42' }));
   assert.equal(error.correlationId, 'req-42');
 });
+
+// Real bytes: the 422 the session route answers for a closed session, captured by the API lane from handleRequest on the code deployed as b108e9a9 (2026-10-15).
+// `session_status` is a top-level extension member, as RFC 9457 puts them.
+const SESSION_NOT_ACTIVE_422 =
+  '{"type":"about:blank","title":"Validation Error","status":422,"detail":"Session is not active","correlationId":"01a13f4a-fb5a-7d99-9d94-910550f34d83","correlation_id":"01a13f4a-fb5a-7d99-9d94-910550f34d83","code":"SESSION_NOT_ACTIVE","session_status":"closed"}';
+
+test('an extension member reaches the caller beside the code', async () => {
+  const error = await apiErrorFor(raw(422, SESSION_NOT_ACTIVE_422));
+  assert.equal(error.code, 'SESSION_NOT_ACTIVE');
+  assert.equal(error.problem.session_status, 'closed');
+  assert.equal(error.correlationId, '01a13f4a-fb5a-7d99-9d94-910550f34d83');
+});

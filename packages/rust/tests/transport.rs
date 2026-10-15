@@ -1479,3 +1479,14 @@ async fn the_request_id_header_is_the_fallback() {
     let api = api_error_for(404, body, Some("req-42")).await;
     assert_eq!(api.correlation_id(), Some("req-42"));
 }
+
+/// Real bytes: the 422 the session route answers for a closed session, captured by the API lane from handleRequest on the code deployed as b108e9a9 (2026-10-15).
+const SESSION_NOT_ACTIVE_422: &str = r#"{"type":"about:blank","title":"Validation Error","status":422,"detail":"Session is not active","correlationId":"01a13f4a-fb5a-7d99-9d94-910550f34d83","correlation_id":"01a13f4a-fb5a-7d99-9d94-910550f34d83","code":"SESSION_NOT_ACTIVE","session_status":"closed"}"#;
+
+#[tokio::test]
+async fn an_extension_member_reaches_the_caller_beside_the_code() {
+    let api = api_error_for(422, SESSION_NOT_ACTIVE_422, None).await;
+    assert_eq!(api.code(), Some("SESSION_NOT_ACTIVE"));
+    assert_eq!(api.problem.extra.get("session_status"), Some(&json!("closed")));
+    assert_eq!(api.problem.extra.len(), 1, "{:?}", api.problem.extra);
+}

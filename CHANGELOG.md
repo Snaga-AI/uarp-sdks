@@ -105,9 +105,12 @@ Tested on two real bodies in all five SDKs: the 401 production answered with no
 key, and the canon 501. Ada's test is written but, as before, not run here.
 Removing the read of `code` and of `X-Request-Id` turns 3 tests red in
 TypeScript, Rust and Kotlin and 2 in Swift (its third reads `problem.code`
-directly), and leaves the rest green. Not yet tested on a body that has
-extension members: none of the error bodies read so far carries one, and
-`SESSION_NOT_ACTIVE` is only reachable by a write.
+directly), and leaves the rest green. Extension members are tested on
+the 422 the session route answers for a closed session, with
+`code: SESSION_NOT_ACTIVE` and a top-level `session_status: "closed"`. The API
+lane captured those bytes from the deployed handler, since reproducing the
+refusal on canon would take a write. Dropping the collected members turns 1
+test red in Swift and 1 in Kotlin, out of 63 each.
 
 ### Changed — build `b108e9a9`: eight types follow the wire
 

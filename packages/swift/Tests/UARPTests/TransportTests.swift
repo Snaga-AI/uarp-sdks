@@ -605,6 +605,16 @@ final class ProblemDecodingTests: XCTestCase {
         XCTAssertEqual(problem.correlationId, "01a13c8d-1f16-732c-8884-727d6fb7bcdb")
     }
 
+    /// Real bytes: the 422 the session route answers for a closed session, captured by the API lane from handleRequest on the code deployed as b108e9a9 (2026-10-15).
+    static let sessionNotActive422 = #"{"type":"about:blank","title":"Validation Error","status":422,"detail":"Session is not active","correlationId":"01a13f4a-fb5a-7d99-9d94-910550f34d83","correlation_id":"01a13f4a-fb5a-7d99-9d94-910550f34d83","code":"SESSION_NOT_ACTIVE","session_status":"closed"}"#
+
+    func testAnExtensionMemberReachesTheCallerBesideTheCode() {
+        let problem = UARPClient.problem(from: Data(Self.sessionNotActive422.utf8))
+        XCTAssertEqual(problem.code, "SESSION_NOT_ACTIVE")
+        XCTAssertEqual(problem.extensions, ["session_status": .string("closed")])
+        XCTAssertEqual(problem.correlationId, "01a13f4a-fb5a-7d99-9d94-910550f34d83")
+    }
+
     func testTheRequestIdHeaderIsTheFallback() {
         let data = Data(#"{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}"#.utf8)
         let error = APIError(status: 404, problem: UARPClient.problem(from: data), headers: ["x-request-id": "req-42"])
