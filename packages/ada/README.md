@@ -183,7 +183,7 @@ Generated operations raise on failure:
 
 | Exception | Meaning |
 | --- | --- |
-| `UARP.Errors.API_Error` | non-2xx response; the message carries status, title, detail and `correlationId` |
+| `UARP.Errors.API_Error` | non-2xx response; the message carries status, title, detail and `correlationId`. `Execute` returns the parsed `Problem`, whose `Code` is the stable value to compare against and whose `Raw` holds every other member |
 | `UARP.Errors.Transport_Error` | the request never produced a response |
 | `UARP.Errors.Decoding_Error` | the body was not the JSON the SDK expected |
 | `UARP.Errors.Configuration_Error` | missing key, bad base URL |

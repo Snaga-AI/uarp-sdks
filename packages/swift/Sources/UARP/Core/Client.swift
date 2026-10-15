@@ -379,7 +379,7 @@ public final class UARPClient: @unchecked Sendable {
         let (data, http) = try await performRaw(spec)
         if (200..<300).contains(http.statusCode) { return (data, http) }
         let headers = Self.normalizedHeaders(http)
-        throw UARPError.api(APIError(status: http.statusCode, problem: Self.problem(from: data), headers: headers))
+        throw UARPError.api(APIError(status: http.statusCode, problem: Self.problem(from: data), headers: headers, body: data))
     }
 
     func buildRequest(_ spec: RequestSpec, idempotencyKey: String?, accept: String = "application/json") throws -> URLRequest {
@@ -476,7 +476,7 @@ public final class UARPClient: @unchecked Sendable {
     /// RFC 9457 keys. A body carrying none of them is not a problem document,
     /// however well-formed its JSON is.
     private static let problemKeys: Set<String> = [
-        "type", "title", "status", "detail", "correlationId", "errors",
+        "type", "title", "status", "detail", "code", "correlation_id", "correlationId", "errors",
     ]
 
     /// Extract the failure message, whatever shape the server used to send it.

@@ -730,7 +730,7 @@ async fn decode_json<R: DeserializeOwned>(response: reqwest::Response) -> Result
 
 /// RFC 9457 keys. A body carrying none of them is not a problem document,
 /// however well-formed its JSON is.
-const PROBLEM_KEYS: [&str; 6] = ["type", "title", "status", "detail", "correlationId", "errors"];
+const PROBLEM_KEYS: [&str; 8] = ["type", "title", "status", "detail", "code", "correlation_id", "correlationId", "errors"];
 
 /// Extract the failure message, whatever shape the server used to send it.
 ///

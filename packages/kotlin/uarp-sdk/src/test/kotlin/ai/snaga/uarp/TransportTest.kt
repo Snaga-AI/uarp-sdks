@@ -1052,4 +1052,35 @@ class ProblemDecodingTest {
         val p = parseProblem("<html><body>502 Bad Gateway</body></html>")
         assertTrue(p.detail!!.contains("Bad Gateway"))
     }
+    /**
+     * Real bytes: the 401 production answered on 2026-10-15 with no key and our
+     * own `X-Request-Id`; the 501 `GET /registry/keys` gave the canon tenant the
+     * day before. The 501's code is not in the `ErrorCode` enum and it carries
+     * only the deprecated `correlationId`.
+     */
+    private val live401 = """{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Missing Authorization header, token query parameter, or uarp_session cookie","correlationId":"sdk-probe-0001","correlation_id":"sdk-probe-0001","code":"AUTH_ERROR"}"""
+    private val canon501 = """{"type": "about:blank", "title": "Not Implemented", "status": 501, "detail": "Artifact signing is disabled (spec_registry.signing_mode = \"off\").", "code": "SIGNING_NOT_CONFIGURED", "correlationId": "01a13c8d-1f16-732c-8884-727d6fb7bcdb"}"""
+
+    @Test
+    fun `a problem keeps its code and request id`() {
+        val error = ApiException(401, parseProblem(live401), emptyMap(), live401)
+        assertEquals("AUTH_ERROR", error.code)
+        assertEquals("sdk-probe-0001", error.problem.correlationId)
+        assertEquals("sdk-probe-0001", error.correlationId)
+        assertEquals(emptyMap(), error.problem.extensions)
+    }
+
+    @Test
+    fun `a code the enum does not list still reaches the caller`() {
+        val error = ApiException(501, parseProblem(canon501), emptyMap(), canon501)
+        assertEquals("SIGNING_NOT_CONFIGURED", error.code)
+        assertEquals("01a13c8d-1f16-732c-8884-727d6fb7bcdb", error.correlationId)
+    }
+
+    @Test
+    fun `the request id header is the fallback`() {
+        val body = """{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}"""
+        val error = ApiException(404, parseProblem(body), mapOf("x-request-id" to "req-42"), body)
+        assertEquals("req-42", error.correlationId)
+    }
 }

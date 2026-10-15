@@ -1433,3 +1433,49 @@ async fn a_generated_completion_is_a_json_post_sent_once() {
     let received: serde_json::Value = serde_json::from_slice(&sent.body).expect("JSON body");
     assert_eq!(received, json!({"model": "contract/model"}));
 }
+
+/// Real problem documents, byte for byte. The 401 was read from production on
+/// 2026-10-15 with no key and an `X-Request-Id` of our own; the 501 is what
+/// `GET /registry/keys` answered the canon tenant the day before. Between them
+/// they carry everything a caller switches on: a `code`, both spellings of the
+/// request id, and — in the 501 — a code the document's `ErrorCode` enum does
+/// not list and only the deprecated `correlationId`.
+const LIVE_401: &str = r#"{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Missing Authorization header, token query parameter, or uarp_session cookie","correlationId":"sdk-probe-0001","correlation_id":"sdk-probe-0001","code":"AUTH_ERROR"}"#;
+const CANON_501: &str = r#"{"type": "about:blank", "title": "Not Implemented", "status": 501, "detail": "Artifact signing is disabled (spec_registry.signing_mode = \"off\").", "code": "SIGNING_NOT_CONFIGURED", "correlationId": "01a13c8d-1f16-732c-8884-727d6fb7bcdb"}"#;
+
+async fn api_error_for(status: u16, body: &'static str, request_id: Option<&str>) -> uarp_sdk::ApiError {
+    let server = MockServer::start().await;
+    let mut response = ResponseTemplate::new(status).set_body_raw(body, "application/problem+json");
+    if let Some(id) = request_id {
+        response = response.insert_header("x-request-id", id);
+    }
+    Mock::given(method("GET")).and(path("/api/v1/agents/a1")).respond_with(response).mount(&server).await;
+    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(0).build().unwrap();
+    match client.agents().get("a1").await.expect_err("must fail") {
+        Error::Api(api) => *api,
+        other => panic!("unexpected error: {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn a_problem_keeps_its_code_and_request_id() {
+    let api = api_error_for(401, LIVE_401, Some("sdk-probe-0001")).await;
+    assert_eq!(api.code(), Some("AUTH_ERROR"));
+    assert_eq!(api.problem.correlation_id.as_deref(), Some("sdk-probe-0001"));
+    assert_eq!(api.correlation_id(), Some("sdk-probe-0001"));
+    assert!(api.problem.extra.is_empty(), "{:?}", api.problem.extra);
+}
+
+#[tokio::test]
+async fn a_code_the_enum_does_not_list_still_reaches_the_caller() {
+    let api = api_error_for(501, CANON_501, None).await;
+    assert_eq!(api.code(), Some("SIGNING_NOT_CONFIGURED"));
+    assert_eq!(api.correlation_id(), Some("01a13c8d-1f16-732c-8884-727d6fb7bcdb"));
+}
+
+#[tokio::test]
+async fn the_request_id_header_is_the_fallback() {
+    let body = r#"{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}"#;
+    let api = api_error_for(404, body, Some("req-42")).await;
+    assert_eq!(api.correlation_id(), Some("req-42"));
+}

@@ -63,6 +63,52 @@ back gets an optional. Found on 2026-10-14 by diffing the IR of the released
 0.10.0 document against this one, after the two breaks above had already been
 written down as the whole list.
 
+### Added — an API error carries the `code` to switch on
+
+Every problem document the platform sends has a `code` — `SESSION_NOT_ACTIVE`,
+`QUOTA_EXCEEDED`, `resource_limit_reached`, `AUTH_ERROR` — and the document
+says it is what a client should switch on, with `detail` being prose for a
+person. No SDK exposed it. Swift and Kotlin dropped it during decoding, and
+TypeScript and Rust kept it only as an untyped leftover. So the macOS client
+recognised an ended chat by matching the exact English sentence (reported by
+the macOS lane, 2026-10-15). All five now have it:
+`error.code` / `api.code()` / `Problem.Code`.
+
+It is a string, not the `ErrorCode` enum, on purpose: the canon tenant already
+receives `SIGNING_NOT_CONFIGURED` from `GET /registry/keys`, a code the enum
+does not list, and with an enum that whole error would have failed to decode.
+
+Two more things came out of reading real error bodies:
+
+- **The request id.** It was read only from the deprecated `correlationId`.
+  It is now read from `correlation_id` first, then `correlationId`. The header
+  fallback read `X-Correlation-Id`, which the server does not send; it now
+  reads `X-Request-Id`, which it does (production, 2026-10-15).
+  `X-Correlation-Id` is still read after it.
+- **Every other member.** Swift's `Problem.extensions` and Kotlin's
+  `Problem.extensions` (`[String: JSONValue]` / `Map<String, JsonElement>`)
+  hold the members the type does not model, such as `session_status`, `reason`
+  and `retry_after`. Rust already had them in `problem.extra` and TypeScript in
+  the index signature. Swift's `APIError` also gains `body`, the raw bytes,
+  which Kotlin's `ApiException` and Ada's `Problem.Raw` already had.
+
+What can break:
+
+- **Rust:** `Problem` gains `code` and `correlation_id_legacy`, so an
+  exhaustive struct literal needs them, or `..Default::default()`.
+  `problem.correlation_id` now holds `correlation_id`.
+- **Kotlin:** `Problem.correlationId` now reads `correlation_id`. A server that
+  sends only the old spelling, as the 501 above does, leaves it null and fills
+  `legacyCorrelationId`. `ApiException.correlationId` reads both.
+
+Tested on two real bodies in all five SDKs: the 401 production answered with no
+key, and the canon 501. Ada's test is written but, as before, not run here.
+Removing the read of `code` and of `X-Request-Id` turns 3 tests red in
+TypeScript, Rust and Kotlin and 2 in Swift (its third reads `problem.code`
+directly), and leaves the rest green. Not yet tested on a body that has
+extension members: none of the error bodies read so far carries one, and
+`SESSION_NOT_ACTIVE` is only reachable by a write.
+
 ### Changed — build `b108e9a9`: eight types follow the wire
 
 Every one of these is the document catching up with what the server already

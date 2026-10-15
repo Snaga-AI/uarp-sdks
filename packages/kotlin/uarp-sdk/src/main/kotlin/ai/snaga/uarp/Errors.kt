@@ -2,6 +2,7 @@ package ai.snaga.uarp
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonElement
 
 /** RFC 9457 problem document returned by the API on failure. */
@@ -12,9 +13,24 @@ public data class Problem(
     val status: Int? = null,
     val detail: String? = null,
     /** Request identifier to quote when reporting an incident. */
-    @SerialName("correlationId") val correlationId: String? = null,
+    @SerialName("correlation_id") val correlationId: String? = null,
     /** Field-level validation failures, present on 422 responses. */
     val errors: List<FieldError> = emptyList(),
+    /**
+     * What a client should do about the failure, as a stable value to switch on
+     * (`SESSION_NOT_ACTIVE`, `QUOTA_EXCEEDED`, `resource_limit_reached`, …).
+     * `detail` is the sentence for a person and can change; this cannot. A
+     * string rather than `ErrorCode`, so that a code added after this SDK was
+     * built still reaches the caller.
+     */
+    val code: String? = null,
+    /**
+     * The deprecated `correlationId` spelling of the request id, sent during a
+     * compatibility window. [ApiException.correlationId] reads both.
+     */
+    @SerialName("correlationId") val legacyCorrelationId: String? = null,
+    /** Every other member of the document (`session_status`, `reason`, `retry_after`, …), as sent. */
+    @Transient val extensions: Map<String, JsonElement> = emptyMap(),
 )
 
 @Serializable
@@ -76,9 +92,17 @@ public class ApiException(
             else -> ApiErrorKind.OTHER
         }
 
-    /** Request identifier for support tickets. */
+    /** The stable code to switch on, e.g. `SESSION_NOT_ACTIVE`. */
+    public val code: String?
+        get() = problem.code
+
+    /**
+     * Request identifier for support tickets: `correlation_id`, its deprecated
+     * spelling, or the `X-Request-Id` header the server sends.
+     */
     public val correlationId: String?
-        get() = problem.correlationId ?: headers["x-correlation-id"]
+        get() = problem.correlationId ?: problem.legacyCorrelationId
+            ?: headers["x-request-id"] ?: headers["x-correlation-id"]
 
     /** Seconds the server asked the client to wait, from `Retry-After`. */
     public val retryAfterSeconds: Double?
@@ -100,7 +124,7 @@ public class ApiException(
             append(' ')
             append(problem.title ?: "HTTP error")
             problem.detail?.let { append(" — ").append(it) }
-            problem.correlationId?.let { append(" (correlationId: ").append(it).append(')') }
+            (problem.correlationId ?: problem.legacyCorrelationId)?.let { append(" (correlationId: ").append(it).append(')') }
         }
     }
 }

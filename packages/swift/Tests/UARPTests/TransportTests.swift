@@ -583,4 +583,31 @@ final class ProblemDecodingTests: XCTestCase {
     func testEmptyBodyStaysEmpty() {
         XCTAssertNil(UARPClient.problem(from: Data()).detail)
     }
+    /// Real bytes: the 401 production answered on 2026-10-15 with no key and
+    /// our own `X-Request-Id`; the 501 `GET /registry/keys` gave the canon
+    /// tenant the day before. The 501's code is not in the `ErrorCode` enum and
+    /// it carries only the deprecated `correlationId`.
+    static let live401 = #"{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Missing Authorization header, token query parameter, or uarp_session cookie","correlationId":"sdk-probe-0001","correlation_id":"sdk-probe-0001","code":"AUTH_ERROR"}"#
+    static let canon501 = #"{"type": "about:blank", "title": "Not Implemented", "status": 501, "detail": "Artifact signing is disabled (spec_registry.signing_mode = \"off\").", "code": "SIGNING_NOT_CONFIGURED", "correlationId": "01a13c8d-1f16-732c-8884-727d6fb7bcdb"}"#
+
+    func testAProblemKeepsItsCodeAndRequestId() {
+        let data = Data(Self.live401.utf8)
+        let error = APIError(status: 401, problem: UARPClient.problem(from: data), headers: [:], body: data)
+        XCTAssertEqual(error.code, "AUTH_ERROR")
+        XCTAssertEqual(error.correlationId, "sdk-probe-0001")
+        XCTAssertEqual(error.problem.extensions, [:])
+        XCTAssertEqual(error.body, data)
+    }
+
+    func testACodeTheEnumDoesNotListStillReachesTheCaller() {
+        let problem = UARPClient.problem(from: Data(Self.canon501.utf8))
+        XCTAssertEqual(problem.code, "SIGNING_NOT_CONFIGURED")
+        XCTAssertEqual(problem.correlationId, "01a13c8d-1f16-732c-8884-727d6fb7bcdb")
+    }
+
+    func testTheRequestIdHeaderIsTheFallback() {
+        let data = Data(#"{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}"#.utf8)
+        let error = APIError(status: 404, problem: UARPClient.problem(from: data), headers: ["x-request-id": "req-42"])
+        XCTAssertEqual(error.correlationId, "req-42")
+    }
 }

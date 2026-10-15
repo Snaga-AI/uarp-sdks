@@ -417,7 +417,7 @@ internal fun okhttp3.Headers.toMap(): Map<String, String> =
  * RFC 9457 keys. A body carrying none of them is not a problem document,
  * however well-formed its JSON is.
  */
-private val PROBLEM_KEYS = setOf("type", "title", "status", "detail", "correlationId", "errors")
+private val PROBLEM_KEYS = setOf("type", "title", "status", "detail", "code", "correlation_id", "correlationId", "errors")
 
 /**
  * Extract the failure message, whatever shape the server used to send it.
@@ -437,7 +437,9 @@ internal fun parseProblem(body: String): Problem {
     val element = runCatching { uarpJson.parseToJsonElement(body) }.getOrNull()
     val obj = element as? JsonObject ?: return Problem(detail = body.take(2_000))
     if (obj.keys.any { it in PROBLEM_KEYS }) {
-        runCatching { uarpJson.decodeFromString<Problem>(body) }.getOrNull()?.let { return it }
+        runCatching { uarpJson.decodeFromString<Problem>(body) }.getOrNull()?.let {
+            return it.copy(extensions = obj.filterKeys { key -> key !in PROBLEM_KEYS })
+        }
     }
     return Problem(detail = messageFrom(obj) ?: body.take(2_000))
 }

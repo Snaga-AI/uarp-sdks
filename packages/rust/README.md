@@ -136,7 +136,10 @@ match client.agents().get("missing").await {
 ```
 
 `ApiError` carries the status, the parsed problem document, the response
-headers, and `correlation_id()` for support tickets.
+headers, `code()` — the stable value to match on, such as `SESSION_NOT_ACTIVE`,
+where `detail` is prose that can change — and `correlation_id()` for support
+tickets. Members the document has no field for (`session_status`, `reason`, …)
+are in `api.problem.extra`.
 
 ## Configuration
 

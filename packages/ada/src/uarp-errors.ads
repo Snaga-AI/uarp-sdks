@@ -28,6 +28,12 @@ package UARP.Errors is
       Title          : Text;
       Status         : Natural := 0;
       Detail         : Text;
+      --  What a client should do about the failure, as a stable value to
+      --  compare against (SESSION_NOT_ACTIVE, QUOTA_EXCEEDED, ...). Detail is
+      --  the sentence for a person and can change; this cannot. Every other
+      --  member of the document is in Raw.
+      Code           : Text;
+      --  Read from correlation_id, or from the deprecated correlationId.
       Correlation_Id : Text;
       --  Field-level validation failures, present on 422 responses.
       Errors         : Field_Error_Vectors.Vector;

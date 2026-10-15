@@ -6,8 +6,19 @@ export interface ProblemDocument {
   title?: string;
   status?: number;
   detail?: string;
+  /**
+   * What a client should do about the failure, as a stable value to switch on
+   * (`SESSION_NOT_ACTIVE`, `QUOTA_EXCEEDED`, `resource_limit_reached`, …). Typed
+   * as a string rather than `ErrorCode` so that a code added after this SDK was
+   * built still reaches the caller.
+   */
+  code?: string;
+  /** Request identifier. */
+  correlation_id?: string;
+  /** @deprecated The old spelling of `correlation_id`, sent for a compatibility window. */
   correlationId?: string;
   errors?: Array<{ field?: string; message?: string }>;
+  /** Every other member (`session_status`, `reason`, `retry_after`, …), as sent. */
   [key: string]: unknown;
 }
 
@@ -37,8 +48,13 @@ export class APIError extends UarpError {
   readonly status: number;
   readonly problem: ProblemDocument;
   readonly headers: Headers;
-  /** `correlationId` from the problem document, or the `X-Correlation-Id` header. */
+  /**
+   * The request id: `correlation_id` from the problem document, its deprecated
+   * `correlationId` spelling, or the `X-Request-Id` header the server sends.
+   */
   readonly correlationId?: string;
+  /** The stable code to switch on, e.g. `SESSION_NOT_ACTIVE`. */
+  readonly code?: string;
   readonly requestId?: string;
 
   constructor(status: number, problem: ProblemDocument, headers: Headers, message?: string) {
@@ -46,7 +62,9 @@ export class APIError extends UarpError {
     this.status = status;
     this.problem = problem;
     this.headers = headers;
-    this.correlationId = problem.correlationId ?? headers.get('x-correlation-id') ?? undefined;
+    this.correlationId =
+      problem.correlation_id ?? problem.correlationId ?? headers.get('x-request-id') ?? headers.get('x-correlation-id') ?? undefined;
+    this.code = typeof problem.code === 'string' ? problem.code : undefined;
     this.requestId = headers.get('x-request-id') ?? undefined;
   }
 
@@ -103,7 +121,8 @@ function numericHeader(headers: Headers, name: string): number | undefined {
 function formatMessage(status: number, problem: ProblemDocument): string {
   const title = problem.title ?? `HTTP ${status}`;
   const detail = problem.detail ? ` — ${problem.detail}` : '';
-  const correlation = problem.correlationId ? ` (correlationId: ${problem.correlationId})` : '';
+  const id = problem.correlation_id ?? problem.correlationId;
+  const correlation = id ? ` (correlationId: ${id})` : '';
   return `${status} ${title}${detail}${correlation}`;
 }
 

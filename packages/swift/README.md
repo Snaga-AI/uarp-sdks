@@ -131,7 +131,9 @@ do {
     case .notFound:            print("no such agent")
     case .unprocessableEntity: print(error.validationErrors)
     case .rateLimit:           print(error.retryAfterSeconds ?? 0)
-    default:                   print(error.status, error.correlationId ?? "")
+    case _ where error.code == "SESSION_NOT_ACTIVE":
+        print("the session ended:", error.problem.extensions["session_status"] ?? .null)
+    default:                   print(error.status, error.code ?? "", error.correlationId ?? "")
     }
 } catch UARPError.timeout {
     print("timed out")

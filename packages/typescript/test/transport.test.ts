@@ -539,3 +539,45 @@ test('a non-JSON error body is not thrown away either', async () => {
     },
   );
 });
+
+// Real bytes: the 401 production answered on 2026-10-15 with no key and our own
+// `X-Request-Id`; the 501 `GET /registry/keys` gave the canon tenant the day
+// before. The 501's code is not in the `ErrorCode` enum and it carries only the
+// deprecated `correlationId`.
+const LIVE_401 =
+  '{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Missing Authorization header, token query parameter, or uarp_session cookie","correlationId":"sdk-probe-0001","correlation_id":"sdk-probe-0001","code":"AUTH_ERROR"}';
+const CANON_501 =
+  '{"type": "about:blank", "title": "Not Implemented", "status": 501, "detail": "Artifact signing is disabled (spec_registry.signing_mode = \\"off\\").", "code": "SIGNING_NOT_CONFIGURED", "correlationId": "01a13c8d-1f16-732c-8884-727d6fb7bcdb"}';
+
+function raw(status: number, body: string, headers: Record<string, string> = {}): Response {
+  return new Response(body, { status, headers: { 'content-type': 'application/problem+json', ...headers } });
+}
+
+async function apiErrorFor(response: Response): Promise<APIError> {
+  const { client } = clientWith([response]);
+  try {
+    await client.agents.get('a1');
+  } catch (error) {
+    assert.ok(error instanceof APIError);
+    return error;
+  }
+  throw new Error('must fail');
+}
+
+test('a problem keeps its code and request id', async () => {
+  const error = await apiErrorFor(raw(401, LIVE_401, { 'x-request-id': 'sdk-probe-0001' }));
+  assert.equal(error.code, 'AUTH_ERROR');
+  assert.equal(error.correlationId, 'sdk-probe-0001');
+});
+
+test('a code the enum does not list still reaches the caller', async () => {
+  const error = await apiErrorFor(raw(501, CANON_501));
+  assert.equal(error.code, 'SIGNING_NOT_CONFIGURED');
+  assert.equal(error.correlationId, '01a13c8d-1f16-732c-8884-727d6fb7bcdb');
+});
+
+test('the request id header is the fallback', async () => {
+  const body = '{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}';
+  const error = await apiErrorFor(raw(404, body, { 'x-request-id': 'req-42' }));
+  assert.equal(error.correlationId, 'req-42');
+});

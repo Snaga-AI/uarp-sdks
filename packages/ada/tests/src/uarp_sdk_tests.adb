@@ -323,6 +323,29 @@ procedure UARP_SDK_Tests is
       Check_Equal ("the title is parsed", +Item.Title, "Not Found");
       Check_Equal ("the detail is parsed", +Item.Detail, "no such agent");
       Check_Equal ("the correlation id is parsed", +Item.Correlation_Id, "corr-1");
+      --  Real bytes: the 501 GET /registry/keys gave the canon tenant on
+      --  2026-10-14, with a code ErrorCode does not list and only the
+      --  deprecated correlationId; and the 401 production answered on
+      --  2026-10-15 with both spellings.
+      declare
+         Canon_501 : constant Problem :=
+           UARP.Client.To_Problem
+             ("{""type"": ""about:blank"", ""title"": ""Not Implemented"", ""status"": 501, "
+              & """detail"": ""Artifact signing is disabled (spec_registry.signing_mode = \""off\"")."", "
+              & """code"": ""SIGNING_NOT_CONFIGURED"", "
+              & """correlationId"": ""01a13c8d-1f16-732c-8884-727d6fb7bcdb""}");
+         Live_401 : constant Problem :=
+           UARP.Client.To_Problem
+             ("{""type"":""about:blank"",""title"":""Unauthorized"",""status"":401,"
+              & """detail"":""Missing Authorization header, token query parameter, or uarp_session cookie"","
+              & """correlationId"":""sdk-probe-0001"",""correlation_id"":""sdk-probe-0001"",""code"":""AUTH_ERROR""}");
+      begin
+         Check_Equal ("an unlisted code is kept", +Canon_501.Code, "SIGNING_NOT_CONFIGURED");
+         Check_Equal ("the old request id spelling is read",
+                      +Canon_501.Correlation_Id, "01a13c8d-1f16-732c-8884-727d6fb7bcdb");
+         Check_Equal ("the code is parsed", +Live_401.Code, "AUTH_ERROR");
+         Check_Equal ("correlation_id is read", +Live_401.Correlation_Id, "sdk-probe-0001");
+      end;
       Check ("404 classifies as Not_Found", Classify (404) = Not_Found);
       Check ("429 classifies as Rate_Limit", Classify (429) = Rate_Limit);
       Check ("500 classifies as a server error", Classify (500) = Server_Error);
