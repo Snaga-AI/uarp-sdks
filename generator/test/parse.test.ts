@@ -68,6 +68,14 @@ test('a $ref to a component that admits null is nullable where it is referenced'
   assert.equal(property(spec, 'Thing', 'shape').nullable, true);
 });
 
+test('a response body that may be null is nullable, and one that may not is not', () => {
+  const spec = fixture('nullability');
+  const schedule = operation(spec, 'getThingSchedule').response;
+  assert.deepEqual(schedule.type, { kind: 'named', name: 'Owner' });
+  assert.equal(schedule.nullable, true);
+  assert.equal(operation(spec, 'getThing').response.nullable, undefined);
+});
+
 test('maps scalar formats onto distinct primitives', () => {
   const spec = fixture('nullability');
   assert.deepEqual(property(spec, 'Thing', 'id').type, { kind: 'prim', prim: 'uuid' });

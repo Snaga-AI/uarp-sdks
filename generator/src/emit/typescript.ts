@@ -392,7 +392,8 @@ function bodyType(op: Operation): string {
 function responseType(op: Operation): string {
   if (!op.response.type) return 'void';
   if (op.response.type.kind === 'prim' && op.response.type.prim === 'binary') return 'Blob';
-  return tsType(op.response.type);
+  const type = tsType(op.response.type);
+  return op.response.nullable ? `${type} | null` : type;
 }
 
 function operationDoc(op: Operation): string {

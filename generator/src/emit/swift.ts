@@ -716,7 +716,8 @@ function bodyType(op: Operation): string {
 function returnType(op: Operation): string {
   if (!op.response.type) return 'Void';
   if (op.response.type.kind === 'prim' && op.response.type.prim === 'binary') return 'Data';
-  return swiftType(op.response.type);
+  const type = swiftType(op.response.type);
+  return op.response.nullable ? `${type}?` : type;
 }
 
 export function swiftType(ref: TypeRef): string {

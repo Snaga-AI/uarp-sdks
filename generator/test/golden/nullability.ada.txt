@@ -339,6 +339,7 @@ end UARP.API;
 --
 
 with UARP.Client;
+with UARP.JSON_Support;
 with UARP.Models;
 package UARP.API.Things is
 
@@ -355,6 +356,15 @@ package UARP.API.Things is
       Thing_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Thing;
+
+   --  A thing's schedule, or null when it has none
+   --
+   --  GET /things/{thingId}/schedule
+   function Get_Thing_Schedule
+     (Self : Client_Type;
+      Thing_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
 
    --  GET /envelopes
    function List_Envelopes
@@ -385,6 +395,20 @@ package body UARP.API.Things is
              "/things/" & UARP.Types.Encode_Path_Segment (Thing_Id),
              Options => Options));
    end Get;
+
+   function Get_Thing_Schedule
+     (Self : Client_Type;
+      Thing_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value
+   is
+   begin
+      return UARP.Client.Call
+         (Self,
+          "GET",
+          "/things/" & UARP.Types.Encode_Path_Segment (Thing_Id) & "/schedule",
+          Options => Options);
+   end Get_Thing_Schedule;
 
    function List_Envelopes
      (Self : Client_Type;

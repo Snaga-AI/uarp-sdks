@@ -83,6 +83,7 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
   Envelope,
+  Owner,
   Thing,
 } from '../models.js';
 
@@ -101,6 +102,19 @@ export class ThingsResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/things/${encodeURIComponent(String(thingId))}`,
+      options,
+    });
+  }
+
+  /**
+   * A thing's schedule, or null when it has none
+   *
+   * `GET /things/{thingId}/schedule`
+   */
+  getThingSchedule(thingId: string, options?: RequestOptions): Promise<Owner | null> {
+    return this._client.request({
+      method: 'GET',
+      path: `/things/${encodeURIComponent(String(thingId))}/schedule`,
       options,
     });
   }

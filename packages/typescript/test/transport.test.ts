@@ -593,3 +593,12 @@ test('an extension member reaches the caller beside the code', async () => {
   assert.equal(error.problem.session_status, 'closed');
   assert.equal(error.correlationId, '01a13f4a-fb5a-7d99-9d94-910550f34d83');
 });
+
+// Real bytes: the 4-byte body `null` that GET /agents/{id}/schedule answered
+// the canon tenant on 2026-10-15 (build b108e9a9) for an agent with no schedule.
+// The method is typed `Schedule | null`; this proves the runtime agrees.
+test('a schedule that is not set is null', async () => {
+  const { client } = clientWith([new Response('null', { status: 200, headers: { 'content-type': 'application/json' } })]);
+  const schedule: unknown = await client.scheduler.getSchedule('a1');
+  assert.equal(schedule, null);
+});

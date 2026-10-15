@@ -603,7 +603,7 @@ impl CompanyApi {
     /// `POST /api/v1/tenants/me/test-run`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn start_tenant_test_run(&self, body: &models::StartTenantTestRunRequest) -> Result<models::CompanyTestRun> {
+    pub async fn start_tenant_test_run(&self, body: &models::StartTenantTestRunRequest) -> Result<Option<models::CompanyTestRun>> {
         self.client
             .request_json(Request {
                 method: Method::POST,

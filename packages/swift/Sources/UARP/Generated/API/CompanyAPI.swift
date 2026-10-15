@@ -483,7 +483,7 @@ public struct CompanyAPI: Sendable {
     /// `POST /api/v1/tenants/me/test-run`
     ///
     /// Required scopes: `agents:write`.
-    public func startTenantTestRun(body: StartTenantTestRunRequest? = nil, options: RequestOptions = .init()) async throws -> CompanyTestRun {
+    public func startTenantTestRun(body: StartTenantTestRunRequest? = nil, options: RequestOptions = .init()) async throws -> CompanyTestRun? {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",

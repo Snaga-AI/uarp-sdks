@@ -197,6 +197,17 @@ public struct ThingsAPI: Sendable {
         ))
     }
 
+    /// A thing's schedule, or null when it has none
+    ///
+    /// `GET /things/{thingId}/schedule`
+    public func getThingSchedule(thingId: String, options: RequestOptions = .init()) async throws -> Owner? {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/things/\(encodePathSegment(thingId))/schedule",
+            options: options
+        ))
+    }
+
     /// `GET /envelopes`
     public func listEnvelopes(options: RequestOptions = .init()) async throws -> Envelope {
         return try await client.send(RequestSpec(

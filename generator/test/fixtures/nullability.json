@@ -68,6 +68,44 @@
           }
         }
       }
+    },
+    "/things/{thingId}/schedule": {
+      "get": {
+        "operationId": "getThingSchedule",
+        "summary": "A thing's schedule, or null when it has none",
+        "tags": [
+          "Things"
+        ],
+        "parameters": [
+          {
+            "name": "thingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The schedule, or null in the body when none is set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Owner"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

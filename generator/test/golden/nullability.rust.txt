@@ -158,6 +158,22 @@ impl ThingsApi {
             .await
     }
 
+    /// A thing's schedule, or null when it has none
+    ///
+    /// `GET /things/{thingId}/schedule`
+    pub async fn get_thing_schedule(&self, thing_id: &str) -> Result<Option<models::Owner>> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/things/{}/schedule", encode_path(thing_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// `GET /envelopes`
     pub async fn list_envelopes(&self) -> Result<models::Envelope> {
         self.client

@@ -175,11 +175,36 @@ five; the five `ScheduleShape` sites become `ScheduleShape | null` in
 TypeScript (the other four already decoded null into their JSON value type).
 Nothing that 0.10.0 exported changes: neither component existed there.
 
-One site stays as it was, on purpose: the `202` body of
-`startTenantTestRun` is a whole-body `$ref` to `CompanyTestRun`, and the
-generator has no notion of a nullable response body. The route answers
-"Started." with the run it started, so it is typed non-null; if the platform
-ever answers it with `null`, that is a defect to raise, not a shape to model.
+The `202` body of `startTenantTestRun` follows the same rule now that a
+response body can be nullable (next section): it is a whole-body `$ref` to
+`CompanyTestRun`, which admits null, so it is `CompanyTestRun | null` too. The
+route answers "Started." with the run it started, so the document would say it
+better with the null at the property (`readiness.test_run`) than on the
+component; that is asked of the API lane. Neither existed in 0.10.0.
+
+### Changed — a response body that may be null is optional
+
+`GET /agents/{id}/schedule` answers `null` for an agent with no schedule, and
+says so ("null in response body when no schedule is set"). The generator typed
+every response body by its schema and dropped whether it may be null. So
+`getSchedule` returned `Schedule`, and on that answer Rust failed with
+`invalid type: null, expected struct Schedule`, Swift with `valueNotFound` and
+Kotlin likewise. It is now `Schedule | null` in TypeScript, `Option<Schedule>`
+in Rust and `Schedule?` in Swift and Kotlin. Ada has no optional record, and
+`From_JSON` over a null would return an all-empty record that reads like a real
+one, so the Ada function returns the `JSON_Value`: test it with `Is_Null`, then
+call `From_JSON`. That is a break for every caller of `getSchedule`, which
+0.10.0 already had, and one whose old form failed on the answer it now handles.
+
+Found by decoding every JSON body the canon tenant answers a read-only sweep
+with, 209 operations, in the Rust, Swift and Kotlin SDKs. Before this fix 208
+decoded in Rust; after it, all 209 decode in all three. A harness check on four
+deliberately broken bodies: a missing required key, a null in a non-null
+field and a wrong primitive each fail in all three, and the untouched body
+passes. Removing the parser's `nullable` flag turns 6 generator tests red, and
+1 transport test each in Rust, Swift and Kotlin (Rust at runtime, not at
+compile). TypeScript was always returning the `null`; its change is to the
+type alone.
 
 ### Changed — `CompanyProposal.operations` is a discriminated union
 

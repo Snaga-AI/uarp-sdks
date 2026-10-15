@@ -1490,3 +1490,22 @@ async fn an_extension_member_reaches_the_caller_beside_the_code() {
     assert_eq!(api.problem.extra.get("session_status"), Some(&json!("closed")));
     assert_eq!(api.problem.extra.len(), 1, "{:?}", api.problem.extra);
 }
+
+/// Real bytes: the 4-byte body `null` that GET /agents/{id}/schedule answered the canon tenant on 2026-10-15 (build b108e9a9) for an agent with no schedule.
+/// The document says so ("null in response body when no schedule is set"), and
+/// the SDK read it as a `Schedule` and failed: `invalid type: null, expected
+/// struct Schedule`.
+#[tokio::test]
+async fn a_schedule_that_is_not_set_is_none() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents/a1/schedule"))
+        .respond_with(ResponseTemplate::new(200).set_body_raw("null", "application/json"))
+        .mount(&server)
+        .await;
+    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(0).build().unwrap();
+    // Asserted through JSON so the test compiles against the old signature too
+    // and fails where the defect was: in decoding, not at compile time.
+    let schedule = client.scheduler().get_schedule("a1").await.expect("null is an answer");
+    assert!(serde_json::to_value(&schedule).unwrap().is_null());
+}

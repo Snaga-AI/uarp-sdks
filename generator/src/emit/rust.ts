@@ -672,7 +672,8 @@ function methodName(op: Operation): string {
 function returnType(op: Operation): string {
   if (!op.response.type) return '()';
   if (op.response.type.kind === 'prim' && op.response.type.prim === 'binary') return 'bytes::Bytes';
-  return rustType(op.response.type, true);
+  const type = rustType(op.response.type, true);
+  return op.response.nullable ? `Option<${type}>` : type;
 }
 
 function paramBag(op: Operation): Param[] {

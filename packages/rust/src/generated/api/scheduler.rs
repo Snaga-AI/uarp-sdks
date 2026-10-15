@@ -37,7 +37,7 @@ impl SchedulerApi {
     /// `GET /api/v1/agents/{agentId}/schedule`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get_schedule(&self, agent_id: &str) -> Result<models::Schedule> {
+    pub async fn get_schedule(&self, agent_id: &str) -> Result<Option<models::Schedule>> {
         self.client
             .request_json(Request {
                 method: Method::GET,

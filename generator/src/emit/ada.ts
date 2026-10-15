@@ -785,6 +785,10 @@ function returnType(op: Operation): string | undefined {
   if (op.sse) return undefined;
   if (!op.response.type) return undefined;
   if (op.response.type.kind === 'prim' && op.response.type.prim === 'binary') return 'UARP.Types.Text';
+  // Ada has no optional record, and From_JSON over a JSON null would hand back
+  // an all-empty record that reads like a real one. A body that may be null is
+  // returned as the JSON value: test it with Is_Null, then call From_JSON.
+  if (op.response.nullable && op.response.type.kind === 'named') return 'UARP.JSON_Support.JSON_Value';
   return adaType(op.response.type);
 }
 
@@ -1101,7 +1105,7 @@ function emitRawBodyCall(w: Writer, op: Operation, rawArgs: string[]): void {
       w.line('null;');
     } else if (result === 'UARP.Types.Text') {
       w.line('return Raw_Body;');
-    } else if (op.response.type!.kind === 'named') {
+    } else if (op.response.type!.kind === 'named' && !op.response.nullable) {
       w.line('return UARP.Models.From_JSON (JS.Parse (UARP.Types.SU.To_String (Raw_Body)));');
     } else {
       w.line('return JS.Parse (UARP.Types.SU.To_String (Raw_Body));');
@@ -1196,7 +1200,7 @@ function emitCall(w: Writer, op: Operation, isFunction: boolean): void {
     return;
   }
 
-  const wraps = op.response.type!.kind === 'named';
+  const wraps = op.response.type!.kind === 'named' && !op.response.nullable;
   if (wraps) {
     w.line('return UARP.Models.From_JSON');
     w.indent(() => emitArgs(w, '(UARP.Client.Call', args, '));'));

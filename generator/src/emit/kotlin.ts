@@ -563,7 +563,8 @@ function bodyType(op: Operation): string {
 function returnType(op: Operation): string {
   if (!op.response.type) return 'Unit';
   if (op.response.type.kind === 'prim' && op.response.type.prim === 'binary') return 'ByteArray';
-  return kotlinType(op.response.type);
+  const type = kotlinType(op.response.type);
+  return op.response.nullable ? `${type}?` : type;
 }
 
 export function kotlinType(ref: TypeRef): string {

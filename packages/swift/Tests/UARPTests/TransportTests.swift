@@ -22,6 +22,16 @@ final class TransportTests: XCTestCase {
         XCTAssertTrue(recorded.value(forHTTPHeaderField: "User-Agent")?.hasPrefix("uarp-sdk-swift/") == true)
     }
 
+    /// Real bytes: the 4-byte body `null` that GET /agents/{id}/schedule answered the canon tenant on 2026-10-15 (build b108e9a9) for an agent with no schedule.
+    func testAScheduleThatIsNotSetIsNil() async throws {
+        let client = makeClient()
+        MockURLProtocol.handler = { request in
+            (MockURLProtocol.response(request, status: 200), Data("null".utf8))
+        }
+        let schedule = try await client.scheduler.getSchedule(agentId: "a1")
+        XCTAssertNil(schedule)
+    }
+
     func testSerialisesQueryParametersAndSkipsNil() async throws {
         let client = makeClient()
         MockURLProtocol.handler = { request in

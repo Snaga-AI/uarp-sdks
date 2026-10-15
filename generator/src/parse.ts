@@ -606,8 +606,9 @@ class Parser {
       return { response: { status, type: PRIM_JSON, description: node.description }, sse: true, errorStatuses };
     }
     if (json) {
+      const { type, nullable } = this.#schemaTypeNullable(json.schema, `${opName}Response`);
       return {
-        response: { status, type: this.#schemaType(json.schema, `${opName}Response`), description: node.description },
+        response: { status, type, ...(nullable ? { nullable: true } : {}), description: node.description },
         sse: false,
         errorStatuses,
       };

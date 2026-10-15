@@ -5,6 +5,7 @@ import ai.snaga.uarp.api.auth
 import ai.snaga.uarp.api.files
 import ai.snaga.uarp.api.registry
 import ai.snaga.uarp.api.runs
+import ai.snaga.uarp.api.scheduler
 import ai.snaga.uarp.models.GetMeResponseAuthMethod
 import ai.snaga.uarp.models.CreateAgentRequest
 import ai.snaga.uarp.models.CompleteOAuthLoginFormPostProvider
@@ -91,6 +92,13 @@ class TransportTest {
         assertEquals("Bearer uarp_test1234_secret", recorded.getHeader("Authorization"))
         assertEquals("application/json", recorded.getHeader("Accept"))
         assertTrue(recorded.getHeader("User-Agent")!!.startsWith("uarp-sdk-kotlin/"))
+    }
+
+    /** Real bytes: the 4-byte body `null` that GET /agents/{id}/schedule answered the canon tenant on 2026-10-15 (build b108e9a9) for an agent with no schedule. */
+    @Test
+    fun `a schedule that is not set is null`() = runTest {
+        server.enqueue(json("null"))
+        assertNull(client().scheduler.getSchedule("a1"))
     }
 
     @Test
