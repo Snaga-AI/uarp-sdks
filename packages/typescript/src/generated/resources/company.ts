@@ -567,7 +567,7 @@ export class CompanyResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  startTenantTestRun(body?: StartTenantTestRunRequest, options?: RequestOptions): Promise<CompanyTestRun | null> {
+  startTenantTestRun(body?: StartTenantTestRunRequest, options?: RequestOptions): Promise<CompanyTestRun> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/tenants/me/test-run',

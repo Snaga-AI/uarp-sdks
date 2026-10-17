@@ -25,6 +25,7 @@ import { GDPRResource } from './gdpr.js';
 import { GovernanceResource } from './governance.js';
 import { GuardrailsResource } from './guardrails.js';
 import { HealthResource } from './health.js';
+import { HireResource } from './hire.js';
 import { InitiativesResource } from './initiatives.js';
 import { IntegrationsResource } from './integrations.js';
 import { KnowledgeResource } from './knowledge.js';
@@ -78,6 +79,7 @@ export * from './gdpr.js';
 export * from './governance.js';
 export * from './guardrails.js';
 export * from './health.js';
+export * from './hire.js';
 export * from './initiatives.js';
 export * from './integrations.js';
 export * from './knowledge.js';
@@ -204,6 +206,11 @@ export interface Resources {
    * Health checks, readiness, and metrics
    */
   readonly health: HealthResource;
+  /**
+   * Hire an agent the person already uses (Claude Code, …) into their company, with their own
+   * account and subscription
+   */
+  readonly hire: HireResource;
   readonly initiatives: InitiativesResource;
   /**
    * OAuth integrations and connector management
@@ -343,6 +350,7 @@ export function createResources(client: Transport): Resources {
     governance: new GovernanceResource(client),
     guardrails: new GuardrailsResource(client),
     health: new HealthResource(client),
+    hire: new HireResource(client),
     initiatives: new InitiativesResource(client),
     integrations: new IntegrationsResource(client),
     knowledge: new KnowledgeResource(client),

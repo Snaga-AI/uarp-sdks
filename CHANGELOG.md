@@ -8,22 +8,22 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
-Build `b108e9a9`, canonical digest `9a1d32cee90cc481`. Four platform builds are
+Build `d926b90e`, canonical digest `c7dd2655bb5b2722`. Five platform builds are
 collected here: `ef5b646d` (2026-10-12), `435ca06c` and `199b0863` (2026-10-13),
-`b108e9a9` (2026-10-15). Against 0.10.0: 585 → 622 paths, 789 → 832 operations
-(+43, −0), 382 → 411 schemas (+29, −0), 50 → 52 groups, 1845 → 2024 named types
-(+179, −0).
+`b108e9a9` (2026-10-15), `d926b90e` (2026-10-16). Against 0.10.0: 585 → 629
+paths, 789 → 839 operations (+50, −0), 382 → 415 schemas (+33, −0), 50 → 53
+groups, 1845 → 2053 named types (+208, −0).
 
 **No exported name leaves.** Measured against the released 0.10.0 rather than
-against the intermediate drafts: 212 names are added, none is removed, so every
+against the intermediate drafts: 248 names are added, none is removed, so every
 import that compiled against 0.10.0 still resolves. The eleven `/companies`
 operations warn at compile time rather than break.
 
 **The minor moves** because types that 0.10.0 already exported change shape
 under their own names — `ResourceUsageEntry.limit` becomes nullable,
 `RunEventType` renames seven values, the workspace copy and move requests stop
-requiring their paths, and build `b108e9a9` corrects eight of them to the wire
-(all below). Under 1.0 a caret does not
+requiring their paths, build `b108e9a9` corrects eight of them to the wire,
+and `getSession` answers a new type (all below). Under 1.0 a caret does not
 cross the minor, so `^0.10` keeps building against 0.10.x.
 
 ### Changed — `ResourceUsageEntry.limit` is nullable
@@ -74,9 +74,11 @@ recognised an ended chat by matching the exact English sentence (reported by
 the macOS lane, 2026-10-15). All five now have it:
 `error.code` / `api.code()` / `Problem.Code`.
 
-It is a string, not the `ErrorCode` enum, on purpose: the canon tenant already
-receives `SIGNING_NOT_CONFIGURED` from `GET /registry/keys`, a code the enum
-does not list, and with an enum that whole error would have failed to decode.
+It is a string, not the `ErrorCode` enum, on purpose: the canon tenant was
+receiving `SIGNING_NOT_CONFIGURED` from `GET /registry/keys` while the enum did
+not list it, and with an enum that whole error would have failed to decode.
+Build `d926b90e` lists it, with nine other codes; a string keeps the next code
+the server sends before the document names it from failing the same way.
 
 Two more things came out of reading real error bodies:
 
@@ -144,6 +146,40 @@ fixing them breaks code that compiles rather than code that worked.
   because a server before this build does not send them. `SESSION_NOT_ACTIVE`
   joins `ErrorCode`. Nine operations gain `x-capability`.
 
+### Changed — build `d926b90e`: `getSession` answers its own type, and seven hire operations
+
+`GET /sessions/{id}` now declares its body as the `Session` plus a required
+`context`, the agent's context window as the chat header shows it
+(`SessionContext`: `window_tokens`, `used_tokens` and `percent`, null when
+unknown, never 0, plus `source` and `updated_at`). So `getSession` returns
+`GetSessionResponse` instead of `Session`. In TypeScript that is a superset and
+assigns to `Session` unchanged; in Rust, Swift, Kotlin and Ada it is a
+different type, and code that names `Session` for the result stops compiling.
+The session read from the canon tenant on production on 2026-10-17 carries
+`context`; a body captured on 2026-10-15, before the build, has none and
+fails to decode in all three typed SDKs, which is the build's change rather
+than a defect.
+
+Added, all optional. Those the read-only sweep had captured (`cached_tokens`,
+the webhook fields, the goal's legacy values) were on the wire before the
+document named them:
+
+- the `hire` group, an outside agent hired into a tenant: `hireAgent`,
+  `getHireCatalog`, `getHireIcon`, `hiredAgentMcp`, and `newHireCommand` and
+  `disconnectHiredAgent` under `/agents/{agentId}/hire`; `Agent.hire` and
+  `Agent.bridge_status`;
+- `repairAgentRecords`, an admin maintenance route;
+- `RunMetrics.cached_tokens`; `WebhookSubscription.updated_at`,
+  `failure_count`, `last_failure_at` and `secret`, which every read answers as
+  `"[redacted]"` and only the `201` of `POST /webhooks` in full;
+- `Goal.priority` and the `abandoned` status, both on goals stored before
+  2026-08-31 only;
+- `ConversationEntry.author_agent_id`, `author_name`, `error_code` and
+  `error_details`; `InboxItem.goal`; the inbox review's `headline` and
+  `summary_truncated`; the economics' `month_to_date_llm_usd` and
+  `llm_run_rate_basis`; the AI system card's `tool_sources`;
+- ten `ErrorCode` values and the `session.context` run event.
+
 ### Changed — `createTask` and memory search take typed bodies
 
 `createTask` and memory `search` took `JsonValue` in 0.10.0 and now take
@@ -175,12 +211,12 @@ five; the five `ScheduleShape` sites become `ScheduleShape | null` in
 TypeScript (the other four already decoded null into their JSON value type).
 Nothing that 0.10.0 exported changes: neither component existed there.
 
-The `202` body of `startTenantTestRun` follows the same rule now that a
-response body can be nullable (next section): it is a whole-body `$ref` to
-`CompanyTestRun`, which admits null, so it is `CompanyTestRun | null` too. The
-route answers "Started." with the run it started, so the document would say it
-better with the null at the property (`readiness.test_run`) than on the
-component; that is asked of the API lane. Neither existed in 0.10.0.
+Build `d926b90e` moves that null from the component to the property, as asked
+of the API lane: `CompanyTestRun` itself is an object, and `readiness.test_run`
+is `CompanyTestRun | null`. So the `202` of `startTenantTestRun`, a whole-body
+`$ref` to the component, is a `CompanyTestRun` again rather than an optional
+one, which is what the route answers ("Started.", with the run it started).
+Neither existed in 0.10.0.
 
 ### Changed — a response body that may be null is optional
 
@@ -198,7 +234,8 @@ call `From_JSON`. That is a break for every caller of `getSchedule`, which
 
 Found by decoding every JSON body the canon tenant answers a read-only sweep
 with, 209 operations, in the Rust, Swift and Kotlin SDKs. Before this fix 208
-decoded in Rust; after it, all 209 decode in all three. A harness check on four
+decoded in Rust; after it, all 209 decode in all three, and again against build
+`d926b90e` with `getSession` re-read from production. A harness check on four
 deliberately broken bodies: a missing required key, a null in a non-null
 field and a wrong primitive each fail in all three, and the untouched body
 passes. Removing the parser's `nullable` flag turns 6 generator tests red, and

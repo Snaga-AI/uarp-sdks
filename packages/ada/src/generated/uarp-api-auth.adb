@@ -338,6 +338,9 @@ package body UARP.API.Auth is
       if Params.Has_Return_To then
          UARP.Types.Add (Query, "return_to", Params.Return_To);
       end if;
+      if Params.Has_App_Code_Challenge then
+         UARP.Types.Add (Query, "app_code_challenge", Params.App_Code_Challenge);
+      end if;
       if Params.Has_Device_Label then
          UARP.Types.Add (Query, "device_label", Params.Device_Label);
       end if;

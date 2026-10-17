@@ -25,6 +25,7 @@
 --    UARP.API.Governance
 --    UARP.API.Guardrails
 --    UARP.API.Health
+--    UARP.API.Hire
 --    UARP.API.Initiatives
 --    UARP.API.Integrations
 --    UARP.API.Knowledge

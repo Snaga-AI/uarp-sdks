@@ -452,7 +452,11 @@ test('parses the production document into the expected shape', () => {
   // export, import and version history (`/tenants/me/company/export`,
   // `/import`, `/restore`, `/versions`) with the plan fit at
   // `GET /tenants/me/fit`.
-  assert.equal(ops.length, 832);
+  // 832 -> 839 on 2026-10-17 (build d926b90e): seven and none removed — hiring
+  // an outside agent (`POST /hire`, its catalogue and icons, the MCP endpoint
+  // a hired agent speaks, and its command and disconnect under
+  // `/agents/{agentId}/hire`) and one admin repair, `repairAgentRecords`.
+  assert.equal(ops.length, 839);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -460,7 +464,8 @@ test('parses the production document into the expected shape', () => {
   // 48 -> 49 on 2026-09-14 (uarp #472): Drawings.
   // 49 -> 50 on 2026-10-05 (0.8.0): Anthropic Compat, for `/v1/messages`.
   // 50 -> 52 on 2026-10-12 (build ef5b646d): Company and Initiatives.
-  assert.equal(spec.groups.length, 52);
+  // 52 -> 53 on 2026-10-17 (build d926b90e): Hire.
+  assert.equal(spec.groups.length, 53);
   // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
   // `auto_approve_tools`, `command_relationships`, `access_control` and
   // `metadata`, each nested object becoming its own named type. The server had
@@ -714,7 +719,14 @@ test('parses the production document into the expected shape', () => {
   // and objects) where 0.10.0 took `JsonValue`. The copy and move bodies would
   // have gone the other way — the document added the same kind of rule to them,
   // and without the fix they fell back to `JsonValue` and lost both names.
-  assert.equal(spec.types.length, 2024);
+  // 2024 -> 2053 on 2026-10-17 (build d926b90e): +29, none removed. Twelve are
+  // hiring an outside agent (`AgentHire`, `HireConnect`, the catalogue item and
+  // its steps, the requests and answers), nine the admin `repairAgentRecords`
+  // report, and the rest the document's: `getSession` now names its body
+  // (`GetSessionResponse`, with `SessionContext` and a model override), the
+  // overview's problem missions, the agent's bridge status and the AI system
+  // card's tool sources.
+  assert.equal(spec.types.length, 2053);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);

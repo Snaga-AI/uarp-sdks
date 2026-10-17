@@ -280,7 +280,7 @@ package body UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Session
+      return UARP.Models.Get_Session_Response
    is
    begin
       return UARP.Models.From_JSON

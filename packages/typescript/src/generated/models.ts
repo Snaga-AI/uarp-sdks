@@ -229,10 +229,12 @@ export interface AbortMissionRequest {
 
 export interface AcceptInviteFromPickerRequest {
   /**
-   * The invite secret, echoed to the picker by `GET /api/v1/me/tenants`. Compared in constant
-   * time. Defence in depth rather than the primary gate — the email match is that — and it
-   * catches the class where the listing ever shows an invite not addressed to the caller.
-   * Invites created before secrets exist accept without one.
+   * Required in practice: `pending_invites[].secret` from `GET /api/v1/me/tenants`, the same
+   * listing the picker shows — the email link carries the same value. Compared in constant time.
+   * Defence in depth rather than the primary gate — the email match is that — and it catches the
+   * class where the listing ever shows an invite not addressed to the caller. Missing or wrong
+   * is 403; an invite stored before secrets existed (2026-09-02) is refused too, and an admin
+   * resend mints one.
    */
   token?: string;
   /**
@@ -1987,6 +1989,13 @@ export interface Agent {
    * filed under this one. Added 2026-09-25.
    */
   children_count?: number;
+  /**
+   * Bridge agents only, on GET /agents rows and GET /agents/{agentId}: `online` when an executor
+   * connection heartbeated in the last two minutes, else `offline`. Read any other value as
+   * `offline`. On GET /agents/{agentId} since 2026-10-15.
+   */
+  bridge_status?: AgentBridgeStatus;
+  hire?: AgentHire;
   worker_reuse?: boolean;
   /**
    * Cron schedule configuration
@@ -2142,6 +2151,15 @@ export interface AgentBridgeState {
 }
 
 /**
+ * Bridge agents only, on GET /agents rows and GET /agents/{agentId}: `online` when an executor
+ * connection heartbeated in the last two minutes, else `offline`. Read any other value as
+ * `offline`. On GET /agents/{agentId} since 2026-10-15.
+ */
+export type AgentBridgeStatus = 'online' | 'offline';
+
+export const AGENT_BRIDGE_STATUS_VALUES = ['online', 'offline'] as const;
+
+/**
  * What GET /agents/{agentId}/capabilities serves. Measured 2026-09-10 on the e2e-canon tenant;
  * `tools[]` and `kb_ids[]` were empty there, so their element shape is not asserted.
  */
@@ -2205,6 +2223,46 @@ export interface AgentCoreMemoryBlock {
 export type AgentExecutionMode = 'async' | 'worker' | 'bridge';
 
 export const AGENT_EXECUTION_MODE_VALUES = ['async', 'worker', 'bridge'] as const;
+
+/**
+ * Hired agents only (POST /hire): an agent the person runs on their own computer with their
+ * own account. A hired agent is listed by GET /agents whatever its connection. Since
+ * 2026-10-15.
+ */
+export interface AgentHire {
+  /**
+   * The GET /hire/catalog entry it was hired from.
+   */
+  catalog_id: string;
+  /**
+   * That entry's name, for labels ("Hired · Claude Code").
+   */
+  catalog_name: string;
+  /**
+   * Absolute PNG icon, public.
+   */
+  icon_url: string;
+  /**
+   * `pending`: a command was issued and nothing has connected with it; `connected`: the agent
+   * connected with its current command; `disconnected`: the person disconnected it — POST
+   * /agents/{agentId}/hire/command brings it back.
+   */
+  status: AgentHireStatus;
+  connected_at?: string;
+  /**
+   * Pending only: when the current command stops working if still unused.
+   */
+  expires_at?: string;
+}
+
+/**
+ * `pending`: a command was issued and nothing has connected with it; `connected`: the agent
+ * connected with its current command; `disconnected`: the person disconnected it — POST
+ * /agents/{agentId}/hire/command brings it back.
+ */
+export type AgentHireStatus = 'pending' | 'connected' | 'disconnected';
+
+export const AGENT_HIRE_STATUS_VALUES = ['pending', 'connected', 'disconnected'] as const;
 
 /**
  * Agent-scoped integration (connection) instance
@@ -3013,8 +3071,10 @@ export interface AgentVersion {
    * canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
    * provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
    * detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-   * provisioned`, `Platform agent config migrated on boot`, `Rollback to version N` (N = the
-   * version rolled back to), `Self-improvement: N changes based on N analysis` (the
+   * provisioned`, `Platform agent config migrated on boot`, `Hired`, `Registered from a local
+   * app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`,
+   * `Token cap removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N =
+   * the version rolled back to), `Self-improvement: N changes based on N analysis` (the
    * self-improvement loop: the first N is a count, the second is one of errors, ratings or
    * feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC
    * 11).
@@ -3049,8 +3109,23 @@ export interface AiSystemCardTechnicalSpecifications {
   model_ref?: string;
   max_context_tokens?: number;
   built_in_tools?: string[];
+  /**
+   * Where the agent's tools come from, as counts: built-in tools, installed SPECs and MCP
+   * servers. Since 2026-10-16.
+   */
+  tool_sources?: AiSystemCardTechnicalSpecificationsToolSources;
   guardrails_enabled?: boolean;
   guardrail_ids?: string[];
+}
+
+/**
+ * Where the agent's tools come from, as counts: built-in tools, installed SPECs and MCP
+ * servers. Since 2026-10-16.
+ */
+export interface AiSystemCardTechnicalSpecificationsToolSources {
+  built_in?: number;
+  specs?: number;
+  mcp_servers?: number;
 }
 
 /**
@@ -5216,13 +5291,34 @@ export interface ConversationEntry {
    */
   cost_usd?: number;
   /**
-   * The reply came from a run a Todo triggered.
+   * The reply came from a run a Todo triggered. Stored on the entry since 2026-10-16 (with
+   * `author_agent_id` / `author_name`), so it survives the run's deletion; derived from the run
+   * for older entries.
    */
   from_todo?: boolean;
   /**
    * The model ran out of output tokens — see RunOutput.output_truncated.
    */
   output_truncated?: boolean;
+  /**
+   * With `from_todo`: the agent that did the work, stored on the entry when the reply was
+   * written (since 2026-10-16), so it outlives the run and the agent.
+   */
+  author_agent_id?: string;
+  /**
+   * With `from_todo`: that agent's name when the reply was written.
+   */
+  author_name?: string;
+  /**
+   * On an assistant entry whose run failed — today a run stopped by the token cap, whose partial
+   * answer is this entry's `content`. The run's own `error_code`. Since 2026-10-16.
+   */
+  error_code?: string;
+  /**
+   * With `error_code`: the run's `error_details` without `partial_response` (that is `content`),
+   * e.g. `limit_tokens` and `used_tokens`.
+   */
+  error_details?: JsonObject;
 }
 
 export interface ConversationEntryAttachment {
@@ -5268,6 +5364,11 @@ export interface ConversationEntryRunMetrics {
   input_tokens?: number;
   output_tokens?: number;
   thinking_tokens?: number;
+  /**
+   * Prompt tokens served from the provider's prefix cache — a subset of `input_tokens`. Present
+   * only when the provider reports it.
+   */
+  cached_tokens?: number;
   tool_calls_count?: number;
   llm_calls_count?: number;
   guardrail_checks?: number;
@@ -6874,6 +6975,10 @@ export interface DisableMfaResponse {
   disabled: boolean;
 }
 
+export interface DisconnectHiredAgentResponse {
+  agent: Agent;
+}
+
 export interface DomainCertLifecycle {
   /**
    * `renewal_due` is entered 14 days or less before `not_after`.
@@ -7474,9 +7579,9 @@ export interface Error {
  * code only when its call site names one. Other statuses: absent when there is no
  * machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURE_DISABLED' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SESSION_NOT_ACTIVE' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURED_SET_CONTENDED' | 'FEATURE_DISABLED' | 'FILE_NOT_FOUND' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INTERNAL_ERROR' | 'INVALID_ARCHIVE' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_MANIFEST' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSING_SCOPE' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SECURITY_SCAN_FAILED' | 'SESSION_NOT_ACTIVE' | 'SHARE_LIST_CONFLICT' | 'SIGNING_NOT_CONFIGURED' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'hire_catalog_unknown' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'not_hired' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURE_DISABLED', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SESSION_NOT_ACTIVE', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURED_SET_CONTENDED', 'FEATURE_DISABLED', 'FILE_NOT_FOUND', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INTERNAL_ERROR', 'INVALID_ARCHIVE', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_MANIFEST', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSING_SCOPE', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SECURITY_SCAN_FAILED', 'SESSION_NOT_ACTIVE', 'SHARE_LIST_CONFLICT', 'SIGNING_NOT_CONFIGURED', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'hire_catalog_unknown', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'not_hired', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -8630,6 +8735,14 @@ export type GetHealthResponseStatus = 'healthy' | 'degraded' | 'unhealthy';
 
 export const GET_HEALTH_RESPONSE_STATUS_VALUES = ['healthy', 'degraded', 'unhealthy'] as const;
 
+export type GetHireCatalogLocale = 'uk' | 'en';
+
+export const GET_HIRE_CATALOG_LOCALE_VALUES = ['uk', 'en'] as const;
+
+export interface GetHireCatalogResponse {
+  items: HireCatalogItem[];
+}
+
 export interface GetImmutableAuditResponse {
   events: ImmutableAuditEvent[];
   total: number;
@@ -8795,6 +8908,12 @@ export interface GetMissionPerformanceResponseByAgentItem {
 export interface GetMissionPerformanceResponseMissions {
   total: number;
   by_status: JsonObject;
+  /**
+   * Missions not yet ended with a draft at `awaiting_review`, waiting on a person. Their status
+   * stays `executing` (the run is not over), so they are also counted there: show `executing -
+   * waiting_on_review` as running. Absent from servers before 2026-10-15; read as 0.
+   */
+  waiting_on_review?: number;
 }
 
 export interface GetMissionPerformanceResponseObjectives {
@@ -9096,8 +9215,10 @@ export interface GetRunResponse {
    * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`,
    * `limit_usd` and `spent_usd` with `BUDGET_EXCEEDED` (beside the older `max_cost_usd`,
    * `accumulated_cost_usd` and `cap_source`), `limit_ms` and `elapsed_ms` with
-   * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). Never a provider id — this reaches a
-   * screen, and the product does not name the model it picked.
+   * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). `limit_tokens`, `used_tokens` and, when the
+   * model had written anything, `partial_response` (its text so far, at most 8000 characters)
+   * with `MAX_TOKENS_EXCEEDED` (since 2026-10-16). Never a provider id — this reaches a screen,
+   * and the product does not name the model it picked.
    */
   error_details?: JsonObject;
   /**
@@ -9312,6 +9433,76 @@ export interface GetSessionMessagesResponse {
    * the next page. Opaque (here an offset); `total` still counts the whole list.
    */
   cursor?: string;
+}
+
+export interface GetSessionResponse {
+  /**
+   * Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+   * `metadata.archived: true` read as archived here and in the list filters; writing the flag
+   * removes those metadata keys.
+   */
+  archived?: boolean;
+  archived_at?: string;
+  /**
+   * Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+   * `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+   * the flag removes the metadata key.
+   */
+  pinned?: boolean;
+  /**
+   * When it was pinned; order the pinned group by it.
+   */
+  pinned_at?: string;
+  created_by?: string;
+  session_id: string;
+  tenant_id: string;
+  agent_id: string;
+  status: PublicSessionViewStatus;
+  conversation_history?: ConversationEntry[];
+  metadata?: JsonObject;
+  runs?: string[];
+  created_at?: string;
+  /**
+   * Last activity: a message, a run, or a metadata change. Pinning, archiving, creating or
+   * switching a branch, and metadata writes that only set `title`, `project_id` or the legacy
+   * `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+   * by it.
+   */
+  updated_at?: string;
+  expires_at?: string | null;
+  /**
+   * Team ID if session belongs to a team
+   */
+  team_id?: string | null;
+  /**
+   * Session branches for conversation forking
+   */
+  branches?: SessionBranch[];
+  /**
+   * Currently active branch ID
+   */
+  active_branch?: string;
+  /**
+   * How to handle concurrent runs in this session
+   */
+  queue_mode?: SessionQueueMode;
+  /**
+   * Per-conversation model override (in-chat model switcher). When set, runs in this session
+   * resolve their LLM from this config instead of the agent's default. Absent → agent default.
+   */
+  model_override?: GetSessionResponseModelOverride | null;
+  context: SessionContext;
+}
+
+/**
+ * Per-conversation model override (in-chat model switcher). When set, runs in this session
+ * resolve their LLM from this config instead of the agent's default. Absent → agent default.
+ */
+export interface GetSessionResponseModelOverride {
+  provider: string;
+  model_ref: string;
+  endpoint_url?: string;
+  capabilities?: JsonObject;
 }
 
 export interface GetSessionShareResponse {
@@ -9567,8 +9758,10 @@ export interface GetTenantCompanyOverviewResponse {
    * method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
    * setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
    * then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
-   * with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
-   * when nothing else applies.
+   * with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
+   * `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
+   * as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
+   * else applies.
    */
   next_step?: GetTenantCompanyOverviewResponseNextStep;
   generated_at: string;
@@ -9584,7 +9777,9 @@ export interface GetTenantCompanyOverviewResponse {
    */
   work: JsonObject;
   /**
-   * Up to 5 objectives completed in the window, newest first.
+   * Up to 5 results delivered in the window, newest first: completed objectives that no other
+   * objective depends on. The steps feeding a deliverable (collect, analyze) are work, not
+   * results, and are left out since 2026-10-15.
    */
   results: GetTenantCompanyOverviewResponseResult[];
   problems: GetTenantCompanyOverviewResponseProblems;
@@ -9648,8 +9843,10 @@ export interface GetTenantCompanyOverviewResponseNextItem {
  * method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
  * setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
  * then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
- * with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
- * when nothing else applies.
+ * with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
+ * `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
+ * as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
+ * else applies.
  */
 export interface GetTenantCompanyOverviewResponseNextStep {
   kind: GetTenantCompanyOverviewResponseNextStepKind;
@@ -9657,6 +9854,9 @@ export interface GetTenantCompanyOverviewResponseNextStep {
   fix?: string;
   count?: number;
   run_id?: string;
+  mission_id?: string;
+  agent_id?: string;
+  agent_name?: string | null;
   error_code?: string | null;
   name?: string;
   next_fire_at?: string;
@@ -9669,7 +9869,32 @@ export const GET_TENANT_COMPANY_OVERVIEW_RESPONSE_NEXT_STEP_KIND_VALUES = ['setu
 export interface GetTenantCompanyOverviewResponseProblems {
   failed_runs?: number;
   recent?: GetTenantCompanyOverviewResponseProblemsRecentItem[];
+  /**
+   * Missions in the window the PLATFORM stopped (`aborted` or `failed`, not
+   * `aborted_by_operator`) — the watchdog, a failed plan, failed objectives. Since 2026-10-15.
+   */
+  stopped_missions?: number;
+  /**
+   * The newest 5 of them.
+   */
+  missions?: GetTenantCompanyOverviewResponseProblemsMission[];
 }
+
+export interface GetTenantCompanyOverviewResponseProblemsMission {
+  mission_id?: string;
+  goal?: string;
+  status?: GetTenantCompanyOverviewResponseProblemsMissionStatus;
+  /**
+   * As on the mission (`watchdog_stuck`, `planning_failed`, `objectives_failed` …).
+   */
+  result_code?: string | null;
+  result_summary?: string | null;
+  at?: string;
+}
+
+export type GetTenantCompanyOverviewResponseProblemsMissionStatus = 'aborted' | 'failed';
+
+export const GET_TENANT_COMPANY_OVERVIEW_RESPONSE_PROBLEMS_MISSION_STATUS_VALUES = ['aborted', 'failed'] as const;
 
 export interface GetTenantCompanyOverviewResponseProblemsRecentItem {
   run_id?: string;
@@ -9682,7 +9907,18 @@ export interface GetTenantCompanyOverviewResponseProblemsRecentItem {
 
 export interface GetTenantCompanyOverviewResponseResult {
   objective_id?: string;
+  /**
+   * The objective's own name — for a mission step, the step (`Deliver`).
+   */
   title?: string;
+  /**
+   * The result's first line without markdown markers, at most 120 characters — what to head the
+   * card with. Null when the result has no text.
+   */
+  headline?: string | null;
+  /**
+   * Cut at a line or word boundary, with `…` when cut.
+   */
   summary?: string;
   completed_at?: string;
 }
@@ -9785,7 +10021,15 @@ export interface Goal {
   alignment_justification?: string;
   expected_impact?: string;
   resource_estimate_usd?: number;
+  /**
+   * `abandoned` is a status no current code writes; goals stored before 2026-08-31 can carry it,
+   * and GET returns records as stored (SDK decode of the canon tenant, 2026-10-15).
+   */
   status: GoalStatus;
+  /**
+   * On goals stored before 2026-08-31 only; the current propose route does not take it.
+   */
+  priority?: number;
   /**
    * Set once the goal reaches a vote. Absent before that.
    */
@@ -9795,9 +10039,13 @@ export interface Goal {
   updated_at?: string;
 }
 
-export type GoalStatus = 'proposed' | 'checking' | 'voting' | 'approved' | 'rejected' | 'active' | 'completed';
+/**
+ * `abandoned` is a status no current code writes; goals stored before 2026-08-31 can carry it,
+ * and GET returns records as stored (SDK decode of the canon tenant, 2026-10-15).
+ */
+export type GoalStatus = 'proposed' | 'checking' | 'voting' | 'approved' | 'rejected' | 'active' | 'completed' | 'abandoned';
 
-export const GOAL_STATUS_VALUES = ['proposed', 'checking', 'voting', 'approved', 'rejected', 'active', 'completed'] as const;
+export const GOAL_STATUS_VALUES = ['proposed', 'checking', 'voting', 'approved', 'rejected', 'active', 'completed', 'abandoned'] as const;
 
 export interface GoogleOneTapAuthRequest {
   /**
@@ -9957,6 +10205,55 @@ export interface HealthLiveResponse {
 
 export interface HealthzAliasResponse {
   status?: string;
+}
+
+export interface HireAgentRequest {
+  catalog_id: string;
+}
+
+export interface HireAgentResponse {
+  agent: Agent;
+  connect: HireConnect;
+}
+
+export interface HireCatalogItem {
+  id: string;
+  name: string;
+  vendor: string;
+  /**
+   * Absolute PNG, 256×256, public.
+   */
+  icon_url: string;
+  summary: string;
+  requirements: string;
+  platforms: HireCatalogItemPlatform[];
+  steps: HireCatalogItemStep[];
+  docs_url: string;
+}
+
+export type HireCatalogItemPlatform = 'macos' | 'linux' | 'windows';
+
+export const HIRE_CATALOG_ITEM_PLATFORM_VALUES = ['macos', 'linux', 'windows'] as const;
+
+export interface HireCatalogItemStep {
+  title: string;
+  /**
+   * A command to copy, or null.
+   */
+  command: string | null;
+}
+
+/**
+ * The one terminal command that connects a hired agent. Contains its secret: returned once, by
+ * the call that minted it, and never again.
+ */
+export interface HireConnect {
+  command: string;
+  expires_at: string;
+  /**
+   * How long an unused command works (900).
+   */
+  ttl_seconds: number;
 }
 
 export interface HostDroplet {
@@ -10147,6 +10444,12 @@ export interface InboxItem {
   session_id: string | null;
   status: string;
   created_at: string | null;
+  /**
+   * What the run was asked to do — the first line of its request (message, prompt, text or
+   * instruction), at most 140 characters. Absent when the run carries no text. Since 2026-10-16:
+   * a failed row used to carry only its error, so clients titled the task with it.
+   */
+  goal?: string;
   /**
    * One line: the tool being requested, the question, or the error.
    */
@@ -13039,6 +13342,10 @@ export interface MoveWorkspaceFileRequest {
   dest_path?: string;
 }
 
+export interface NewHireCommandResponse {
+  connect: HireConnect;
+}
+
 export interface Notification {
   id: string;
   tenant_id: string;
@@ -13357,7 +13664,10 @@ export interface OAuthIdentityConfig {
   apple_team_id: string;
   apple_bundle_id: string;
   /**
-   * Lower-cased hostnames. Empty means nothing is allowlisted.
+   * Each entry is a lower-cased bare host, which admits that host's `/auth/callback` path
+   * family, or an exact https URL (origin + path, path case kept), which admits that one path —
+   * how a separate app names its own callback. Empty means nothing beyond the built-in
+   * `snaga.ai` and `www.snaga.ai` is allowlisted.
    */
   oauth_return_to_hosts: string[];
 }
@@ -14271,6 +14581,17 @@ export interface PlatformEconomicsEconomics {
    */
   margin_percent: number | null;
   month_to_date_infra_usd: number | null;
+  /**
+   * How `monthly_llm_usd` was reached. The margin is `monthly_revenue_usd − monthly_infra_usd −
+   * monthly_llm_usd`, exactly; show those three beside it, not the month-to-date figures. Since
+   * 2026-10-16.
+   */
+  llm_run_rate_basis?: PlatformEconomicsLLMRunRateBasis;
+  /**
+   * LLM provider spend so far this month — the month-to-date counterpart of `monthly_llm_usd`,
+   * as `month_to_date_infra_usd` is of `monthly_infra_usd`. Since 2026-10-16.
+   */
+  month_to_date_llm_usd?: number;
   markup_percent: number | null;
   pricing_tiers: JsonObject | null;
 }
@@ -15848,6 +16169,53 @@ export interface RemoveScheduleResponse {
   agent_id: string;
 }
 
+export interface RepairAgentRecordsRequest {
+  dry_run?: boolean;
+  ops?: RepairAgentRecordsRequestOp[];
+}
+
+export type RepairAgentRecordsRequestOp = 'head_token_caps' | 'head_names' | 'head_pod_descriptions' | 'initial_versions' | 'orphan_schedules';
+
+export const REPAIR_AGENT_RECORDS_REQUEST_OP_VALUES = ['head_token_caps', 'head_names', 'head_pod_descriptions', 'initial_versions', 'orphan_schedules'] as const;
+
+export interface RepairAgentRecordsResponse {
+  dry_run: boolean;
+  tenants: number;
+  head_token_caps: RepairAgentRecordsResponseHeadTokenCaps;
+  head_names: RepairAgentRecordsResponseHeadNames;
+  head_pod_descriptions: RepairAgentRecordsResponseHeadPodDescriptions;
+  initial_versions: RepairAgentRecordsResponseInitialVersions;
+  orphan_schedules: RepairAgentRecordsResponseOrphanSchedules;
+  errors: RepairAgentRecordsResponseError[];
+}
+
+export interface RepairAgentRecordsResponseError {
+  tenant_id?: string;
+  agent_id?: string;
+  error?: string;
+}
+
+export interface RepairAgentRecordsResponseHeadNames {
+  renamed?: number;
+}
+
+export interface RepairAgentRecordsResponseHeadPodDescriptions {
+  replaced?: number;
+}
+
+export interface RepairAgentRecordsResponseHeadTokenCaps {
+  fixed?: number;
+  by_value?: JsonObject;
+}
+
+export interface RepairAgentRecordsResponseInitialVersions {
+  created?: number;
+}
+
+export interface RepairAgentRecordsResponseOrphanSchedules {
+  removed?: number;
+}
+
 export interface ReplaceConstitutionRequest {
   rules: ConstitutionRule[];
   /**
@@ -16343,8 +16711,10 @@ export interface Run {
    * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`,
    * `limit_usd` and `spent_usd` with `BUDGET_EXCEEDED` (beside the older `max_cost_usd`,
    * `accumulated_cost_usd` and `cap_source`), `limit_ms` and `elapsed_ms` with
-   * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). Never a provider id — this reaches a
-   * screen, and the product does not name the model it picked.
+   * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). `limit_tokens`, `used_tokens` and, when the
+   * model had written anything, `partial_response` (its text so far, at most 8000 characters)
+   * with `MAX_TOKENS_EXCEEDED` (since 2026-10-16). Never a provider id — this reaches a screen,
+   * and the product does not name the model it picked.
    */
   error_details?: JsonObject;
   /**
@@ -16662,9 +17032,9 @@ export interface RunEventTraceContext {
  * forward-compatible addition — but a client should still ignore an unknown one rather than
  * fail, which is how a new type arrives before a client knows it.
  */
-export type RunEventType = 'run.created' | 'run.started' | 'run.completed' | 'run.failed' | 'run.cancelled' | 'run.timeout' | 'run.guardrail_blocked' | 'run.awaiting_approval' | 'run.awaiting_input' | 'run.input_received' | 'run.approved' | 'run.rejected' | 'run.checkpoint' | 'run.paused' | 'run.resumed' | 'run.restored' | 'run.affect' | 'llm.request' | 'llm.response' | 'llm.error' | 'llm.thinking' | 'llm.chunk' | 'llm.timeout' | 'llm.fallback' | 'step.plan' | 'step.act' | 'step.evaluate' | 'step.thinking' | 'tool.call' | 'tool.result' | 'tool.error' | 'tool.timeout' | 'guardrail.check' | 'guardrail.violation' | 'guardrail.custom.check' | 'guardrail.custom.violation' | 'memory.retrieval' | 'memory.extraction' | 'memory.stored' | 'memory.evicted' | 'session.context_compacted' | 'session.created' | 'session.closed' | 'team.message' | 'team.round_start' | 'team.round_end' | 'team.delegate' | 'team.broadcast' | 'team.merge' | 'team.handoff' | 'child_run.completed' | 'child_run.failed' | 'initiative.tick_start' | 'initiative.tick_end' | 'initiative.paused' | 'initiative.resumed' | 'initiative.budget_updated' | 'initiative.escalation' | 'initiative.objective_updated' | 'circuit_breaker.opened' | 'circuit_breaker.closed' | 'circuit_breaker.half_open' | 'streaming.started' | 'streaming.completed' | 'streaming.error' | 'streaming.buffer_truncated' | 'run.step_started' | 'run.step_completed' | 'budget.soft_threshold_crossed' | 'budget.hard_limit_reached' | 'tenant.created' | 'tenant.suspended' | 'tenant.purged' | 'config.updated' | 'webhook.delivered' | 'webhook.failed' | 'cron.fired' | 'agent.version_created' | 'agent.rollback' | 'mcp.server_log' | 'orchestration.started' | 'orchestration.planned' | 'orchestration.replanned' | 'orchestration.task_started' | 'orchestration.task_completed' | 'orchestration.task_failed' | 'orchestration.checkpoint' | 'orchestration.policy_violation' | 'orchestration.quality_report' | 'orchestration.completed' | 'orchestration.failed' | 'graph.agent_spawned' | 'graph.agent_terminated' | 'graph.task_delegated' | 'graph.edge_added' | 'graph.edge_removed' | 'plan.created' | 'plan.updated' | 'plan.sub_goal_completed' | 'plan.sub_goal_abandoned' | 'mcp.tool_called' | 'mcp.server_connected' | 'mcp.server_disconnected' | 'a2a.task_sent' | 'a2a.task_received' | 'memory.compressed' | 'capability.best_agent_selected' | 'identity.created' | 'identity.rotated' | 'message.signed' | 'message.verified' | 'message.replay_blocked' | 'constitution.bootstrapped' | 'constitution.amended' | 'constitution.check_passed' | 'constitution.check_blocked' | 'constitution.violation' | 'ledger.appended' | 'ledger.integrity_checked' | 'permission.checked' | 'permission.denied' | 'permission.spawn_blocked' | 'attestation.created' | 'attestation.verified' | 'attestation.invalid' | 'arbitration.case_opened' | 'arbitration.ruling_submitted' | 'arbitration.appeal_filed' | 'voting.proposal_created' | 'voting.ballot_cast' | 'voting.tallied' | 'voting.vetoed' | 'resource.spent' | 'resource.earned' | 'resource.transferred' | 'resource.insufficient' | 'ambassador.veto_issued' | 'ambassador.request_submitted' | 'builder.design_submitted' | 'builder.design_approved' | 'builder.design_spawned' | 'emergency.safe_mode_activated' | 'emergency.safe_mode_deactivated' | 'emergency.deadlock_detected' | 'goal.self_formulated' | 'goal.approved' | 'improvement.proposed' | 'improvement.sandbox_tested' | 'improvement.applied' | 'collective.insight_published' | 'collective.insights_retrieved' | 'collective.review_requested' | 'collective.poll_created' | 'collective.agent_rated' | 'collective.feedback_requested' | 'collective.reflection_completed' | 'collective.approaches_compared' | 'collective.lesson_logged' | 'collective.team_formed' | 'collective.team_joined' | 'collective.team_left' | 'collective.team_broadcast' | 'collective.specialist_requested' | 'collective.budget_requested' | 'collective.tokens_transferred' | 'collective.task_posted' | 'collective.bid_placed' | 'collective.bid_accepted' | 'collective.cost_reported' | 'sensor.url_watch_created' | 'sensor.rss_watch_created' | 'sensor.webhook_listener_created' | 'sensor.check_scheduled' | 'sensor.event_subscription_created' | 'sensor.triggered' | 'collective.report_presented' | 'collective.escalation' | 'collective.anomaly_reported' | 'collective.human_override' | 'collective.collective_paused' | 'collective.verification_requested' | 'strategy.created' | 'strategy.kpi_updated' | 'document.edit_start' | 'document.edit_chunk' | 'document.edit_complete';
+export type RunEventType = 'run.created' | 'run.started' | 'run.completed' | 'run.failed' | 'run.cancelled' | 'run.timeout' | 'run.guardrail_blocked' | 'run.awaiting_approval' | 'run.awaiting_input' | 'run.input_received' | 'run.approved' | 'run.rejected' | 'run.checkpoint' | 'run.paused' | 'run.resumed' | 'run.restored' | 'run.affect' | 'llm.request' | 'llm.response' | 'llm.error' | 'llm.thinking' | 'llm.chunk' | 'llm.timeout' | 'llm.fallback' | 'step.plan' | 'step.act' | 'step.evaluate' | 'step.thinking' | 'tool.call' | 'tool.result' | 'tool.error' | 'tool.timeout' | 'guardrail.check' | 'guardrail.violation' | 'guardrail.custom.check' | 'guardrail.custom.violation' | 'memory.retrieval' | 'memory.extraction' | 'memory.stored' | 'memory.evicted' | 'session.context_compacted' | 'session.context' | 'session.created' | 'session.closed' | 'team.message' | 'team.round_start' | 'team.round_end' | 'team.delegate' | 'team.broadcast' | 'team.merge' | 'team.handoff' | 'child_run.completed' | 'child_run.failed' | 'initiative.tick_start' | 'initiative.tick_end' | 'initiative.paused' | 'initiative.resumed' | 'initiative.budget_updated' | 'initiative.escalation' | 'initiative.objective_updated' | 'circuit_breaker.opened' | 'circuit_breaker.closed' | 'circuit_breaker.half_open' | 'streaming.started' | 'streaming.completed' | 'streaming.error' | 'streaming.buffer_truncated' | 'run.step_started' | 'run.step_completed' | 'budget.soft_threshold_crossed' | 'budget.hard_limit_reached' | 'tenant.created' | 'tenant.suspended' | 'tenant.purged' | 'config.updated' | 'webhook.delivered' | 'webhook.failed' | 'cron.fired' | 'agent.version_created' | 'agent.rollback' | 'mcp.server_log' | 'orchestration.started' | 'orchestration.planned' | 'orchestration.replanned' | 'orchestration.task_started' | 'orchestration.task_completed' | 'orchestration.task_failed' | 'orchestration.checkpoint' | 'orchestration.policy_violation' | 'orchestration.quality_report' | 'orchestration.completed' | 'orchestration.failed' | 'graph.agent_spawned' | 'graph.agent_terminated' | 'graph.task_delegated' | 'graph.edge_added' | 'graph.edge_removed' | 'plan.created' | 'plan.updated' | 'plan.sub_goal_completed' | 'plan.sub_goal_abandoned' | 'mcp.tool_called' | 'mcp.server_connected' | 'mcp.server_disconnected' | 'a2a.task_sent' | 'a2a.task_received' | 'memory.compressed' | 'capability.best_agent_selected' | 'identity.created' | 'identity.rotated' | 'message.signed' | 'message.verified' | 'message.replay_blocked' | 'constitution.bootstrapped' | 'constitution.amended' | 'constitution.check_passed' | 'constitution.check_blocked' | 'constitution.violation' | 'ledger.appended' | 'ledger.integrity_checked' | 'permission.checked' | 'permission.denied' | 'permission.spawn_blocked' | 'attestation.created' | 'attestation.verified' | 'attestation.invalid' | 'arbitration.case_opened' | 'arbitration.ruling_submitted' | 'arbitration.appeal_filed' | 'voting.proposal_created' | 'voting.ballot_cast' | 'voting.tallied' | 'voting.vetoed' | 'resource.spent' | 'resource.earned' | 'resource.transferred' | 'resource.insufficient' | 'ambassador.veto_issued' | 'ambassador.request_submitted' | 'builder.design_submitted' | 'builder.design_approved' | 'builder.design_spawned' | 'emergency.safe_mode_activated' | 'emergency.safe_mode_deactivated' | 'emergency.deadlock_detected' | 'goal.self_formulated' | 'goal.approved' | 'improvement.proposed' | 'improvement.sandbox_tested' | 'improvement.applied' | 'collective.insight_published' | 'collective.insights_retrieved' | 'collective.review_requested' | 'collective.poll_created' | 'collective.agent_rated' | 'collective.feedback_requested' | 'collective.reflection_completed' | 'collective.approaches_compared' | 'collective.lesson_logged' | 'collective.team_formed' | 'collective.team_joined' | 'collective.team_left' | 'collective.team_broadcast' | 'collective.specialist_requested' | 'collective.budget_requested' | 'collective.tokens_transferred' | 'collective.task_posted' | 'collective.bid_placed' | 'collective.bid_accepted' | 'collective.cost_reported' | 'sensor.url_watch_created' | 'sensor.rss_watch_created' | 'sensor.webhook_listener_created' | 'sensor.check_scheduled' | 'sensor.event_subscription_created' | 'sensor.triggered' | 'collective.report_presented' | 'collective.escalation' | 'collective.anomaly_reported' | 'collective.human_override' | 'collective.collective_paused' | 'collective.verification_requested' | 'strategy.created' | 'strategy.kpi_updated' | 'document.edit_start' | 'document.edit_chunk' | 'document.edit_complete';
 
-export const RUN_EVENT_TYPE_VALUES = ['run.created', 'run.started', 'run.completed', 'run.failed', 'run.cancelled', 'run.timeout', 'run.guardrail_blocked', 'run.awaiting_approval', 'run.awaiting_input', 'run.input_received', 'run.approved', 'run.rejected', 'run.checkpoint', 'run.paused', 'run.resumed', 'run.restored', 'run.affect', 'llm.request', 'llm.response', 'llm.error', 'llm.thinking', 'llm.chunk', 'llm.timeout', 'llm.fallback', 'step.plan', 'step.act', 'step.evaluate', 'step.thinking', 'tool.call', 'tool.result', 'tool.error', 'tool.timeout', 'guardrail.check', 'guardrail.violation', 'guardrail.custom.check', 'guardrail.custom.violation', 'memory.retrieval', 'memory.extraction', 'memory.stored', 'memory.evicted', 'session.context_compacted', 'session.created', 'session.closed', 'team.message', 'team.round_start', 'team.round_end', 'team.delegate', 'team.broadcast', 'team.merge', 'team.handoff', 'child_run.completed', 'child_run.failed', 'initiative.tick_start', 'initiative.tick_end', 'initiative.paused', 'initiative.resumed', 'initiative.budget_updated', 'initiative.escalation', 'initiative.objective_updated', 'circuit_breaker.opened', 'circuit_breaker.closed', 'circuit_breaker.half_open', 'streaming.started', 'streaming.completed', 'streaming.error', 'streaming.buffer_truncated', 'run.step_started', 'run.step_completed', 'budget.soft_threshold_crossed', 'budget.hard_limit_reached', 'tenant.created', 'tenant.suspended', 'tenant.purged', 'config.updated', 'webhook.delivered', 'webhook.failed', 'cron.fired', 'agent.version_created', 'agent.rollback', 'mcp.server_log', 'orchestration.started', 'orchestration.planned', 'orchestration.replanned', 'orchestration.task_started', 'orchestration.task_completed', 'orchestration.task_failed', 'orchestration.checkpoint', 'orchestration.policy_violation', 'orchestration.quality_report', 'orchestration.completed', 'orchestration.failed', 'graph.agent_spawned', 'graph.agent_terminated', 'graph.task_delegated', 'graph.edge_added', 'graph.edge_removed', 'plan.created', 'plan.updated', 'plan.sub_goal_completed', 'plan.sub_goal_abandoned', 'mcp.tool_called', 'mcp.server_connected', 'mcp.server_disconnected', 'a2a.task_sent', 'a2a.task_received', 'memory.compressed', 'capability.best_agent_selected', 'identity.created', 'identity.rotated', 'message.signed', 'message.verified', 'message.replay_blocked', 'constitution.bootstrapped', 'constitution.amended', 'constitution.check_passed', 'constitution.check_blocked', 'constitution.violation', 'ledger.appended', 'ledger.integrity_checked', 'permission.checked', 'permission.denied', 'permission.spawn_blocked', 'attestation.created', 'attestation.verified', 'attestation.invalid', 'arbitration.case_opened', 'arbitration.ruling_submitted', 'arbitration.appeal_filed', 'voting.proposal_created', 'voting.ballot_cast', 'voting.tallied', 'voting.vetoed', 'resource.spent', 'resource.earned', 'resource.transferred', 'resource.insufficient', 'ambassador.veto_issued', 'ambassador.request_submitted', 'builder.design_submitted', 'builder.design_approved', 'builder.design_spawned', 'emergency.safe_mode_activated', 'emergency.safe_mode_deactivated', 'emergency.deadlock_detected', 'goal.self_formulated', 'goal.approved', 'improvement.proposed', 'improvement.sandbox_tested', 'improvement.applied', 'collective.insight_published', 'collective.insights_retrieved', 'collective.review_requested', 'collective.poll_created', 'collective.agent_rated', 'collective.feedback_requested', 'collective.reflection_completed', 'collective.approaches_compared', 'collective.lesson_logged', 'collective.team_formed', 'collective.team_joined', 'collective.team_left', 'collective.team_broadcast', 'collective.specialist_requested', 'collective.budget_requested', 'collective.tokens_transferred', 'collective.task_posted', 'collective.bid_placed', 'collective.bid_accepted', 'collective.cost_reported', 'sensor.url_watch_created', 'sensor.rss_watch_created', 'sensor.webhook_listener_created', 'sensor.check_scheduled', 'sensor.event_subscription_created', 'sensor.triggered', 'collective.report_presented', 'collective.escalation', 'collective.anomaly_reported', 'collective.human_override', 'collective.collective_paused', 'collective.verification_requested', 'strategy.created', 'strategy.kpi_updated', 'document.edit_start', 'document.edit_chunk', 'document.edit_complete'] as const;
+export const RUN_EVENT_TYPE_VALUES = ['run.created', 'run.started', 'run.completed', 'run.failed', 'run.cancelled', 'run.timeout', 'run.guardrail_blocked', 'run.awaiting_approval', 'run.awaiting_input', 'run.input_received', 'run.approved', 'run.rejected', 'run.checkpoint', 'run.paused', 'run.resumed', 'run.restored', 'run.affect', 'llm.request', 'llm.response', 'llm.error', 'llm.thinking', 'llm.chunk', 'llm.timeout', 'llm.fallback', 'step.plan', 'step.act', 'step.evaluate', 'step.thinking', 'tool.call', 'tool.result', 'tool.error', 'tool.timeout', 'guardrail.check', 'guardrail.violation', 'guardrail.custom.check', 'guardrail.custom.violation', 'memory.retrieval', 'memory.extraction', 'memory.stored', 'memory.evicted', 'session.context_compacted', 'session.context', 'session.created', 'session.closed', 'team.message', 'team.round_start', 'team.round_end', 'team.delegate', 'team.broadcast', 'team.merge', 'team.handoff', 'child_run.completed', 'child_run.failed', 'initiative.tick_start', 'initiative.tick_end', 'initiative.paused', 'initiative.resumed', 'initiative.budget_updated', 'initiative.escalation', 'initiative.objective_updated', 'circuit_breaker.opened', 'circuit_breaker.closed', 'circuit_breaker.half_open', 'streaming.started', 'streaming.completed', 'streaming.error', 'streaming.buffer_truncated', 'run.step_started', 'run.step_completed', 'budget.soft_threshold_crossed', 'budget.hard_limit_reached', 'tenant.created', 'tenant.suspended', 'tenant.purged', 'config.updated', 'webhook.delivered', 'webhook.failed', 'cron.fired', 'agent.version_created', 'agent.rollback', 'mcp.server_log', 'orchestration.started', 'orchestration.planned', 'orchestration.replanned', 'orchestration.task_started', 'orchestration.task_completed', 'orchestration.task_failed', 'orchestration.checkpoint', 'orchestration.policy_violation', 'orchestration.quality_report', 'orchestration.completed', 'orchestration.failed', 'graph.agent_spawned', 'graph.agent_terminated', 'graph.task_delegated', 'graph.edge_added', 'graph.edge_removed', 'plan.created', 'plan.updated', 'plan.sub_goal_completed', 'plan.sub_goal_abandoned', 'mcp.tool_called', 'mcp.server_connected', 'mcp.server_disconnected', 'a2a.task_sent', 'a2a.task_received', 'memory.compressed', 'capability.best_agent_selected', 'identity.created', 'identity.rotated', 'message.signed', 'message.verified', 'message.replay_blocked', 'constitution.bootstrapped', 'constitution.amended', 'constitution.check_passed', 'constitution.check_blocked', 'constitution.violation', 'ledger.appended', 'ledger.integrity_checked', 'permission.checked', 'permission.denied', 'permission.spawn_blocked', 'attestation.created', 'attestation.verified', 'attestation.invalid', 'arbitration.case_opened', 'arbitration.ruling_submitted', 'arbitration.appeal_filed', 'voting.proposal_created', 'voting.ballot_cast', 'voting.tallied', 'voting.vetoed', 'resource.spent', 'resource.earned', 'resource.transferred', 'resource.insufficient', 'ambassador.veto_issued', 'ambassador.request_submitted', 'builder.design_submitted', 'builder.design_approved', 'builder.design_spawned', 'emergency.safe_mode_activated', 'emergency.safe_mode_deactivated', 'emergency.deadlock_detected', 'goal.self_formulated', 'goal.approved', 'improvement.proposed', 'improvement.sandbox_tested', 'improvement.applied', 'collective.insight_published', 'collective.insights_retrieved', 'collective.review_requested', 'collective.poll_created', 'collective.agent_rated', 'collective.feedback_requested', 'collective.reflection_completed', 'collective.approaches_compared', 'collective.lesson_logged', 'collective.team_formed', 'collective.team_joined', 'collective.team_left', 'collective.team_broadcast', 'collective.specialist_requested', 'collective.budget_requested', 'collective.tokens_transferred', 'collective.task_posted', 'collective.bid_placed', 'collective.bid_accepted', 'collective.cost_reported', 'sensor.url_watch_created', 'sensor.rss_watch_created', 'sensor.webhook_listener_created', 'sensor.check_scheduled', 'sensor.event_subscription_created', 'sensor.triggered', 'collective.report_presented', 'collective.escalation', 'collective.anomaly_reported', 'collective.human_override', 'collective.collective_paused', 'collective.verification_requested', 'strategy.created', 'strategy.kpi_updated', 'document.edit_start', 'document.edit_chunk', 'document.edit_complete'] as const;
 
 /**
  * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
@@ -16741,6 +17111,11 @@ export interface RunMetrics {
   input_tokens?: number;
   output_tokens?: number;
   thinking_tokens?: number;
+  /**
+   * Prompt tokens served from the provider's prefix cache — a subset of `input_tokens`. Present
+   * only when the provider reports it.
+   */
+  cached_tokens?: number;
   tool_calls_count?: number;
   llm_calls_count?: number;
   guardrail_checks?: number;
@@ -17433,6 +17808,41 @@ export interface SessionBranch {
 export type SessionBranchStatus = 'active' | 'abandoned' | 'merged';
 
 export const SESSION_BRANCH_STATUS_VALUES = ['active', 'abandoned', 'merged'] as const;
+
+/**
+ * How full the agent's context is — the chat header's bar, for every agent. Written after each
+ * run of the session (event `session.context`, before `run.completed`). Unknown numbers are
+ * null, never 0: a hired Claude Code does not report its context. Since 2026-10-15.
+ */
+export interface SessionContext {
+  /**
+   * The model's context window.
+   */
+  window_tokens: number | null;
+  /**
+   * Tokens the agent's latest model call was sent.
+   */
+  used_tokens: number | null;
+  /**
+   * Whole percent, only when both numbers are known; 1–100 (at least 1 when anything is used).
+   * Show as served.
+   */
+  percent: number | null;
+  /**
+   * `model`: measured from the platform's own model call; `agent`: reported by a bridge or hired
+   * agent.
+   */
+  source: SessionContextSource;
+  updated_at: string | null;
+}
+
+/**
+ * `model`: measured from the platform's own model call; `agent`: reported by a bridge or hired
+ * agent.
+ */
+export type SessionContextSource = 'model' | 'agent';
+
+export const SESSION_CONTEXT_SOURCE_VALUES = ['model', 'agent'] as const;
 
 export interface SessionExport {
   exported_at: string;
@@ -18750,8 +19160,10 @@ export interface TenantInbox {
   items: InboxItem[];
   /**
    * Mission objectives held at `awaiting_review`, oldest first — answer each with `POST
-   * /missions/{mission_id}/objectives/{objective_id}/review`. `unsourced_links` counts links in
-   * the result that no tool produced. Since 2026-10-12.
+   * /missions/{mission_id}/objectives/{objective_id}/review`. A draft whose mission has ended
+   * (`completed`, `failed`, `aborted`) is left out since 2026-10-15: nothing is left to accept
+   * it into; a stopped mission shows in the overview's `problems.missions`. `unsourced_links`
+   * counts links in the result that no tool produced. Since 2026-10-12.
    */
   reviews?: TenantInboxReview[];
   /**
@@ -18818,8 +19230,21 @@ export interface TenantInboxProposalProposedBy {
 export interface TenantInboxReview {
   objective_id?: string;
   mission_id?: string | null;
+  /**
+   * The objective's own name — for a mission step, the step (`Draft`).
+   */
   title?: string;
+  /**
+   * The result's first line without markdown markers, at most 120 characters — a better card
+   * heading than `title`. Null when the result has no text. Since 2026-10-15.
+   */
+  headline?: string | null;
+  /**
+   * At most 200 characters, cut at a line or word boundary with `…` when cut. The whole text:
+   * `GET /missions/{mission_id}/objectives` → `output_summary`.
+   */
   summary?: string;
+  summary_truncated?: boolean;
   revisions?: number;
   waiting_since?: string;
   unsourced_links?: number;
@@ -18991,7 +19416,8 @@ export interface TenantOverviewRunsRecentItem {
   error_code?: string;
   /**
    * Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`,
-   * `limit_usd`/`spent_usd`, `limit_ms`/`elapsed_ms`. See `Run.error_details`.
+   * `limit_usd`/`spent_usd`, `limit_ms`/`elapsed_ms`,
+   * `limit_tokens`/`used_tokens`/`partial_response`. See `Run.error_details`.
    */
   error_details?: JsonObject;
   /**
@@ -19958,6 +20384,11 @@ export interface UpdateAdminOAuthIdentityConfigRequest {
   apple_services_id?: string;
   apple_team_id?: string;
   apple_bundle_id?: string;
+  /**
+   * A bare host (`app.example.com` — admits its `/auth/callback` paths) or an exact https URL
+   * with a path and no query, fragment or credentials (`https://app.example.com/auth/handoff` —
+   * admits that path only). Any other entry is 422 and nothing is written.
+   */
   oauth_return_to_hosts?: string[];
 }
 
@@ -21569,6 +22000,21 @@ export interface WebhookSubscription {
   events: string[];
   status: WebhookSubscriptionStatus;
   created_at?: string;
+  updated_at?: string;
+  /**
+   * Consecutive failed deliveries; reset by a success.
+   */
+  failure_count?: number;
+  /**
+   * When the latest delivery failed. Absent when none has.
+   */
+  last_failure_at?: string;
+  /**
+   * The HMAC signing secret. Returned in full ONCE, on `POST /webhooks` (201) — store it then.
+   * Every read (`GET /webhooks`, `GET /webhooks/{webhookId}`) answers the literal
+   * `"[redacted]"`.
+   */
+  secret?: string;
 }
 
 export type WebhookSubscriptionStatus = 'active' | 'disabled' | 'failing';

@@ -587,8 +587,8 @@ public class CompanyApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun startTenantTestRun(body: StartTenantTestRunRequest? = null, options: RequestOptions = RequestOptions()): CompanyTestRun? {
-        return client.request<CompanyTestRun?>(
+    public suspend fun startTenantTestRun(body: StartTenantTestRunRequest? = null, options: RequestOptions = RequestOptions()): CompanyTestRun {
+        return client.request<CompanyTestRun>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/tenants/me/test-run",

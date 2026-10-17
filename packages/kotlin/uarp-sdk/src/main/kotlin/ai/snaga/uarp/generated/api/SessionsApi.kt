@@ -428,17 +428,18 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      * does not exist, and `404` again — not `403` — when it is filed under a private project the
      * caller cannot open, because the existence of that project and of the chats in it is itself
      * confidential. Assistant turns are enriched from their runs: public run metrics, the billable
-     * `cost_usd`, an `output_truncated` marker for a reply that was cut off, and `from_todo` for a
-     * turn a scheduled todo started; runs still in flight are stitched in from `session.runs` so a
-     * reload during streaming can reattach rather than render an idle screen. An unrecognised
-     * sub-path under the session answers `405`, never this record.
+     * `cost_usd`, an `output_truncated` marker for a reply that was cut off, `error_code` /
+     * `error_details` on the partial answer of a run that failed at the token cap, and `from_todo`
+     * for a turn a scheduled todo started; runs still in flight are stitched in from
+     * `session.runs` so a reload during streaming can reattach rather than render an idle screen.
+     * An unrecognised sub-path under the session answers `405`, never this record.
      *
      * `GET /api/v1/sessions/{sessionId}`
      *
      * Required scopes: `sessions:read`.
      */
-    public suspend fun `get`(sessionId: String, options: RequestOptions = RequestOptions()): Session {
-        return client.request<Session>(
+    public suspend fun `get`(sessionId: String, options: RequestOptions = RequestOptions()): GetSessionResponse {
+        return client.request<GetSessionResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}",
@@ -927,7 +928,10 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      * §5.4) — `drawing.created` (data: Drawing) and `drawing.ops` (data: { drawing_id, from_seq,
      * to_seq, items: DrawingJournalEntry\[\] }, up to 100 entries a frame). Event ids are
      * `<runId>:<seq>` and `drawing:<drawingId>:<seq>`; send the last one as `Last-Event-ID` to
-     * resume. An unknown event name is ignored by clients, which is how new ones arrive.
+     * resume. An unknown event name is ignored by clients, which is how new ones arrive. A session
+     * run also emits `session.context` (payload: SessionContext plus `session_id`) after the run's
+     * last model call and before `run.completed` — the context bar's live update, since
+     * 2026-10-15.
      *
      * `GET /api/v1/sessions/{sessionId}/events`
      *

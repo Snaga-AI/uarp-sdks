@@ -5468,6 +5468,7 @@
                     "memory.stored",
                     "memory.evicted",
                     "session.context_compacted",
+                    "session.context",
                     "session.created",
                     "session.closed",
                     "team.message",
@@ -5867,15 +5868,20 @@
                             "DEPENDENCY_EXISTS",
                             "EVENT_STORE_ERROR",
                             "EXTERNAL_SERVICE_ERROR",
+                            "FEATURED_SET_CONTENDED",
                             "FEATURE_DISABLED",
+                            "FILE_NOT_FOUND",
                             "FILE_TYPE_NOT_ALLOWED",
                             "FORBIDDEN",
                             "GUARDRAIL_VIOLATION",
                             "IDEMPOTENCY_KEY_REUSED",
                             "INITIATIVE_BUDGET_EXHAUSTED",
                             "INITIATIVE_PAUSED",
+                            "INTERNAL_ERROR",
+                            "INVALID_ARCHIVE",
                             "INVALID_BODY",
                             "INVALID_CURSOR",
+                            "INVALID_MANIFEST",
                             "INVALID_QUERY",
                             "INVALID_REQUEST",
                             "INVALID_SHARE_LIST",
@@ -5887,6 +5893,7 @@
                             "METHOD_NOT_ALLOWED",
                             "MIGRATION_CONFLICT",
                             "MISSING_FIELD",
+                            "MISSING_SCOPE",
                             "MISSION_ALREADY_RUNNING",
                             "MISSION_CONCURRENCY_LIMIT",
                             "MISSION_NOT_FOUND",
@@ -5919,8 +5926,10 @@
                             "SEARCH_PROVIDER_NOT_CONFIGURED",
                             "SEARCH_UPSTREAM_FAILED",
                             "SEARCH_UPSTREAM_TIMEOUT",
+                            "SECURITY_SCAN_FAILED",
                             "SESSION_NOT_ACTIVE",
                             "SHARE_LIST_CONFLICT",
+                            "SIGNING_NOT_CONFIGURED",
                             "SIZE_LIMIT",
                             "SPEC_NOT_FOUND",
                             "STARTED_BY_ANOTHER_USER",
@@ -5947,6 +5956,7 @@
                             "cv_too_large",
                             "duplicate_application",
                             "governance_not_enabled",
+                            "hire_catalog_unknown",
                             "incomplete_record",
                             "inert_policy_field",
                             "inert_public_config_field",
@@ -5961,6 +5971,7 @@
                             "limit_reached",
                             "mfa_required",
                             "no_eligible_arbiter",
+                            "not_hired",
                             "plan_upgrade_required",
                             "proposal_required",
                             "provider_auth_failed",
@@ -7852,6 +7863,193 @@
                     }
                 }
             },
+            "AgentHire": {
+                "type": "object",
+                "description": "Hired agents only (POST /hire): an agent the person runs on their own computer with their own account. A hired agent is listed by GET /agents whatever its connection. Since 2026-10-15.",
+                "properties": {
+                    "catalog_id": {
+                        "type": "string",
+                        "description": "The GET /hire/catalog entry it was hired from."
+                    },
+                    "catalog_name": {
+                        "type": "string",
+                        "description": "That entry's name, for labels (\"Hired · Claude Code\")."
+                    },
+                    "icon_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "Absolute PNG icon, public."
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "connected",
+                            "disconnected"
+                        ],
+                        "description": "`pending`: a command was issued and nothing has connected with it; `connected`: the agent connected with its current command; `disconnected`: the person disconnected it — POST /agents/{agentId}/hire/command brings it back."
+                    },
+                    "connected_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Pending only: when the current command stops working if still unused."
+                    }
+                },
+                "required": [
+                    "catalog_id",
+                    "catalog_name",
+                    "icon_url",
+                    "status"
+                ]
+            },
+            "HireConnect": {
+                "type": "object",
+                "description": "The one terminal command that connects a hired agent. Contains its secret: returned once, by the call that minted it, and never again.",
+                "properties": {
+                    "command": {
+                        "type": "string"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "ttl_seconds": {
+                        "type": "integer",
+                        "description": "How long an unused command works (900)."
+                    }
+                },
+                "required": [
+                    "command",
+                    "expires_at",
+                    "ttl_seconds"
+                ]
+            },
+            "HireCatalogItem": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "vendor": {
+                        "type": "string"
+                    },
+                    "icon_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "Absolute PNG, 256×256, public."
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "requirements": {
+                        "type": "string"
+                    },
+                    "platforms": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "macos",
+                                "linux",
+                                "windows"
+                            ]
+                        }
+                    },
+                    "steps": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {
+                                    "type": "string"
+                                },
+                                "command": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "description": "A command to copy, or null."
+                                }
+                            },
+                            "required": [
+                                "title",
+                                "command"
+                            ]
+                        }
+                    },
+                    "docs_url": {
+                        "type": "string",
+                        "format": "uri"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "vendor",
+                    "icon_url",
+                    "summary",
+                    "requirements",
+                    "platforms",
+                    "steps",
+                    "docs_url"
+                ]
+            },
+            "SessionContext": {
+                "type": "object",
+                "description": "How full the agent's context is — the chat header's bar, for every agent. Written after each run of the session (event `session.context`, before `run.completed`). Unknown numbers are null, never 0: a hired Claude Code does not report its context. Since 2026-10-15.",
+                "properties": {
+                    "window_tokens": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "The model's context window."
+                    },
+                    "used_tokens": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "Tokens the agent's latest model call was sent."
+                    },
+                    "percent": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "Whole percent, only when both numbers are known; 1–100 (at least 1 when anything is used). Show as served."
+                    },
+                    "source": {
+                        "type": "string",
+                        "enum": [
+                            "model",
+                            "agent"
+                        ],
+                        "description": "`model`: measured from the platform's own model call; `agent`: reported by a bridge or hired agent."
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "window_tokens",
+                    "used_tokens",
+                    "percent",
+                    "source",
+                    "updated_at"
+                ]
+            },
             "Agent": {
                 "type": "object",
                 "properties": {
@@ -8243,6 +8441,17 @@
                         "type": "integer",
                         "description": "GET /agents rows of bridge agents only, and only when non-zero: how many bridge agents are filed under this one. Added 2026-09-25."
                     },
+                    "bridge_status": {
+                        "type": "string",
+                        "enum": [
+                            "online",
+                            "offline"
+                        ],
+                        "description": "Bridge agents only, on GET /agents rows and GET /agents/{agentId}: `online` when an executor connection heartbeated in the last two minutes, else `offline`. Read any other value as `offline`. On GET /agents/{agentId} since 2026-10-15."
+                    },
+                    "hire": {
+                        "$ref": "#/components/schemas/AgentHire"
+                    },
                     "worker_reuse": {
                         "type": "boolean"
                     },
@@ -8418,7 +8627,7 @@
                     "error_details": {
                         "type": "object",
                         "additionalProperties": true,
-                        "description": "Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`, `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`, `limit_usd` and `spent_usd` with `BUDGET_EXCEEDED` (beside the older `max_cost_usd`, `accumulated_cost_usd` and `cap_source`), `limit_ms` and `elapsed_ms` with `MAX_DURATION_EXCEEDED` (both since 2026-09-23). Never a provider id — this reaches a screen, and the product does not name the model it picked."
+                        "description": "Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`, `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`, `limit_usd` and `spent_usd` with `BUDGET_EXCEEDED` (beside the older `max_cost_usd`, `accumulated_cost_usd` and `cap_source`), `limit_ms` and `elapsed_ms` with `MAX_DURATION_EXCEEDED` (both since 2026-09-23). `limit_tokens`, `used_tokens` and, when the model had written anything, `partial_response` (its text so far, at most 8000 characters) with `MAX_TOKENS_EXCEEDED` (since 2026-10-16). Never a provider id — this reaches a screen, and the product does not name the model it picked."
                     },
                     "approvals": {
                         "type": "array",
@@ -8590,6 +8799,10 @@
                     },
                     "thinking_tokens": {
                         "type": "integer"
+                    },
+                    "cached_tokens": {
+                        "type": "integer",
+                        "description": "Prompt tokens served from the provider's prefix cache — a subset of `input_tokens`. Present only when the provider reports it."
                     },
                     "tool_calls_count": {
                         "type": "integer"
@@ -9643,11 +9856,28 @@
                     },
                     "from_todo": {
                         "type": "boolean",
-                        "description": "The reply came from a run a Todo triggered."
+                        "description": "The reply came from a run a Todo triggered. Stored on the entry since 2026-10-16 (with `author_agent_id` / `author_name`), so it survives the run's deletion; derived from the run for older entries."
                     },
                     "output_truncated": {
                         "type": "boolean",
                         "description": "The model ran out of output tokens — see RunOutput.output_truncated."
+                    },
+                    "author_agent_id": {
+                        "type": "string",
+                        "description": "With `from_todo`: the agent that did the work, stored on the entry when the reply was written (since 2026-10-16), so it outlives the run and the agent."
+                    },
+                    "author_name": {
+                        "type": "string",
+                        "description": "With `from_todo`: that agent's name when the reply was written."
+                    },
+                    "error_code": {
+                        "type": "string",
+                        "description": "On an assistant entry whose run failed — today a run stopped by the token cap, whose partial answer is this entry's `content`. The run's own `error_code`. Since 2026-10-16."
+                    },
+                    "error_details": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "description": "With `error_code`: the run's `error_details` without `partial_response` (that is `content`), e.g. `limit_tokens` and `used_tokens`."
                     }
                 }
             },
@@ -10250,8 +10480,14 @@
                             "approved",
                             "rejected",
                             "active",
-                            "completed"
-                        ]
+                            "completed",
+                            "abandoned"
+                        ],
+                        "description": "`abandoned` is a status no current code writes; goals stored before 2026-08-31 can carry it, and GET returns records as stored (SDK decode of the canon tenant, 2026-10-15)."
+                    },
+                    "priority": {
+                        "type": "integer",
+                        "description": "On goals stored before 2026-08-31 only; the current propose route does not take it."
                     },
                     "proposal_id": {
                         "type": "string",
@@ -10507,7 +10743,7 @@
                             "string",
                             "null"
                         ],
-                        "description": "Free text when a client sent one with POST /agents/{agentId}/versions. The SERVER writes these fixed values of its own on the versions it mints — known values a client may match on, and therefore part of the contract (a test keeps this list equal to the literals in the code): `Initial version`, `Initial version (auto-created)`, `Initial version (created by agent factory)`, `Auto-versioned before update`, `Auto-versioned after update`, `Auto-versioned after update (retry)`, `Updated by agent factory`, `Head Agent orchestration kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent provisioned`, `Platform agent config migrated on boot`, `Rollback to version N` (N = the version rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement loop: the first N is a count, the second is one of errors, ratings or feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC 11)."
+                        "description": "Free text when a client sent one with POST /agents/{agentId}/versions. The SERVER writes these fixed values of its own on the versions it mints — known values a client may match on, and therefore part of the contract (a test keeps this list equal to the literals in the code): `Initial version`, `Initial version (auto-created)`, `Initial version (created by agent factory)`, `Auto-versioned before update`, `Auto-versioned after update`, `Auto-versioned after update (retry)`, `Updated by agent factory`, `Head Agent orchestration kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent provisioned`, `Platform agent config migrated on boot`, `Hired`, `Registered from a local app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement loop: the first N is a count, the second is one of errors, ratings or feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC 11)."
                     },
                     "created_at": {
                         "type": "string",
@@ -17754,10 +17990,7 @@
                 }
             },
             "CompanyTestRun": {
-                "type": [
-                    "object",
-                    "null"
-                ],
+                "type": "object",
                 "properties": {
                     "run_id": {
                         "type": "string"
@@ -19539,6 +19772,21 @@
                                     "type": "string"
                                 }
                             },
+                            "tool_sources": {
+                                "type": "object",
+                                "description": "Where the agent's tools come from, as counts: built-in tools, installed SPECs and MCP servers. Since 2026-10-16.",
+                                "properties": {
+                                    "built_in": {
+                                        "type": "integer"
+                                    },
+                                    "specs": {
+                                        "type": "integer"
+                                    },
+                                    "mcp_servers": {
+                                        "type": "integer"
+                                    }
+                                }
+                            },
                             "guardrails_enabled": {
                                 "type": "boolean"
                             },
@@ -19845,6 +20093,23 @@
                     "created_at": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "failure_count": {
+                        "type": "integer",
+                        "description": "Consecutive failed deliveries; reset by a success."
+                    },
+                    "last_failure_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the latest delivery failed. Absent when none has."
+                    },
+                    "secret": {
+                        "type": "string",
+                        "description": "The HMAC signing secret. Returned in full ONCE, on `POST /webhooks` (201) — store it then. Every read (`GET /webhooks`, `GET /webhooks/{webhookId}`) answers the literal `\"[redacted]\"`."
                     }
                 },
                 "required": [
@@ -19957,7 +20222,7 @@
                         "items": {
                             "type": "string"
                         },
-                        "description": "Lower-cased hostnames. Empty means nothing is allowlisted."
+                        "description": "Each entry is a lower-cased bare host, which admits that host's `/auth/callback` path family, or an exact https URL (origin + path, path case kept), which admits that one path — how a separate app names its own callback. Empty means nothing beyond the built-in `snaga.ai` and `www.snaga.ai` is allowlisted."
                     }
                 }
             },
@@ -22849,7 +23114,7 @@
                                         "error_details": {
                                             "type": "object",
                                             "additionalProperties": true,
-                                            "description": "Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`, `limit_usd`/`spent_usd`, `limit_ms`/`elapsed_ms`. See `Run.error_details`."
+                                            "description": "Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`, `limit_usd`/`spent_usd`, `limit_ms`/`elapsed_ms`, `limit_tokens`/`used_tokens`/`partial_response`. See `Run.error_details`."
                                         },
                                         "execution_mode": {
                                             "type": "string",
@@ -23019,6 +23284,10 @@
                         ],
                         "format": "date-time"
                     },
+                    "goal": {
+                        "type": "string",
+                        "description": "What the run was asked to do — the first line of its request (message, prompt, text or instruction), at most 140 characters. Absent when the run carries no text. Since 2026-10-16: a failed row used to carry only its error, so clients titled the task with it."
+                    },
                     "summary": {
                         "type": "string",
                         "description": "One line: the tool being requested, the question, or the error."
@@ -23123,7 +23392,7 @@
                     },
                     "reviews": {
                         "type": "array",
-                        "description": "Mission objectives held at `awaiting_review`, oldest first — answer each with `POST /missions/{mission_id}/objectives/{objective_id}/review`. `unsourced_links` counts links in the result that no tool produced. Since 2026-10-12.",
+                        "description": "Mission objectives held at `awaiting_review`, oldest first — answer each with `POST /missions/{mission_id}/objectives/{objective_id}/review`. A draft whose mission has ended (`completed`, `failed`, `aborted`) is left out since 2026-10-15: nothing is left to accept it into; a stopped mission shows in the overview's `problems.missions`. `unsourced_links` counts links in the result that no tool produced. Since 2026-10-12.",
                         "items": {
                             "type": "object",
                             "properties": {
@@ -23137,10 +23406,22 @@
                                     ]
                                 },
                                 "title": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The objective's own name — for a mission step, the step (`Draft`)."
+                                },
+                                "headline": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "description": "The result's first line without markdown markers, at most 120 characters — a better card heading than `title`. Null when the result has no text. Since 2026-10-15."
                                 },
                                 "summary": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "At most 200 characters, cut at a line or word boundary with `…` when cut. The whole text: `GET /missions/{mission_id}/objectives` → `output_summary`."
+                                },
+                                "summary_truncated": {
+                                    "type": "boolean"
                                 },
                                 "revisions": {
                                     "type": "integer"
@@ -23823,6 +24104,19 @@
                                     "number",
                                     "null"
                                 ]
+                            },
+                            "llm_run_rate_basis": {
+                                "type": "string",
+                                "enum": [
+                                    "previous_period",
+                                    "month_to_date_extrapolated",
+                                    "none"
+                                ],
+                                "description": "How `monthly_llm_usd` was reached. The margin is `monthly_revenue_usd − monthly_infra_usd − monthly_llm_usd`, exactly; show those three beside it, not the month-to-date figures. Since 2026-10-16."
+                            },
+                            "month_to_date_llm_usd": {
+                                "type": "number",
+                                "description": "LLM provider spend so far this month — the month-to-date counterpart of `monthly_llm_usd`, as `month_to_date_infra_usd` is of `monthly_infra_usd`. Since 2026-10-16."
                             },
                             "markup_percent": {
                                 "type": [
@@ -28483,17 +28777,32 @@
                     }
                 ],
                 "summary": "Get a session",
-                "description": "Returns the session record with its conversation timeline. When the session has branches, the timeline is the ACTIVE branch's (`active_branch`): its parent's turns up to the fork point, then its own; `runs` still lists every run of the session. `404` when the session does not exist, and `404` again — not `403` — when it is filed under a private project the caller cannot open, because the existence of that project and of the chats in it is itself confidential. Assistant turns are enriched from their runs: public run metrics, the billable `cost_usd`, an `output_truncated` marker for a reply that was cut off, and `from_todo` for a turn a scheduled todo started; runs still in flight are stitched in from `session.runs` so a reload during streaming can reattach rather than render an idle screen. An unrecognised sub-path under the session answers `405`, never this record.",
+                "description": "Returns the session record with its conversation timeline. When the session has branches, the timeline is the ACTIVE branch's (`active_branch`): its parent's turns up to the fork point, then its own; `runs` still lists every run of the session. `404` when the session does not exist, and `404` again — not `403` — when it is filed under a private project the caller cannot open, because the existence of that project and of the chats in it is itself confidential. Assistant turns are enriched from their runs: public run metrics, the billable `cost_usd`, an `output_truncated` marker for a reply that was cut off, `error_code` / `error_details` on the partial answer of a run that failed at the token cap, and `from_todo` for a turn a scheduled todo started; runs still in flight are stitched in from `session.runs` so a reload during streaming can reattach rather than render an idle screen. An unrecognised sub-path under the session answers `405`, never this record.",
                 "tags": [
                     "Sessions"
                 ],
                 "responses": {
                     "200": {
-                        "description": "The session (13 keys measured 2026-09-10 on e2e-canon)",
+                        "description": "The session (13 keys measured 2026-09-10 on e2e-canon), plus `context` since 2026-10-15",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Session"
+                                    "allOf": [
+                                        {
+                                            "$ref": "#/components/schemas/Session"
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "context": {
+                                                    "$ref": "#/components/schemas/SessionContext"
+                                                }
+                                            },
+                                            "required": [
+                                                "context"
+                                            ]
+                                        }
+                                    ]
                                 }
                             }
                         },
@@ -29071,7 +29380,7 @@
             "get": {
                 "operationId": "streamSessionEvents",
                 "summary": "Stream session events (SSE)",
-                "description": "Server-Sent Events of the session: `connected`, `run_added`, every run event by type, `run_done`, `session_closed`, and — for the session's drawings (docs/DESIGNER-CANVAS.md §5.4) — `drawing.created` (data: Drawing) and `drawing.ops` (data: { drawing_id, from_seq, to_seq, items: DrawingJournalEntry[] }, up to 100 entries a frame). Event ids are `<runId>:<seq>` and `drawing:<drawingId>:<seq>`; send the last one as `Last-Event-ID` to resume. An unknown event name is ignored by clients, which is how new ones arrive.",
+                "description": "Server-Sent Events of the session: `connected`, `run_added`, every run event by type, `run_done`, `session_closed`, and — for the session's drawings (docs/DESIGNER-CANVAS.md §5.4) — `drawing.created` (data: Drawing) and `drawing.ops` (data: { drawing_id, from_seq, to_seq, items: DrawingJournalEntry[] }, up to 100 entries a frame). Event ids are `<runId>:<seq>` and `drawing:<drawingId>:<seq>`; send the last one as `Last-Event-ID` to resume. An unknown event name is ignored by clients, which is how new ones arrive. A session run also emits `session.context` (payload: SessionContext plus `session_id`) after the run's last model call and before `run.completed` — the context bar's live update, since 2026-10-15.",
                 "tags": [
                     "Sessions"
                 ],
@@ -30668,7 +30977,7 @@
             "get": {
                 "operationId": "streamRunEvents",
                 "summary": "Stream run events via SSE",
-                "description": "Real-time event stream for a run. Supports `Last-Event-ID` header (or `?last_event_id=`) for reconnection. Stream closes when run reaches terminal status. Each event payload includes `stream_type`: lifecycle (run.*), assistant (llm.chunk), tool (tool.*), or other — use it to filter client-side. Browsers using EventSource (which cannot set Authorization headers) should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`.",
+                "description": "Real-time event stream for a run. Supports `Last-Event-ID` header (or `?last_event_id=`) for reconnection. Stream closes when run reaches terminal status. Each event payload includes `stream_type`: lifecycle (run.*), assistant (llm.chunk), tool (tool.*), or other — use it to filter client-side. Browsers using EventSource (which cannot set Authorization headers) should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`. A session run also emits `session.context` (payload: SessionContext plus `session_id`) after the run's last model call and before `run.completed` — the context bar's live update, since 2026-10-15.",
                 "tags": [
                     "Runs"
                 ],
@@ -34807,7 +35116,14 @@
                                             }
                                         },
                                         "test_run": {
-                                            "$ref": "#/components/schemas/CompanyTestRun"
+                                            "oneOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/CompanyTestRun"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ]
                                         }
                                     }
                                 }
@@ -35109,7 +35425,7 @@
                                     "properties": {
                                         "next_step": {
                                             "type": "object",
-                                            "description": "The ONE thing to do next, chosen by the server so every client shows the same step in the same order (shared UX structure, 2026-10-14). Present on every answer of a server from this release on; optional in this document because an older server does not send it — read it as `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind` setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`; then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window, with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing else applies.",
+                                            "description": "The ONE thing to do next, chosen by the server so every client shows the same step in the same order (shared UX structure, 2026-10-14). Present on every answer of a server from this release on; optional in this document because an older server does not send it — read it as `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind` setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`; then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window, with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`), `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code` as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing else applies.",
                                             "required": [
                                                 "kind",
                                                 "code"
@@ -35136,6 +35452,18 @@
                                                 },
                                                 "run_id": {
                                                     "type": "string"
+                                                },
+                                                "mission_id": {
+                                                    "type": "string"
+                                                },
+                                                "agent_id": {
+                                                    "type": "string"
+                                                },
+                                                "agent_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
                                                 },
                                                 "error_code": {
                                                     "type": [
@@ -35262,7 +35590,7 @@
                                         },
                                         "results": {
                                             "type": "array",
-                                            "description": "Up to 5 objectives completed in the window, newest first.",
+                                            "description": "Up to 5 results delivered in the window, newest first: completed objectives that no other objective depends on. The steps feeding a deliverable (collect, analyze) are work, not results, and are left out since 2026-10-15.",
                                             "items": {
                                                 "type": "object",
                                                 "properties": {
@@ -35270,11 +35598,20 @@
                                                         "type": "string"
                                                     },
                                                     "title": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "description": "The objective's own name — for a mission step, the step (`Deliver`)."
+                                                    },
+                                                    "headline": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ],
+                                                        "description": "The result's first line without markdown markers, at most 120 characters — what to head the card with. Null when the result has no text."
                                                     },
                                                     "summary": {
                                                         "type": "string",
-                                                        "maxLength": 280
+                                                        "maxLength": 280,
+                                                        "description": "Cut at a line or word boundary, with `…` when cut."
                                                     },
                                                     "completed_at": {
                                                         "type": "string",
@@ -35313,6 +35650,49 @@
                                                                 ]
                                                             },
                                                             "error": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "at": {
+                                                                "type": "string"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "stopped_missions": {
+                                                    "type": "integer",
+                                                    "description": "Missions in the window the PLATFORM stopped (`aborted` or `failed`, not `aborted_by_operator`) — the watchdog, a failed plan, failed objectives. Since 2026-10-15."
+                                                },
+                                                "missions": {
+                                                    "type": "array",
+                                                    "description": "The newest 5 of them.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "mission_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "goal": {
+                                                                "type": "string",
+                                                                "maxLength": 120
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "aborted",
+                                                                    "failed"
+                                                                ]
+                                                            },
+                                                            "result_code": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ],
+                                                                "description": "As on the mission (`watchdog_stuck`, `planning_failed`, `objectives_failed` …)."
+                                                            },
+                                                            "result_summary": {
                                                                 "type": [
                                                                     "string",
                                                                     "null"
@@ -43160,8 +43540,8 @@
         "/api/v1/auth/oauth/exchange": {
             "post": {
                 "operationId": "exchangeOAuthAppCode",
-                "summary": "Trade a mobile hand-off code for the session",
-                "description": "Second half of the mobile sign-in hand-off. When `start` is called with `app_code_challenge`, the callback redirects to the app with `#code=` instead of `#api_key=`, and the key is only released here, to a caller that presents the matching verifier. Single-use and short-lived: the code is consumed on the first attempt, successful or not.",
+                "summary": "Trade a sign-in hand-off code for the session",
+                "description": "Second half of the sign-in hand-off, for a mobile app or a separate web app alike. When `start` is called with `app_code_challenge` and an accepted `return_to`, the callback redirects there with `#code=` instead of `#api_key=`, and the key is only released here, to a caller that presents the matching verifier. Single-use and short-lived: the code is consumed on the first attempt, successful or not.",
                 "tags": [
                     "Auth"
                 ],
@@ -43237,7 +43617,7 @@
             "get": {
                 "operationId": "startOAuthLogin",
                 "summary": "Begin browser OAuth login (302 to provider)",
-                "description": "Redirects the browser to GitHub/Google authorize URL. Server stores a one-shot state record (10 min TTL) keyed by the `state` query the provider will echo back. PKCE codeVerifier is generated server-side. `return_to` defaults to nothing (response is JSON); when set, must satisfy the allow-list (same-origin paths, configured Universal-Link hosts, or `snaga://`). `device_label` is captured here and surfaces on the minted `api_key` for `/me/sessions`.",
+                "description": "Redirects the browser to GitHub/Google authorize URL. Server stores a one-shot state record (10 min TTL) keyed by the `state` query the provider will echo back. PKCE codeVerifier is generated server-side. `return_to` defaults to nothing (response is JSON); when set, must satisfy the allow-list (same-origin paths, `snaga://`, or an entry of `oauth_return_to_hosts`: a host's `/auth/callback` paths or an exact https callback URL). `device_label` is captured here and surfaces on the minted `api_key` for `/me/sessions`.",
                 "tags": [
                     "Auth"
                 ],
@@ -43262,7 +43642,16 @@
                             "type": "string",
                             "maxLength": 65536
                         },
-                        "description": "Where to redirect after callback. Same-origin paths, Universal-Link hosts (default `snaga.ai/auth/callback`), and `snaga://` allowed. Anything else is silently dropped."
+                        "description": "Where to redirect after callback. Same-origin paths, `snaga://`, `/auth/callback` on an allowlisted host (default `snaga.ai`), and an exact https URL listed in `oauth_return_to_hosts` are allowed. Anything else is silently dropped, and the callback then answers the JSON session body."
+                    },
+                    {
+                        "name": "app_code_challenge",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 128
+                        },
+                        "description": "SHA-256 of a verifier the caller keeps, base64url without padding (RFC 7636 S256). With an accepted `return_to` the callback carries `#code=` rather than `#api_key=`, and `POST /auth/oauth/exchange` releases the key for the verifier. Ignored without an accepted `return_to`; absent, the redirect carries `api_key` as before."
                     },
                     {
                         "name": "device_label",
@@ -44557,7 +44946,7 @@
                                 "properties": {
                                     "token": {
                                         "type": "string",
-                                        "description": "The invite secret, echoed to the picker by `GET /api/v1/me/tenants`. Compared in constant time. Defence in depth rather than the primary gate — the email match is that — and it catches the class where the listing ever shows an invite not addressed to the caller. Invites created before secrets exist accept without one.",
+                                        "description": "Required in practice: `pending_invites[].secret` from `GET /api/v1/me/tenants`, the same listing the picker shows — the email link carries the same value. Compared in constant time. Defence in depth rather than the primary gate — the email match is that — and it catches the class where the listing ever shows an invite not addressed to the caller. Missing or wrong is 403; an invite stored before secrets existed (2026-09-02) is refused too, and an admin resend mints one.",
                                         "maxLength": 10485760
                                     },
                                     "name": {
@@ -65380,6 +65769,578 @@
                 "x-roles": [
                     "developer"
                 ]
+            }
+        },
+        "/api/v1/hire/catalog": {
+            "get": {
+                "operationId": "getHireCatalog",
+                "tags": [
+                    "Hire"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Agents a person can hire",
+                "description": "The agents a person can connect to their company with their own account and subscription (Claude Code, …), with the install steps every client renders as served. Texts in `uk` or `en`: `?locale=` first, then Accept-Language; any other locale is answered in `en`. Since 2026-10-15.",
+                "parameters": [
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "uk",
+                                "en"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The catalog",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/HireCatalogItem"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "items"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:read"
+                ]
+            }
+        },
+        "/api/v1/hire": {
+            "post": {
+                "operationId": "hireAgent",
+                "tags": [
+                    "Hire"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Hire an agent",
+                "description": "Creates the hired agent (a bridge agent, `hire.status: pending`) and returns the one terminal command that connects it. The command carries the agent's secret and is returned only here; it stops working 15 minutes after issue if nothing has connected with it. A second hire of the same entry is named with a suffix (\"Claude Code 2\"). A hired agent does not count toward the plan's agent limit. `404 hire_catalog_unknown` for an unknown `catalog_id`. Since 2026-10-15.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "catalog_id": {
+                                        "type": "string",
+                                        "maxLength": 10485760
+                                    }
+                                },
+                                "required": [
+                                    "catalog_id"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The agent and its connect command",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "agent": {
+                                            "$ref": "#/components/schemas/Agent"
+                                        },
+                                        "connect": {
+                                            "$ref": "#/components/schemas/HireConnect"
+                                        }
+                                    },
+                                    "required": [
+                                        "agent",
+                                        "connect"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "`hire_catalog_unknown`: no such catalog entry",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:write"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ],
+                "x-roles": [
+                    "developer"
+                ]
+            }
+        },
+        "/api/v1/agents/{agentId}/hire/command": {
+            "post": {
+                "operationId": "newHireCommand",
+                "tags": [
+                    "Hire"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "A new connect command for a hired agent",
+                "description": "Issues a new command and secret; the previous one stops working at once. The agent goes back to `hire.status: pending` until something connects with the new command — this is also how a disconnected agent is brought back. `409 not_hired` for an agent that was not hired. Since 2026-10-15.",
+                "parameters": [
+                    {
+                        "name": "agentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": 36
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "The new command",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "connect": {
+                                            "$ref": "#/components/schemas/HireConnect"
+                                        }
+                                    },
+                                    "required": [
+                                        "connect"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "No such agent",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "`not_hired`: the agent was not hired",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/IdempotencyKeyReused"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:write"
+                ],
+                "x-roles": [
+                    "developer"
+                ]
+            }
+        },
+        "/api/v1/agents/{agentId}/hire/disconnect": {
+            "post": {
+                "operationId": "disconnectHiredAgent",
+                "tags": [
+                    "Hire"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Disconnect a hired agent",
+                "description": "Revokes the agent's secret and closes its bridge connection; the agent stays listed with `hire.status: disconnected` and its history kept. A new command brings it back. `409 not_hired` for an agent that was not hired. Since 2026-10-15.",
+                "parameters": [
+                    {
+                        "name": "agentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": 36
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The agent after disconnecting",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "agent": {
+                                            "$ref": "#/components/schemas/Agent"
+                                        }
+                                    },
+                                    "required": [
+                                        "agent"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "No such agent",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "`not_hired`: the agent was not hired",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/IdempotencyKeyReused"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-scopes": [
+                    "agents:write"
+                ],
+                "x-roles": [
+                    "developer"
+                ]
+            }
+        },
+        "/api/v1/mcp/hire": {
+            "post": {
+                "operationId": "hiredAgentMcp",
+                "tags": [
+                    "Hire"
+                ],
+                "security": [],
+                "summary": "A hired agent's own MCP endpoint",
+                "description": "MCP over Streamable HTTP (stateless, JSON responses) for the hired agent itself, authenticated by `Authorization: Bearer` with the secret from its connect command — not an API key, and nothing else accepts it. Tools: `wait_for_task` (up to ~25 s; returns the tasks to do), `send_progress`, `complete_task`, `fail_task`; the rules arrive in the `initialize` result's `instructions`. The first authenticated request marks the agent connected. `401` for a missing, unknown, expired or revoked secret — the same answer for each. Since 2026-10-15.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "A JSON-RPC response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "description": "The secret is not valid",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/hire/icons/{icon}.png": {
+            "get": {
+                "operationId": "getHireIcon",
+                "tags": [
+                    "Hire"
+                ],
+                "security": [],
+                "summary": "A hire catalog icon",
+                "description": "The PNG behind a catalog entry's `icon_url`. Public, cacheable for a day. Since 2026-10-15.",
+                "parameters": [
+                    {
+                        "name": "icon",
+                        "in": "path",
+                        "required": true,
+                        "description": "The catalog entry id, e.g. `claude-code`.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-z0-9-]+$",
+                            "maxLength": 65536
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The icon",
+                        "content": {
+                            "image/png": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No such icon",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
             }
         },
         "/api/v1/agents/{agentId}/suspend": {
@@ -88733,7 +89694,7 @@
                     "Admin Config"
                 ],
                 "summary": "Apple native sign-in identifiers and the OAuth return-to allowlist",
-                "description": "Three-layer read with `effective`, as with founder identity. The environment's `oauth_return_to_hosts` is a comma-separated variable, split, trimmed and lower-cased before it appears here.",
+                "description": "Three-layer read with `effective`, as with founder identity. The environment's `oauth_return_to_hosts` is a comma-separated variable, split and normalised the way a PUT is (hosts lower-cased, URLs as origin + path); an entry of neither shape is dropped.",
                 "responses": {
                     "200": {
                         "description": "Stored, environment, and resolved OAuth identity config.",
@@ -88810,8 +89771,9 @@
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
-                                            "maxLength": 253
-                                        }
+                                            "maxLength": 512
+                                        },
+                                        "description": "A bare host (`app.example.com` — admits its `/auth/callback` paths) or an exact https URL with a path and no query, fragment or credentials (`https://app.example.com/auth/handoff` — admits that path only). Any other entry is 422 and nothing is written."
                                     }
                                 }
                             }
@@ -107144,6 +108106,10 @@
                                                         "type": "integer",
                                                         "description": "How many carry the status key they sit under."
                                                     }
+                                                },
+                                                "waiting_on_review": {
+                                                    "type": "integer",
+                                                    "description": "Missions not yet ended with a draft at `awaiting_review`, waiting on a person. Their status stays `executing` (the run is not over), so they are also counted there: show `executing - waiting_on_review` as running. Absent from servers before 2026-10-15; read as 0."
                                                 }
                                             }
                                         },
@@ -107504,6 +108470,195 @@
                 ],
                 "x-scopes": [
                     "analytics:read"
+                ]
+            }
+        },
+        "/api/v1/admin/maintenance/agent-records": {
+            "post": {
+                "operationId": "repairAgentRecords",
+                "summary": "Repair stored agent records (one-off)",
+                "tags": [
+                    "Admin"
+                ],
+                "description": "One-off repairs of agent records that no code writes any more but production still carries. **Super-admin only.** `head_token_caps`: a head agent's stored `resource_limits.max_tokens_per_run` below the platform's per-run budget is removed, so the platform budget applies. `head_names`: a head agent still named `Head Agent` or `<Company> Head Agent` becomes `Chief of Staff` (and its description, when that still names a Head Agent). `head_pod_descriptions`: a head agent whose description still says \"Pod\" gets the Chief of Staff description, whatever its name. `initial_versions`: an agent with no version gets v1 from its current record. `orphan_schedules`: a cron schedule whose agent is gone is deleted (it fired a run daily that failed with agent_not_found). A changed head agent gets a new version, since chat runs pin the latest one. `dry_run: true` counts without writing. Idempotent: a second run finds nothing to do. Since 2026-10-16.",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "dry_run": {
+                                        "type": "boolean"
+                                    },
+                                    "ops": {
+                                        "type": "array",
+                                        "maxItems": 5,
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "head_token_caps",
+                                                "head_names",
+                                                "head_pod_descriptions",
+                                                "initial_versions",
+                                                "orphan_schedules"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "What was (or, with dry_run, would be) repaired.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "dry_run",
+                                        "tenants",
+                                        "head_token_caps",
+                                        "head_names",
+                                        "head_pod_descriptions",
+                                        "initial_versions",
+                                        "orphan_schedules",
+                                        "errors"
+                                    ],
+                                    "properties": {
+                                        "dry_run": {
+                                            "type": "boolean"
+                                        },
+                                        "tenants": {
+                                            "type": "integer"
+                                        },
+                                        "head_token_caps": {
+                                            "type": "object",
+                                            "properties": {
+                                                "fixed": {
+                                                    "type": "integer"
+                                                },
+                                                "by_value": {
+                                                    "type": "object",
+                                                    "additionalProperties": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "head_names": {
+                                            "type": "object",
+                                            "properties": {
+                                                "renamed": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        },
+                                        "head_pod_descriptions": {
+                                            "type": "object",
+                                            "properties": {
+                                                "replaced": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        },
+                                        "initial_versions": {
+                                            "type": "object",
+                                            "properties": {
+                                                "created": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        },
+                                        "orphan_schedules": {
+                                            "type": "object",
+                                            "properties": {
+                                                "removed": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        },
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "tenant_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "agent_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "error": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "405": {
+                        "description": "Only POST is allowed."
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "`ops` names an unknown repair."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "admin"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
                 ]
             }
         },
@@ -114646,6 +115801,10 @@
         {
             "name": "Bridge",
             "description": "Local agent bridge for Snaga desktop connections"
+        },
+        {
+            "name": "Hire",
+            "description": "Hire an agent the person already uses (Claude Code, …) into their company, with their own account and subscription"
         },
         {
             "name": "Feed",

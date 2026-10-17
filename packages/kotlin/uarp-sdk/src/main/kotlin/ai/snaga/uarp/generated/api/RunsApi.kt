@@ -705,7 +705,10 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      * reconnection. Stream closes when run reaches terminal status. Each event payload includes
      * `stream_type`: lifecycle (run.*), assistant (llm.chunk), tool (tool.*), or other — use it to
      * filter client-side. Browsers using EventSource (which cannot set Authorization headers)
-     * should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`.
+     * should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`. A
+     * session run also emits `session.context` (payload: SessionContext plus `session_id`) after
+     * the run's last model call and before `run.completed` — the context bar's live update, since
+     * 2026-10-15.
      *
      * `GET /api/v1/runs/{runId}/events`
      *

@@ -124,13 +124,13 @@ public struct AuthAPI: Sendable {
         ))
     }
 
-    /// Trade a mobile hand-off code for the session
+    /// Trade a sign-in hand-off code for the session
     ///
-    /// Second half of the mobile sign-in hand-off. When `start` is called with
-    /// `app_code_challenge`, the callback redirects to the app with `#code=` instead of
-    /// `#api_key=`, and the key is only released here, to a caller that presents the matching
-    /// verifier. Single-use and short-lived: the code is consumed on the first attempt, successful
-    /// or not.
+    /// Second half of the sign-in hand-off, for a mobile app or a separate web app alike. When
+    /// `start` is called with `app_code_challenge` and an accepted `return_to`, the callback
+    /// redirects there with `#code=` instead of `#api_key=`, and the key is only released here, to
+    /// a caller that presents the matching verifier. Single-use and short-lived: the code is
+    /// consumed on the first attempt, successful or not.
     ///
     /// `POST /api/v1/auth/oauth/exchange`
     public func exchangeOAuthAppCode(body: OAuthAppExchangeRequest, options: RequestOptions = .init()) async throws -> OAuthAppExchangeResponse {
@@ -379,14 +379,18 @@ public struct AuthAPI: Sendable {
     /// Redirects the browser to GitHub/Google authorize URL. Server stores a one-shot state record
     /// (10 min TTL) keyed by the `state` query the provider will echo back. PKCE codeVerifier is
     /// generated server-side. `return_to` defaults to nothing (response is JSON); when set, must
-    /// satisfy the allow-list (same-origin paths, configured Universal-Link hosts, or `snaga://`).
+    /// satisfy the allow-list (same-origin paths, `snaga://`, or an entry of
+    /// `oauth_return_to_hosts`: a host's `/auth/callback` paths or an exact https callback URL).
     /// `device_label` is captured here and surfaces on the minted `api_key` for `/me/sessions`.
     ///
     /// `GET /api/v1/auth/oauth/{provider}/start`
-    public func startOAuthLogin(provider: OAuthLoginProviderConfigStatusProvider, returnTo: String? = nil, deviceLabel: String? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func startOAuthLogin(provider: OAuthLoginProviderConfigStatusProvider, returnTo: String? = nil, appCodeChallenge: String? = nil, deviceLabel: String? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
         var query: [URLQueryItem] = []
         if let returnTo {
             query.append(URLQueryItem(name: "return_to", value: returnTo))
+        }
+        if let appCodeChallenge {
+            query.append(URLQueryItem(name: "app_code_challenge", value: appCodeChallenge))
         }
         if let deviceLabel {
             query.append(URLQueryItem(name: "device_label", value: deviceLabel))

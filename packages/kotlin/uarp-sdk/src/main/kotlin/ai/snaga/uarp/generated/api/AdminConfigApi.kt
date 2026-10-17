@@ -481,8 +481,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      * Apple native sign-in identifiers and the OAuth return-to allowlist
      *
      * Three-layer read with `effective`, as with founder identity. The environment's
-     * `oauth_return_to_hosts` is a comma-separated variable, split, trimmed and lower-cased before
-     * it appears here.
+     * `oauth_return_to_hosts` is a comma-separated variable, split and normalised the way a PUT is
+     * (hosts lower-cased, URLs as origin + path); an entry of neither shape is dropped.
      *
      * `GET /api/v1/admin/config/oauth-identity`
      *

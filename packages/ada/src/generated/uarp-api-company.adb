@@ -388,17 +388,18 @@ package body UARP.API.Company is
       Payload : UARP.Models.Start_Tenant_Test_Run_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Company_Test_Run
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/tenants/me/test-run",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => Include_Payload,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/tenants/me/test-run",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
    end Start_Tenant_Test_Run;
 
    function Update_Tenant_Company

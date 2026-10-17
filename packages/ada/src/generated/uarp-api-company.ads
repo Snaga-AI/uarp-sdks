@@ -2,7 +2,6 @@
 --
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.Types;
 package UARP.API.Company is
@@ -428,7 +427,7 @@ package UARP.API.Company is
       Payload : UARP.Models.Start_Tenant_Test_Run_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Company_Test_Run;
 
    --  Change the company's profile
    --

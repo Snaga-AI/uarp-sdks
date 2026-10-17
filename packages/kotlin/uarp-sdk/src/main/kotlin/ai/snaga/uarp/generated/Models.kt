@@ -564,10 +564,12 @@ public data class AbortMissionRequest(
 @Serializable
 public data class AcceptInviteFromPickerRequest(
     /**
-     * The invite secret, echoed to the picker by `GET /api/v1/me/tenants`. Compared in constant
-     * time. Defence in depth rather than the primary gate — the email match is that — and it
-     * catches the class where the listing ever shows an invite not addressed to the caller.
-     * Invites created before secrets exist accept without one.
+     * Required in practice: `pending_invites\[\].secret` from `GET /api/v1/me/tenants`, the same
+     * listing the picker shows — the email link carries the same value. Compared in constant time.
+     * Defence in depth rather than the primary gate — the email match is that — and it catches the
+     * class where the listing ever shows an invite not addressed to the caller. Missing or wrong
+     * is 403; an invite stored before secrets existed (2026-09-02) is refused too, and an admin
+     * resend mints one.
      */
     public val token: String? = null,
     /**
@@ -3452,6 +3454,14 @@ public data class Agent(
      */
     @SerialName("children_count")
     public val childrenCount: Long? = null,
+    /**
+     * Bridge agents only, on GET /agents rows and GET /agents/{agentId}: `online` when an executor
+     * connection heartbeated in the last two minutes, else `offline`. Read any other value as
+     * `offline`. On GET /agents/{agentId} since 2026-10-15.
+     */
+    @SerialName("bridge_status")
+    public val bridgeStatus: AgentBridgeStatus? = null,
+    public val hire: AgentHire? = null,
     @SerialName("worker_reuse")
     public val workerReuse: Boolean? = null,
     /**
@@ -3717,6 +3727,36 @@ public data class AgentBridgeState(
 )
 
 /**
+ * Bridge agents only, on GET /agents rows and GET /agents/{agentId}: `online` when an executor
+ * connection heartbeated in the last two minutes, else `offline`. Read any other value as
+ * `offline`. On GET /agents/{agentId} since 2026-10-15.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AgentBridgeStatusSerializer::class)
+@JvmInline
+public value class AgentBridgeStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ONLINE: AgentBridgeStatus = AgentBridgeStatus("online")
+        public val OFFLINE: AgentBridgeStatus = AgentBridgeStatus("offline")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AgentBridgeStatus> = listOf(ONLINE, OFFLINE)
+    }
+}
+
+public object AgentBridgeStatusSerializer : KSerializer<AgentBridgeStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AgentBridgeStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AgentBridgeStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AgentBridgeStatus = AgentBridgeStatus(decoder.decodeString())
+}
+
+/**
  * What GET /agents/{agentId}/capabilities serves. Measured 2026-09-10 on the e2e-canon tenant;
  * `tools\[\]` and `kb_ids\[\]` were empty there, so their element shape is not asserted.
  */
@@ -3853,6 +3893,74 @@ public object AgentExecutionModeSerializer : KSerializer<AgentExecutionMode> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AgentExecutionMode", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: AgentExecutionMode): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): AgentExecutionMode = AgentExecutionMode(decoder.decodeString())
+}
+
+/**
+ * Hired agents only (POST /hire): an agent the person runs on their own computer with their
+ * own account. A hired agent is listed by GET /agents whatever its connection. Since
+ * 2026-10-15.
+ */
+@Serializable
+public data class AgentHire(
+    /**
+     * The GET /hire/catalog entry it was hired from.
+     */
+    @SerialName("catalog_id")
+    public val catalogId: String,
+    /**
+     * That entry's name, for labels ("Hired · Claude Code").
+     */
+    @SerialName("catalog_name")
+    public val catalogName: String,
+    /**
+     * Absolute PNG icon, public.
+     */
+    @SerialName("icon_url")
+    public val iconURL: String,
+    /**
+     * `pending`: a command was issued and nothing has connected with it; `connected`: the agent
+     * connected with its current command; `disconnected`: the person disconnected it — POST
+     * /agents/{agentId}/hire/command brings it back.
+     */
+    public val status: AgentHireStatus,
+    @SerialName("connected_at")
+    public val connectedAt: String? = null,
+    /**
+     * Pending only: when the current command stops working if still unused.
+     */
+    @SerialName("expires_at")
+    public val expiresAt: String? = null,
+)
+
+/**
+ * `pending`: a command was issued and nothing has connected with it; `connected`: the agent
+ * connected with its current command; `disconnected`: the person disconnected it — POST
+ * /agents/{agentId}/hire/command brings it back.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AgentHireStatusSerializer::class)
+@JvmInline
+public value class AgentHireStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val PENDING: AgentHireStatus = AgentHireStatus("pending")
+        public val CONNECTED: AgentHireStatus = AgentHireStatus("connected")
+        public val DISCONNECTED: AgentHireStatus = AgentHireStatus("disconnected")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AgentHireStatus> = listOf(PENDING, CONNECTED, DISCONNECTED)
+    }
+}
+
+public object AgentHireStatusSerializer : KSerializer<AgentHireStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AgentHireStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AgentHireStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AgentHireStatus = AgentHireStatus(decoder.decodeString())
 }
 
 /**
@@ -5430,8 +5538,10 @@ public data class AgentVersion(
      * canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
      * provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
      * detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-     * provisioned`, `Platform agent config migrated on boot`, `Rollback to version N` (N = the
-     * version rolled back to), `Self-improvement: N changes based on N analysis` (the
+     * provisioned`, `Platform agent config migrated on boot`, `Hired`, `Registered from a local
+     * app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`,
+     * `Token cap removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N =
+     * the version rolled back to), `Self-improvement: N changes based on N analysis` (the
      * self-improvement loop: the first N is a count, the second is one of errors, ratings or
      * feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC
      * 11).
@@ -5489,10 +5599,29 @@ public data class AiSystemCardTechnicalSpecifications(
     public val maxContextTokens: Long? = null,
     @SerialName("built_in_tools")
     public val builtInTools: List<String>? = null,
+    /**
+     * Where the agent's tools come from, as counts: built-in tools, installed SPECs and MCP
+     * servers. Since 2026-10-16.
+     */
+    @SerialName("tool_sources")
+    public val toolSources: AiSystemCardTechnicalSpecificationsToolSources? = null,
     @SerialName("guardrails_enabled")
     public val guardrailsEnabled: Boolean? = null,
     @SerialName("guardrail_ids")
     public val guardrailIds: List<String>? = null,
+)
+
+/**
+ * Where the agent's tools come from, as counts: built-in tools, installed SPECs and MCP
+ * servers. Since 2026-10-16.
+ */
+@Serializable
+public data class AiSystemCardTechnicalSpecificationsToolSources(
+    @SerialName("built_in")
+    public val builtIn: Long? = null,
+    public val specs: Long? = null,
+    @SerialName("mcp_servers")
+    public val mcpServers: Long? = null,
 )
 
 /**
@@ -9580,7 +9709,9 @@ public data class ConversationEntry(
     @SerialName("cost_usd")
     public val costUsd: Double? = null,
     /**
-     * The reply came from a run a Todo triggered.
+     * The reply came from a run a Todo triggered. Stored on the entry since 2026-10-16 (with
+     * `author_agent_id` / `author_name`), so it survives the run's deletion; derived from the run
+     * for older entries.
      */
     @SerialName("from_todo")
     public val fromTodo: Boolean? = null,
@@ -9589,6 +9720,29 @@ public data class ConversationEntry(
      */
     @SerialName("output_truncated")
     public val outputTruncated: Boolean? = null,
+    /**
+     * With `from_todo`: the agent that did the work, stored on the entry when the reply was
+     * written (since 2026-10-16), so it outlives the run and the agent.
+     */
+    @SerialName("author_agent_id")
+    public val authorAgentId: String? = null,
+    /**
+     * With `from_todo`: that agent's name when the reply was written.
+     */
+    @SerialName("author_name")
+    public val authorName: String? = null,
+    /**
+     * On an assistant entry whose run failed — today a run stopped by the token cap, whose partial
+     * answer is this entry's `content`. The run's own `error_code`. Since 2026-10-16.
+     */
+    @SerialName("error_code")
+    public val errorCode: String? = null,
+    /**
+     * With `error_code`: the run's `error_details` without `partial_response` (that is `content`),
+     * e.g. `limit_tokens` and `used_tokens`.
+     */
+    @SerialName("error_details")
+    public val errorDetails: JsonObject? = null,
 )
 
 /**
@@ -9681,6 +9835,12 @@ public data class ConversationEntryRunMetrics(
     public val outputTokens: Long? = null,
     @SerialName("thinking_tokens")
     public val thinkingTokens: Long? = null,
+    /**
+     * Prompt tokens served from the provider's prefix cache — a subset of `input_tokens`. Present
+     * only when the provider reports it.
+     */
+    @SerialName("cached_tokens")
+    public val cachedTokens: Long? = null,
     @SerialName("tool_calls_count")
     public val toolCallsCount: Long? = null,
     @SerialName("llm_calls_count")
@@ -12320,6 +12480,14 @@ public data class DisableMfaResponse(
 )
 
 /**
+ * `DisconnectHiredAgentResponse` model.
+ */
+@Serializable
+public data class DisconnectHiredAgentResponse(
+    public val agent: Agent,
+)
+
+/**
  * `DomainCertLifecycle` model.
  */
 @Serializable
@@ -13442,15 +13610,20 @@ public value class ErrorCode(public val value: String) {
         public val DEPENDENCY_EXISTS: ErrorCode = ErrorCode("DEPENDENCY_EXISTS")
         public val EVENT_STORE_ERROR: ErrorCode = ErrorCode("EVENT_STORE_ERROR")
         public val EXTERNAL_SERVICE_ERROR: ErrorCode = ErrorCode("EXTERNAL_SERVICE_ERROR")
+        public val FEATURED_SET_CONTENDED: ErrorCode = ErrorCode("FEATURED_SET_CONTENDED")
         public val FEATURE_DISABLED: ErrorCode = ErrorCode("FEATURE_DISABLED")
+        public val FILE_NOT_FOUND: ErrorCode = ErrorCode("FILE_NOT_FOUND")
         public val FILE_TYPE_NOT_ALLOWED: ErrorCode = ErrorCode("FILE_TYPE_NOT_ALLOWED")
         public val FORBIDDEN: ErrorCode = ErrorCode("FORBIDDEN")
         public val GUARDRAIL_VIOLATION: ErrorCode = ErrorCode("GUARDRAIL_VIOLATION")
         public val IDEMPOTENCY_KEY_REUSED: ErrorCode = ErrorCode("IDEMPOTENCY_KEY_REUSED")
         public val INITIATIVE_BUDGET_EXHAUSTED: ErrorCode = ErrorCode("INITIATIVE_BUDGET_EXHAUSTED")
         public val INITIATIVE_PAUSED: ErrorCode = ErrorCode("INITIATIVE_PAUSED")
+        public val INTERNAL_ERROR: ErrorCode = ErrorCode("INTERNAL_ERROR")
+        public val INVALID_ARCHIVE: ErrorCode = ErrorCode("INVALID_ARCHIVE")
         public val INVALID_BODY: ErrorCode = ErrorCode("INVALID_BODY")
         public val INVALID_CURSOR: ErrorCode = ErrorCode("INVALID_CURSOR")
+        public val INVALID_MANIFEST: ErrorCode = ErrorCode("INVALID_MANIFEST")
         public val INVALID_QUERY: ErrorCode = ErrorCode("INVALID_QUERY")
         public val INVALID_REQUEST: ErrorCode = ErrorCode("INVALID_REQUEST")
         public val INVALID_SHARE_LIST: ErrorCode = ErrorCode("INVALID_SHARE_LIST")
@@ -13462,6 +13635,7 @@ public value class ErrorCode(public val value: String) {
         public val METHOD_NOT_ALLOWED: ErrorCode = ErrorCode("METHOD_NOT_ALLOWED")
         public val MIGRATION_CONFLICT: ErrorCode = ErrorCode("MIGRATION_CONFLICT")
         public val MISSING_FIELD: ErrorCode = ErrorCode("MISSING_FIELD")
+        public val MISSING_SCOPE: ErrorCode = ErrorCode("MISSING_SCOPE")
         public val MISSION_ALREADY_RUNNING: ErrorCode = ErrorCode("MISSION_ALREADY_RUNNING")
         public val MISSION_CONCURRENCY_LIMIT: ErrorCode = ErrorCode("MISSION_CONCURRENCY_LIMIT")
         public val MISSION_NOT_FOUND: ErrorCode = ErrorCode("MISSION_NOT_FOUND")
@@ -13494,8 +13668,10 @@ public value class ErrorCode(public val value: String) {
         public val SEARCH_PROVIDER_NOT_CONFIGURED: ErrorCode = ErrorCode("SEARCH_PROVIDER_NOT_CONFIGURED")
         public val SEARCH_UPSTREAM_FAILED: ErrorCode = ErrorCode("SEARCH_UPSTREAM_FAILED")
         public val SEARCH_UPSTREAM_TIMEOUT: ErrorCode = ErrorCode("SEARCH_UPSTREAM_TIMEOUT")
+        public val SECURITY_SCAN_FAILED: ErrorCode = ErrorCode("SECURITY_SCAN_FAILED")
         public val SESSION_NOT_ACTIVE: ErrorCode = ErrorCode("SESSION_NOT_ACTIVE")
         public val SHARE_LIST_CONFLICT: ErrorCode = ErrorCode("SHARE_LIST_CONFLICT")
+        public val SIGNING_NOT_CONFIGURED: ErrorCode = ErrorCode("SIGNING_NOT_CONFIGURED")
         public val SIZE_LIMIT: ErrorCode = ErrorCode("SIZE_LIMIT")
         public val SPEC_NOT_FOUND: ErrorCode = ErrorCode("SPEC_NOT_FOUND")
         public val STARTED_BY_ANOTHER_USER: ErrorCode = ErrorCode("STARTED_BY_ANOTHER_USER")
@@ -13522,6 +13698,7 @@ public value class ErrorCode(public val value: String) {
         public val CV_TOO_LARGE: ErrorCode = ErrorCode("cv_too_large")
         public val DUPLICATE_APPLICATION: ErrorCode = ErrorCode("duplicate_application")
         public val GOVERNANCE_NOT_ENABLED: ErrorCode = ErrorCode("governance_not_enabled")
+        public val HIRE_CATALOG_UNKNOWN: ErrorCode = ErrorCode("hire_catalog_unknown")
         public val INCOMPLETE_RECORD: ErrorCode = ErrorCode("incomplete_record")
         public val INERT_POLICY_FIELD: ErrorCode = ErrorCode("inert_policy_field")
         public val INERT_PUBLIC_CONFIG_FIELD: ErrorCode = ErrorCode("inert_public_config_field")
@@ -13536,6 +13713,7 @@ public value class ErrorCode(public val value: String) {
         public val LIMIT_REACHED: ErrorCode = ErrorCode("limit_reached")
         public val MFA_REQUIRED: ErrorCode = ErrorCode("mfa_required")
         public val NO_ELIGIBLE_ARBITER: ErrorCode = ErrorCode("no_eligible_arbiter")
+        public val NOT_HIRED: ErrorCode = ErrorCode("not_hired")
         public val PLAN_UPGRADE_REQUIRED: ErrorCode = ErrorCode("plan_upgrade_required")
         public val PROPOSAL_REQUIRED: ErrorCode = ErrorCode("proposal_required")
         public val PROVIDER_AUTH_FAILED: ErrorCode = ErrorCode("provider_auth_failed")
@@ -13560,7 +13738,7 @@ public value class ErrorCode(public val value: String) {
         public val VIDEO_SLOT_INVALID: ErrorCode = ErrorCode("video_slot_invalid")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, COMPANY_NOT_READY, COMPANY_PAUSED, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FEATURE_DISABLED, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_KEY_REUSED, INITIATIVE_BUDGET_EXHAUSTED, INITIATIVE_PAUSED, INVALID_BODY, INVALID_CURSOR, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, METHOD_NOT_ALLOWED, MIGRATION_CONFLICT, MISSING_FIELD, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, PROPOSAL_EXPIRED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SESSION_NOT_ACTIVE, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, STARTED_BY_ANOTHER_USER, STRATEGIST_MODEL_UNCONFIGURED, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
+        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, COMPANY_NOT_READY, COMPANY_PAUSED, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FEATURED_SET_CONTENDED, FEATURE_DISABLED, FILE_NOT_FOUND, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_KEY_REUSED, INITIATIVE_BUDGET_EXHAUSTED, INITIATIVE_PAUSED, INTERNAL_ERROR, INVALID_ARCHIVE, INVALID_BODY, INVALID_CURSOR, INVALID_MANIFEST, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, METHOD_NOT_ALLOWED, MIGRATION_CONFLICT, MISSING_FIELD, MISSING_SCOPE, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, PROPOSAL_EXPIRED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SECURITY_SCAN_FAILED, SESSION_NOT_ACTIVE, SHARE_LIST_CONFLICT, SIGNING_NOT_CONFIGURED, SIZE_LIMIT, SPEC_NOT_FOUND, STARTED_BY_ANOTHER_USER, STRATEGIST_MODEL_UNCONFIGURED, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, HIRE_CATALOG_UNKNOWN, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, NOT_HIRED, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
     }
 }
 
@@ -15668,6 +15846,42 @@ public object GetHealthResponseStatusSerializer : KSerializer<GetHealthResponseS
 }
 
 /**
+ * `GetHireCatalogLocale` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = GetHireCatalogLocaleSerializer::class)
+@JvmInline
+public value class GetHireCatalogLocale(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val UK: GetHireCatalogLocale = GetHireCatalogLocale("uk")
+        public val EN: GetHireCatalogLocale = GetHireCatalogLocale("en")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<GetHireCatalogLocale> = listOf(UK, EN)
+    }
+}
+
+public object GetHireCatalogLocaleSerializer : KSerializer<GetHireCatalogLocale> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetHireCatalogLocale", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: GetHireCatalogLocale): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): GetHireCatalogLocale = GetHireCatalogLocale(decoder.decodeString())
+}
+
+/**
+ * `GetHireCatalogResponse` model.
+ */
+@Serializable
+public data class GetHireCatalogResponse(
+    public val items: List<HireCatalogItem>,
+)
+
+/**
  * `GetImmutableAuditResponse` model.
  */
 @Serializable
@@ -15986,6 +16200,13 @@ public data class GetMissionPerformanceResponseMissions(
     public val total: Long,
     @SerialName("by_status")
     public val byStatus: JsonObject,
+    /**
+     * Missions not yet ended with a draft at `awaiting_review`, waiting on a person. Their status
+     * stays `executing` (the run is not over), so they are also counted there: show `executing -
+     * waiting_on_review` as running. Absent from servers before 2026-10-15; read as 0.
+     */
+    @SerialName("waiting_on_review")
+    public val waitingOnReview: Long? = null,
 )
 
 /**
@@ -16558,8 +16779,10 @@ public data class GetRunResponse(
      * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`,
      * `limit_usd` and `spent_usd` with `BUDGET_EXCEEDED` (beside the older `max_cost_usd`,
      * `accumulated_cost_usd` and `cap_source`), `limit_ms` and `elapsed_ms` with
-     * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). Never a provider id — this reaches a
-     * screen, and the product does not name the model it picked.
+     * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). `limit_tokens`, `used_tokens` and, when the
+     * model had written anything, `partial_response` (its text so far, at most 8000 characters)
+     * with `MAX_TOKENS_EXCEEDED` (since 2026-10-16). Never a provider id — this reaches a screen,
+     * and the product does not name the model it picked.
      */
     @SerialName("error_details")
     public val errorDetails: JsonObject? = null,
@@ -16863,6 +17086,97 @@ public data class GetSessionMessagesResponse(
      * the next page. Opaque (here an offset); `total` still counts the whole list.
      */
     public val cursor: String? = null,
+)
+
+/**
+ * `GetSessionResponse` model.
+ */
+@Serializable
+public data class GetSessionResponse(
+    /**
+     * Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+     * `metadata.archived: true` read as archived here and in the list filters; writing the flag
+     * removes those metadata keys.
+     */
+    public val archived: Boolean? = null,
+    @SerialName("archived_at")
+    public val archivedAt: String? = null,
+    /**
+     * Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+     * `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+     * the flag removes the metadata key.
+     */
+    public val pinned: Boolean? = null,
+    /**
+     * When it was pinned; order the pinned group by it.
+     */
+    @SerialName("pinned_at")
+    public val pinnedAt: String? = null,
+    @SerialName("created_by")
+    public val createdBy: String? = null,
+    @SerialName("session_id")
+    public val sessionId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val status: PublicSessionViewStatus,
+    @SerialName("conversation_history")
+    public val conversationHistory: List<ConversationEntry>? = null,
+    public val metadata: JsonObject? = null,
+    public val runs: List<String>? = null,
+    @SerialName("created_at")
+    public val createdAt: String? = null,
+    /**
+     * Last activity: a message, a run, or a metadata change. Pinning, archiving, creating or
+     * switching a branch, and metadata writes that only set `title`, `project_id` or the legacy
+     * `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+     * by it.
+     */
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
+    @SerialName("expires_at")
+    public val expiresAt: String? = null,
+    /**
+     * Team ID if session belongs to a team
+     */
+    @SerialName("team_id")
+    public val teamId: String? = null,
+    /**
+     * Session branches for conversation forking
+     */
+    public val branches: List<SessionBranch>? = null,
+    /**
+     * Currently active branch ID
+     */
+    @SerialName("active_branch")
+    public val activeBranch: String? = null,
+    /**
+     * How to handle concurrent runs in this session
+     */
+    @SerialName("queue_mode")
+    public val queueMode: SessionQueueMode? = null,
+    /**
+     * Per-conversation model override (in-chat model switcher). When set, runs in this session
+     * resolve their LLM from this config instead of the agent's default. Absent → agent default.
+     */
+    @SerialName("model_override")
+    public val modelOverride: GetSessionResponseModelOverride? = null,
+    public val context: SessionContext,
+)
+
+/**
+ * Per-conversation model override (in-chat model switcher). When set, runs in this session
+ * resolve their LLM from this config instead of the agent's default. Absent → agent default.
+ */
+@Serializable
+public data class GetSessionResponseModelOverride(
+    public val provider: String,
+    @SerialName("model_ref")
+    public val modelRef: String,
+    @SerialName("endpoint_url")
+    public val endpointURL: String? = null,
+    public val capabilities: JsonObject? = null,
 )
 
 /**
@@ -17383,8 +17697,10 @@ public data class GetTenantCompanyOverviewResponse(
      * method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
      * setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
      * then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
-     * with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
-     * when nothing else applies.
+     * with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
+     * `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
+     * as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
+     * else applies.
      */
     @SerialName("next_step")
     public val nextStep: GetTenantCompanyOverviewResponseNextStep? = null,
@@ -17403,7 +17719,9 @@ public data class GetTenantCompanyOverviewResponse(
      */
     public val work: JsonObject,
     /**
-     * Up to 5 objectives completed in the window, newest first.
+     * Up to 5 results delivered in the window, newest first: completed objectives that no other
+     * objective depends on. The steps feeding a deliverable (collect, analyze) are work, not
+     * results, and are left out since 2026-10-15.
      */
     public val results: List<GetTenantCompanyOverviewResponseResult>,
     public val problems: GetTenantCompanyOverviewResponseProblems,
@@ -17493,8 +17811,10 @@ public data class GetTenantCompanyOverviewResponseNextItem(
  * method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
  * setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
  * then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
- * with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
- * when nothing else applies.
+ * with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
+ * `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
+ * as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
+ * else applies.
  */
 @Serializable
 public data class GetTenantCompanyOverviewResponseNextStep(
@@ -17504,6 +17824,12 @@ public data class GetTenantCompanyOverviewResponseNextStep(
     public val count: Long? = null,
     @SerialName("run_id")
     public val runId: String? = null,
+    @SerialName("mission_id")
+    public val missionId: String? = null,
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    @SerialName("agent_name")
+    public val agentName: String? = null,
     @SerialName("error_code")
     public val errorCode: String? = null,
     public val name: String? = null,
@@ -17550,7 +17876,64 @@ public data class GetTenantCompanyOverviewResponseProblems(
     @SerialName("failed_runs")
     public val failedRuns: Long? = null,
     public val recent: List<GetTenantCompanyOverviewResponseProblemsRecentItem>? = null,
+    /**
+     * Missions in the window the PLATFORM stopped (`aborted` or `failed`, not
+     * `aborted_by_operator`) — the watchdog, a failed plan, failed objectives. Since 2026-10-15.
+     */
+    @SerialName("stopped_missions")
+    public val stoppedMissions: Long? = null,
+    /**
+     * The newest 5 of them.
+     */
+    public val missions: List<GetTenantCompanyOverviewResponseProblemsMission>? = null,
 )
+
+/**
+ * `GetTenantCompanyOverviewResponseProblemsMission` model.
+ */
+@Serializable
+public data class GetTenantCompanyOverviewResponseProblemsMission(
+    @SerialName("mission_id")
+    public val missionId: String? = null,
+    public val goal: String? = null,
+    public val status: GetTenantCompanyOverviewResponseProblemsMissionStatus? = null,
+    /**
+     * As on the mission (`watchdog_stuck`, `planning_failed`, `objectives_failed` …).
+     */
+    @SerialName("result_code")
+    public val resultCode: String? = null,
+    @SerialName("result_summary")
+    public val resultSummary: String? = null,
+    public val at: String? = null,
+)
+
+/**
+ * `GetTenantCompanyOverviewResponseProblemsMissionStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = GetTenantCompanyOverviewResponseProblemsMissionStatusSerializer::class)
+@JvmInline
+public value class GetTenantCompanyOverviewResponseProblemsMissionStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ABORTED: GetTenantCompanyOverviewResponseProblemsMissionStatus = GetTenantCompanyOverviewResponseProblemsMissionStatus("aborted")
+        public val FAILED: GetTenantCompanyOverviewResponseProblemsMissionStatus = GetTenantCompanyOverviewResponseProblemsMissionStatus("failed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<GetTenantCompanyOverviewResponseProblemsMissionStatus> = listOf(ABORTED, FAILED)
+    }
+}
+
+public object GetTenantCompanyOverviewResponseProblemsMissionStatusSerializer : KSerializer<GetTenantCompanyOverviewResponseProblemsMissionStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetTenantCompanyOverviewResponseProblemsMissionStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: GetTenantCompanyOverviewResponseProblemsMissionStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): GetTenantCompanyOverviewResponseProblemsMissionStatus = GetTenantCompanyOverviewResponseProblemsMissionStatus(decoder.decodeString())
+}
 
 /**
  * `GetTenantCompanyOverviewResponseProblemsRecentItem` model.
@@ -17576,7 +17959,18 @@ public data class GetTenantCompanyOverviewResponseProblemsRecentItem(
 public data class GetTenantCompanyOverviewResponseResult(
     @SerialName("objective_id")
     public val objectiveId: String? = null,
+    /**
+     * The objective's own name — for a mission step, the step (`Deliver`).
+     */
     public val title: String? = null,
+    /**
+     * The result's first line without markdown markers, at most 120 characters — what to head the
+     * card with. Null when the result has no text.
+     */
+    public val headline: String? = null,
+    /**
+     * Cut at a line or word boundary, with `…` when cut.
+     */
     public val summary: String? = null,
     @SerialName("completed_at")
     public val completedAt: String? = null,
@@ -17826,7 +18220,15 @@ public data class Goal(
     public val expectedImpact: String? = null,
     @SerialName("resource_estimate_usd")
     public val resourceEstimateUsd: Double? = null,
+    /**
+     * `abandoned` is a status no current code writes; goals stored before 2026-08-31 can carry it,
+     * and GET returns records as stored (SDK decode of the canon tenant, 2026-10-15).
+     */
     public val status: GoalStatus,
+    /**
+     * On goals stored before 2026-08-31 only; the current propose route does not take it.
+     */
+    public val priority: Long? = null,
     /**
      * Set once the goal reaches a vote. Absent before that.
      */
@@ -17841,7 +18243,8 @@ public data class Goal(
 )
 
 /**
- * `GoalStatus` values.
+ * `abandoned` is a status no current code writes; goals stored before 2026-08-31 can carry it,
+ * and GET returns records as stored (SDK decode of the canon tenant, 2026-10-15).
  */
 ///
 /**
@@ -17861,9 +18264,10 @@ public value class GoalStatus(public val value: String) {
         public val REJECTED: GoalStatus = GoalStatus("rejected")
         public val ACTIVE: GoalStatus = GoalStatus("active")
         public val COMPLETED: GoalStatus = GoalStatus("completed")
+        public val ABANDONED: GoalStatus = GoalStatus("abandoned")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<GoalStatus> = listOf(PROPOSED, CHECKING, VOTING, APPROVED, REJECTED, ACTIVE, COMPLETED)
+        public val knownValues: List<GoalStatus> = listOf(PROPOSED, CHECKING, VOTING, APPROVED, REJECTED, ACTIVE, COMPLETED, ABANDONED)
     }
 }
 
@@ -18187,6 +18591,102 @@ public data class HealthLiveResponse(
 @Serializable
 public data class HealthzAliasResponse(
     public val status: String? = null,
+)
+
+/**
+ * `HireAgentRequest` model.
+ */
+@Serializable
+public data class HireAgentRequest(
+    @SerialName("catalog_id")
+    public val catalogId: String,
+)
+
+/**
+ * `HireAgentResponse` model.
+ */
+@Serializable
+public data class HireAgentResponse(
+    public val agent: Agent,
+    public val connect: HireConnect,
+)
+
+/**
+ * `HireCatalogItem` model.
+ */
+@Serializable
+public data class HireCatalogItem(
+    public val id: String,
+    public val name: String,
+    public val vendor: String,
+    /**
+     * Absolute PNG, 256×256, public.
+     */
+    @SerialName("icon_url")
+    public val iconURL: String,
+    public val summary: String,
+    public val requirements: String,
+    public val platforms: List<HireCatalogItemPlatform>,
+    public val steps: List<HireCatalogItemStep>,
+    @SerialName("docs_url")
+    public val docsURL: String,
+)
+
+/**
+ * `HireCatalogItemPlatform` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = HireCatalogItemPlatformSerializer::class)
+@JvmInline
+public value class HireCatalogItemPlatform(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val MACOS: HireCatalogItemPlatform = HireCatalogItemPlatform("macos")
+        public val LINUX: HireCatalogItemPlatform = HireCatalogItemPlatform("linux")
+        public val WINDOWS: HireCatalogItemPlatform = HireCatalogItemPlatform("windows")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<HireCatalogItemPlatform> = listOf(MACOS, LINUX, WINDOWS)
+    }
+}
+
+public object HireCatalogItemPlatformSerializer : KSerializer<HireCatalogItemPlatform> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.HireCatalogItemPlatform", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: HireCatalogItemPlatform): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): HireCatalogItemPlatform = HireCatalogItemPlatform(decoder.decodeString())
+}
+
+/**
+ * `HireCatalogItemStep` model.
+ */
+@Serializable
+public data class HireCatalogItemStep(
+    public val title: String,
+    /**
+     * A command to copy, or null.
+     */
+    public val command: String? = null,
+)
+
+/**
+ * The one terminal command that connects a hired agent. Contains its secret: returned once, by
+ * the call that minted it, and never again.
+ */
+@Serializable
+public data class HireConnect(
+    public val command: String,
+    @SerialName("expires_at")
+    public val expiresAt: String,
+    /**
+     * How long an unused command works (900).
+     */
+    @SerialName("ttl_seconds")
+    public val ttlSeconds: Long,
 )
 
 /**
@@ -18582,6 +19082,12 @@ public data class InboxItem(
     public val status: String,
     @SerialName("created_at")
     public val createdAt: String? = null,
+    /**
+     * What the run was asked to do — the first line of its request (message, prompt, text or
+     * instruction), at most 140 characters. Absent when the run carries no text. Since 2026-10-16:
+     * a failed row used to carry only its error, so clients titled the task with it.
+     */
+    public val goal: String? = null,
     /**
      * One line: the tool being requested, the question, or the error.
      */
@@ -23863,6 +24369,14 @@ public data class MoveWorkspaceFileRequest(
 )
 
 /**
+ * `NewHireCommandResponse` model.
+ */
+@Serializable
+public data class NewHireCommandResponse(
+    public val connect: HireConnect,
+)
+
+/**
  * `Notification` model.
  */
 @Serializable
@@ -24523,7 +25037,10 @@ public data class OAuthIdentityConfig(
     @SerialName("apple_bundle_id")
     public val appleBundleId: String,
     /**
-     * Lower-cased hostnames. Empty means nothing is allowlisted.
+     * Each entry is a lower-cased bare host, which admits that host's `/auth/callback` path
+     * family, or an exact https URL (origin + path, path case kept), which admits that one path —
+     * how a separate app names its own callback. Empty means nothing beyond the built-in
+     * `snaga.ai` and `www.snaga.ai` is allowlisted.
      */
     @SerialName("oauth_return_to_hosts")
     public val oauthReturnToHosts: List<String>,
@@ -26308,6 +26825,19 @@ public data class PlatformEconomicsEconomics(
     public val marginPercent: Double? = null,
     @SerialName("month_to_date_infra_usd")
     public val monthToDateInfraUsd: Double? = null,
+    /**
+     * How `monthly_llm_usd` was reached. The margin is `monthly_revenue_usd − monthly_infra_usd −
+     * monthly_llm_usd`, exactly; show those three beside it, not the month-to-date figures. Since
+     * 2026-10-16.
+     */
+    @SerialName("llm_run_rate_basis")
+    public val llmRunRateBasis: PlatformEconomicsLLMRunRateBasis? = null,
+    /**
+     * LLM provider spend so far this month — the month-to-date counterpart of `monthly_llm_usd`,
+     * as `month_to_date_infra_usd` is of `monthly_infra_usd`. Since 2026-10-16.
+     */
+    @SerialName("month_to_date_llm_usd")
+    public val monthToDateLLMUsd: Double? = null,
     @SerialName("markup_percent")
     public val markupPercent: Double? = null,
     @SerialName("pricing_tiers")
@@ -29211,6 +29741,122 @@ public data class RemoveScheduleResponse(
 )
 
 /**
+ * `RepairAgentRecordsRequest` model.
+ */
+@Serializable
+public data class RepairAgentRecordsRequest(
+    @SerialName("dry_run")
+    public val dryRun: Boolean? = null,
+    public val ops: List<RepairAgentRecordsRequestOp>? = null,
+)
+
+/**
+ * `RepairAgentRecordsRequestOp` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RepairAgentRecordsRequestOpSerializer::class)
+@JvmInline
+public value class RepairAgentRecordsRequestOp(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val HEAD_TOKEN_CAPS: RepairAgentRecordsRequestOp = RepairAgentRecordsRequestOp("head_token_caps")
+        public val HEAD_NAMES: RepairAgentRecordsRequestOp = RepairAgentRecordsRequestOp("head_names")
+        public val HEAD_POD_DESCRIPTIONS: RepairAgentRecordsRequestOp = RepairAgentRecordsRequestOp("head_pod_descriptions")
+        public val INITIAL_VERSIONS: RepairAgentRecordsRequestOp = RepairAgentRecordsRequestOp("initial_versions")
+        public val ORPHAN_SCHEDULES: RepairAgentRecordsRequestOp = RepairAgentRecordsRequestOp("orphan_schedules")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RepairAgentRecordsRequestOp> = listOf(HEAD_TOKEN_CAPS, HEAD_NAMES, HEAD_POD_DESCRIPTIONS, INITIAL_VERSIONS, ORPHAN_SCHEDULES)
+    }
+}
+
+public object RepairAgentRecordsRequestOpSerializer : KSerializer<RepairAgentRecordsRequestOp> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RepairAgentRecordsRequestOp", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RepairAgentRecordsRequestOp): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RepairAgentRecordsRequestOp = RepairAgentRecordsRequestOp(decoder.decodeString())
+}
+
+/**
+ * `RepairAgentRecordsResponse` model.
+ */
+@Serializable
+public data class RepairAgentRecordsResponse(
+    @SerialName("dry_run")
+    public val dryRun: Boolean,
+    public val tenants: Long,
+    @SerialName("head_token_caps")
+    public val headTokenCaps: RepairAgentRecordsResponseHeadTokenCaps,
+    @SerialName("head_names")
+    public val headNames: RepairAgentRecordsResponseHeadNames,
+    @SerialName("head_pod_descriptions")
+    public val headPodDescriptions: RepairAgentRecordsResponseHeadPodDescriptions,
+    @SerialName("initial_versions")
+    public val initialVersions: RepairAgentRecordsResponseInitialVersions,
+    @SerialName("orphan_schedules")
+    public val orphanSchedules: RepairAgentRecordsResponseOrphanSchedules,
+    public val errors: List<RepairAgentRecordsResponseError>,
+)
+
+/**
+ * `RepairAgentRecordsResponseError` model.
+ */
+@Serializable
+public data class RepairAgentRecordsResponseError(
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    public val error: String? = null,
+)
+
+/**
+ * `RepairAgentRecordsResponseHeadNames` model.
+ */
+@Serializable
+public data class RepairAgentRecordsResponseHeadNames(
+    public val renamed: Long? = null,
+)
+
+/**
+ * `RepairAgentRecordsResponseHeadPodDescriptions` model.
+ */
+@Serializable
+public data class RepairAgentRecordsResponseHeadPodDescriptions(
+    public val replaced: Long? = null,
+)
+
+/**
+ * `RepairAgentRecordsResponseHeadTokenCaps` model.
+ */
+@Serializable
+public data class RepairAgentRecordsResponseHeadTokenCaps(
+    public val fixed: Long? = null,
+    @SerialName("by_value")
+    public val byValue: JsonObject? = null,
+)
+
+/**
+ * `RepairAgentRecordsResponseInitialVersions` model.
+ */
+@Serializable
+public data class RepairAgentRecordsResponseInitialVersions(
+    public val created: Long? = null,
+)
+
+/**
+ * `RepairAgentRecordsResponseOrphanSchedules` model.
+ */
+@Serializable
+public data class RepairAgentRecordsResponseOrphanSchedules(
+    public val removed: Long? = null,
+)
+
+/**
  * `ReplaceConstitutionRequest` model.
  */
 @Serializable
@@ -30111,8 +30757,10 @@ public data class Run(
      * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`,
      * `limit_usd` and `spent_usd` with `BUDGET_EXCEEDED` (beside the older `max_cost_usd`,
      * `accumulated_cost_usd` and `cap_source`), `limit_ms` and `elapsed_ms` with
-     * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). Never a provider id — this reaches a
-     * screen, and the product does not name the model it picked.
+     * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). `limit_tokens`, `used_tokens` and, when the
+     * model had written anything, `partial_response` (its text so far, at most 8000 characters)
+     * with `MAX_TOKENS_EXCEEDED` (since 2026-10-16). Never a provider id — this reaches a screen,
+     * and the product does not name the model it picked.
      */
     @SerialName("error_details")
     public val errorDetails: JsonObject? = null,
@@ -30677,6 +31325,7 @@ public value class RunEventType(public val value: String) {
         public val MEMORY_STORED: RunEventType = RunEventType("memory.stored")
         public val MEMORY_EVICTED: RunEventType = RunEventType("memory.evicted")
         public val SESSION_CONTEXT_COMPACTED: RunEventType = RunEventType("session.context_compacted")
+        public val SESSION_CONTEXT: RunEventType = RunEventType("session.context")
         public val SESSION_CREATED: RunEventType = RunEventType("session.created")
         public val SESSION_CLOSED: RunEventType = RunEventType("session.closed")
         public val TEAM_MESSAGE: RunEventType = RunEventType("team.message")
@@ -30824,7 +31473,7 @@ public value class RunEventType(public val value: String) {
         public val DOCUMENT_EDIT_COMPLETE: RunEventType = RunEventType("document.edit_complete")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<RunEventType> = listOf(RUN_CREATED, RUN_STARTED, RUN_COMPLETED, RUN_FAILED, RUN_CANCELLED, RUN_TIMEOUT, RUN_GUARDRAIL_BLOCKED, RUN_AWAITING_APPROVAL, RUN_AWAITING_INPUT, RUN_INPUT_RECEIVED, RUN_APPROVED, RUN_REJECTED, RUN_CHECKPOINT, RUN_PAUSED, RUN_RESUMED, RUN_RESTORED, RUN_AFFECT, LLM_REQUEST, LLM_RESPONSE, LLM_ERROR, LLM_THINKING, LLM_CHUNK, LLM_TIMEOUT, LLM_FALLBACK, STEP_PLAN, STEP_ACT, STEP_EVALUATE, STEP_THINKING, TOOL_CALL, TOOL_RESULT, TOOL_ERROR, TOOL_TIMEOUT, GUARDRAIL_CHECK, GUARDRAIL_VIOLATION, GUARDRAIL_CUSTOM_CHECK, GUARDRAIL_CUSTOM_VIOLATION, MEMORY_RETRIEVAL, MEMORY_EXTRACTION, MEMORY_STORED, MEMORY_EVICTED, SESSION_CONTEXT_COMPACTED, SESSION_CREATED, SESSION_CLOSED, TEAM_MESSAGE, TEAM_ROUND_START, TEAM_ROUND_END, TEAM_DELEGATE, TEAM_BROADCAST, TEAM_MERGE, TEAM_HANDOFF, CHILD_RUN_COMPLETED, CHILD_RUN_FAILED, INITIATIVE_TICK_START, INITIATIVE_TICK_END, INITIATIVE_PAUSED, INITIATIVE_RESUMED, INITIATIVE_BUDGET_UPDATED, INITIATIVE_ESCALATION, INITIATIVE_OBJECTIVE_UPDATED, CIRCUIT_BREAKER_OPENED, CIRCUIT_BREAKER_CLOSED, CIRCUIT_BREAKER_HALF_OPEN, STREAMING_STARTED, STREAMING_COMPLETED, STREAMING_ERROR, STREAMING_BUFFER_TRUNCATED, RUN_STEP_STARTED, RUN_STEP_COMPLETED, BUDGET_SOFT_THRESHOLD_CROSSED, BUDGET_HARD_LIMIT_REACHED, TENANT_CREATED, TENANT_SUSPENDED, TENANT_PURGED, CONFIG_UPDATED, WEBHOOK_DELIVERED, WEBHOOK_FAILED, CRON_FIRED, AGENT_VERSION_CREATED, AGENT_ROLLBACK, MCP_SERVER_LOG, ORCHESTRATION_STARTED, ORCHESTRATION_PLANNED, ORCHESTRATION_REPLANNED, ORCHESTRATION_TASK_STARTED, ORCHESTRATION_TASK_COMPLETED, ORCHESTRATION_TASK_FAILED, ORCHESTRATION_CHECKPOINT, ORCHESTRATION_POLICY_VIOLATION, ORCHESTRATION_QUALITY_REPORT, ORCHESTRATION_COMPLETED, ORCHESTRATION_FAILED, GRAPH_AGENT_SPAWNED, GRAPH_AGENT_TERMINATED, GRAPH_TASK_DELEGATED, GRAPH_EDGE_ADDED, GRAPH_EDGE_REMOVED, PLAN_CREATED, PLAN_UPDATED, PLAN_SUB_GOAL_COMPLETED, PLAN_SUB_GOAL_ABANDONED, MCP_TOOL_CALLED, MCP_SERVER_CONNECTED, MCP_SERVER_DISCONNECTED, A2A_TASK_SENT, A2A_TASK_RECEIVED, MEMORY_COMPRESSED, CAPABILITY_BEST_AGENT_SELECTED, IDENTITY_CREATED, IDENTITY_ROTATED, MESSAGE_SIGNED, MESSAGE_VERIFIED, MESSAGE_REPLAY_BLOCKED, CONSTITUTION_BOOTSTRAPPED, CONSTITUTION_AMENDED, CONSTITUTION_CHECK_PASSED, CONSTITUTION_CHECK_BLOCKED, CONSTITUTION_VIOLATION, LEDGER_APPENDED, LEDGER_INTEGRITY_CHECKED, PERMISSION_CHECKED, PERMISSION_DENIED, PERMISSION_SPAWN_BLOCKED, ATTESTATION_CREATED, ATTESTATION_VERIFIED, ATTESTATION_INVALID, ARBITRATION_CASE_OPENED, ARBITRATION_RULING_SUBMITTED, ARBITRATION_APPEAL_FILED, VOTING_PROPOSAL_CREATED, VOTING_BALLOT_CAST, VOTING_TALLIED, VOTING_VETOED, RESOURCE_SPENT, RESOURCE_EARNED, RESOURCE_TRANSFERRED, RESOURCE_INSUFFICIENT, AMBASSADOR_VETO_ISSUED, AMBASSADOR_REQUEST_SUBMITTED, BUILDER_DESIGN_SUBMITTED, BUILDER_DESIGN_APPROVED, BUILDER_DESIGN_SPAWNED, EMERGENCY_SAFE_MODE_ACTIVATED, EMERGENCY_SAFE_MODE_DEACTIVATED, EMERGENCY_DEADLOCK_DETECTED, GOAL_SELF_FORMULATED, GOAL_APPROVED, IMPROVEMENT_PROPOSED, IMPROVEMENT_SANDBOX_TESTED, IMPROVEMENT_APPLIED, COLLECTIVE_INSIGHT_PUBLISHED, COLLECTIVE_INSIGHTS_RETRIEVED, COLLECTIVE_REVIEW_REQUESTED, COLLECTIVE_POLL_CREATED, COLLECTIVE_AGENT_RATED, COLLECTIVE_FEEDBACK_REQUESTED, COLLECTIVE_REFLECTION_COMPLETED, COLLECTIVE_APPROACHES_COMPARED, COLLECTIVE_LESSON_LOGGED, COLLECTIVE_TEAM_FORMED, COLLECTIVE_TEAM_JOINED, COLLECTIVE_TEAM_LEFT, COLLECTIVE_TEAM_BROADCAST, COLLECTIVE_SPECIALIST_REQUESTED, COLLECTIVE_BUDGET_REQUESTED, COLLECTIVE_TOKENS_TRANSFERRED, COLLECTIVE_TASK_POSTED, COLLECTIVE_BID_PLACED, COLLECTIVE_BID_ACCEPTED, COLLECTIVE_COST_REPORTED, SENSOR_URL_WATCH_CREATED, SENSOR_RSS_WATCH_CREATED, SENSOR_WEBHOOK_LISTENER_CREATED, SENSOR_CHECK_SCHEDULED, SENSOR_EVENT_SUBSCRIPTION_CREATED, SENSOR_TRIGGERED, COLLECTIVE_REPORT_PRESENTED, COLLECTIVE_ESCALATION, COLLECTIVE_ANOMALY_REPORTED, COLLECTIVE_HUMAN_OVERRIDE, COLLECTIVE_COLLECTIVE_PAUSED, COLLECTIVE_VERIFICATION_REQUESTED, STRATEGY_CREATED, STRATEGY_KPI_UPDATED, DOCUMENT_EDIT_START, DOCUMENT_EDIT_CHUNK, DOCUMENT_EDIT_COMPLETE)
+        public val knownValues: List<RunEventType> = listOf(RUN_CREATED, RUN_STARTED, RUN_COMPLETED, RUN_FAILED, RUN_CANCELLED, RUN_TIMEOUT, RUN_GUARDRAIL_BLOCKED, RUN_AWAITING_APPROVAL, RUN_AWAITING_INPUT, RUN_INPUT_RECEIVED, RUN_APPROVED, RUN_REJECTED, RUN_CHECKPOINT, RUN_PAUSED, RUN_RESUMED, RUN_RESTORED, RUN_AFFECT, LLM_REQUEST, LLM_RESPONSE, LLM_ERROR, LLM_THINKING, LLM_CHUNK, LLM_TIMEOUT, LLM_FALLBACK, STEP_PLAN, STEP_ACT, STEP_EVALUATE, STEP_THINKING, TOOL_CALL, TOOL_RESULT, TOOL_ERROR, TOOL_TIMEOUT, GUARDRAIL_CHECK, GUARDRAIL_VIOLATION, GUARDRAIL_CUSTOM_CHECK, GUARDRAIL_CUSTOM_VIOLATION, MEMORY_RETRIEVAL, MEMORY_EXTRACTION, MEMORY_STORED, MEMORY_EVICTED, SESSION_CONTEXT_COMPACTED, SESSION_CONTEXT, SESSION_CREATED, SESSION_CLOSED, TEAM_MESSAGE, TEAM_ROUND_START, TEAM_ROUND_END, TEAM_DELEGATE, TEAM_BROADCAST, TEAM_MERGE, TEAM_HANDOFF, CHILD_RUN_COMPLETED, CHILD_RUN_FAILED, INITIATIVE_TICK_START, INITIATIVE_TICK_END, INITIATIVE_PAUSED, INITIATIVE_RESUMED, INITIATIVE_BUDGET_UPDATED, INITIATIVE_ESCALATION, INITIATIVE_OBJECTIVE_UPDATED, CIRCUIT_BREAKER_OPENED, CIRCUIT_BREAKER_CLOSED, CIRCUIT_BREAKER_HALF_OPEN, STREAMING_STARTED, STREAMING_COMPLETED, STREAMING_ERROR, STREAMING_BUFFER_TRUNCATED, RUN_STEP_STARTED, RUN_STEP_COMPLETED, BUDGET_SOFT_THRESHOLD_CROSSED, BUDGET_HARD_LIMIT_REACHED, TENANT_CREATED, TENANT_SUSPENDED, TENANT_PURGED, CONFIG_UPDATED, WEBHOOK_DELIVERED, WEBHOOK_FAILED, CRON_FIRED, AGENT_VERSION_CREATED, AGENT_ROLLBACK, MCP_SERVER_LOG, ORCHESTRATION_STARTED, ORCHESTRATION_PLANNED, ORCHESTRATION_REPLANNED, ORCHESTRATION_TASK_STARTED, ORCHESTRATION_TASK_COMPLETED, ORCHESTRATION_TASK_FAILED, ORCHESTRATION_CHECKPOINT, ORCHESTRATION_POLICY_VIOLATION, ORCHESTRATION_QUALITY_REPORT, ORCHESTRATION_COMPLETED, ORCHESTRATION_FAILED, GRAPH_AGENT_SPAWNED, GRAPH_AGENT_TERMINATED, GRAPH_TASK_DELEGATED, GRAPH_EDGE_ADDED, GRAPH_EDGE_REMOVED, PLAN_CREATED, PLAN_UPDATED, PLAN_SUB_GOAL_COMPLETED, PLAN_SUB_GOAL_ABANDONED, MCP_TOOL_CALLED, MCP_SERVER_CONNECTED, MCP_SERVER_DISCONNECTED, A2A_TASK_SENT, A2A_TASK_RECEIVED, MEMORY_COMPRESSED, CAPABILITY_BEST_AGENT_SELECTED, IDENTITY_CREATED, IDENTITY_ROTATED, MESSAGE_SIGNED, MESSAGE_VERIFIED, MESSAGE_REPLAY_BLOCKED, CONSTITUTION_BOOTSTRAPPED, CONSTITUTION_AMENDED, CONSTITUTION_CHECK_PASSED, CONSTITUTION_CHECK_BLOCKED, CONSTITUTION_VIOLATION, LEDGER_APPENDED, LEDGER_INTEGRITY_CHECKED, PERMISSION_CHECKED, PERMISSION_DENIED, PERMISSION_SPAWN_BLOCKED, ATTESTATION_CREATED, ATTESTATION_VERIFIED, ATTESTATION_INVALID, ARBITRATION_CASE_OPENED, ARBITRATION_RULING_SUBMITTED, ARBITRATION_APPEAL_FILED, VOTING_PROPOSAL_CREATED, VOTING_BALLOT_CAST, VOTING_TALLIED, VOTING_VETOED, RESOURCE_SPENT, RESOURCE_EARNED, RESOURCE_TRANSFERRED, RESOURCE_INSUFFICIENT, AMBASSADOR_VETO_ISSUED, AMBASSADOR_REQUEST_SUBMITTED, BUILDER_DESIGN_SUBMITTED, BUILDER_DESIGN_APPROVED, BUILDER_DESIGN_SPAWNED, EMERGENCY_SAFE_MODE_ACTIVATED, EMERGENCY_SAFE_MODE_DEACTIVATED, EMERGENCY_DEADLOCK_DETECTED, GOAL_SELF_FORMULATED, GOAL_APPROVED, IMPROVEMENT_PROPOSED, IMPROVEMENT_SANDBOX_TESTED, IMPROVEMENT_APPLIED, COLLECTIVE_INSIGHT_PUBLISHED, COLLECTIVE_INSIGHTS_RETRIEVED, COLLECTIVE_REVIEW_REQUESTED, COLLECTIVE_POLL_CREATED, COLLECTIVE_AGENT_RATED, COLLECTIVE_FEEDBACK_REQUESTED, COLLECTIVE_REFLECTION_COMPLETED, COLLECTIVE_APPROACHES_COMPARED, COLLECTIVE_LESSON_LOGGED, COLLECTIVE_TEAM_FORMED, COLLECTIVE_TEAM_JOINED, COLLECTIVE_TEAM_LEFT, COLLECTIVE_TEAM_BROADCAST, COLLECTIVE_SPECIALIST_REQUESTED, COLLECTIVE_BUDGET_REQUESTED, COLLECTIVE_TOKENS_TRANSFERRED, COLLECTIVE_TASK_POSTED, COLLECTIVE_BID_PLACED, COLLECTIVE_BID_ACCEPTED, COLLECTIVE_COST_REPORTED, SENSOR_URL_WATCH_CREATED, SENSOR_RSS_WATCH_CREATED, SENSOR_WEBHOOK_LISTENER_CREATED, SENSOR_CHECK_SCHEDULED, SENSOR_EVENT_SUBSCRIPTION_CREATED, SENSOR_TRIGGERED, COLLECTIVE_REPORT_PRESENTED, COLLECTIVE_ESCALATION, COLLECTIVE_ANOMALY_REPORTED, COLLECTIVE_HUMAN_OVERRIDE, COLLECTIVE_COLLECTIVE_PAUSED, COLLECTIVE_VERIFICATION_REQUESTED, STRATEGY_CREATED, STRATEGY_KPI_UPDATED, DOCUMENT_EDIT_START, DOCUMENT_EDIT_CHUNK, DOCUMENT_EDIT_COMPLETE)
     }
 }
 
@@ -30973,6 +31622,12 @@ public data class RunMetrics(
     public val outputTokens: Long? = null,
     @SerialName("thinking_tokens")
     public val thinkingTokens: Long? = null,
+    /**
+     * Prompt tokens served from the provider's prefix cache — a subset of `input_tokens`. Present
+     * only when the provider reports it.
+     */
+    @SerialName("cached_tokens")
+    public val cachedTokens: Long? = null,
     @SerialName("tool_calls_count")
     public val toolCallsCount: Long? = null,
     @SerialName("llm_calls_count")
@@ -32297,6 +32952,66 @@ public object SessionBranchStatusSerializer : KSerializer<SessionBranchStatus> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SessionBranchStatus", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: SessionBranchStatus): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): SessionBranchStatus = SessionBranchStatus(decoder.decodeString())
+}
+
+/**
+ * How full the agent's context is — the chat header's bar, for every agent. Written after each
+ * run of the session (event `session.context`, before `run.completed`). Unknown numbers are
+ * null, never 0: a hired Claude Code does not report its context. Since 2026-10-15.
+ */
+@Serializable
+public data class SessionContext(
+    /**
+     * The model's context window.
+     */
+    @SerialName("window_tokens")
+    public val windowTokens: Long? = null,
+    /**
+     * Tokens the agent's latest model call was sent.
+     */
+    @SerialName("used_tokens")
+    public val usedTokens: Long? = null,
+    /**
+     * Whole percent, only when both numbers are known; 1–100 (at least 1 when anything is used).
+     * Show as served.
+     */
+    public val percent: Long? = null,
+    /**
+     * `model`: measured from the platform's own model call; `agent`: reported by a bridge or hired
+     * agent.
+     */
+    public val source: SessionContextSource,
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
+)
+
+/**
+ * `model`: measured from the platform's own model call; `agent`: reported by a bridge or hired
+ * agent.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = SessionContextSourceSerializer::class)
+@JvmInline
+public value class SessionContextSource(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val MODEL: SessionContextSource = SessionContextSource("model")
+        public val AGENT: SessionContextSource = SessionContextSource("agent")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<SessionContextSource> = listOf(MODEL, AGENT)
+    }
+}
+
+public object SessionContextSourceSerializer : KSerializer<SessionContextSource> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SessionContextSource", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: SessionContextSource): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): SessionContextSource = SessionContextSource(decoder.decodeString())
 }
 
 /**
@@ -34825,8 +35540,10 @@ public data class TenantInbox(
     public val items: List<InboxItem>,
     /**
      * Mission objectives held at `awaiting_review`, oldest first — answer each with `POST
-     * /missions/{mission_id}/objectives/{objective_id}/review`. `unsourced_links` counts links in
-     * the result that no tool produced. Since 2026-10-12.
+     * /missions/{mission_id}/objectives/{objective_id}/review`. A draft whose mission has ended
+     * (`completed`, `failed`, `aborted`) is left out since 2026-10-15: nothing is left to accept
+     * it into; a stopped mission shows in the overview's `problems.missions`. `unsourced_links`
+     * counts links in the result that no tool produced. Since 2026-10-12.
      */
     public val reviews: List<TenantInboxReview>? = null,
     /**
@@ -34914,8 +35631,22 @@ public data class TenantInboxReview(
     public val objectiveId: String? = null,
     @SerialName("mission_id")
     public val missionId: String? = null,
+    /**
+     * The objective's own name — for a mission step, the step (`Draft`).
+     */
     public val title: String? = null,
+    /**
+     * The result's first line without markdown markers, at most 120 characters — a better card
+     * heading than `title`. Null when the result has no text. Since 2026-10-15.
+     */
+    public val headline: String? = null,
+    /**
+     * At most 200 characters, cut at a line or word boundary with `…` when cut. The whole text:
+     * `GET /missions/{mission_id}/objectives` → `output_summary`.
+     */
     public val summary: String? = null,
+    @SerialName("summary_truncated")
+    public val summaryTruncated: Boolean? = null,
     public val revisions: Long? = null,
     @SerialName("waiting_since")
     public val waitingSince: String? = null,
@@ -35144,7 +35875,8 @@ public data class TenantOverviewRunsRecentItem(
     public val errorCode: String? = null,
     /**
      * Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`,
-     * `limit_usd`/`spent_usd`, `limit_ms`/`elapsed_ms`. See `Run.error_details`.
+     * `limit_usd`/`spent_usd`, `limit_ms`/`elapsed_ms`,
+     * `limit_tokens`/`used_tokens`/`partial_response`. See `Run.error_details`.
      */
     @SerialName("error_details")
     public val errorDetails: JsonObject? = null,
@@ -36975,6 +37707,11 @@ public data class UpdateAdminOAuthIdentityConfigRequest(
     public val appleTeamId: String? = null,
     @SerialName("apple_bundle_id")
     public val appleBundleId: String? = null,
+    /**
+     * A bare host (`app.example.com` — admits its `/auth/callback` paths) or an exact https URL
+     * with a path and no query, fragment or credentials (`https://app.example.com/auth/handoff` —
+     * admits that path only). Any other entry is 422 and nothing is written.
+     */
     @SerialName("oauth_return_to_hosts")
     public val oauthReturnToHosts: List<String>? = null,
 )
@@ -40049,6 +40786,24 @@ public data class WebhookSubscription(
     public val status: WebhookSubscriptionStatus,
     @SerialName("created_at")
     public val createdAt: String? = null,
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
+    /**
+     * Consecutive failed deliveries; reset by a success.
+     */
+    @SerialName("failure_count")
+    public val failureCount: Long? = null,
+    /**
+     * When the latest delivery failed. Absent when none has.
+     */
+    @SerialName("last_failure_at")
+    public val lastFailureAt: String? = null,
+    /**
+     * The HMAC signing secret. Returned in full ONCE, on `POST /webhooks` (201) — store it then.
+     * Every read (`GET /webhooks`, `GET /webhooks/{webhookId}`) answers the literal
+     * `"\[redacted\]"`.
+     */
+    public val secret: String? = null,
 )
 
 /**

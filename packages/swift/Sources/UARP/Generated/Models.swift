@@ -661,10 +661,12 @@ public struct AbortMissionRequest: Codable, Hashable, Sendable {
 
 /// `AcceptInviteFromPickerRequest` model.
 public struct AcceptInviteFromPickerRequest: Codable, Hashable, Sendable {
-    /// The invite secret, echoed to the picker by `GET /api/v1/me/tenants`. Compared in constant
-    /// time. Defence in depth rather than the primary gate — the email match is that — and it
-    /// catches the class where the listing ever shows an invite not addressed to the caller.
-    /// Invites created before secrets exist accept without one.
+    /// Required in practice: `pending_invites[].secret` from `GET /api/v1/me/tenants`, the same
+    /// listing the picker shows — the email link carries the same value. Compared in constant time.
+    /// Defence in depth rather than the primary gate — the email match is that — and it catches the
+    /// class where the listing ever shows an invite not addressed to the caller. Missing or wrong
+    /// is 403; an invite stored before secrets existed (2026-09-02) is refused too, and an admin
+    /// resend mints one.
     public var token: String?
     /// Display name for the new member. Omitted, the local part of the invited email is used.
     public var name: String?
@@ -4638,6 +4640,11 @@ public struct Agent: Codable, Hashable, Sendable {
     /// GET /agents rows of bridge agents only, and only when non-zero: how many bridge agents are
     /// filed under this one. Added 2026-09-25.
     public var childrenCount: Int?
+    /// Bridge agents only, on GET /agents rows and GET /agents/{agentId}: `online` when an executor
+    /// connection heartbeated in the last two minutes, else `offline`. Read any other value as
+    /// `offline`. On GET /agents/{agentId} since 2026-10-15.
+    public var bridgeStatus: AgentBridgeStatus?
+    public var hire: AgentHire?
     public var workerReuse: Bool?
     /// Cron schedule configuration
     public var schedule: JSONObject?
@@ -4661,7 +4668,7 @@ public struct Agent: Codable, Hashable, Sendable {
     public var createdAt: String
     public var updatedAt: String?
 
-    public init(initiativeId: String? = nil, specs: [AgentSpec]? = nil, coreMemory: AgentCoreMemory? = nil, autoApproveTools: [String]? = nil, commandRelationships: AgentCommandRelationships? = nil, accessControl: AgentAccessControl? = nil, metadata: AgentMetadata? = nil, agentId: String, tenantId: String, name: String, `description`: String? = nil, version: String? = nil, model: AgentModelConfig, prompts: AgentPrompts? = nil, mcp: JSONObject? = nil, policies: JSONObject? = nil, thinking: JSONObject? = nil, effortPolicy: JSONObject? = nil, resourceLimits: JSONObject? = nil, memory: JSONObject? = nil, guardrails: JSONObject? = nil, approvalRequiredTools: [String]? = nil, builtInTools: [String]? = nil, imageGeneration: JSONObject? = nil, knowledgeBaseId: String? = nil, knowledgeBaseIds: [String]? = nil, visibility: AgentUpdateVisibility? = nil, status: AgentStatus? = nil, statusChangedAt: String? = nil, statusReason: String? = nil, statusReasonCode: AgentStatusReasonCode? = nil, statusReasonDetails: JSONObject? = nil, autonomy: AgentAutonomy? = nil, toolOverrides: [AgentToolOverride]? = nil, publicConfig: AgentPublicConfig? = nil, bridge: AgentBridgeState? = nil, fallbackModel: JSONObject? = nil, executionMode: AgentExecutionMode? = nil, bridgeServed: Bool? = nil, bridgeDisconnectedAt: String? = nil, bridgeApp: String? = nil, parentAgentId: String? = nil, childrenCount: Int? = nil, workerReuse: Bool? = nil, schedule: JSONObject? = nil, a2a: JSONObject? = nil, riskClassification: JSONObject? = nil, workspaceId: String? = nil, contextStrategy: AgentContextStrategy? = nil, contextWindowSize: Int? = nil, createdAt: String, updatedAt: String? = nil) {
+    public init(initiativeId: String? = nil, specs: [AgentSpec]? = nil, coreMemory: AgentCoreMemory? = nil, autoApproveTools: [String]? = nil, commandRelationships: AgentCommandRelationships? = nil, accessControl: AgentAccessControl? = nil, metadata: AgentMetadata? = nil, agentId: String, tenantId: String, name: String, `description`: String? = nil, version: String? = nil, model: AgentModelConfig, prompts: AgentPrompts? = nil, mcp: JSONObject? = nil, policies: JSONObject? = nil, thinking: JSONObject? = nil, effortPolicy: JSONObject? = nil, resourceLimits: JSONObject? = nil, memory: JSONObject? = nil, guardrails: JSONObject? = nil, approvalRequiredTools: [String]? = nil, builtInTools: [String]? = nil, imageGeneration: JSONObject? = nil, knowledgeBaseId: String? = nil, knowledgeBaseIds: [String]? = nil, visibility: AgentUpdateVisibility? = nil, status: AgentStatus? = nil, statusChangedAt: String? = nil, statusReason: String? = nil, statusReasonCode: AgentStatusReasonCode? = nil, statusReasonDetails: JSONObject? = nil, autonomy: AgentAutonomy? = nil, toolOverrides: [AgentToolOverride]? = nil, publicConfig: AgentPublicConfig? = nil, bridge: AgentBridgeState? = nil, fallbackModel: JSONObject? = nil, executionMode: AgentExecutionMode? = nil, bridgeServed: Bool? = nil, bridgeDisconnectedAt: String? = nil, bridgeApp: String? = nil, parentAgentId: String? = nil, childrenCount: Int? = nil, bridgeStatus: AgentBridgeStatus? = nil, hire: AgentHire? = nil, workerReuse: Bool? = nil, schedule: JSONObject? = nil, a2a: JSONObject? = nil, riskClassification: JSONObject? = nil, workspaceId: String? = nil, contextStrategy: AgentContextStrategy? = nil, contextWindowSize: Int? = nil, createdAt: String, updatedAt: String? = nil) {
         self.initiativeId = initiativeId
         self.specs = specs
         self.coreMemory = coreMemory
@@ -4705,6 +4712,8 @@ public struct Agent: Codable, Hashable, Sendable {
         self.bridgeApp = bridgeApp
         self.parentAgentId = parentAgentId
         self.childrenCount = childrenCount
+        self.bridgeStatus = bridgeStatus
+        self.hire = hire
         self.workerReuse = workerReuse
         self.schedule = schedule
         self.a2a = a2a
@@ -4760,6 +4769,8 @@ public struct Agent: Codable, Hashable, Sendable {
         case bridgeApp = "bridge_app"
         case parentAgentId = "parent_agent_id"
         case childrenCount = "children_count"
+        case bridgeStatus = "bridge_status"
+        case hire = "hire"
         case workerReuse = "worker_reuse"
         case schedule = "schedule"
         case a2a = "a2a"
@@ -5079,6 +5090,31 @@ public struct AgentBridgeState: Codable, Hashable, Sendable {
     }
 }
 
+/// Bridge agents only, on GET /agents rows and GET /agents/{agentId}: `online` when an executor
+/// connection heartbeated in the last two minutes, else `offline`. Read any other value as
+/// `offline`. On GET /agents/{agentId} since 2026-10-15.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AgentBridgeStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let online = AgentBridgeStatus(rawValue: "online")
+    public static let offline = AgentBridgeStatus(rawValue: "offline")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AgentBridgeStatus] = [.online, .offline]
+}
+
 /// What GET /agents/{agentId}/capabilities serves. Measured 2026-09-10 on the e2e-canon tenant;
 /// `tools[]` and `kb_ids[]` were empty there, so their element shape is not asserted.
 public struct AgentCapabilities: Codable, Hashable, Sendable {
@@ -5255,6 +5291,69 @@ public struct AgentExecutionMode: RawRepresentable, Codable, Hashable, Sendable,
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [AgentExecutionMode] = [.async, .worker, .bridge]
+}
+
+/// Hired agents only (POST /hire): an agent the person runs on their own computer with their
+/// own account. A hired agent is listed by GET /agents whatever its connection. Since
+/// 2026-10-15.
+public struct AgentHire: Codable, Hashable, Sendable {
+    /// The GET /hire/catalog entry it was hired from.
+    public var catalogId: String
+    /// That entry's name, for labels ("Hired · Claude Code").
+    public var catalogName: String
+    /// Absolute PNG icon, public.
+    public var iconURL: String
+    /// `pending`: a command was issued and nothing has connected with it; `connected`: the agent
+    /// connected with its current command; `disconnected`: the person disconnected it — POST
+    /// /agents/{agentId}/hire/command brings it back.
+    public var status: AgentHireStatus
+    public var connectedAt: String?
+    /// Pending only: when the current command stops working if still unused.
+    public var expiresAt: String?
+
+    public init(catalogId: String, catalogName: String, iconURL: String, status: AgentHireStatus, connectedAt: String? = nil, expiresAt: String? = nil) {
+        self.catalogId = catalogId
+        self.catalogName = catalogName
+        self.iconURL = iconURL
+        self.status = status
+        self.connectedAt = connectedAt
+        self.expiresAt = expiresAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case catalogId = "catalog_id"
+        case catalogName = "catalog_name"
+        case iconURL = "icon_url"
+        case status = "status"
+        case connectedAt = "connected_at"
+        case expiresAt = "expires_at"
+    }
+}
+
+/// `pending`: a command was issued and nothing has connected with it; `connected`: the agent
+/// connected with its current command; `disconnected`: the person disconnected it — POST
+/// /agents/{agentId}/hire/command brings it back.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AgentHireStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let pending = AgentHireStatus(rawValue: "pending")
+    public static let connected = AgentHireStatus(rawValue: "connected")
+    public static let disconnected = AgentHireStatus(rawValue: "disconnected")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AgentHireStatus] = [.pending, .connected, .disconnected]
 }
 
 /// Agent-scoped integration (connection) instance
@@ -7131,8 +7230,10 @@ public struct AgentVersion: Codable, Hashable, Sendable {
     /// canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
     /// provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
     /// detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-    /// provisioned`, `Platform agent config migrated on boot`, `Rollback to version N` (N = the
-    /// version rolled back to), `Self-improvement: N changes based on N analysis` (the
+    /// provisioned`, `Platform agent config migrated on boot`, `Hired`, `Registered from a local
+    /// app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`,
+    /// `Token cap removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N =
+    /// the version rolled back to), `Self-improvement: N changes based on N analysis` (the
     /// self-improvement loop: the first N is a count, the second is one of errors, ratings or
     /// feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC
     /// 11).
@@ -7218,14 +7319,18 @@ public struct AiSystemCardTechnicalSpecifications: Codable, Hashable, Sendable {
     public var modelRef: String?
     public var maxContextTokens: Int?
     public var builtInTools: [String]?
+    /// Where the agent's tools come from, as counts: built-in tools, installed SPECs and MCP
+    /// servers. Since 2026-10-16.
+    public var toolSources: AiSystemCardTechnicalSpecificationsToolSources?
     public var guardrailsEnabled: Bool?
     public var guardrailIds: [String]?
 
-    public init(modelProvider: String? = nil, modelRef: String? = nil, maxContextTokens: Int? = nil, builtInTools: [String]? = nil, guardrailsEnabled: Bool? = nil, guardrailIds: [String]? = nil) {
+    public init(modelProvider: String? = nil, modelRef: String? = nil, maxContextTokens: Int? = nil, builtInTools: [String]? = nil, toolSources: AiSystemCardTechnicalSpecificationsToolSources? = nil, guardrailsEnabled: Bool? = nil, guardrailIds: [String]? = nil) {
         self.modelProvider = modelProvider
         self.modelRef = modelRef
         self.maxContextTokens = maxContextTokens
         self.builtInTools = builtInTools
+        self.toolSources = toolSources
         self.guardrailsEnabled = guardrailsEnabled
         self.guardrailIds = guardrailIds
     }
@@ -7235,8 +7340,29 @@ public struct AiSystemCardTechnicalSpecifications: Codable, Hashable, Sendable {
         case modelRef = "model_ref"
         case maxContextTokens = "max_context_tokens"
         case builtInTools = "built_in_tools"
+        case toolSources = "tool_sources"
         case guardrailsEnabled = "guardrails_enabled"
         case guardrailIds = "guardrail_ids"
+    }
+}
+
+/// Where the agent's tools come from, as counts: built-in tools, installed SPECs and MCP
+/// servers. Since 2026-10-16.
+public struct AiSystemCardTechnicalSpecificationsToolSources: Codable, Hashable, Sendable {
+    public var builtIn: Int?
+    public var specs: Int?
+    public var mcpServers: Int?
+
+    public init(builtIn: Int? = nil, specs: Int? = nil, mcpServers: Int? = nil) {
+        self.builtIn = builtIn
+        self.specs = specs
+        self.mcpServers = mcpServers
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case builtIn = "built_in"
+        case specs = "specs"
+        case mcpServers = "mcp_servers"
     }
 }
 
@@ -12487,12 +12613,25 @@ public struct ConversationEntry: Codable, Hashable, Sendable {
     public var runMetrics: ConversationEntryRunMetrics?
     /// On an assistant entry, when the run recorded a cost.
     public var costUsd: Double?
-    /// The reply came from a run a Todo triggered.
+    /// The reply came from a run a Todo triggered. Stored on the entry since 2026-10-16 (with
+    /// `author_agent_id` / `author_name`), so it survives the run's deletion; derived from the run
+    /// for older entries.
     public var fromTodo: Bool?
     /// The model ran out of output tokens — see RunOutput.output_truncated.
     public var outputTruncated: Bool?
+    /// With `from_todo`: the agent that did the work, stored on the entry when the reply was
+    /// written (since 2026-10-16), so it outlives the run and the agent.
+    public var authorAgentId: String?
+    /// With `from_todo`: that agent's name when the reply was written.
+    public var authorName: String?
+    /// On an assistant entry whose run failed — today a run stopped by the token cap, whose partial
+    /// answer is this entry's `content`. The run's own `error_code`. Since 2026-10-16.
+    public var errorCode: String?
+    /// With `error_code`: the run's `error_details` without `partial_response` (that is `content`),
+    /// e.g. `limit_tokens` and `used_tokens`.
+    public var errorDetails: JSONObject?
 
-    public init(messageId: String, role: PublicSessionViewMessageRole, content: JSONValue, runId: String, timestamp: String, compacted: Bool? = nil, toolCalls: [ConversationEntryToolCall]? = nil, thinking: String? = nil, importance: ConversationEntryImportance? = nil, attachments: [ConversationEntryAttachment]? = nil, runMetrics: ConversationEntryRunMetrics? = nil, costUsd: Double? = nil, fromTodo: Bool? = nil, outputTruncated: Bool? = nil) {
+    public init(messageId: String, role: PublicSessionViewMessageRole, content: JSONValue, runId: String, timestamp: String, compacted: Bool? = nil, toolCalls: [ConversationEntryToolCall]? = nil, thinking: String? = nil, importance: ConversationEntryImportance? = nil, attachments: [ConversationEntryAttachment]? = nil, runMetrics: ConversationEntryRunMetrics? = nil, costUsd: Double? = nil, fromTodo: Bool? = nil, outputTruncated: Bool? = nil, authorAgentId: String? = nil, authorName: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil) {
         self.messageId = messageId
         self.role = role
         self.content = content
@@ -12507,6 +12646,10 @@ public struct ConversationEntry: Codable, Hashable, Sendable {
         self.costUsd = costUsd
         self.fromTodo = fromTodo
         self.outputTruncated = outputTruncated
+        self.authorAgentId = authorAgentId
+        self.authorName = authorName
+        self.errorCode = errorCode
+        self.errorDetails = errorDetails
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -12524,6 +12667,10 @@ public struct ConversationEntry: Codable, Hashable, Sendable {
         case costUsd = "cost_usd"
         case fromTodo = "from_todo"
         case outputTruncated = "output_truncated"
+        case authorAgentId = "author_agent_id"
+        case authorName = "author_name"
+        case errorCode = "error_code"
+        case errorDetails = "error_details"
     }
 }
 
@@ -12624,6 +12771,9 @@ public struct ConversationEntryRunMetrics: Codable, Hashable, Sendable {
     public var inputTokens: Int?
     public var outputTokens: Int?
     public var thinkingTokens: Int?
+    /// Prompt tokens served from the provider's prefix cache — a subset of `input_tokens`. Present
+    /// only when the provider reports it.
+    public var cachedTokens: Int?
     public var toolCallsCount: Int?
     public var llmCallsCount: Int?
     public var guardrailChecks: Int?
@@ -12633,13 +12783,14 @@ public struct ConversationEntryRunMetrics: Codable, Hashable, Sendable {
     /// Estimated total cost in USD
     public var totalCostUsd: Double?
 
-    public init(pricingConfidence: String? = nil, durationMs: Double? = nil, stepsCount: Int? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, thinkingTokens: Int? = nil, toolCallsCount: Int? = nil, llmCallsCount: Int? = nil, guardrailChecks: Int? = nil, guardrailViolations: Int? = nil, memoryRetrievals: Int? = nil, memoryExtractions: Int? = nil, totalCostUsd: Double? = nil) {
+    public init(pricingConfidence: String? = nil, durationMs: Double? = nil, stepsCount: Int? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, thinkingTokens: Int? = nil, cachedTokens: Int? = nil, toolCallsCount: Int? = nil, llmCallsCount: Int? = nil, guardrailChecks: Int? = nil, guardrailViolations: Int? = nil, memoryRetrievals: Int? = nil, memoryExtractions: Int? = nil, totalCostUsd: Double? = nil) {
         self.pricingConfidence = pricingConfidence
         self.durationMs = durationMs
         self.stepsCount = stepsCount
         self.inputTokens = inputTokens
         self.outputTokens = outputTokens
         self.thinkingTokens = thinkingTokens
+        self.cachedTokens = cachedTokens
         self.toolCallsCount = toolCallsCount
         self.llmCallsCount = llmCallsCount
         self.guardrailChecks = guardrailChecks
@@ -12656,6 +12807,7 @@ public struct ConversationEntryRunMetrics: Codable, Hashable, Sendable {
         case inputTokens = "input_tokens"
         case outputTokens = "output_tokens"
         case thinkingTokens = "thinking_tokens"
+        case cachedTokens = "cached_tokens"
         case toolCallsCount = "tool_calls_count"
         case llmCallsCount = "llm_calls_count"
         case guardrailChecks = "guardrail_checks"
@@ -16461,6 +16613,19 @@ public struct DisableMfaResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `DisconnectHiredAgentResponse` model.
+public struct DisconnectHiredAgentResponse: Codable, Hashable, Sendable {
+    public var agent: Agent
+
+    public init(agent: Agent) {
+        self.agent = agent
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agent = "agent"
+    }
+}
+
 /// `DomainCertLifecycle` model.
 public struct DomainCertLifecycle: Codable, Hashable, Sendable {
     /// `renewal_due` is entered 14 days or less before `not_after`.
@@ -17868,15 +18033,20 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let dependencyExists = ErrorCode(rawValue: "DEPENDENCY_EXISTS")
     public static let eventStoreError = ErrorCode(rawValue: "EVENT_STORE_ERROR")
     public static let externalServiceError = ErrorCode(rawValue: "EXTERNAL_SERVICE_ERROR")
+    public static let featuredSetContended = ErrorCode(rawValue: "FEATURED_SET_CONTENDED")
     public static let featureDisabled = ErrorCode(rawValue: "FEATURE_DISABLED")
+    public static let fileNotFound = ErrorCode(rawValue: "FILE_NOT_FOUND")
     public static let fileTypeNotAllowed = ErrorCode(rawValue: "FILE_TYPE_NOT_ALLOWED")
     public static let forbidden = ErrorCode(rawValue: "FORBIDDEN")
     public static let guardrailViolation = ErrorCode(rawValue: "GUARDRAIL_VIOLATION")
     public static let idempotencyKeyReused = ErrorCode(rawValue: "IDEMPOTENCY_KEY_REUSED")
     public static let initiativeBudgetExhausted = ErrorCode(rawValue: "INITIATIVE_BUDGET_EXHAUSTED")
     public static let initiativePaused = ErrorCode(rawValue: "INITIATIVE_PAUSED")
+    public static let internalError = ErrorCode(rawValue: "INTERNAL_ERROR")
+    public static let invalidArchive = ErrorCode(rawValue: "INVALID_ARCHIVE")
     public static let invalidBody = ErrorCode(rawValue: "INVALID_BODY")
     public static let invalidCursor = ErrorCode(rawValue: "INVALID_CURSOR")
+    public static let invalidManifest = ErrorCode(rawValue: "INVALID_MANIFEST")
     public static let invalidQuery = ErrorCode(rawValue: "INVALID_QUERY")
     public static let invalidRequest = ErrorCode(rawValue: "INVALID_REQUEST")
     public static let invalidShareList = ErrorCode(rawValue: "INVALID_SHARE_LIST")
@@ -17888,6 +18058,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let methodNotAllowed = ErrorCode(rawValue: "METHOD_NOT_ALLOWED")
     public static let migrationConflict = ErrorCode(rawValue: "MIGRATION_CONFLICT")
     public static let missingField = ErrorCode(rawValue: "MISSING_FIELD")
+    public static let missingScope = ErrorCode(rawValue: "MISSING_SCOPE")
     public static let missionAlreadyRunning = ErrorCode(rawValue: "MISSION_ALREADY_RUNNING")
     public static let missionConcurrencyLimit = ErrorCode(rawValue: "MISSION_CONCURRENCY_LIMIT")
     public static let missionNotFound = ErrorCode(rawValue: "MISSION_NOT_FOUND")
@@ -17920,8 +18091,10 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let searchProviderNotConfigured = ErrorCode(rawValue: "SEARCH_PROVIDER_NOT_CONFIGURED")
     public static let searchUpstreamFailed = ErrorCode(rawValue: "SEARCH_UPSTREAM_FAILED")
     public static let searchUpstreamTimeout = ErrorCode(rawValue: "SEARCH_UPSTREAM_TIMEOUT")
+    public static let securityScanFailed = ErrorCode(rawValue: "SECURITY_SCAN_FAILED")
     public static let sessionNotActive = ErrorCode(rawValue: "SESSION_NOT_ACTIVE")
     public static let shareListConflict = ErrorCode(rawValue: "SHARE_LIST_CONFLICT")
+    public static let signingNotConfigured = ErrorCode(rawValue: "SIGNING_NOT_CONFIGURED")
     public static let sizeLimit = ErrorCode(rawValue: "SIZE_LIMIT")
     public static let specNotFound = ErrorCode(rawValue: "SPEC_NOT_FOUND")
     public static let startedByAnotherUser = ErrorCode(rawValue: "STARTED_BY_ANOTHER_USER")
@@ -17948,6 +18121,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let cvTooLarge = ErrorCode(rawValue: "cv_too_large")
     public static let duplicateApplication = ErrorCode(rawValue: "duplicate_application")
     public static let governanceNotEnabled = ErrorCode(rawValue: "governance_not_enabled")
+    public static let hireCatalogUnknown = ErrorCode(rawValue: "hire_catalog_unknown")
     public static let incompleteRecord = ErrorCode(rawValue: "incomplete_record")
     public static let inertPolicyField = ErrorCode(rawValue: "inert_policy_field")
     public static let inertPublicConfigField = ErrorCode(rawValue: "inert_public_config_field")
@@ -17962,6 +18136,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let limitReached = ErrorCode(rawValue: "limit_reached")
     public static let mfaRequired = ErrorCode(rawValue: "mfa_required")
     public static let noEligibleArbiter = ErrorCode(rawValue: "no_eligible_arbiter")
+    public static let notHired = ErrorCode(rawValue: "not_hired")
     public static let planUpgradeRequired = ErrorCode(rawValue: "plan_upgrade_required")
     public static let proposalRequired = ErrorCode(rawValue: "proposal_required")
     public static let providerAuthFailed = ErrorCode(rawValue: "provider_auth_failed")
@@ -17986,7 +18161,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let videoSlotInvalid = ErrorCode(rawValue: "video_slot_invalid")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .activeTenantNotSupported, .alreadyExists, .anonBusy, .artifactIntegrityError, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .companyNotReady, .companyPaused, .concurrencyLimit, .concurrentModification, .configurationError, .confirmationRequired, .conflict, .contextLengthExceeded, .countLimitReached, .dailyLimit, .dependencyExists, .eventStoreError, .externalServiceError, .featureDisabled, .fileTypeNotAllowed, .forbidden, .guardrailViolation, .idempotencyKeyReused, .initiativeBudgetExhausted, .initiativePaused, .invalidBody, .invalidCursor, .invalidQuery, .invalidRequest, .invalidShareList, .invalidShareTarget, .invalidStateTransition, .llmError, .maxDurationExceeded, .maxTokensExceeded, .methodNotAllowed, .migrationConflict, .missingField, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notBridgeAgent, .notFound, .notYanked, .noRunnableTarget, .oauthFailed, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .prerequisiteMissing, .pricingUnavailable, .privateNotShared, .promoRedemptionFailed, .proposalExpired, .quotaExceeded, .rateLimitExceeded, .referenceNotFound, .reservedScope, .runActive, .runCancelled, .scopeMismatch, .scopeTaken, .searchProviderNotConfigured, .searchUpstreamFailed, .searchUpstreamTimeout, .sessionNotActive, .shareListConflict, .sizeLimit, .specNotFound, .startedByAnotherUser, .strategistModelUnconfigured, .taskGraphFailed, .teamAbort, .termsNotAccepted, .textExtractionFailed, .userRequired, .validationError, .verificationFailed, .versionConflict, .versionNotFound, .workspaceStorageLimit, .wouldOrphan, .yankConflict, .agentDeleted, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .consentRequired, .cvInvalid, .cvTooLarge, .duplicateApplication, .governanceNotEnabled, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .jobApplyElsewhere, .jobClosed, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbEmbeddingFailed, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .mfaRequired, .noEligibleArbiter, .planUpgradeRequired, .proposalRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited, .resourceLimitReached, .runApprovalExpired, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded, .runStalled, .secretWouldMove, .videoConsentRequired, .videoOrderState, .videoPhotoInvalid, .videoPhotoRejected, .videoRegenUnavailable, .videoSlotInvalid]
+    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .activeTenantNotSupported, .alreadyExists, .anonBusy, .artifactIntegrityError, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .companyNotReady, .companyPaused, .concurrencyLimit, .concurrentModification, .configurationError, .confirmationRequired, .conflict, .contextLengthExceeded, .countLimitReached, .dailyLimit, .dependencyExists, .eventStoreError, .externalServiceError, .featuredSetContended, .featureDisabled, .fileNotFound, .fileTypeNotAllowed, .forbidden, .guardrailViolation, .idempotencyKeyReused, .initiativeBudgetExhausted, .initiativePaused, .internalError, .invalidArchive, .invalidBody, .invalidCursor, .invalidManifest, .invalidQuery, .invalidRequest, .invalidShareList, .invalidShareTarget, .invalidStateTransition, .llmError, .maxDurationExceeded, .maxTokensExceeded, .methodNotAllowed, .migrationConflict, .missingField, .missingScope, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notBridgeAgent, .notFound, .notYanked, .noRunnableTarget, .oauthFailed, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .prerequisiteMissing, .pricingUnavailable, .privateNotShared, .promoRedemptionFailed, .proposalExpired, .quotaExceeded, .rateLimitExceeded, .referenceNotFound, .reservedScope, .runActive, .runCancelled, .scopeMismatch, .scopeTaken, .searchProviderNotConfigured, .searchUpstreamFailed, .searchUpstreamTimeout, .securityScanFailed, .sessionNotActive, .shareListConflict, .signingNotConfigured, .sizeLimit, .specNotFound, .startedByAnotherUser, .strategistModelUnconfigured, .taskGraphFailed, .teamAbort, .termsNotAccepted, .textExtractionFailed, .userRequired, .validationError, .verificationFailed, .versionConflict, .versionNotFound, .workspaceStorageLimit, .wouldOrphan, .yankConflict, .agentDeleted, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .consentRequired, .cvInvalid, .cvTooLarge, .duplicateApplication, .governanceNotEnabled, .hireCatalogUnknown, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .jobApplyElsewhere, .jobClosed, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbEmbeddingFailed, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .mfaRequired, .noEligibleArbiter, .notHired, .planUpgradeRequired, .proposalRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited, .resourceLimitReached, .runApprovalExpired, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded, .runStalled, .secretWouldMove, .videoConsentRequired, .videoOrderState, .videoPhotoInvalid, .videoPhotoRejected, .videoRegenUnavailable, .videoSlotInvalid]
 }
 
 /// `ErrorError` model.
@@ -20894,6 +21069,42 @@ public struct GetHealthResponseStatus: RawRepresentable, Codable, Hashable, Send
     public static let knownValues: [GetHealthResponseStatus] = [.healthy, .degraded, .unhealthy]
 }
 
+/// `GetHireCatalogLocale` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct GetHireCatalogLocale: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let uk = GetHireCatalogLocale(rawValue: "uk")
+    public static let en = GetHireCatalogLocale(rawValue: "en")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [GetHireCatalogLocale] = [.uk, .en]
+}
+
+/// `GetHireCatalogResponse` model.
+public struct GetHireCatalogResponse: Codable, Hashable, Sendable {
+    public var items: [HireCatalogItem]
+
+    public init(items: [HireCatalogItem]) {
+        self.items = items
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case items = "items"
+    }
+}
+
 /// `GetImmutableAuditResponse` model.
 public struct GetImmutableAuditResponse: Codable, Hashable, Sendable {
     public var events: [ImmutableAuditEvent]
@@ -21373,15 +21584,21 @@ public struct GetMissionPerformanceResponseByAgentItem: Codable, Hashable, Senda
 public struct GetMissionPerformanceResponseMissions: Codable, Hashable, Sendable {
     public var total: Int
     public var byStatus: JSONObject
+    /// Missions not yet ended with a draft at `awaiting_review`, waiting on a person. Their status
+    /// stays `executing` (the run is not over), so they are also counted there: show `executing -
+    /// waiting_on_review` as running. Absent from servers before 2026-10-15; read as 0.
+    public var waitingOnReview: Int?
 
-    public init(total: Int, byStatus: JSONObject) {
+    public init(total: Int, byStatus: JSONObject, waitingOnReview: Int? = nil) {
         self.total = total
         self.byStatus = byStatus
+        self.waitingOnReview = waitingOnReview
     }
 
     private enum CodingKeys: String, CodingKey {
         case total = "total"
         case byStatus = "by_status"
+        case waitingOnReview = "waiting_on_review"
     }
 }
 
@@ -22116,8 +22333,10 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
     /// `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`,
     /// `limit_usd` and `spent_usd` with `BUDGET_EXCEEDED` (beside the older `max_cost_usd`,
     /// `accumulated_cost_usd` and `cap_source`), `limit_ms` and `elapsed_ms` with
-    /// `MAX_DURATION_EXCEEDED` (both since 2026-09-23). Never a provider id — this reaches a
-    /// screen, and the product does not name the model it picked.
+    /// `MAX_DURATION_EXCEEDED` (both since 2026-09-23). `limit_tokens`, `used_tokens` and, when the
+    /// model had written anything, `partial_response` (its text so far, at most 8000 characters)
+    /// with `MAX_TOKENS_EXCEEDED` (since 2026-10-16). Never a provider id — this reaches a screen,
+    /// and the product does not name the model it picked.
     public var errorDetails: JSONObject?
     /// Every human decision on a tool approval this run waited for, oldest first. Absent when the
     /// run never waited for one. Recorded since 2026-09-22; before that an approved call left no
@@ -22512,6 +22731,119 @@ public struct GetSessionMessagesResponse: Codable, Hashable, Sendable {
         case activeRunPartialContent = "active_run_partial_content"
         case hasMore = "has_more"
         case cursor = "cursor"
+    }
+}
+
+/// `GetSessionResponse` model.
+public struct GetSessionResponse: Codable, Hashable, Sendable {
+    /// Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+    /// `metadata.archived: true` read as archived here and in the list filters; writing the flag
+    /// removes those metadata keys.
+    public var archived: Bool?
+    public var archivedAt: String?
+    /// Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+    /// `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+    /// the flag removes the metadata key.
+    public var pinned: Bool?
+    /// When it was pinned; order the pinned group by it.
+    public var pinnedAt: String?
+    public var createdBy: String?
+    public var sessionId: String
+    public var tenantId: String
+    public var agentId: String
+    public var status: PublicSessionViewStatus
+    public var conversationHistory: [ConversationEntry]?
+    public var metadata: JSONObject?
+    public var runs: [String]?
+    public var createdAt: String?
+    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, creating or
+    /// switching a branch, and metadata writes that only set `title`, `project_id` or the legacy
+    /// `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+    /// by it.
+    public var updatedAt: String?
+    public var expiresAt: String?
+    /// Team ID if session belongs to a team
+    public var teamId: String?
+    /// Session branches for conversation forking
+    public var branches: [SessionBranch]?
+    /// Currently active branch ID
+    public var activeBranch: String?
+    /// How to handle concurrent runs in this session
+    public var queueMode: SessionQueueMode?
+    /// Per-conversation model override (in-chat model switcher). When set, runs in this session
+    /// resolve their LLM from this config instead of the agent's default. Absent → agent default.
+    public var modelOverride: GetSessionResponseModelOverride?
+    public var context: SessionContext
+
+    public init(archived: Bool? = nil, archivedAt: String? = nil, pinned: Bool? = nil, pinnedAt: String? = nil, createdBy: String? = nil, sessionId: String, tenantId: String, agentId: String, status: PublicSessionViewStatus, conversationHistory: [ConversationEntry]? = nil, metadata: JSONObject? = nil, runs: [String]? = nil, createdAt: String? = nil, updatedAt: String? = nil, expiresAt: String? = nil, teamId: String? = nil, branches: [SessionBranch]? = nil, activeBranch: String? = nil, queueMode: SessionQueueMode? = nil, modelOverride: GetSessionResponseModelOverride? = nil, context: SessionContext) {
+        self.archived = archived
+        self.archivedAt = archivedAt
+        self.pinned = pinned
+        self.pinnedAt = pinnedAt
+        self.createdBy = createdBy
+        self.sessionId = sessionId
+        self.tenantId = tenantId
+        self.agentId = agentId
+        self.status = status
+        self.conversationHistory = conversationHistory
+        self.metadata = metadata
+        self.runs = runs
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.expiresAt = expiresAt
+        self.teamId = teamId
+        self.branches = branches
+        self.activeBranch = activeBranch
+        self.queueMode = queueMode
+        self.modelOverride = modelOverride
+        self.context = context
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case archived = "archived"
+        case archivedAt = "archived_at"
+        case pinned = "pinned"
+        case pinnedAt = "pinned_at"
+        case createdBy = "created_by"
+        case sessionId = "session_id"
+        case tenantId = "tenant_id"
+        case agentId = "agent_id"
+        case status = "status"
+        case conversationHistory = "conversation_history"
+        case metadata = "metadata"
+        case runs = "runs"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case expiresAt = "expires_at"
+        case teamId = "team_id"
+        case branches = "branches"
+        case activeBranch = "active_branch"
+        case queueMode = "queue_mode"
+        case modelOverride = "model_override"
+        case context = "context"
+    }
+}
+
+/// Per-conversation model override (in-chat model switcher). When set, runs in this session
+/// resolve their LLM from this config instead of the agent's default. Absent → agent default.
+public struct GetSessionResponseModelOverride: Codable, Hashable, Sendable {
+    public var provider: String
+    public var modelRef: String
+    public var endpointURL: String?
+    public var capabilities: JSONObject?
+
+    public init(provider: String, modelRef: String, endpointURL: String? = nil, capabilities: JSONObject? = nil) {
+        self.provider = provider
+        self.modelRef = modelRef
+        self.endpointURL = endpointURL
+        self.capabilities = capabilities
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case provider = "provider"
+        case modelRef = "model_ref"
+        case endpointURL = "endpoint_url"
+        case capabilities = "capabilities"
     }
 }
 
@@ -23239,8 +23571,10 @@ public struct GetTenantCompanyOverviewResponse: Codable, Hashable, Sendable {
     /// method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
     /// setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
     /// then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
-    /// with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
-    /// when nothing else applies.
+    /// with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
+    /// `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
+    /// as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
+    /// else applies.
     public var nextStep: GetTenantCompanyOverviewResponseNextStep?
     public var generatedAt: String
     public var windowDays: Int
@@ -23250,7 +23584,9 @@ public struct GetTenantCompanyOverviewResponse: Codable, Hashable, Sendable {
     public var decisions: GetTenantCompanyOverviewResponseDecisions
     /// The `GET /analytics/missions?days=` body for the same window.
     public var work: JSONObject
-    /// Up to 5 objectives completed in the window, newest first.
+    /// Up to 5 results delivered in the window, newest first: completed objectives that no other
+    /// objective depends on. The steps feeding a deliverable (collect, analyze) are work, not
+    /// results, and are left out since 2026-10-15.
     public var results: [GetTenantCompanyOverviewResponseResult]
     public var problems: GetTenantCompanyOverviewResponseProblems
     public var activity: GetTenantCompanyOverviewResponseActivity
@@ -23417,24 +23753,32 @@ public struct GetTenantCompanyOverviewResponseNextItem: Codable, Hashable, Senda
 /// method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
 /// setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
 /// then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
-/// with `run_id` and `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET`
-/// when nothing else applies.
+/// with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
+/// `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
+/// as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
+/// else applies.
 public struct GetTenantCompanyOverviewResponseNextStep: Codable, Hashable, Sendable {
     public var kind: GetTenantCompanyOverviewResponseNextStepKind
     public var code: String
     public var fix: String?
     public var count: Int?
     public var runId: String?
+    public var missionId: String?
+    public var agentId: String?
+    public var agentName: String?
     public var errorCode: String?
     public var name: String?
     public var nextFireAt: String?
 
-    public init(kind: GetTenantCompanyOverviewResponseNextStepKind, code: String, fix: String? = nil, count: Int? = nil, runId: String? = nil, errorCode: String? = nil, name: String? = nil, nextFireAt: String? = nil) {
+    public init(kind: GetTenantCompanyOverviewResponseNextStepKind, code: String, fix: String? = nil, count: Int? = nil, runId: String? = nil, missionId: String? = nil, agentId: String? = nil, agentName: String? = nil, errorCode: String? = nil, name: String? = nil, nextFireAt: String? = nil) {
         self.kind = kind
         self.code = code
         self.fix = fix
         self.count = count
         self.runId = runId
+        self.missionId = missionId
+        self.agentId = agentId
+        self.agentName = agentName
         self.errorCode = errorCode
         self.name = name
         self.nextFireAt = nextFireAt
@@ -23446,6 +23790,9 @@ public struct GetTenantCompanyOverviewResponseNextStep: Codable, Hashable, Senda
         case fix = "fix"
         case count = "count"
         case runId = "run_id"
+        case missionId = "mission_id"
+        case agentId = "agent_id"
+        case agentName = "agent_name"
         case errorCode = "error_code"
         case name = "name"
         case nextFireAt = "next_fire_at"
@@ -23482,16 +23829,77 @@ public struct GetTenantCompanyOverviewResponseNextStepKind: RawRepresentable, Co
 public struct GetTenantCompanyOverviewResponseProblems: Codable, Hashable, Sendable {
     public var failedRuns: Int?
     public var recent: [GetTenantCompanyOverviewResponseProblemsRecentItem]?
+    /// Missions in the window the PLATFORM stopped (`aborted` or `failed`, not
+    /// `aborted_by_operator`) — the watchdog, a failed plan, failed objectives. Since 2026-10-15.
+    public var stoppedMissions: Int?
+    /// The newest 5 of them.
+    public var missions: [GetTenantCompanyOverviewResponseProblemsMission]?
 
-    public init(failedRuns: Int? = nil, recent: [GetTenantCompanyOverviewResponseProblemsRecentItem]? = nil) {
+    public init(failedRuns: Int? = nil, recent: [GetTenantCompanyOverviewResponseProblemsRecentItem]? = nil, stoppedMissions: Int? = nil, missions: [GetTenantCompanyOverviewResponseProblemsMission]? = nil) {
         self.failedRuns = failedRuns
         self.recent = recent
+        self.stoppedMissions = stoppedMissions
+        self.missions = missions
     }
 
     private enum CodingKeys: String, CodingKey {
         case failedRuns = "failed_runs"
         case recent = "recent"
+        case stoppedMissions = "stopped_missions"
+        case missions = "missions"
     }
+}
+
+/// `GetTenantCompanyOverviewResponseProblemsMission` model.
+public struct GetTenantCompanyOverviewResponseProblemsMission: Codable, Hashable, Sendable {
+    public var missionId: String?
+    public var goal: String?
+    public var status: GetTenantCompanyOverviewResponseProblemsMissionStatus?
+    /// As on the mission (`watchdog_stuck`, `planning_failed`, `objectives_failed` …).
+    public var resultCode: String?
+    public var resultSummary: String?
+    public var at: String?
+
+    public init(missionId: String? = nil, goal: String? = nil, status: GetTenantCompanyOverviewResponseProblemsMissionStatus? = nil, resultCode: String? = nil, resultSummary: String? = nil, at: String? = nil) {
+        self.missionId = missionId
+        self.goal = goal
+        self.status = status
+        self.resultCode = resultCode
+        self.resultSummary = resultSummary
+        self.at = at
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case missionId = "mission_id"
+        case goal = "goal"
+        case status = "status"
+        case resultCode = "result_code"
+        case resultSummary = "result_summary"
+        case at = "at"
+    }
+}
+
+/// `GetTenantCompanyOverviewResponseProblemsMissionStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct GetTenantCompanyOverviewResponseProblemsMissionStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let aborted = GetTenantCompanyOverviewResponseProblemsMissionStatus(rawValue: "aborted")
+    public static let failed = GetTenantCompanyOverviewResponseProblemsMissionStatus(rawValue: "failed")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [GetTenantCompanyOverviewResponseProblemsMissionStatus] = [.aborted, .failed]
 }
 
 /// `GetTenantCompanyOverviewResponseProblemsRecentItem` model.
@@ -23525,13 +23933,19 @@ public struct GetTenantCompanyOverviewResponseProblemsRecentItem: Codable, Hasha
 /// `GetTenantCompanyOverviewResponseResult` model.
 public struct GetTenantCompanyOverviewResponseResult: Codable, Hashable, Sendable {
     public var objectiveId: String?
+    /// The objective's own name — for a mission step, the step (`Deliver`).
     public var title: String?
+    /// The result's first line without markdown markers, at most 120 characters — what to head the
+    /// card with. Null when the result has no text.
+    public var headline: String?
+    /// Cut at a line or word boundary, with `…` when cut.
     public var summary: String?
     public var completedAt: String?
 
-    public init(objectiveId: String? = nil, title: String? = nil, summary: String? = nil, completedAt: String? = nil) {
+    public init(objectiveId: String? = nil, title: String? = nil, headline: String? = nil, summary: String? = nil, completedAt: String? = nil) {
         self.objectiveId = objectiveId
         self.title = title
+        self.headline = headline
         self.summary = summary
         self.completedAt = completedAt
     }
@@ -23539,6 +23953,7 @@ public struct GetTenantCompanyOverviewResponseResult: Codable, Hashable, Sendabl
     private enum CodingKeys: String, CodingKey {
         case objectiveId = "objective_id"
         case title = "title"
+        case headline = "headline"
         case summary = "summary"
         case completedAt = "completed_at"
     }
@@ -23817,14 +24232,18 @@ public struct Goal: Codable, Hashable, Sendable {
     public var alignmentJustification: String?
     public var expectedImpact: String?
     public var resourceEstimateUsd: Double?
+    /// `abandoned` is a status no current code writes; goals stored before 2026-08-31 can carry it,
+    /// and GET returns records as stored (SDK decode of the canon tenant, 2026-10-15).
     public var status: GoalStatus
+    /// On goals stored before 2026-08-31 only; the current propose route does not take it.
+    public var priority: Int?
     /// Set once the goal reaches a vote. Absent before that.
     public var proposalId: String?
     public var constitutionCheckPassed: Bool?
     public var createdAt: String
     public var updatedAt: String?
 
-    public init(goalId: String, tenantId: String, agentId: String? = nil, title: String? = nil, `description`: String? = nil, rationale: String? = nil, alignmentJustification: String? = nil, expectedImpact: String? = nil, resourceEstimateUsd: Double? = nil, status: GoalStatus, proposalId: String? = nil, constitutionCheckPassed: Bool? = nil, createdAt: String, updatedAt: String? = nil) {
+    public init(goalId: String, tenantId: String, agentId: String? = nil, title: String? = nil, `description`: String? = nil, rationale: String? = nil, alignmentJustification: String? = nil, expectedImpact: String? = nil, resourceEstimateUsd: Double? = nil, status: GoalStatus, priority: Int? = nil, proposalId: String? = nil, constitutionCheckPassed: Bool? = nil, createdAt: String, updatedAt: String? = nil) {
         self.goalId = goalId
         self.tenantId = tenantId
         self.agentId = agentId
@@ -23835,6 +24254,7 @@ public struct Goal: Codable, Hashable, Sendable {
         self.expectedImpact = expectedImpact
         self.resourceEstimateUsd = resourceEstimateUsd
         self.status = status
+        self.priority = priority
         self.proposalId = proposalId
         self.constitutionCheckPassed = constitutionCheckPassed
         self.createdAt = createdAt
@@ -23852,6 +24272,7 @@ public struct Goal: Codable, Hashable, Sendable {
         case expectedImpact = "expected_impact"
         case resourceEstimateUsd = "resource_estimate_usd"
         case status = "status"
+        case priority = "priority"
         case proposalId = "proposal_id"
         case constitutionCheckPassed = "constitution_check_passed"
         case createdAt = "created_at"
@@ -23859,7 +24280,8 @@ public struct Goal: Codable, Hashable, Sendable {
     }
 }
 
-/// `GoalStatus` values.
+/// `abandoned` is a status no current code writes; goals stored before 2026-08-31 can carry it,
+/// and GET returns records as stored (SDK decode of the canon tenant, 2026-10-15).
 ///
 /// Values the API adds later decode into this type unchanged, so a new
 /// server-side case never breaks an existing client.
@@ -23882,9 +24304,10 @@ public struct GoalStatus: RawRepresentable, Codable, Hashable, Sendable, Express
     public static let rejected = GoalStatus(rawValue: "rejected")
     public static let active = GoalStatus(rawValue: "active")
     public static let completed = GoalStatus(rawValue: "completed")
+    public static let abandoned = GoalStatus(rawValue: "abandoned")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [GoalStatus] = [.proposed, .checking, .voting, .approved, .rejected, .active, .completed]
+    public static let knownValues: [GoalStatus] = [.proposed, .checking, .voting, .approved, .rejected, .active, .completed, .abandoned]
 }
 
 /// `GoogleOneTapAuthRequest` model.
@@ -24276,6 +24699,135 @@ public struct HealthzAliasResponse: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case status = "status"
+    }
+}
+
+/// `HireAgentRequest` model.
+public struct HireAgentRequest: Codable, Hashable, Sendable {
+    public var catalogId: String
+
+    public init(catalogId: String) {
+        self.catalogId = catalogId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case catalogId = "catalog_id"
+    }
+}
+
+/// `HireAgentResponse` model.
+public struct HireAgentResponse: Codable, Hashable, Sendable {
+    public var agent: Agent
+    public var connect: HireConnect
+
+    public init(agent: Agent, connect: HireConnect) {
+        self.agent = agent
+        self.connect = connect
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agent = "agent"
+        case connect = "connect"
+    }
+}
+
+/// `HireCatalogItem` model.
+public struct HireCatalogItem: Codable, Hashable, Sendable {
+    public var id: String
+    public var name: String
+    public var vendor: String
+    /// Absolute PNG, 256×256, public.
+    public var iconURL: String
+    public var summary: String
+    public var requirements: String
+    public var platforms: [HireCatalogItemPlatform]
+    public var steps: [HireCatalogItemStep]
+    public var docsURL: String
+
+    public init(id: String, name: String, vendor: String, iconURL: String, summary: String, requirements: String, platforms: [HireCatalogItemPlatform], steps: [HireCatalogItemStep], docsURL: String) {
+        self.id = id
+        self.name = name
+        self.vendor = vendor
+        self.iconURL = iconURL
+        self.summary = summary
+        self.requirements = requirements
+        self.platforms = platforms
+        self.steps = steps
+        self.docsURL = docsURL
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case name = "name"
+        case vendor = "vendor"
+        case iconURL = "icon_url"
+        case summary = "summary"
+        case requirements = "requirements"
+        case platforms = "platforms"
+        case steps = "steps"
+        case docsURL = "docs_url"
+    }
+}
+
+/// `HireCatalogItemPlatform` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct HireCatalogItemPlatform: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let macos = HireCatalogItemPlatform(rawValue: "macos")
+    public static let linux = HireCatalogItemPlatform(rawValue: "linux")
+    public static let windows = HireCatalogItemPlatform(rawValue: "windows")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [HireCatalogItemPlatform] = [.macos, .linux, .windows]
+}
+
+/// `HireCatalogItemStep` model.
+public struct HireCatalogItemStep: Codable, Hashable, Sendable {
+    public var title: String
+    /// A command to copy, or null.
+    public var command: String?
+
+    public init(title: String, command: String? = nil) {
+        self.title = title
+        self.command = command
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case title = "title"
+        case command = "command"
+    }
+}
+
+/// The one terminal command that connects a hired agent. Contains its secret: returned once, by
+/// the call that minted it, and never again.
+public struct HireConnect: Codable, Hashable, Sendable {
+    public var command: String
+    public var expiresAt: String
+    /// How long an unused command works (900).
+    public var ttlSeconds: Int
+
+    public init(command: String, expiresAt: String, ttlSeconds: Int) {
+        self.command = command
+        self.expiresAt = expiresAt
+        self.ttlSeconds = ttlSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case command = "command"
+        case expiresAt = "expires_at"
+        case ttlSeconds = "ttl_seconds"
     }
 }
 
@@ -24782,6 +25334,10 @@ public struct InboxItem: Codable, Hashable, Sendable {
     public var sessionId: String?
     public var status: String
     public var createdAt: String?
+    /// What the run was asked to do — the first line of its request (message, prompt, text or
+    /// instruction), at most 140 characters. Absent when the run carries no text. Since 2026-10-16:
+    /// a failed row used to carry only its error, so clients titled the task with it.
+    public var goal: String?
     /// One line: the tool being requested, the question, or the error.
     public var summary: String
     /// Longer body — tool arguments, error detail, question context. Empty string when there is
@@ -24802,7 +25358,7 @@ public struct InboxItem: Codable, Hashable, Sendable {
     /// has none. Since 2026-09-23.
     public var errorDetails: JSONObject?
 
-    public init(id: String, kind: InboxItemKind, runId: String, agentId: String, agentName: String, sessionId: String? = nil, status: String, createdAt: String? = nil, summary: String, detail: String, options: [String], tools: [InboxItemTool]? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil) {
+    public init(id: String, kind: InboxItemKind, runId: String, agentId: String, agentName: String, sessionId: String? = nil, status: String, createdAt: String? = nil, goal: String? = nil, summary: String, detail: String, options: [String], tools: [InboxItemTool]? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil) {
         self.id = id
         self.kind = kind
         self.runId = runId
@@ -24811,6 +25367,7 @@ public struct InboxItem: Codable, Hashable, Sendable {
         self.sessionId = sessionId
         self.status = status
         self.createdAt = createdAt
+        self.goal = goal
         self.summary = summary
         self.detail = detail
         self.options = options
@@ -24828,6 +25385,7 @@ public struct InboxItem: Codable, Hashable, Sendable {
         case sessionId = "session_id"
         case status = "status"
         case createdAt = "created_at"
+        case goal = "goal"
         case summary = "summary"
         case detail = "detail"
         case options = "options"
@@ -31550,6 +32108,19 @@ public struct MoveWorkspaceFileRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `NewHireCommandResponse` model.
+public struct NewHireCommandResponse: Codable, Hashable, Sendable {
+    public var connect: HireConnect
+
+    public init(connect: HireConnect) {
+        self.connect = connect
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case connect = "connect"
+    }
+}
+
 /// `Notification` model.
 public struct Notification: Codable, Hashable, Sendable {
     public var id: String
@@ -32262,7 +32833,10 @@ public struct OAuthIdentityConfig: Codable, Hashable, Sendable {
     public var appleServicesId: String
     public var appleTeamId: String
     public var appleBundleId: String
-    /// Lower-cased hostnames. Empty means nothing is allowlisted.
+    /// Each entry is a lower-cased bare host, which admits that host's `/auth/callback` path
+    /// family, or an exact https URL (origin + path, path case kept), which admits that one path —
+    /// how a separate app names its own callback. Empty means nothing beyond the built-in
+    /// `snaga.ai` and `www.snaga.ai` is allowlisted.
     public var oauthReturnToHosts: [String]
 
     public init(appleServicesId: String, appleTeamId: String, appleBundleId: String, oauthReturnToHosts: [String]) {
@@ -34233,16 +34807,25 @@ public struct PlatformEconomicsEconomics: Codable, Hashable, Sendable {
     /// Null when there is no revenue to divide by — not zero, which would read as a 0% margin.
     public var marginPercent: Double?
     public var monthToDateInfraUsd: Double?
+    /// How `monthly_llm_usd` was reached. The margin is `monthly_revenue_usd − monthly_infra_usd −
+    /// monthly_llm_usd`, exactly; show those three beside it, not the month-to-date figures. Since
+    /// 2026-10-16.
+    public var llmRunRateBasis: PlatformEconomicsLLMRunRateBasis?
+    /// LLM provider spend so far this month — the month-to-date counterpart of `monthly_llm_usd`,
+    /// as `month_to_date_infra_usd` is of `monthly_infra_usd`. Since 2026-10-16.
+    public var monthToDateLLMUsd: Double?
     public var markupPercent: Double?
     public var pricingTiers: JSONObject?
 
-    public init(monthlyRevenueUsd: Double, monthlyInfraUsd: Double, monthlyLLMUsd: Double, monthlyMarginUsd: Double, marginPercent: Double? = nil, monthToDateInfraUsd: Double? = nil, markupPercent: Double? = nil, pricingTiers: JSONObject? = nil) {
+    public init(monthlyRevenueUsd: Double, monthlyInfraUsd: Double, monthlyLLMUsd: Double, monthlyMarginUsd: Double, marginPercent: Double? = nil, monthToDateInfraUsd: Double? = nil, llmRunRateBasis: PlatformEconomicsLLMRunRateBasis? = nil, monthToDateLLMUsd: Double? = nil, markupPercent: Double? = nil, pricingTiers: JSONObject? = nil) {
         self.monthlyRevenueUsd = monthlyRevenueUsd
         self.monthlyInfraUsd = monthlyInfraUsd
         self.monthlyLLMUsd = monthlyLLMUsd
         self.monthlyMarginUsd = monthlyMarginUsd
         self.marginPercent = marginPercent
         self.monthToDateInfraUsd = monthToDateInfraUsd
+        self.llmRunRateBasis = llmRunRateBasis
+        self.monthToDateLLMUsd = monthToDateLLMUsd
         self.markupPercent = markupPercent
         self.pricingTiers = pricingTiers
     }
@@ -34254,6 +34837,8 @@ public struct PlatformEconomicsEconomics: Codable, Hashable, Sendable {
         case monthlyMarginUsd = "monthly_margin_usd"
         case marginPercent = "margin_percent"
         case monthToDateInfraUsd = "month_to_date_infra_usd"
+        case llmRunRateBasis = "llm_run_rate_basis"
+        case monthToDateLLMUsd = "month_to_date_llm_usd"
         case markupPercent = "markup_percent"
         case pricingTiers = "pricing_tiers"
     }
@@ -38087,6 +38672,169 @@ public struct RemoveScheduleResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `RepairAgentRecordsRequest` model.
+public struct RepairAgentRecordsRequest: Codable, Hashable, Sendable {
+    public var dryRun: Bool?
+    public var ops: [RepairAgentRecordsRequestOp]?
+
+    public init(dryRun: Bool? = nil, ops: [RepairAgentRecordsRequestOp]? = nil) {
+        self.dryRun = dryRun
+        self.ops = ops
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case dryRun = "dry_run"
+        case ops = "ops"
+    }
+}
+
+/// `RepairAgentRecordsRequestOp` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RepairAgentRecordsRequestOp: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let headTokenCaps = RepairAgentRecordsRequestOp(rawValue: "head_token_caps")
+    public static let headNames = RepairAgentRecordsRequestOp(rawValue: "head_names")
+    public static let headPodDescriptions = RepairAgentRecordsRequestOp(rawValue: "head_pod_descriptions")
+    public static let initialVersions = RepairAgentRecordsRequestOp(rawValue: "initial_versions")
+    public static let orphanSchedules = RepairAgentRecordsRequestOp(rawValue: "orphan_schedules")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RepairAgentRecordsRequestOp] = [.headTokenCaps, .headNames, .headPodDescriptions, .initialVersions, .orphanSchedules]
+}
+
+/// `RepairAgentRecordsResponse` model.
+public struct RepairAgentRecordsResponse: Codable, Hashable, Sendable {
+    public var dryRun: Bool
+    public var tenants: Int
+    public var headTokenCaps: RepairAgentRecordsResponseHeadTokenCaps
+    public var headNames: RepairAgentRecordsResponseHeadNames
+    public var headPodDescriptions: RepairAgentRecordsResponseHeadPodDescriptions
+    public var initialVersions: RepairAgentRecordsResponseInitialVersions
+    public var orphanSchedules: RepairAgentRecordsResponseOrphanSchedules
+    public var errors: [RepairAgentRecordsResponseError]
+
+    public init(dryRun: Bool, tenants: Int, headTokenCaps: RepairAgentRecordsResponseHeadTokenCaps, headNames: RepairAgentRecordsResponseHeadNames, headPodDescriptions: RepairAgentRecordsResponseHeadPodDescriptions, initialVersions: RepairAgentRecordsResponseInitialVersions, orphanSchedules: RepairAgentRecordsResponseOrphanSchedules, errors: [RepairAgentRecordsResponseError]) {
+        self.dryRun = dryRun
+        self.tenants = tenants
+        self.headTokenCaps = headTokenCaps
+        self.headNames = headNames
+        self.headPodDescriptions = headPodDescriptions
+        self.initialVersions = initialVersions
+        self.orphanSchedules = orphanSchedules
+        self.errors = errors
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case dryRun = "dry_run"
+        case tenants = "tenants"
+        case headTokenCaps = "head_token_caps"
+        case headNames = "head_names"
+        case headPodDescriptions = "head_pod_descriptions"
+        case initialVersions = "initial_versions"
+        case orphanSchedules = "orphan_schedules"
+        case errors = "errors"
+    }
+}
+
+/// `RepairAgentRecordsResponseError` model.
+public struct RepairAgentRecordsResponseError: Codable, Hashable, Sendable {
+    public var tenantId: String?
+    public var agentId: String?
+    public var error: String?
+
+    public init(tenantId: String? = nil, agentId: String? = nil, error: String? = nil) {
+        self.tenantId = tenantId
+        self.agentId = agentId
+        self.error = error
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tenantId = "tenant_id"
+        case agentId = "agent_id"
+        case error = "error"
+    }
+}
+
+/// `RepairAgentRecordsResponseHeadNames` model.
+public struct RepairAgentRecordsResponseHeadNames: Codable, Hashable, Sendable {
+    public var renamed: Int?
+
+    public init(renamed: Int? = nil) {
+        self.renamed = renamed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case renamed = "renamed"
+    }
+}
+
+/// `RepairAgentRecordsResponseHeadPodDescriptions` model.
+public struct RepairAgentRecordsResponseHeadPodDescriptions: Codable, Hashable, Sendable {
+    public var replaced: Int?
+
+    public init(replaced: Int? = nil) {
+        self.replaced = replaced
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case replaced = "replaced"
+    }
+}
+
+/// `RepairAgentRecordsResponseHeadTokenCaps` model.
+public struct RepairAgentRecordsResponseHeadTokenCaps: Codable, Hashable, Sendable {
+    public var fixed: Int?
+    public var byValue: JSONObject?
+
+    public init(fixed: Int? = nil, byValue: JSONObject? = nil) {
+        self.fixed = fixed
+        self.byValue = byValue
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case fixed = "fixed"
+        case byValue = "by_value"
+    }
+}
+
+/// `RepairAgentRecordsResponseInitialVersions` model.
+public struct RepairAgentRecordsResponseInitialVersions: Codable, Hashable, Sendable {
+    public var created: Int?
+
+    public init(created: Int? = nil) {
+        self.created = created
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case created = "created"
+    }
+}
+
+/// `RepairAgentRecordsResponseOrphanSchedules` model.
+public struct RepairAgentRecordsResponseOrphanSchedules: Codable, Hashable, Sendable {
+    public var removed: Int?
+
+    public init(removed: Int? = nil) {
+        self.removed = removed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case removed = "removed"
+    }
+}
+
 /// `ReplaceConstitutionRequest` model.
 public struct ReplaceConstitutionRequest: Codable, Hashable, Sendable {
     public var rules: [ConstitutionRule]
@@ -39255,8 +40003,10 @@ public struct Run: Codable, Hashable, Sendable {
     /// `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`,
     /// `limit_usd` and `spent_usd` with `BUDGET_EXCEEDED` (beside the older `max_cost_usd`,
     /// `accumulated_cost_usd` and `cap_source`), `limit_ms` and `elapsed_ms` with
-    /// `MAX_DURATION_EXCEEDED` (both since 2026-09-23). Never a provider id — this reaches a
-    /// screen, and the product does not name the model it picked.
+    /// `MAX_DURATION_EXCEEDED` (both since 2026-09-23). `limit_tokens`, `used_tokens` and, when the
+    /// model had written anything, `partial_response` (its text so far, at most 8000 characters)
+    /// with `MAX_TOKENS_EXCEEDED` (since 2026-10-16). Never a provider id — this reaches a screen,
+    /// and the product does not name the model it picked.
     public var errorDetails: JSONObject?
     /// Every human decision on a tool approval this run waited for, oldest first. Absent when the
     /// run never waited for one. Recorded since 2026-09-22; before that an approved call left no
@@ -39901,6 +40651,7 @@ public struct RunEventType: RawRepresentable, Codable, Hashable, Sendable, Expre
     public static let memoryStored = RunEventType(rawValue: "memory.stored")
     public static let memoryEvicted = RunEventType(rawValue: "memory.evicted")
     public static let sessionContextCompacted = RunEventType(rawValue: "session.context_compacted")
+    public static let sessionContext = RunEventType(rawValue: "session.context")
     public static let sessionCreated = RunEventType(rawValue: "session.created")
     public static let sessionClosed = RunEventType(rawValue: "session.closed")
     public static let teamMessage = RunEventType(rawValue: "team.message")
@@ -40048,7 +40799,7 @@ public struct RunEventType: RawRepresentable, Codable, Hashable, Sendable, Expre
     public static let documentEditComplete = RunEventType(rawValue: "document.edit_complete")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [RunEventType] = [.runCreated, .runStarted, .runCompleted, .runFailed, .runCancelled, .runTimeout, .runGuardrailBlocked, .runAwaitingApproval, .runAwaitingInput, .runInputReceived, .runApproved, .runRejected, .runCheckpoint, .runPaused, .runResumed, .runRestored, .runAffect, .llmRequest, .llmResponse, .llmError, .llmThinking, .llmChunk, .llmTimeout, .llmFallback, .stepPlan, .stepAct, .stepEvaluate, .stepThinking, .toolCall, .toolResult, .toolError, .toolTimeout, .guardrailCheck, .guardrailViolation, .guardrailCustomCheck, .guardrailCustomViolation, .memoryRetrieval, .memoryExtraction, .memoryStored, .memoryEvicted, .sessionContextCompacted, .sessionCreated, .sessionClosed, .teamMessage, .teamRoundStart, .teamRoundEnd, .teamDelegate, .teamBroadcast, .teamMerge, .teamHandoff, .childRunCompleted, .childRunFailed, .initiativeTickStart, .initiativeTickEnd, .initiativePaused, .initiativeResumed, .initiativeBudgetUpdated, .initiativeEscalation, .initiativeObjectiveUpdated, .circuitBreakerOpened, .circuitBreakerClosed, .circuitBreakerHalfOpen, .streamingStarted, .streamingCompleted, .streamingError, .streamingBufferTruncated, .runStepStarted, .runStepCompleted, .budgetSoftThresholdCrossed, .budgetHardLimitReached, .tenantCreated, .tenantSuspended, .tenantPurged, .configUpdated, .webhookDelivered, .webhookFailed, .cronFired, .agentVersionCreated, .agentRollback, .mcpServerLog, .orchestrationStarted, .orchestrationPlanned, .orchestrationReplanned, .orchestrationTaskStarted, .orchestrationTaskCompleted, .orchestrationTaskFailed, .orchestrationCheckpoint, .orchestrationPolicyViolation, .orchestrationQualityReport, .orchestrationCompleted, .orchestrationFailed, .graphAgentSpawned, .graphAgentTerminated, .graphTaskDelegated, .graphEdgeAdded, .graphEdgeRemoved, .planCreated, .planUpdated, .planSubGoalCompleted, .planSubGoalAbandoned, .mcpToolCalled, .mcpServerConnected, .mcpServerDisconnected, .a2aTaskSent, .a2aTaskReceived, .memoryCompressed, .capabilityBestAgentSelected, .identityCreated, .identityRotated, .messageSigned, .messageVerified, .messageReplayBlocked, .constitutionBootstrapped, .constitutionAmended, .constitutionCheckPassed, .constitutionCheckBlocked, .constitutionViolation, .ledgerAppended, .ledgerIntegrityChecked, .permissionChecked, .permissionDenied, .permissionSpawnBlocked, .attestationCreated, .attestationVerified, .attestationInvalid, .arbitrationCaseOpened, .arbitrationRulingSubmitted, .arbitrationAppealFiled, .votingProposalCreated, .votingBallotCast, .votingTallied, .votingVetoed, .resourceSpent, .resourceEarned, .resourceTransferred, .resourceInsufficient, .ambassadorVetoIssued, .ambassadorRequestSubmitted, .builderDesignSubmitted, .builderDesignApproved, .builderDesignSpawned, .emergencySafeModeActivated, .emergencySafeModeDeactivated, .emergencyDeadlockDetected, .goalSelfFormulated, .goalApproved, .improvementProposed, .improvementSandboxTested, .improvementApplied, .collectiveInsightPublished, .collectiveInsightsRetrieved, .collectiveReviewRequested, .collectivePollCreated, .collectiveAgentRated, .collectiveFeedbackRequested, .collectiveReflectionCompleted, .collectiveApproachesCompared, .collectiveLessonLogged, .collectiveTeamFormed, .collectiveTeamJoined, .collectiveTeamLeft, .collectiveTeamBroadcast, .collectiveSpecialistRequested, .collectiveBudgetRequested, .collectiveTokensTransferred, .collectiveTaskPosted, .collectiveBidPlaced, .collectiveBidAccepted, .collectiveCostReported, .sensorURLWatchCreated, .sensorRssWatchCreated, .sensorWebhookListenerCreated, .sensorCheckScheduled, .sensorEventSubscriptionCreated, .sensorTriggered, .collectiveReportPresented, .collectiveEscalation, .collectiveAnomalyReported, .collectiveHumanOverride, .collectiveCollectivePaused, .collectiveVerificationRequested, .strategyCreated, .strategyKpiUpdated, .documentEditStart, .documentEditChunk, .documentEditComplete]
+    public static let knownValues: [RunEventType] = [.runCreated, .runStarted, .runCompleted, .runFailed, .runCancelled, .runTimeout, .runGuardrailBlocked, .runAwaitingApproval, .runAwaitingInput, .runInputReceived, .runApproved, .runRejected, .runCheckpoint, .runPaused, .runResumed, .runRestored, .runAffect, .llmRequest, .llmResponse, .llmError, .llmThinking, .llmChunk, .llmTimeout, .llmFallback, .stepPlan, .stepAct, .stepEvaluate, .stepThinking, .toolCall, .toolResult, .toolError, .toolTimeout, .guardrailCheck, .guardrailViolation, .guardrailCustomCheck, .guardrailCustomViolation, .memoryRetrieval, .memoryExtraction, .memoryStored, .memoryEvicted, .sessionContextCompacted, .sessionContext, .sessionCreated, .sessionClosed, .teamMessage, .teamRoundStart, .teamRoundEnd, .teamDelegate, .teamBroadcast, .teamMerge, .teamHandoff, .childRunCompleted, .childRunFailed, .initiativeTickStart, .initiativeTickEnd, .initiativePaused, .initiativeResumed, .initiativeBudgetUpdated, .initiativeEscalation, .initiativeObjectiveUpdated, .circuitBreakerOpened, .circuitBreakerClosed, .circuitBreakerHalfOpen, .streamingStarted, .streamingCompleted, .streamingError, .streamingBufferTruncated, .runStepStarted, .runStepCompleted, .budgetSoftThresholdCrossed, .budgetHardLimitReached, .tenantCreated, .tenantSuspended, .tenantPurged, .configUpdated, .webhookDelivered, .webhookFailed, .cronFired, .agentVersionCreated, .agentRollback, .mcpServerLog, .orchestrationStarted, .orchestrationPlanned, .orchestrationReplanned, .orchestrationTaskStarted, .orchestrationTaskCompleted, .orchestrationTaskFailed, .orchestrationCheckpoint, .orchestrationPolicyViolation, .orchestrationQualityReport, .orchestrationCompleted, .orchestrationFailed, .graphAgentSpawned, .graphAgentTerminated, .graphTaskDelegated, .graphEdgeAdded, .graphEdgeRemoved, .planCreated, .planUpdated, .planSubGoalCompleted, .planSubGoalAbandoned, .mcpToolCalled, .mcpServerConnected, .mcpServerDisconnected, .a2aTaskSent, .a2aTaskReceived, .memoryCompressed, .capabilityBestAgentSelected, .identityCreated, .identityRotated, .messageSigned, .messageVerified, .messageReplayBlocked, .constitutionBootstrapped, .constitutionAmended, .constitutionCheckPassed, .constitutionCheckBlocked, .constitutionViolation, .ledgerAppended, .ledgerIntegrityChecked, .permissionChecked, .permissionDenied, .permissionSpawnBlocked, .attestationCreated, .attestationVerified, .attestationInvalid, .arbitrationCaseOpened, .arbitrationRulingSubmitted, .arbitrationAppealFiled, .votingProposalCreated, .votingBallotCast, .votingTallied, .votingVetoed, .resourceSpent, .resourceEarned, .resourceTransferred, .resourceInsufficient, .ambassadorVetoIssued, .ambassadorRequestSubmitted, .builderDesignSubmitted, .builderDesignApproved, .builderDesignSpawned, .emergencySafeModeActivated, .emergencySafeModeDeactivated, .emergencyDeadlockDetected, .goalSelfFormulated, .goalApproved, .improvementProposed, .improvementSandboxTested, .improvementApplied, .collectiveInsightPublished, .collectiveInsightsRetrieved, .collectiveReviewRequested, .collectivePollCreated, .collectiveAgentRated, .collectiveFeedbackRequested, .collectiveReflectionCompleted, .collectiveApproachesCompared, .collectiveLessonLogged, .collectiveTeamFormed, .collectiveTeamJoined, .collectiveTeamLeft, .collectiveTeamBroadcast, .collectiveSpecialistRequested, .collectiveBudgetRequested, .collectiveTokensTransferred, .collectiveTaskPosted, .collectiveBidPlaced, .collectiveBidAccepted, .collectiveCostReported, .sensorURLWatchCreated, .sensorRssWatchCreated, .sensorWebhookListenerCreated, .sensorCheckScheduled, .sensorEventSubscriptionCreated, .sensorTriggered, .collectiveReportPresented, .collectiveEscalation, .collectiveAnomalyReported, .collectiveHumanOverride, .collectiveCollectivePaused, .collectiveVerificationRequested, .strategyCreated, .strategyKpiUpdated, .documentEditStart, .documentEditChunk, .documentEditComplete]
 }
 
 /// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
@@ -40187,6 +40938,9 @@ public struct RunMetrics: Codable, Hashable, Sendable {
     public var inputTokens: Int?
     public var outputTokens: Int?
     public var thinkingTokens: Int?
+    /// Prompt tokens served from the provider's prefix cache — a subset of `input_tokens`. Present
+    /// only when the provider reports it.
+    public var cachedTokens: Int?
     public var toolCallsCount: Int?
     public var llmCallsCount: Int?
     public var guardrailChecks: Int?
@@ -40196,13 +40950,14 @@ public struct RunMetrics: Codable, Hashable, Sendable {
     /// Estimated total cost in USD
     public var totalCostUsd: Double?
 
-    public init(pricingConfidence: String? = nil, durationMs: Double? = nil, stepsCount: Int? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, thinkingTokens: Int? = nil, toolCallsCount: Int? = nil, llmCallsCount: Int? = nil, guardrailChecks: Int? = nil, guardrailViolations: Int? = nil, memoryRetrievals: Int? = nil, memoryExtractions: Int? = nil, totalCostUsd: Double? = nil) {
+    public init(pricingConfidence: String? = nil, durationMs: Double? = nil, stepsCount: Int? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, thinkingTokens: Int? = nil, cachedTokens: Int? = nil, toolCallsCount: Int? = nil, llmCallsCount: Int? = nil, guardrailChecks: Int? = nil, guardrailViolations: Int? = nil, memoryRetrievals: Int? = nil, memoryExtractions: Int? = nil, totalCostUsd: Double? = nil) {
         self.pricingConfidence = pricingConfidence
         self.durationMs = durationMs
         self.stepsCount = stepsCount
         self.inputTokens = inputTokens
         self.outputTokens = outputTokens
         self.thinkingTokens = thinkingTokens
+        self.cachedTokens = cachedTokens
         self.toolCallsCount = toolCallsCount
         self.llmCallsCount = llmCallsCount
         self.guardrailChecks = guardrailChecks
@@ -40219,6 +40974,7 @@ public struct RunMetrics: Codable, Hashable, Sendable {
         case inputTokens = "input_tokens"
         case outputTokens = "output_tokens"
         case thinkingTokens = "thinking_tokens"
+        case cachedTokens = "cached_tokens"
         case toolCallsCount = "tool_calls_count"
         case llmCallsCount = "llm_calls_count"
         case guardrailChecks = "guardrail_checks"
@@ -41815,6 +42571,63 @@ public struct SessionBranchStatus: RawRepresentable, Codable, Hashable, Sendable
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [SessionBranchStatus] = [.active, .abandoned, .merged]
+}
+
+/// How full the agent's context is — the chat header's bar, for every agent. Written after each
+/// run of the session (event `session.context`, before `run.completed`). Unknown numbers are
+/// null, never 0: a hired Claude Code does not report its context. Since 2026-10-15.
+public struct SessionContext: Codable, Hashable, Sendable {
+    /// The model's context window.
+    public var windowTokens: Int?
+    /// Tokens the agent's latest model call was sent.
+    public var usedTokens: Int?
+    /// Whole percent, only when both numbers are known; 1–100 (at least 1 when anything is used).
+    /// Show as served.
+    public var percent: Int?
+    /// `model`: measured from the platform's own model call; `agent`: reported by a bridge or hired
+    /// agent.
+    public var source: SessionContextSource
+    public var updatedAt: String?
+
+    public init(windowTokens: Int? = nil, usedTokens: Int? = nil, percent: Int? = nil, source: SessionContextSource, updatedAt: String? = nil) {
+        self.windowTokens = windowTokens
+        self.usedTokens = usedTokens
+        self.percent = percent
+        self.source = source
+        self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case windowTokens = "window_tokens"
+        case usedTokens = "used_tokens"
+        case percent = "percent"
+        case source = "source"
+        case updatedAt = "updated_at"
+    }
+}
+
+/// `model`: measured from the platform's own model call; `agent`: reported by a bridge or hired
+/// agent.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct SessionContextSource: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let model = SessionContextSource(rawValue: "model")
+    public static let agent = SessionContextSource(rawValue: "agent")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [SessionContextSource] = [.model, .agent]
 }
 
 /// `SessionExport` model.
@@ -45023,8 +45836,10 @@ public struct TenantInbox: Codable, Hashable, Sendable {
     public var counts: TenantInboxCounts
     public var items: [InboxItem]
     /// Mission objectives held at `awaiting_review`, oldest first — answer each with `POST
-    /// /missions/{mission_id}/objectives/{objective_id}/review`. `unsourced_links` counts links in
-    /// the result that no tool produced. Since 2026-10-12.
+    /// /missions/{mission_id}/objectives/{objective_id}/review`. A draft whose mission has ended
+    /// (`completed`, `failed`, `aborted`) is left out since 2026-10-15: nothing is left to accept
+    /// it into; a stopped mission shows in the overview's `problems.missions`. `unsourced_links`
+    /// counts links in the result that no tool produced. Since 2026-10-12.
     public var reviews: [TenantInboxReview]?
     /// Company changes waiting for a person, newest first — open with `GET
     /// /tenants/me/proposals/{proposal_id}`, decide with `…/apply` or `…/reject`. Since 2026-10-12.
@@ -45151,17 +45966,26 @@ public struct TenantInboxProposalProposedBy: Codable, Hashable, Sendable {
 public struct TenantInboxReview: Codable, Hashable, Sendable {
     public var objectiveId: String?
     public var missionId: String?
+    /// The objective's own name — for a mission step, the step (`Draft`).
     public var title: String?
+    /// The result's first line without markdown markers, at most 120 characters — a better card
+    /// heading than `title`. Null when the result has no text. Since 2026-10-15.
+    public var headline: String?
+    /// At most 200 characters, cut at a line or word boundary with `…` when cut. The whole text:
+    /// `GET /missions/{mission_id}/objectives` → `output_summary`.
     public var summary: String?
+    public var summaryTruncated: Bool?
     public var revisions: Int?
     public var waitingSince: String?
     public var unsourcedLinks: Int?
 
-    public init(objectiveId: String? = nil, missionId: String? = nil, title: String? = nil, summary: String? = nil, revisions: Int? = nil, waitingSince: String? = nil, unsourcedLinks: Int? = nil) {
+    public init(objectiveId: String? = nil, missionId: String? = nil, title: String? = nil, headline: String? = nil, summary: String? = nil, summaryTruncated: Bool? = nil, revisions: Int? = nil, waitingSince: String? = nil, unsourcedLinks: Int? = nil) {
         self.objectiveId = objectiveId
         self.missionId = missionId
         self.title = title
+        self.headline = headline
         self.summary = summary
+        self.summaryTruncated = summaryTruncated
         self.revisions = revisions
         self.waitingSince = waitingSince
         self.unsourcedLinks = unsourcedLinks
@@ -45171,7 +45995,9 @@ public struct TenantInboxReview: Codable, Hashable, Sendable {
         case objectiveId = "objective_id"
         case missionId = "mission_id"
         case title = "title"
+        case headline = "headline"
         case summary = "summary"
+        case summaryTruncated = "summary_truncated"
         case revisions = "revisions"
         case waitingSince = "waiting_since"
         case unsourcedLinks = "unsourced_links"
@@ -45454,7 +46280,8 @@ public struct TenantOverviewRunsRecentItem: Codable, Hashable, Sendable {
     /// say by matching English in `error`.
     public var errorCode: String?
     /// Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`,
-    /// `limit_usd`/`spent_usd`, `limit_ms`/`elapsed_ms`. See `Run.error_details`.
+    /// `limit_usd`/`spent_usd`, `limit_ms`/`elapsed_ms`,
+    /// `limit_tokens`/`used_tokens`/`partial_response`. See `Run.error_details`.
     public var errorDetails: JSONObject?
     /// Passed through from the run record. Absent for platform-dispatched cloud runs; `bridge` is
     /// the only value the platform writes (run-dispatch.ts, bridge.ts); `async` only echoes what a
@@ -48131,6 +48958,9 @@ public struct UpdateAdminOAuthIdentityConfigRequest: Codable, Hashable, Sendable
     public var appleServicesId: String?
     public var appleTeamId: String?
     public var appleBundleId: String?
+    /// A bare host (`app.example.com` — admits its `/auth/callback` paths) or an exact https URL
+    /// with a path and no query, fragment or credentials (`https://app.example.com/auth/handoff` —
+    /// admits that path only). Any other entry is 422 and nothing is written.
     public var oauthReturnToHosts: [String]?
 
     public init(appleServicesId: String? = nil, appleTeamId: String? = nil, appleBundleId: String? = nil, oauthReturnToHosts: [String]? = nil) {
@@ -52424,14 +53254,27 @@ public struct WebhookSubscription: Codable, Hashable, Sendable {
     public var events: [String]
     public var status: WebhookSubscriptionStatus
     public var createdAt: String?
+    public var updatedAt: String?
+    /// Consecutive failed deliveries; reset by a success.
+    public var failureCount: Int?
+    /// When the latest delivery failed. Absent when none has.
+    public var lastFailureAt: String?
+    /// The HMAC signing secret. Returned in full ONCE, on `POST /webhooks` (201) — store it then.
+    /// Every read (`GET /webhooks`, `GET /webhooks/{webhookId}`) answers the literal
+    /// `"[redacted]"`.
+    public var secret: String?
 
-    public init(webhookId: String, tenantId: String? = nil, url: String, events: [String], status: WebhookSubscriptionStatus, createdAt: String? = nil) {
+    public init(webhookId: String, tenantId: String? = nil, url: String, events: [String], status: WebhookSubscriptionStatus, createdAt: String? = nil, updatedAt: String? = nil, failureCount: Int? = nil, lastFailureAt: String? = nil, secret: String? = nil) {
         self.webhookId = webhookId
         self.tenantId = tenantId
         self.url = url
         self.events = events
         self.status = status
         self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.failureCount = failureCount
+        self.lastFailureAt = lastFailureAt
+        self.secret = secret
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -52441,6 +53284,10 @@ public struct WebhookSubscription: Codable, Hashable, Sendable {
         case events = "events"
         case status = "status"
         case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case failureCount = "failure_count"
+        case lastFailureAt = "last_failure_at"
+        case secret = "secret"
     }
 }
 
