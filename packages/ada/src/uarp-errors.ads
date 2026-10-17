@@ -33,6 +33,9 @@ package UARP.Errors is
       --  the sentence for a person and can change; this cannot. Every other
       --  member of the document is in Raw.
       Code           : Text;
+      --  Why, when Code alone does not say: a refused X-Active-Tenant answers
+      --  403 FORBIDDEN with not_a_member or membership_suspended.
+      Reason         : Text;
       --  Read from correlation_id, or from the deprecated correlationId.
       Correlation_Id : Text;
       --  Field-level validation failures, present on 422 responses.

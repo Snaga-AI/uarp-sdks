@@ -594,6 +594,26 @@ test('an extension member reaches the caller beside the code', async () => {
   assert.equal(error.correlationId, '01a13f4a-fb5a-7d99-9d94-910550f34d83');
 });
 
+// batch19 local, unreleased: the 403 a refused X-Active-Tenant answers, captured by the API lane from handleRequest at d6b1c66e5 (2026-10-17). Re-capture from the wire after the deploy.
+const NOT_A_MEMBER_403 =
+  '{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-dcaa-7ae1-9121-78d9959fba18","correlation_id":"01a14a66-dcaa-7ae1-9121-78d9959fba18","code":"FORBIDDEN","reason":"not_a_member"}';
+const MEMBERSHIP_SUSPENDED_403 =
+  '{"type":"about:blank","title":"Forbidden","status":403,"detail":"Your membership in the active tenant requested by X-Active-Tenant is suspended","correlationId":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","correlation_id":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","code":"FORBIDDEN","reason":"membership_suspended"}';
+// Real bytes: the same refusal on production, build d926b90e (2026-10-17), before batch19: no code and no reason.
+const NOT_A_MEMBER_403_D926 =
+  '{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-337b-7324-9a2a-9354a8fc02c6","correlation_id":"01a14a66-337b-7324-9a2a-9354a8fc02c6"}';
+
+test('the reason a tenant refused the caller reaches it, typed', async () => {
+  const notAMember = await apiErrorFor(raw(403, NOT_A_MEMBER_403));
+  assert.equal(notAMember.code, 'FORBIDDEN');
+  assert.equal(notAMember.reason, 'not_a_member');
+  const suspended = await apiErrorFor(raw(403, MEMBERSHIP_SUSPENDED_403));
+  assert.equal(suspended.reason, 'membership_suspended');
+  const before = await apiErrorFor(raw(403, NOT_A_MEMBER_403_D926));
+  assert.equal(before.reason, undefined);
+  assert.equal(before.code, undefined);
+});
+
 // Real bytes: the 4-byte body `null` that GET /agents/{id}/schedule answered
 // the canon tenant on 2026-10-15 (build b108e9a9) for an agent with no schedule.
 // The method is typed `Schedule | null`; this proves the runtime agrees.

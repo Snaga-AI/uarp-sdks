@@ -93,12 +93,20 @@ Two more things came out of reading real error bodies:
   and `retry_after`. Rust already had them in `problem.extra` and TypeScript in
   the index signature. Swift's `APIError` also gains `body`, the raw bytes,
   which Kotlin's `ApiException` and Ada's `Problem.Raw` already had.
+- **`reason`, typed.** A refused `X-Active-Tenant` will answer 403 `FORBIDDEN`
+  with `reason` set to `not_a_member` or `membership_suspended`, which is how a
+  client tells a lost company from any other refusal (the macOS lane's W33).
+  `error.reason` / `api.reason()` / `Problem.Reason` read it in all five. It is
+  read from the member, not decoded as a field, and is absent when the member
+  is absent or not a string, so a different shape cannot fail the whole error.
 
 What can break:
 
 - **Rust:** `Problem` gains `code` and `correlation_id_legacy`, so an
   exhaustive struct literal needs them, or `..Default::default()`.
   `problem.correlation_id` now holds `correlation_id`.
+- **Ada:** `Problem` gains `Code` and `Reason`, so a record aggregate
+  that names every component needs them, or `others => <>`.
 - **Kotlin:** `Problem.correlationId` now reads `correlation_id`. A server that
   sends only the old spelling, as the 501 above does, leaves it null and fills
   `legacyCorrelationId`. `ApiException.correlationId` reads both.
@@ -113,6 +121,15 @@ the 422 the session route answers for a closed session, with
 lane captured those bytes from the deployed handler, since reproducing the
 refusal on canon would take a write. Dropping the collected members turns 1
 test red in Swift and 1 in Kotlin, out of 63 each.
+
+`reason` is tested on three bodies. Two are the API lane's batch19 bytes,
+captured from `handleRequest` at `d6b1c66e5`, which is not deployed (both
+refusals, to be re-captured from the wire once it is). The third is the
+refusal production answers today at `d926b90e`, with no `code` and no
+`reason`: there `reason` must be absent, and is. Removing the read of `reason`
+turns that one test red in each of TypeScript (1 of 68), Rust (1 of 46),
+Swift (2 assertions in 1 of 65) and Kotlin (1 of 65), and leaves every other
+test green. Ada's check is written, not run.
 
 ### Changed — build `b108e9a9`: eight types follow the wire
 

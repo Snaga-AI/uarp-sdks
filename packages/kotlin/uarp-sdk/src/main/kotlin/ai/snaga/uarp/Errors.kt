@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 
 /** RFC 9457 problem document returned by the API on failure. */
 @Serializable
@@ -95,6 +96,14 @@ public class ApiException(
     /** The stable code to switch on, e.g. `SESSION_NOT_ACTIVE`. */
     public val code: String?
         get() = problem.code
+
+    /**
+     * Why, when the code alone does not say: a refused `X-Active-Tenant`
+     * answers 403 `FORBIDDEN` with `not_a_member` or `membership_suspended`.
+     * The problem's `reason` member, when it is a string.
+     */
+    public val reason: String?
+        get() = (problem.extensions["reason"] as? JsonPrimitive)?.takeIf { it.isString }?.content
 
     /**
      * Request identifier for support tickets: `correlation_id`, its deprecated

@@ -395,6 +395,7 @@ package body UARP.Client is
          Result.Status := Natural (Integer_Value'Max (0, JS.Get_Integer (Document, "status")));
          Result.Detail := JS.Get_Text (Document, "detail");
          Result.Code := JS.Get_Text (Document, "code");
+         Result.Reason := JS.Get_Text (Document, "reason");
          Result.Correlation_Id := JS.Get_Text (Document, "correlation_id");
          if SU.Length (Result.Correlation_Id) = 0 then
             Result.Correlation_Id := JS.Get_Text (Document, "correlationId");

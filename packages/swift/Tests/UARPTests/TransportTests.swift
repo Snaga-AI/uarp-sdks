@@ -625,6 +625,24 @@ final class ProblemDecodingTests: XCTestCase {
         XCTAssertEqual(problem.correlationId, "01a13f4a-fb5a-7d99-9d94-910550f34d83")
     }
 
+    /// batch19 local, unreleased: the 403 a refused X-Active-Tenant answers, captured by the API lane from handleRequest at d6b1c66e5 (2026-10-17). Re-capture from the wire after the deploy.
+    static let notAMember403 = #"{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-dcaa-7ae1-9121-78d9959fba18","correlation_id":"01a14a66-dcaa-7ae1-9121-78d9959fba18","code":"FORBIDDEN","reason":"not_a_member"}"#
+    static let membershipSuspended403 = #"{"type":"about:blank","title":"Forbidden","status":403,"detail":"Your membership in the active tenant requested by X-Active-Tenant is suspended","correlationId":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","correlation_id":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","code":"FORBIDDEN","reason":"membership_suspended"}"#
+    /// Real bytes: the same refusal on production, build d926b90e (2026-10-17), before batch19: no code and no reason.
+    static let notAMember403D926 = #"{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-337b-7324-9a2a-9354a8fc02c6","correlation_id":"01a14a66-337b-7324-9a2a-9354a8fc02c6"}"#
+
+    func testTheReasonATenantRefusedTheCallerReachesItTyped() {
+        func error(_ body: String) -> APIError {
+            let data = Data(body.utf8)
+            return APIError(status: 403, problem: UARPClient.problem(from: data), headers: [:], body: data)
+        }
+        XCTAssertEqual(error(Self.notAMember403).code, "FORBIDDEN")
+        XCTAssertEqual(error(Self.notAMember403).reason, "not_a_member")
+        XCTAssertEqual(error(Self.membershipSuspended403).reason, "membership_suspended")
+        XCTAssertNil(error(Self.notAMember403D926).reason)
+        XCTAssertNil(error(Self.notAMember403D926).code)
+    }
+
     func testTheRequestIdHeaderIsTheFallback() {
         let data = Data(#"{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}"#.utf8)
         let error = APIError(status: 404, problem: UARPClient.problem(from: data), headers: ["x-request-id": "req-42"])

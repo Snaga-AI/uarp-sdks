@@ -125,6 +125,11 @@ public struct APIError: Error, Sendable, CustomStringConvertible {
     /// The stable code to switch on, e.g. `SESSION_NOT_ACTIVE`.
     public var code: String? { problem.code }
 
+    /// Why, when the code alone does not say: a refused `X-Active-Tenant`
+    /// answers 403 `FORBIDDEN` with `not_a_member` or `membership_suspended`.
+    /// The problem's `reason` member, when it is a string.
+    public var reason: String? { problem.extensions["reason"]?.stringValue }
+
     public var kind: APIErrorKind {
         switch status {
         case 400: return .badRequest

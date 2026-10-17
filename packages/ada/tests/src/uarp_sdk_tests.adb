@@ -352,6 +352,32 @@ procedure UARP_SDK_Tests is
                          & """correlationId"":""01a13f4a-fb5a-7d99-9d94-910550f34d83"","
                          & """correlation_id"":""01a13f4a-fb5a-7d99-9d94-910550f34d83"","
                          & """code"":""SESSION_NOT_ACTIVE"",""session_status"":""closed""}").Code, "SESSION_NOT_ACTIVE");
+         --  batch19 local, unreleased: the 403 a refused X-Active-Tenant answers,
+         --  captured by the API lane from handleRequest at d6b1c66e5
+         --  (2026-10-17). Re-capture from the wire after the deploy.
+         Check_Equal ("not_a_member is read",
+                      +UARP.Client.To_Problem
+                        ("{""type"":""about:blank"",""title"":""Forbidden"",""status"":403,"
+                         & """detail"":""You are not a member of the active tenant requested by X-Active-Tenant"","
+                         & """correlationId"":""01a14a66-dcaa-7ae1-9121-78d9959fba18"","
+                         & """correlation_id"":""01a14a66-dcaa-7ae1-9121-78d9959fba18"","
+                         & """code"":""FORBIDDEN"",""reason"":""not_a_member""}").Reason, "not_a_member");
+         Check_Equal ("membership_suspended is read",
+                      +UARP.Client.To_Problem
+                        ("{""type"":""about:blank"",""title"":""Forbidden"",""status"":403,"
+                         & """detail"":""Your membership in the active tenant requested by X-Active-Tenant is suspended"","
+                         & """correlationId"":""01a14a66-dcfc-7a98-9221-f40af5b6cd0b"","
+                         & """correlation_id"":""01a14a66-dcfc-7a98-9221-f40af5b6cd0b"","
+                         & """code"":""FORBIDDEN"",""reason"":""membership_suspended""}").Reason,
+                      "membership_suspended");
+         --  Real bytes: the same refusal on production, build d926b90e
+         --  (2026-10-17), before batch19: no code and no reason.
+         Check_Equal ("no reason before batch19",
+                      +UARP.Client.To_Problem
+                        ("{""type"":""about:blank"",""title"":""Forbidden"",""status"":403,"
+                         & """detail"":""You are not a member of the active tenant requested by X-Active-Tenant"","
+                         & """correlationId"":""01a14a66-337b-7324-9a2a-9354a8fc02c6"","
+                         & """correlation_id"":""01a14a66-337b-7324-9a2a-9354a8fc02c6""}").Reason, "");
       end;
       Check ("404 classifies as Not_Found", Classify (404) = Not_Found);
       Check ("429 classifies as Rate_Limit", Classify (429) = Rate_Limit);

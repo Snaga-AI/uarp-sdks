@@ -1491,6 +1491,24 @@ async fn an_extension_member_reaches_the_caller_beside_the_code() {
     assert_eq!(api.problem.extra.len(), 1, "{:?}", api.problem.extra);
 }
 
+/// batch19 local, unreleased: the 403 a refused X-Active-Tenant answers, captured by the API lane from handleRequest at d6b1c66e5 (2026-10-17). Re-capture from the wire after the deploy.
+const NOT_A_MEMBER_403: &str = r#"{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-dcaa-7ae1-9121-78d9959fba18","correlation_id":"01a14a66-dcaa-7ae1-9121-78d9959fba18","code":"FORBIDDEN","reason":"not_a_member"}"#;
+const MEMBERSHIP_SUSPENDED_403: &str = r#"{"type":"about:blank","title":"Forbidden","status":403,"detail":"Your membership in the active tenant requested by X-Active-Tenant is suspended","correlationId":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","correlation_id":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","code":"FORBIDDEN","reason":"membership_suspended"}"#;
+/// Real bytes: the same refusal on production, build d926b90e (2026-10-17), before batch19: no code and no reason.
+const NOT_A_MEMBER_403_D926: &str = r#"{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-337b-7324-9a2a-9354a8fc02c6","correlation_id":"01a14a66-337b-7324-9a2a-9354a8fc02c6"}"#;
+
+#[tokio::test]
+async fn the_reason_a_tenant_refused_the_caller_reaches_it_typed() {
+    let not_a_member = api_error_for(403, NOT_A_MEMBER_403, None).await;
+    assert_eq!(not_a_member.code(), Some("FORBIDDEN"));
+    assert_eq!(not_a_member.reason(), Some("not_a_member"));
+    let suspended = api_error_for(403, MEMBERSHIP_SUSPENDED_403, None).await;
+    assert_eq!(suspended.reason(), Some("membership_suspended"));
+    let before = api_error_for(403, NOT_A_MEMBER_403_D926, None).await;
+    assert_eq!(before.reason(), None);
+    assert_eq!(before.code(), None);
+}
+
 /// Real bytes: the 4-byte body `null` that GET /agents/{id}/schedule answered the canon tenant on 2026-10-15 (build b108e9a9) for an agent with no schedule.
 /// The document says so ("null in response body when no schedule is set"), and
 /// the SDK read it as a `Schedule` and failed: `invalid type: null, expected

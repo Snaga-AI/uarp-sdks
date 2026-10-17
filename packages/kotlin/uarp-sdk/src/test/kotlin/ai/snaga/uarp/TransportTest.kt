@@ -1095,6 +1095,22 @@ class ProblemDecodingTest {
         assertEquals(mapOf("session_status" to kotlinx.serialization.json.JsonPrimitive("closed")), error.problem.extensions)
     }
 
+    /** batch19 local, unreleased: the 403 a refused X-Active-Tenant answers, captured by the API lane from handleRequest at d6b1c66e5 (2026-10-17). Re-capture from the wire after the deploy. */
+    private val notAMember403 = """{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-dcaa-7ae1-9121-78d9959fba18","correlation_id":"01a14a66-dcaa-7ae1-9121-78d9959fba18","code":"FORBIDDEN","reason":"not_a_member"}"""
+    private val membershipSuspended403 = """{"type":"about:blank","title":"Forbidden","status":403,"detail":"Your membership in the active tenant requested by X-Active-Tenant is suspended","correlationId":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","correlation_id":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","code":"FORBIDDEN","reason":"membership_suspended"}"""
+    /** Real bytes: the same refusal on production, build d926b90e (2026-10-17), before batch19: no code and no reason. */
+    private val notAMember403D926 = """{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-337b-7324-9a2a-9354a8fc02c6","correlation_id":"01a14a66-337b-7324-9a2a-9354a8fc02c6"}"""
+
+    @Test
+    fun `the reason a tenant refused the caller reaches it, typed`() {
+        fun error(body: String) = ApiException(403, parseProblem(body), emptyMap(), body)
+        assertEquals("FORBIDDEN", error(notAMember403).code)
+        assertEquals("not_a_member", error(notAMember403).reason)
+        assertEquals("membership_suspended", error(membershipSuspended403).reason)
+        assertEquals(null, error(notAMember403D926).reason)
+        assertEquals(null, error(notAMember403D926).code)
+    }
+
     @Test
     fun `the request id header is the fallback`() {
         val body = """{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}"""

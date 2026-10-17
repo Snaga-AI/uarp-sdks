@@ -162,6 +162,13 @@ impl ApiError {
         self.problem.code.as_deref()
     }
 
+    /// Why, when the code alone does not say: a refused `X-Active-Tenant`
+    /// answers 403 `FORBIDDEN` with `not_a_member` or `membership_suspended`.
+    /// The problem's `reason` member, when it is a string.
+    pub fn reason(&self) -> Option<&str> {
+        self.problem.extra.get("reason").and_then(serde_json::Value::as_str)
+    }
+
     /// Request identifier for support tickets: `correlation_id`, its deprecated
     /// spelling, or the `X-Request-Id` header the server sends.
     pub fn correlation_id(&self) -> Option<&str> {

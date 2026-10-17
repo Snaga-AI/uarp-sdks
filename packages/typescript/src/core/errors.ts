@@ -55,6 +55,12 @@ export class APIError extends UarpError {
   readonly correlationId?: string;
   /** The stable code to switch on, e.g. `SESSION_NOT_ACTIVE`. */
   readonly code?: string;
+  /**
+   * Why, when the code alone does not say: a refused `X-Active-Tenant` answers
+   * 403 `FORBIDDEN` with `not_a_member` or `membership_suspended`. The
+   * problem's `reason` member, when it is a string.
+   */
+  readonly reason?: string;
   readonly requestId?: string;
 
   constructor(status: number, problem: ProblemDocument, headers: Headers, message?: string) {
@@ -65,6 +71,7 @@ export class APIError extends UarpError {
     this.correlationId =
       problem.correlation_id ?? problem.correlationId ?? headers.get('x-request-id') ?? headers.get('x-correlation-id') ?? undefined;
     this.code = typeof problem.code === 'string' ? problem.code : undefined;
+    this.reason = typeof problem.reason === 'string' ? problem.reason : undefined;
     this.requestId = headers.get('x-request-id') ?? undefined;
   }
 
