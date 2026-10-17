@@ -39,6 +39,20 @@ package body UARP.API.Me is
              Options => Options));
    end Export_My_Account;
 
+   function Get_My_Email_Preferences
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_My_Email_Preferences_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/me/email-preferences",
+             Options => Options));
+   end Get_My_Email_Preferences;
+
    function Get_My_Preferences
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -88,6 +102,24 @@ package body UARP.API.Me is
              Idempotent => True,
              Options => Options));
    end Switch_Tenant;
+
+   function Update_My_Email_Preferences
+     (Self : Client_Type;
+      Payload : UARP.Models.Update_My_Email_Preferences_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Update_My_Email_Preferences_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/me/email-preferences",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Update_My_Email_Preferences;
 
    function Update_My_Preferences
      (Self : Client_Type;

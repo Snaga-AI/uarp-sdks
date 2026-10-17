@@ -1759,6 +1759,26 @@ export interface AdminSmtpConfigEnv {
    * Whether a credential is stored. The password itself is never returned by any read.
    */
   has_password?: boolean;
+  /**
+   * The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+   * Empty `user` means none, and that mail goes from the primary sender.
+   */
+  notify?: AdminSmtpConfigEnvNotify;
+  /**
+   * Reply-To on notify mail. Empty means none.
+   */
+  reply_to?: string;
+}
+
+/**
+ * The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+ * Empty `user` means none, and that mail goes from the primary sender.
+ */
+export interface AdminSmtpConfigEnvNotify {
+  user?: string;
+  from?: string;
+  from_name?: string;
+  has_password?: boolean;
 }
 
 /**
@@ -1773,6 +1793,26 @@ export interface AdminSmtpConfigKv {
   /**
    * Whether a credential is stored. The password itself is never returned by any read.
    */
+  has_password?: boolean;
+  /**
+   * The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+   * Empty `user` means none, and that mail goes from the primary sender.
+   */
+  notify?: AdminSmtpConfigKvNotify;
+  /**
+   * Reply-To on notify mail. Empty means none.
+   */
+  reply_to?: string;
+}
+
+/**
+ * The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+ * Empty `user` means none, and that mail goes from the primary sender.
+ */
+export interface AdminSmtpConfigKvNotify {
+  user?: string;
+  from?: string;
+  from_name?: string;
   has_password?: boolean;
 }
 
@@ -2624,9 +2664,11 @@ export interface AgentUpdate {
   context_window_size?: number;
   /**
    * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
-   * their stored values.
+   * their stored values. `null` clears the whole block and a key set to `null` is removed, so
+   * the agent falls back to the platform's limits (since 2026-10-17; before, `null` was 422 and
+   * `{}` changed nothing).
    */
-  resource_limits?: AgentUpdateResourceLimits;
+  resource_limits?: AgentUpdateResourceLimits | null;
   /**
    * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
    * their stored values.
@@ -2948,18 +2990,20 @@ export interface AgentUpdatePublicConfig {
 
 /**
  * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
- * their stored values.
+ * their stored values. `null` clears the whole block and a key set to `null` is removed, so
+ * the agent falls back to the platform's limits (since 2026-10-17; before, `null` was 422 and
+ * `{}` changed nothing).
  */
 export interface AgentUpdateResourceLimits {
-  max_duration_ms?: number;
-  max_steps?: number;
-  max_tool_calls?: number;
-  max_tokens_per_run?: number;
+  max_duration_ms?: number | null;
+  max_steps?: number | null;
+  max_tool_calls?: number | null;
+  max_tokens_per_run?: number | null;
   /**
    * In-run cost ceiling in USD; 0 or absent means no cap from this field (QA B4, 2026-09-23).
    * Negative or non-numeric is 422.
    */
-  max_cost_usd?: number;
+  max_cost_usd?: number | null;
 }
 
 export interface AgentUpdateRiskClassification {
@@ -3150,7 +3194,12 @@ export interface AmbassadorRequest {
   request_id: string;
   tenant_id: string;
   from_agent_id: string;
-  type: AmbassadorRequestType;
+  /**
+   * One of `clarification`, `approval`, `escalation`, `report` for every request written since
+   * 2026-10-17. Not an enum on read: rows stored before then were not validated and can carry
+   * other text (production holds `question` and probe strings).
+   */
+  type: string;
   subject: string;
   body: string;
   status: AmbassadorRequestStatus;
@@ -5693,7 +5742,7 @@ export interface CreateAgentVersionRequest {
 
 export interface CreateAmbassadorRequestRequest {
   from_agent_id: string;
-  type: string;
+  type: AmbassadorRequestType;
   subject: string;
   body: string;
 }
@@ -6185,7 +6234,12 @@ export interface CreateRunRequest {
    * agent.
    */
   version?: number;
-  resource_limits?: JsonObject;
+  /**
+   * This run's limits, laid over the agent's. A key not listed here is refused with 422 naming
+   * the accepted keys (since 2026-10-17; before, it was dropped and the run ran without the cap
+   * the caller meant).
+   */
+  resource_limits?: CreateRunRequestResourceLimits;
   metadata?: JsonObject;
 }
 
@@ -6199,6 +6253,19 @@ export interface CreateRunRequest {
 export interface CreateRunRequestInput {
   message?: string;
   file_ids?: string[];
+}
+
+/**
+ * This run's limits, laid over the agent's. A key not listed here is refused with 422 naming
+ * the accepted keys (since 2026-10-17; before, it was dropped and the run ran without the cap
+ * the caller meant).
+ */
+export interface CreateRunRequestResourceLimits {
+  max_duration_ms?: number;
+  max_steps?: number;
+  max_tool_calls?: number;
+  max_tokens_per_run?: number;
+  max_cost_usd?: number;
 }
 
 export interface CreateSessionAnnotationRequest {
@@ -8735,6 +8802,11 @@ export type GetHealthResponseStatus = 'healthy' | 'degraded' | 'unhealthy';
 
 export const GET_HEALTH_RESPONSE_STATUS_VALUES = ['healthy', 'degraded', 'unhealthy'] as const;
 
+/**
+ * Language of the letter (since 2026-10-17). Without it: the language the person chose before,
+ * else Accept-Language, else English. The browser's language is remembered for later letters
+ * until the person sets one in GET/PUT /api/v1/me/email-preferences.
+ */
 export type GetHireCatalogLocale = 'uk' | 'en';
 
 export const GET_HIRE_CATALOG_LOCALE_VALUES = ['uk', 'en'] as const;
@@ -8816,7 +8888,8 @@ export interface GetMediaUsageResponseVideos {
 }
 
 export interface GetMemoriesByEntityResponse {
-  items?: MemoryEntry[];
+  entries: MemoryEntry[];
+  total: number;
 }
 
 export interface GetMeResponse {
@@ -8842,6 +8915,9 @@ export interface GetMeResponseTenant {
   name: string;
   slug: string;
   plan: string;
+  head_agent_id?: string | null;
+  logo_url?: string | null;
+  shared_workspace_id?: string | null;
 }
 
 export interface GetMeResponseUser {
@@ -8961,6 +9037,22 @@ export interface GetMissionPerformanceResponseReviews {
   avg_revisions: number | null;
 }
 
+export interface GetMyEmailPreferencesResponse {
+  /**
+   * Language of every letter; null until the person or a browser sets it (English then).
+   */
+  locale: string | null;
+  /**
+   * The Monday summary for owners and admins.
+   */
+  weekly_digest: boolean;
+  /**
+   * The day-1 and day-3 letters to a company that has not started.
+   */
+  product_tips: boolean;
+  updated_at?: string;
+}
+
 export interface GetMyHeadAgentTemplateResponse {
   plan: string;
   recommended: GetMyHeadAgentTemplateResponseRecommended;
@@ -8973,6 +9065,12 @@ export const GET_MY_HEAD_AGENT_TEMPLATE_RESPONSE_RECOMMENDED_VALUES = ['basic', 
 
 export interface GetMyHeadAgentTemplateResponseTier {
   tier?: GetMyHeadAgentTemplateResponseTierTier;
+  resource_limits?: GetMyHeadAgentTemplateResponseTierResourceLimits;
+  initial_budget_usd?: number;
+  /**
+   * The tools the tier's Head Agent gets. Empty for a locked tier.
+   */
+  built_in_tools?: string[];
   available?: boolean;
   install_specs?: GetMyHeadAgentTemplateResponseTierInstallSpec[];
   auto_approve_tools?: string[];
@@ -8981,6 +9079,14 @@ export interface GetMyHeadAgentTemplateResponseTier {
 
 export interface GetMyHeadAgentTemplateResponseTierInstallSpec {
   spec_id: string;
+  tool_allowlist?: string[];
+}
+
+export interface GetMyHeadAgentTemplateResponseTierResourceLimits {
+  max_duration_ms?: number;
+  max_steps?: number;
+  max_tokens_per_run?: number;
+  thinking_budget_tokens?: number;
 }
 
 export interface GetMyHeadAgentTemplateResponseTierTier {
@@ -8989,11 +9095,31 @@ export interface GetMyHeadAgentTemplateResponseTierTier {
   description?: string;
   required_plan?: GetMyHeadAgentTemplateResponseTierTierRequiredPlan;
   spec_ids?: string[];
+  /**
+   * Per-SPEC tool names this tier advertises; a SPEC absent here advertises all its tools.
+   */
+  tool_allowlists?: Record<string, string[]>;
+  resource_limits?: GetMyHeadAgentTemplateResponseTierTierResourceLimits;
+  initial_budget_usd?: number;
+  auto_inject_overrides?: GetMyHeadAgentTemplateResponseTierTierAutoInjectOverrides;
+}
+
+export interface GetMyHeadAgentTemplateResponseTierTierAutoInjectOverrides {
+  kb_tools?: boolean;
+  memory_tools?: boolean;
+  core_memory_tools?: boolean;
 }
 
 export type GetMyHeadAgentTemplateResponseTierTierRequiredPlan = 'free' | 'starter' | 'pro';
 
 export const GET_MY_HEAD_AGENT_TEMPLATE_RESPONSE_TIER_TIER_REQUIRED_PLAN_VALUES = ['free', 'starter', 'pro'] as const;
+
+export interface GetMyHeadAgentTemplateResponseTierTierResourceLimits {
+  max_duration_ms?: number;
+  max_steps?: number;
+  max_tokens_per_run?: number;
+  thinking_budget_tokens?: number;
+}
 
 export interface GetPromoStateResponse {
   applied_code: GetPromoStateResponseAppliedCode | null;
@@ -9074,20 +9200,6 @@ export interface GetPublicStateResponse {
    */
   agents: PublicStateAgent[];
 }
-
-export interface GetReadyResponse {
-  status?: GetReadyResponseStatus;
-  timestamp?: string;
-  checks?: GetReadyResponseChecks;
-}
-
-export interface GetReadyResponseChecks {
-  kv?: string;
-}
-
-export type GetReadyResponseStatus = 'ready' | 'not_ready';
-
-export const GET_READY_RESPONSE_STATUS_VALUES = ['ready', 'not_ready'] as const;
 
 export interface GetReconciliationResponse {
   reconciliation: CostReconciliationResult | null;
@@ -9578,8 +9690,26 @@ export type GetTeamChatHistoryResponseChatState = 'IDLE' | 'ADDRESSING' | 'RUNNI
 export const GET_TEAM_CHAT_HISTORY_RESPONSE_CHAT_STATE_VALUES = ['IDLE', 'ADDRESSING', 'RUNNING', 'MERGING', 'AWAITING_USER', 'DONE'] as const;
 
 export interface GetTeamGraphResponse {
+  /**
+   * The graph envelope: ids of its nodes and edges and the CAS `version` every mutation
+   * increments.
+   */
+  graph?: GetTeamGraphResponseGraph;
   nodes?: TeamGraphNode[];
   edges?: TeamGraphEdge[];
+}
+
+/**
+ * The graph envelope: ids of its nodes and edges and the CAS `version` every mutation
+ * increments.
+ */
+export interface GetTeamGraphResponseGraph {
+  team_id: string;
+  node_ids: string[];
+  edge_ids: string[];
+  version: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface GetTeamRunMessagesResponse {
@@ -10115,6 +10245,10 @@ export interface Guardrail {
   phase: GuardrailConfigItemPhase;
   action?: GuardrailAction;
   timeout_ms?: number;
+  /**
+   * Whether a signing secret is set. The secret itself is never answered.
+   */
+  has_secret?: boolean;
   created_at?: string;
 }
 
@@ -10204,7 +10338,76 @@ export interface HealthLiveResponse {
 }
 
 export interface HealthzAliasResponse {
-  status?: string;
+  status?: GetHealthResponseStatus;
+  timestamp?: string;
+  kv_connected?: boolean;
+  uptime_seconds?: number;
+  /**
+   * The API contract version, a DATE STAMP — `2026-09-10` — bumped only on a breaking change,
+   * and the same value the `X-API-Version` RESPONSE header carries. The server does not read a
+   * request header of that name: pinning a date negotiates nothing. Not a release number and not
+   * semver: it cannot be ordered against a semver string, so a client that compares it to one is
+   * wrong in a way that appears to work for as long as both happen to sort the same. Compare it
+   * for equality, or read it as a date. It says nothing about which BUILD is running — for that,
+   * read `build_sha`.
+   */
+  version?: string;
+  /**
+   * The commit this running build was made from, baked in at image build time. This is the only
+   * value on the wire that identifies the deployed code: `version` is the contract stamp and is
+   * constant across deploys, and a restart proves a restart rather than an identity. `"unknown"`
+   * means the image was built without the build argument (a local build, or a deploy predating
+   * this field) and must be read as UNKNOWN, never as a match. Documentation that pins a claim
+   * about platform behaviour can cite it.
+   */
+  build_sha?: string;
+  /**
+   * When the running image was built, ISO-8601 UTC, baked in at image build time next to
+   * `build_sha`. `"unknown"` when the build argument was absent or did not parse as a date. Like
+   * `build_sha` it identifies the BUILD; `version` is the API contract stamp (the
+   * `X-API-Version` header) and does not change between deploys.
+   */
+  build_time?: string;
+  /**
+   * Always 0. Kept for compatibility — there is no resume-parking state: `RunStatus` has no
+   * `waiting_for_resume`, and startup reconciliation FAILS an interrupted run rather than
+   * holding it for resume. It previously reported the queue depth under this name, which reads
+   * as recovery progress on the one endpoint an operator watches during a deploy. Use
+   * `runs_queued` for the queue, and run status for recovery.
+   */
+  pending_resumes?: number;
+  /**
+   * What this build can do, by name — gate a feature on it instead of on a 404. Names are added
+   * when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
+   * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
+   * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
+   * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+   * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+   * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+   * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+   * `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+   * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+   * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+   * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+   * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+   * `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+   * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+   * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+   * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+   * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+   * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+   * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+   * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+   * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+   * /company/versions` AND `POST /company/restore` — there is deliberately no separate
+   * `company_restore`, since a snapshot and the rollback to it ship together.
+   */
+  capabilities?: string[];
+  /**
+   * Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
+   * falls as they are picked up — but it is a queue depth, not a count of recoveries.
+   */
+  runs_queued?: number;
 }
 
 export interface HireAgentRequest {
@@ -10445,9 +10648,11 @@ export interface InboxItem {
   status: string;
   created_at: string | null;
   /**
-   * What the run was asked to do — the first line of its request (message, prompt, text or
-   * instruction), at most 140 characters. Absent when the run carries no text. Since 2026-10-16:
-   * a failed row used to carry only its error, so clients titled the task with it.
+   * What the run was asked to do — the first line of its request (`title` when the platform gave
+   * the run one — an event-started reaction run says "Looking into a failed run of <agent>"
+   * rather than its event envelope — else message, prompt, text or instruction), at most 140
+   * characters. Absent when the run carries no text. Since 2026-10-16: a failed row used to
+   * carry only its error, so clients titled the task with it.
    */
   goal?: string;
   /**
@@ -10687,6 +10892,10 @@ export interface Invite {
   role?: string;
   status?: string;
   tenant_id?: string;
+  /**
+   * When the invite was last re-sent. Absent until the first resend.
+   */
+  last_sent_at?: string;
 }
 
 export interface InviteUserRequest {
@@ -10707,6 +10916,10 @@ export interface InviteUserResponse {
   role?: string;
   status?: string;
   tenant_id?: string;
+  /**
+   * When the invite was last re-sent. Absent until the first resend.
+   */
+  last_sent_at?: string;
   email_sent: boolean;
 }
 
@@ -11330,6 +11543,7 @@ export interface ListAgentMCPServersResponse {
 
 export interface ListAgentScorersResponse {
   scorers?: AgentScorer[];
+  total?: number;
 }
 
 export interface ListAgentsResponse {
@@ -11756,6 +11970,17 @@ export interface ListModelsResponseDataItem {
   object: 'model';
   created?: number;
   owned_by?: string;
+  permission?: JsonValue[];
+  root?: string;
+  parent?: string | null;
+  /**
+   * The agent's or team's name. Absent when it has none.
+   */
+  display_name?: string;
+  /**
+   * Context window: the agent model's `max_context_tokens`, else 128000.
+   */
+  max_tokens?: number;
 }
 
 export interface ListMyTenantsResponse {
@@ -12325,6 +12550,10 @@ export interface ListWebhookDeliveriesResponse {
   webhook_id: string;
   deliveries: WebhookDeliveryAttempt[];
   total: number;
+  /**
+   * True when the scan hit its bound, so older deliveries exist that this list does not count.
+   */
+  truncated?: boolean;
   /**
    * Present only when `limit` was sent: whether another page follows.
    */
@@ -15627,6 +15856,7 @@ export interface PublicTenantAgent {
 export interface PublicTenantStats {
   total_runs: number;
   total_agents: number;
+  total_ratings?: number;
   avg_rating: number;
 }
 
@@ -16174,9 +16404,9 @@ export interface RepairAgentRecordsRequest {
   ops?: RepairAgentRecordsRequestOp[];
 }
 
-export type RepairAgentRecordsRequestOp = 'head_token_caps' | 'head_names' | 'head_pod_descriptions' | 'initial_versions' | 'orphan_schedules';
+export type RepairAgentRecordsRequestOp = 'head_token_caps' | 'head_names' | 'head_pod_descriptions' | 'initial_versions' | 'orphan_schedules' | 'cancel_lessons';
 
-export const REPAIR_AGENT_RECORDS_REQUEST_OP_VALUES = ['head_token_caps', 'head_names', 'head_pod_descriptions', 'initial_versions', 'orphan_schedules'] as const;
+export const REPAIR_AGENT_RECORDS_REQUEST_OP_VALUES = ['head_token_caps', 'head_names', 'head_pod_descriptions', 'initial_versions', 'orphan_schedules', 'cancel_lessons'] as const;
 
 export interface RepairAgentRecordsResponse {
   dry_run: boolean;
@@ -16186,7 +16416,12 @@ export interface RepairAgentRecordsResponse {
   head_pod_descriptions: RepairAgentRecordsResponseHeadPodDescriptions;
   initial_versions: RepairAgentRecordsResponseInitialVersions;
   orphan_schedules: RepairAgentRecordsResponseOrphanSchedules;
+  cancel_lessons: RepairAgentRecordsResponseCancelLessons;
   errors: RepairAgentRecordsResponseError[];
+}
+
+export interface RepairAgentRecordsResponseCancelLessons {
+  removed?: number;
 }
 
 export interface RepairAgentRecordsResponseError {
@@ -16323,9 +16558,15 @@ export interface RequestOtpCodeRequest {
   accept_terms?: boolean;
   accept_privacy?: boolean;
   /**
-   * Anonymous visitor cookie, joining the landing visit to this request.
+   * Anonymous visitor cookie; joins landing_visit to otp_requested.
    */
   visitor_id?: string;
+  /**
+   * Language of the letter (since 2026-10-17). Without it: the language the person chose before,
+   * else Accept-Language, else English. The browser's language is remembered for later letters
+   * until the person sets one in GET/PUT /api/v1/me/email-preferences.
+   */
+  locale?: GetHireCatalogLocale;
 }
 
 export interface RequestOtpCodeResponse {
@@ -18314,6 +18555,10 @@ export interface ShareWorkspaceRequest {
   agent_id: string;
 }
 
+export type ShowEmailUnsubscribeC = 'weekly_digest' | 'product_tips';
+
+export const SHOW_EMAIL_UNSUBSCRIBE_C_VALUES = ['weekly_digest', 'product_tips'] as const;
+
 export interface SignUpForAndroidTestingRequest {
   email: string;
   /**
@@ -19652,7 +19897,20 @@ export interface TerminateAgentResponse {
 
 export interface TestAdminSmtpConfigRequest {
   to: string;
+  /**
+   * Which sender to test. `auth` (the default) sends sign-in codes; `notify` sends everything
+   * else.
+   */
+  profile?: TestAdminSmtpConfigRequestProfile;
 }
+
+/**
+ * Which sender to test. `auth` (the default) sends sign-in codes; `notify` sends everything
+ * else.
+ */
+export type TestAdminSmtpConfigRequestProfile = 'auth' | 'notify';
+
+export const TEST_ADMIN_SMTP_CONFIG_REQUEST_PROFILE_VALUES = ['auth', 'notify'] as const;
 
 export interface TestAdminSmtpConfigResponse {
   ok: boolean;
@@ -20572,6 +20830,26 @@ export interface UpdateAdminSmtpConfigRequest {
   password?: string;
   from?: string;
   from_name?: string;
+  /**
+   * The second sender (since 2026-10-17). The relay refuses a From its login does not own, so a
+   * second address needs its own login. Same merge rules; `password: ""` clears it.
+   */
+  notify?: UpdateAdminSmtpConfigRequestNotify;
+  /**
+   * Reply-To on notify mail; `""` clears it.
+   */
+  reply_to?: string | string;
+}
+
+/**
+ * The second sender (since 2026-10-17). The relay refuses a From its login does not own, so a
+ * second address needs its own login. Same merge rules; `password: ""` clears it.
+ */
+export interface UpdateAdminSmtpConfigRequestNotify {
+  user?: string;
+  password?: string;
+  from?: string;
+  from_name?: string;
 }
 
 export interface UpdateAdminSSEConfigRequest {
@@ -20903,6 +21181,28 @@ export interface UpdateMissionObjectiveRequestBudget {
   max_runs?: number;
   max_tokens?: number;
   max_cost_usd?: number;
+}
+
+export interface UpdateMyEmailPreferencesRequest {
+  locale?: GetHireCatalogLocale;
+  weekly_digest?: boolean;
+  product_tips?: boolean;
+}
+
+export interface UpdateMyEmailPreferencesResponse {
+  /**
+   * Language of every letter; null until the person or a browser sets it (English then).
+   */
+  locale: string | null;
+  /**
+   * The Monday summary for owners and admins.
+   */
+  weekly_digest: boolean;
+  /**
+   * The day-1 and day-3 letters to a company that has not started.
+   */
+  product_tips: boolean;
+  updated_at?: string;
 }
 
 export interface UpdateMyPreferencesRequest {

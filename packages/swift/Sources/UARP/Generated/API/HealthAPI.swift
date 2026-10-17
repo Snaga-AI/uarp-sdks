@@ -56,7 +56,7 @@ public struct HealthAPI: Sendable {
     /// process answers 503 outright. Unauthenticated.
     ///
     /// `GET /ready`
-    public func getReady(options: RequestOptions = .init()) async throws -> GetReadyResponse {
+    public func getReady(options: RequestOptions = .init()) async throws -> ReadinessReport {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/ready",

@@ -352,15 +352,16 @@ procedure UARP_SDK_Tests is
                          & """correlationId"":""01a13f4a-fb5a-7d99-9d94-910550f34d83"","
                          & """correlation_id"":""01a13f4a-fb5a-7d99-9d94-910550f34d83"","
                          & """code"":""SESSION_NOT_ACTIVE"",""session_status"":""closed""}").Code, "SESSION_NOT_ACTIVE");
-         --  batch19 local, unreleased: the 403 a refused X-Active-Tenant answers,
-         --  captured by the API lane from handleRequest at d6b1c66e5
-         --  (2026-10-17). Re-capture from the wire after the deploy.
+         --  Real bytes: the 403 a refused X-Active-Tenant answers on production,
+         --  build e0b37b03 (2026-10-17). membership_suspended is the API lane's
+         --  capture from handleRequest at d6b1c66e5, the same code: producing it
+         --  on the wire would mean suspending a membership on canon.
          Check_Equal ("not_a_member is read",
                       +UARP.Client.To_Problem
                         ("{""type"":""about:blank"",""title"":""Forbidden"",""status"":403,"
                          & """detail"":""You are not a member of the active tenant requested by X-Active-Tenant"","
-                         & """correlationId"":""01a14a66-dcaa-7ae1-9121-78d9959fba18"","
-                         & """correlation_id"":""01a14a66-dcaa-7ae1-9121-78d9959fba18"","
+                         & """correlationId"":""01a14b59-dd54-7a2f-aa6b-e4338e105419"","
+                         & """correlation_id"":""01a14b59-dd54-7a2f-aa6b-e4338e105419"","
                          & """code"":""FORBIDDEN"",""reason"":""not_a_member""}").Reason, "not_a_member");
          Check_Equal ("membership_suspended is read",
                       +UARP.Client.To_Problem

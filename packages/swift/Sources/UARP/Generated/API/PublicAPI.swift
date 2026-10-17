@@ -77,6 +77,27 @@ public struct PublicAPI: Sendable {
         ))
     }
 
+    /// Turn one kind of mail off
+    ///
+    /// Turns the category in the link off for that address and answers an HTML page saying so. Also
+    /// what a mail client sends for RFC 8058 one-click unsubscribe (`List-Unsubscribe-Post:
+    /// List-Unsubscribe=One-Click`); the body is not read. Same query parameters as the GET.
+    ///
+    /// `POST /api/v1/public/email/unsubscribe`
+    public func confirmEmailUnsubscribe(e: String, c: ShowEmailUnsubscribeC, t: String, options: RequestOptions = .init()) async throws -> String {
+        var query: [URLQueryItem] = []
+        query.append(URLQueryItem(name: "e", value: e))
+        query.append(URLQueryItem(name: "c", value: c.rawValue))
+        query.append(URLQueryItem(name: "t", value: t))
+        return try await client.sendText(RequestSpec(
+            method: "POST",
+            path: "/api/v1/public/email/unsubscribe",
+            query: query,
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Create public session
     ///
     /// Opens an anonymous chat session against the public agent named by `agent_id` and returns the
@@ -918,6 +939,27 @@ public struct PublicAPI: Sendable {
             method: "POST",
             path: "/api/v1/public/sessions/\(encodePathSegment(sessionId))/share",
             idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Unsubscribe page from a letter
+    ///
+    /// The link in the footer of a weekly summary or a tips letter (since 2026-10-17). Answers an
+    /// HTML page with one button and changes nothing, because mail scanners open every link in a
+    /// message. A link that was not signed by Snaga, or names an unknown category, answers 400 with
+    /// an HTML page. Rate limited to 30 per minute per IP.
+    ///
+    /// `GET /api/v1/public/email/unsubscribe`
+    public func showEmailUnsubscribe(e: String, c: ShowEmailUnsubscribeC, t: String, options: RequestOptions = .init()) async throws -> String {
+        var query: [URLQueryItem] = []
+        query.append(URLQueryItem(name: "e", value: e))
+        query.append(URLQueryItem(name: "c", value: c.rawValue))
+        query.append(URLQueryItem(name: "t", value: t))
+        return try await client.sendText(RequestSpec(
+            method: "GET",
+            path: "/api/v1/public/email/unsubscribe",
+            query: query,
             options: options
         ))
     }

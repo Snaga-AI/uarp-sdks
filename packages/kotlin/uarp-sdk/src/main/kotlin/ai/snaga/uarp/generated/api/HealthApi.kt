@@ -82,8 +82,8 @@ public class HealthApi internal constructor(private val client: UarpClient) {
      *
      * `GET /ready`
      */
-    public suspend fun getReady(options: RequestOptions = RequestOptions()): GetReadyResponse {
-        return client.request<GetReadyResponse>(
+    public suspend fun getReady(options: RequestOptions = RequestOptions()): ReadinessReport {
+        return client.request<ReadinessReport>(
             RequestSpec(
                 method = "GET",
                 path = "/ready",

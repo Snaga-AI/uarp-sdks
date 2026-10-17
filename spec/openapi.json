@@ -2971,6 +2971,28 @@
                             "has_password": {
                                 "type": "boolean",
                                 "description": "Whether a credential is stored. The password itself is never returned by any read."
+                            },
+                            "notify": {
+                                "type": "object",
+                                "description": "The second sender, for everything but sign-in codes (invites, approvals, billing, digests). Empty `user` means none, and that mail goes from the primary sender.",
+                                "properties": {
+                                    "user": {
+                                        "type": "string"
+                                    },
+                                    "from": {
+                                        "type": "string"
+                                    },
+                                    "from_name": {
+                                        "type": "string"
+                                    },
+                                    "has_password": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            },
+                            "reply_to": {
+                                "type": "string",
+                                "description": "Reply-To on notify mail. Empty means none."
                             }
                         }
                     },
@@ -2997,6 +3019,28 @@
                             "has_password": {
                                 "type": "boolean",
                                 "description": "Whether a credential is stored. The password itself is never returned by any read."
+                            },
+                            "notify": {
+                                "type": "object",
+                                "description": "The second sender, for everything but sign-in codes (invites, approvals, billing, digests). Empty `user` means none, and that mail goes from the primary sender.",
+                                "properties": {
+                                    "user": {
+                                        "type": "string"
+                                    },
+                                    "from": {
+                                        "type": "string"
+                                    },
+                                    "from_name": {
+                                        "type": "string"
+                                    },
+                                    "has_password": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            },
+                            "reply_to": {
+                                "type": "string",
+                                "description": "Reply-To on notify mail. Empty means none."
                             }
                         }
                     },
@@ -7114,23 +7158,41 @@
                         "maximum": 2097152
                     },
                     "resource_limits": {
-                        "description": "Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep their stored values.",
-                        "type": "object",
+                        "description": "Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep their stored values. `null` clears the whole block and a key set to `null` is removed, so the agent falls back to the platform's limits (since 2026-10-17; before, `null` was 422 and `{}` changed nothing).",
+                        "type": [
+                            "object",
+                            "null"
+                        ],
                         "properties": {
                             "max_duration_ms": {
-                                "type": "number"
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
                             },
                             "max_steps": {
-                                "type": "number"
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
                             },
                             "max_tool_calls": {
-                                "type": "number"
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
                             },
                             "max_tokens_per_run": {
-                                "type": "number"
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
                             },
                             "max_cost_usd": {
-                                "type": "number",
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
                                 "minimum": 0,
                                 "description": "In-run cost ceiling in USD; 0 or absent means no cap from this field (QA B4, 2026-09-23). Negative or non-numeric is 422."
                             }
@@ -11022,6 +11084,11 @@
                     },
                     "tenant_id": {
                         "type": "string"
+                    },
+                    "last_sent_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the invite was last re-sent. Absent until the first resend."
                     }
                 }
             },
@@ -13670,6 +13737,9 @@
                             "total_agents": {
                                 "type": "integer"
                             },
+                            "total_ratings": {
+                                "type": "integer"
+                            },
                             "avg_rating": {
                                 "type": "number"
                             }
@@ -14693,12 +14763,7 @@
                     },
                     "type": {
                         "type": "string",
-                        "enum": [
-                            "clarification",
-                            "approval",
-                            "escalation",
-                            "report"
-                        ]
+                        "description": "One of `clarification`, `approval`, `escalation`, `report` for every request written since 2026-10-17. Not an enum on read: rows stored before then were not validated and can carry other text (production holds `question` and probe strings)."
                     },
                     "subject": {
                         "type": "string"
@@ -16587,6 +16652,10 @@
                     },
                     "timeout_ms": {
                         "type": "integer"
+                    },
+                    "has_secret": {
+                        "type": "boolean",
+                        "description": "Whether a signing secret is set. The secret itself is never answered."
                     },
                     "created_at": {
                         "type": "string",
@@ -23286,7 +23355,7 @@
                     },
                     "goal": {
                         "type": "string",
-                        "description": "What the run was asked to do — the first line of its request (message, prompt, text or instruction), at most 140 characters. Absent when the run carries no text. Since 2026-10-16: a failed row used to carry only its error, so clients titled the task with it."
+                        "description": "What the run was asked to do — the first line of its request (`title` when the platform gave the run one — an event-started reaction run says \"Looking into a failed run of <agent>\" rather than its event envelope — else message, prompt, text or instruction), at most 140 characters. Absent when the run carries no text. Since 2026-10-16: a failed row used to carry only its error, so clients titled the task with it."
                     },
                     "summary": {
                         "type": "string",
@@ -25358,7 +25427,7 @@
                 }
             },
             "Forbidden": {
-                "description": "Insufficient permissions, missing scope, suspended tenant, quota exceeded, or governance/emergency-mode block.",
+                "description": "Insufficient permissions, missing scope, suspended tenant, quota exceeded, or governance/emergency-mode block. When `X-Active-Tenant` names a tenant the caller cannot act in, the body also carries `reason`: `not_a_member` (removed from that tenant, or it is gone — forget the stored tenant and offer the picker) or `membership_suspended`; `code` stays `FORBIDDEN` (since 2026-10-17). The picker's own routes (`/me/tenants…`, `/me/invites/…`, `/me/memberships/…`) ignore the `uarp_active_tenant` cookie, so a stale one cannot make the way out refuse; an explicit header still applies.",
                 "content": {
                     "application/problem+json": {
                         "schema": {
@@ -25800,28 +25869,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "enum": [
-                                                "ready",
-                                                "not_ready"
-                                            ]
-                                        },
-                                        "timestamp": {
-                                            "type": "string",
-                                            "format": "date-time"
-                                        },
-                                        "checks": {
-                                            "type": "object",
-                                            "properties": {
-                                                "kv": {
-                                                    "type": "string"
-                                                }
-                                            }
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/ReadinessReport"
                                 }
                             }
                         },
@@ -30595,7 +30643,27 @@
                                         "description": "Pin to a specific agent version (1-based). When omitted, runs against the agent's current head version. A version the agent does not have (never created, or pruned from its history) is refused with 404 and no run is created; until 2026-09-23 it answered 202 and ran the live agent."
                                     },
                                     "resource_limits": {
-                                        "type": "object"
+                                        "type": "object",
+                                        "description": "This run's limits, laid over the agent's. A key not listed here is refused with 422 naming the accepted keys (since 2026-10-17; before, it was dropped and the run ran without the cap the caller meant).",
+                                        "additionalProperties": false,
+                                        "properties": {
+                                            "max_duration_ms": {
+                                                "type": "number"
+                                            },
+                                            "max_steps": {
+                                                "type": "number"
+                                            },
+                                            "max_tool_calls": {
+                                                "type": "number"
+                                            },
+                                            "max_tokens_per_run": {
+                                                "type": "number"
+                                            },
+                                            "max_cost_usd": {
+                                                "type": "number",
+                                                "minimum": 0
+                                            }
+                                        }
                                     },
                                     "metadata": {
                                         "type": "object"
@@ -32151,6 +32219,10 @@
                                         "total": {
                                             "type": "integer"
                                         },
+                                        "truncated": {
+                                            "type": "boolean",
+                                            "description": "True when the scan hit its bound, so older deliveries exist that this list does not count."
+                                        },
                                         "has_more": {
                                             "type": "boolean",
                                             "description": "Present only when `limit` was sent: whether another page follows."
@@ -33342,13 +33414,20 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "items": {
+                                        "entries": {
                                             "type": "array",
                                             "items": {
                                                 "$ref": "#/components/schemas/MemoryEntry"
                                             }
+                                        },
+                                        "total": {
+                                            "type": "integer"
                                         }
-                                    }
+                                    },
+                                    "required": [
+                                        "entries",
+                                        "total"
+                                    ]
                                 }
                             }
                         },
@@ -43416,6 +43495,24 @@
                                                 },
                                                 "plan": {
                                                     "type": "string"
+                                                },
+                                                "head_agent_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "logo_url": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "shared_workspace_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
                                                 }
                                             },
                                             "required": [
@@ -45464,8 +45561,79 @@
                                                                 "items": {
                                                                     "type": "string"
                                                                 }
+                                                            },
+                                                            "tool_allowlists": {
+                                                                "type": "object",
+                                                                "description": "Per-SPEC tool names this tier advertises; a SPEC absent here advertises all its tools.",
+                                                                "additionalProperties": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "string"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "resource_limits": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "max_duration_ms": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "max_steps": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "max_tokens_per_run": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "thinking_budget_tokens": {
+                                                                        "type": "integer"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "initial_budget_usd": {
+                                                                "type": "number"
+                                                            },
+                                                            "auto_inject_overrides": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "kb_tools": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "memory_tools": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "core_memory_tools": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                }
                                                             }
                                                         }
+                                                    },
+                                                    "resource_limits": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "max_duration_ms": {
+                                                                "type": "integer"
+                                                            },
+                                                            "max_steps": {
+                                                                "type": "integer"
+                                                            },
+                                                            "max_tokens_per_run": {
+                                                                "type": "integer"
+                                                            },
+                                                            "thinking_budget_tokens": {
+                                                                "type": "integer"
+                                                            }
+                                                        }
+                                                    },
+                                                    "initial_budget_usd": {
+                                                        "type": "number"
+                                                    },
+                                                    "built_in_tools": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        },
+                                                        "description": "The tools the tier's Head Agent gets. Empty for a locked tier."
                                                     },
                                                     "available": {
                                                         "type": "boolean"
@@ -45477,6 +45645,12 @@
                                                             "properties": {
                                                                 "spec_id": {
                                                                     "type": "string"
+                                                                },
+                                                                "tool_allowlist": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "string"
+                                                                    }
                                                                 }
                                                             },
                                                             "required": [
@@ -46920,6 +47094,9 @@
                         "application/json": {
                             "schema": {
                                 "type": "object",
+                                "required": [
+                                    "email"
+                                ],
                                 "properties": {
                                     "email": {
                                         "type": "string",
@@ -46934,13 +47111,18 @@
                                     },
                                     "visitor_id": {
                                         "type": "string",
-                                        "description": "Anonymous visitor cookie, joining the landing visit to this request.",
+                                        "description": "Anonymous visitor cookie; joins landing_visit to otp_requested.",
                                         "maxLength": 10485760
+                                    },
+                                    "locale": {
+                                        "type": "string",
+                                        "enum": [
+                                            "uk",
+                                            "en"
+                                        ],
+                                        "description": "Language of the letter (since 2026-10-17). Without it: the language the person chose before, else Accept-Language, else English. The browser's language is remembered for later letters until the person sets one in GET/PUT /api/v1/me/email-preferences."
                                     }
-                                },
-                                "required": [
-                                    "email"
-                                ]
+                                }
                             }
                         }
                     }
@@ -54518,6 +54700,27 @@
                                                     },
                                                     "owned_by": {
                                                         "type": "string"
+                                                    },
+                                                    "permission": {
+                                                        "type": "array",
+                                                        "items": {}
+                                                    },
+                                                    "root": {
+                                                        "type": "string"
+                                                    },
+                                                    "parent": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "display_name": {
+                                                        "type": "string",
+                                                        "description": "The agent's or team's name. Absent when it has none."
+                                                    },
+                                                    "max_tokens": {
+                                                        "type": "integer",
+                                                        "description": "Context window: the agent model's `max_context_tokens`, else 128000."
                                                     }
                                                 },
                                                 "required": [
@@ -56192,6 +56395,9 @@
                                             "items": {
                                                 "$ref": "#/components/schemas/AgentScorer"
                                             }
+                                        },
+                                        "total": {
+                                            "type": "integer"
                                         }
                                     }
                                 }
@@ -65429,7 +65635,49 @@
                                     "type": "object",
                                     "properties": {
                                         "status": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "enum": [
+                                                "healthy",
+                                                "degraded",
+                                                "unhealthy"
+                                            ]
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "kv_connected": {
+                                            "type": "boolean"
+                                        },
+                                        "uptime_seconds": {
+                                            "type": "number"
+                                        },
+                                        "version": {
+                                            "type": "string",
+                                            "description": "The API contract version, a DATE STAMP — `2026-09-10` — bumped only on a breaking change, and the same value the `X-API-Version` RESPONSE header carries. The server does not read a request header of that name: pinning a date negotiates nothing. Not a release number and not semver: it cannot be ordered against a semver string, so a client that compares it to one is wrong in a way that appears to work for as long as both happen to sort the same. Compare it for equality, or read it as a date. It says nothing about which BUILD is running — for that, read `build_sha`."
+                                        },
+                                        "build_sha": {
+                                            "type": "string",
+                                            "description": "The commit this running build was made from, baked in at image build time. This is the only value on the wire that identifies the deployed code: `version` is the contract stamp and is constant across deploys, and a restart proves a restart rather than an identity. `\"unknown\"` means the image was built without the build argument (a local build, or a deploy predating this field) and must be read as UNKNOWN, never as a match. Documentation that pins a claim about platform behaviour can cite it."
+                                        },
+                                        "build_time": {
+                                            "type": "string",
+                                            "description": "When the running image was built, ISO-8601 UTC, baked in at image build time next to `build_sha`. `\"unknown\"` when the build argument was absent or did not parse as a date. Like `build_sha` it identifies the BUILD; `version` is the API contract stamp (the `X-API-Version` header) and does not change between deploys."
+                                        },
+                                        "pending_resumes": {
+                                            "type": "integer",
+                                            "description": "Always 0. Kept for compatibility — there is no resume-parking state: `RunStatus` has no `waiting_for_resume`, and startup reconciliation FAILS an interrupted run rather than holding it for resume. It previously reported the queue depth under this name, which reads as recovery progress on the one endpoint an operator watches during a deploy. Use `runs_queued` for the queue, and run status for recovery."
+                                        },
+                                        "capabilities": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "description": "What this build can do, by name — gate a feature on it instead of on a 404. Names are added when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`, `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`, `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`, `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`, `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates `POST /tenants/me/company/restore` and the answer existed only in prose no client can read: `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name); `initiative_pause` = pausing an initiative; `mission_review` = objectives with `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` = `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`; `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`; `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` = `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`; `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`); `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` = `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET /company/versions` AND `POST /company/restore` — there is deliberately no separate `company_restore`, since a snapshot and the rollback to it ship together."
+                                        },
+                                        "runs_queued": {
+                                            "type": "integer",
+                                            "description": "Runs currently queued. After a restart this includes runs reconciliation re-queued, so it falls as they are picked up — but it is a queue depth, not a count of recoveries."
                                         }
                                     }
                                 }
@@ -67572,6 +67820,46 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
+                                        "graph": {
+                                            "type": "object",
+                                            "description": "The graph envelope: ids of its nodes and edges and the CAS `version` every mutation increments.",
+                                            "properties": {
+                                                "team_id": {
+                                                    "type": "string"
+                                                },
+                                                "node_ids": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "edge_ids": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "version": {
+                                                    "type": "integer"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "team_id",
+                                                "node_ids",
+                                                "edge_ids",
+                                                "version",
+                                                "created_at",
+                                                "updated_at"
+                                            ]
+                                        },
                                         "nodes": {
                                             "type": "array",
                                             "items": {
@@ -89167,6 +89455,44 @@
                                     "from_name": {
                                         "type": "string",
                                         "maxLength": 80
+                                    },
+                                    "notify": {
+                                        "type": "object",
+                                        "description": "The second sender (since 2026-10-17). The relay refuses a From its login does not own, so a second address needs its own login. Same merge rules; `password: \"\"` clears it.",
+                                        "properties": {
+                                            "user": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 255
+                                            },
+                                            "password": {
+                                                "type": "string",
+                                                "maxLength": 2048
+                                            },
+                                            "from": {
+                                                "type": "string",
+                                                "format": "email",
+                                                "maxLength": 254
+                                            },
+                                            "from_name": {
+                                                "type": "string",
+                                                "maxLength": 80
+                                            }
+                                        }
+                                    },
+                                    "reply_to": {
+                                        "description": "Reply-To on notify mail; `\"\"` clears it.",
+                                        "oneOf": [
+                                            {
+                                                "type": "string",
+                                                "const": ""
+                                            },
+                                            {
+                                                "type": "string",
+                                                "format": "email",
+                                                "maxLength": 254
+                                            }
+                                        ]
                                     }
                                 }
                             }
@@ -89270,6 +89596,14 @@
                                         "type": "string",
                                         "format": "email",
                                         "maxLength": 254
+                                    },
+                                    "profile": {
+                                        "type": "string",
+                                        "enum": [
+                                            "auth",
+                                            "notify"
+                                        ],
+                                        "description": "Which sender to test. `auth` (the default) sends sign-in codes; `notify` sends everything else."
                                     }
                                 }
                             }
@@ -98205,7 +98539,7 @@
                     "Governance"
                 ],
                 "summary": "Create request",
-                "description": "Submits a request from an agent to the tenant's ambassadors, stored with status `pending`. Unlike the other mutations on this sub-handler there is no admin gate — any caller the governance router admits may file one. The body's `from_agent_id`, `type`, `subject` and `body` are passed to the store without validation, so a missing field is stored as undefined rather than refused. 201 with the created request.",
+                "description": "Submits a request from an agent to the tenant's ambassadors, stored with status `pending`. Unlike the other mutations on this sub-handler there is no admin gate — any caller the governance router admits may file one. All four fields are required and `type` must be one of `clarification`, `approval`, `escalation` or `report`; anything else answers 422 and stores nothing (since 2026-10-17 — before that the body was stored unvalidated, so older rows can carry other `type` text or missing fields). 201 with the created request.",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -98215,19 +98549,27 @@
                                 "properties": {
                                     "from_agent_id": {
                                         "type": "string",
-                                        "maxLength": 10485760
+                                        "minLength": 1,
+                                        "maxLength": 256
                                     },
                                     "type": {
                                         "type": "string",
-                                        "maxLength": 10485760
+                                        "enum": [
+                                            "clarification",
+                                            "approval",
+                                            "escalation",
+                                            "report"
+                                        ]
                                     },
                                     "subject": {
                                         "type": "string",
-                                        "maxLength": 10485760
+                                        "minLength": 1,
+                                        "maxLength": 1000
                                     },
                                     "body": {
                                         "type": "string",
-                                        "maxLength": 10485760
+                                        "minLength": 1,
+                                        "maxLength": 50000
                                     }
                                 },
                                 "required": [
@@ -98242,7 +98584,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "The stored request, `status: pending` (governance-ambassador.ts, `jsonResponse(result, 201)`; never 200). The body is not validated — `type`, `subject` and `body` are echoed as sent.",
+                        "description": "The stored request, `status: pending` (governance-ambassador.ts, `jsonResponse(result, 201)`; never 200).",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -108480,7 +108822,7 @@
                 "tags": [
                     "Admin"
                 ],
-                "description": "One-off repairs of agent records that no code writes any more but production still carries. **Super-admin only.** `head_token_caps`: a head agent's stored `resource_limits.max_tokens_per_run` below the platform's per-run budget is removed, so the platform budget applies. `head_names`: a head agent still named `Head Agent` or `<Company> Head Agent` becomes `Chief of Staff` (and its description, when that still names a Head Agent). `head_pod_descriptions`: a head agent whose description still says \"Pod\" gets the Chief of Staff description, whatever its name. `initial_versions`: an agent with no version gets v1 from its current record. `orphan_schedules`: a cron schedule whose agent is gone is deleted (it fired a run daily that failed with agent_not_found). A changed head agent gets a new version, since chat runs pin the latest one. `dry_run: true` counts without writing. Idempotent: a second run finds nothing to do. Since 2026-10-16.",
+                "description": "One-off repairs of agent records that no code writes any more but production still carries. **Super-admin only.** `head_token_caps`: a head agent's stored `resource_limits.max_tokens_per_run` below the platform's per-run budget is removed, so the platform budget applies. `head_names`: a head agent still named `Head Agent` or `<Company> Head Agent` becomes `Chief of Staff` (and its description, when that still names a Head Agent). `head_pod_descriptions`: a head agent whose description still says \"Pod\" gets the Chief of Staff description, whatever its name. `initial_versions`: an agent with no version gets v1 from its current record. `orphan_schedules`: a cron schedule whose agent is gone is deleted (it fired a run daily that failed with agent_not_found). `cancel_lessons`: an episodic memory \"[Failure] … failed: Run cancelled\" — a person's stop stored as a lesson — is deleted. A changed head agent gets a new version, since chat runs pin the latest one. `dry_run: true` counts without writing. Idempotent: a second run finds nothing to do. Since 2026-10-16.",
                 "requestBody": {
                     "required": false,
                     "content": {
@@ -108493,7 +108835,7 @@
                                     },
                                     "ops": {
                                         "type": "array",
-                                        "maxItems": 5,
+                                        "maxItems": 6,
                                         "items": {
                                             "type": "string",
                                             "enum": [
@@ -108501,7 +108843,8 @@
                                                 "head_names",
                                                 "head_pod_descriptions",
                                                 "initial_versions",
-                                                "orphan_schedules"
+                                                "orphan_schedules",
+                                                "cancel_lessons"
                                             ]
                                         }
                                     }
@@ -108525,6 +108868,7 @@
                                         "head_pod_descriptions",
                                         "initial_versions",
                                         "orphan_schedules",
+                                        "cancel_lessons",
                                         "errors"
                                     ],
                                     "properties": {
@@ -108573,6 +108917,14 @@
                                             }
                                         },
                                         "orphan_schedules": {
+                                            "type": "object",
+                                            "properties": {
+                                                "removed": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        },
+                                        "cancel_lessons": {
                                             "type": "object",
                                             "properties": {
                                                 "removed": {
@@ -111551,6 +111903,378 @@
                 "x-roles": [
                     "developer"
                 ]
+            }
+        },
+        "/api/v1/me/email-preferences": {
+            "get": {
+                "operationId": "getMyEmailPreferences",
+                "summary": "Read email preferences",
+                "tags": [
+                    "Me"
+                ],
+                "description": "The language of every letter Snaga sends this person, and the two kinds of mail they may turn off (since 2026-10-17). Keyed by the email address, so the same answer in every company the person belongs to. Mail about the account itself (sign-in codes, invites, approvals, billing, security) is always sent. Requires a credential bound to a person; a key without a user identity is refused with 403.",
+                "responses": {
+                    "200": {
+                        "description": "Preferences. Never 404: an address with nothing stored answers with both kinds on and `locale: null`.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "locale",
+                                        "weekly_digest",
+                                        "product_tips"
+                                    ],
+                                    "properties": {
+                                        "locale": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "enum": [
+                                                "uk",
+                                                "en",
+                                                null
+                                            ],
+                                            "description": "Language of every letter; null until the person or a browser sets it (English then)."
+                                        },
+                                        "weekly_digest": {
+                                            "type": "boolean",
+                                            "description": "The Monday summary for owners and admins."
+                                        },
+                                        "product_tips": {
+                                            "type": "boolean",
+                                            "description": "The day-1 and day-3 letters to a company that has not started."
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "updateMyEmailPreferences",
+                "summary": "Update email preferences",
+                "tags": [
+                    "Me"
+                ],
+                "description": "WRITE SEMANTICS: merges. A field the body omits keeps its value. Setting `locale` here fixes it: a browser's Accept-Language no longer changes it. An unknown locale is 422.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "locale": {
+                                        "type": "string",
+                                        "enum": [
+                                            "uk",
+                                            "en"
+                                        ]
+                                    },
+                                    "weekly_digest": {
+                                        "type": "boolean"
+                                    },
+                                    "product_tips": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The preferences after the write.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "locale",
+                                        "weekly_digest",
+                                        "product_tips"
+                                    ],
+                                    "properties": {
+                                        "locale": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "enum": [
+                                                "uk",
+                                                "en",
+                                                null
+                                            ],
+                                            "description": "Language of every letter; null until the person or a browser sets it (English then)."
+                                        },
+                                        "weekly_digest": {
+                                            "type": "boolean",
+                                            "description": "The Monday summary for owners and admins."
+                                        },
+                                        "product_tips": {
+                                            "type": "boolean",
+                                            "description": "The day-1 and day-3 letters to a company that has not started."
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            }
+        },
+        "/api/v1/public/email/unsubscribe": {
+            "get": {
+                "operationId": "showEmailUnsubscribe",
+                "summary": "Unsubscribe page from a letter",
+                "tags": [
+                    "Public"
+                ],
+                "security": [],
+                "description": "The link in the footer of a weekly summary or a tips letter (since 2026-10-17). Answers an HTML page with one button and changes nothing, because mail scanners open every link in a message. A link that was not signed by Snaga, or names an unknown category, answers 400 with an HTML page. Rate limited to 30 per minute per IP.",
+                "parameters": [
+                    {
+                        "name": "e",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 65536
+                        },
+                        "description": "The address, base64url."
+                    },
+                    {
+                        "name": "c",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "weekly_digest",
+                                "product_tips"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "t",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 65536
+                        },
+                        "description": "HMAC over the address and category."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The confirmation page.",
+                        "content": {
+                            "text/html": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Not a valid link.",
+                        "content": {
+                            "text/html": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "confirmEmailUnsubscribe",
+                "summary": "Turn one kind of mail off",
+                "tags": [
+                    "Public"
+                ],
+                "security": [],
+                "description": "Turns the category in the link off for that address and answers an HTML page saying so. Also what a mail client sends for RFC 8058 one-click unsubscribe (`List-Unsubscribe-Post: List-Unsubscribe=One-Click`); the body is not read. Same query parameters as the GET.",
+                "parameters": [
+                    {
+                        "name": "e",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 65536
+                        }
+                    },
+                    {
+                        "name": "c",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "weekly_digest",
+                                "product_tips"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "t",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 65536
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Done page.",
+                        "content": {
+                            "text/html": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Not a valid link; nothing changed.",
+                        "content": {
+                            "text/html": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
             }
         },
         "/api/v1/me/preferences": {

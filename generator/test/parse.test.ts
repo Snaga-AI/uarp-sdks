@@ -456,7 +456,11 @@ test('parses the production document into the expected shape', () => {
   // an outside agent (`POST /hire`, its catalogue and icons, the MCP endpoint
   // a hired agent speaks, and its command and disconnect under
   // `/agents/{agentId}/hire`) and one admin repair, `repairAgentRecords`.
-  assert.equal(ops.length, 839);
+  // 839 -> 843 on 2026-10-17 (build e0b37b03): four and none removed — the
+  // reader's email preferences (`GET`/`PUT /me/email-preferences`) and the
+  // one-click unsubscribe page behind a letter (`GET`/`POST
+  // /public/email/unsubscribe`, which answer HTML).
+  assert.equal(ops.length, 843);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -726,7 +730,18 @@ test('parses the production document into the expected shape', () => {
   // (`GetSessionResponse`, with `SessionContext` and a model override), the
   // overview's problem missions, the agent's bridge status and the AI system
   // card's tool sources.
-  assert.equal(spec.types.length, 2053);
+  // 2053 -> 2064 on 2026-10-17 (build e0b37b03): +16, −5. Four are the email
+  // preferences and the unsubscribe page, four the admin SMTP notify and
+  // profile, three the documented `getMyHeadAgentTemplate` tiers, and one each
+  // the team graph's envelope, the strict `resource_limits` on `createRun`,
+  // the lesson cancellations in `repairAgentRecords`, the sign-in letter's
+  // `locale` and the ambassador request's type on create. `getReady` now
+  // answers the shared `ReadinessReport`, so its three hoisted names leave.
+  // The other two leaving are the parser's first-use names only:
+  // `AmbassadorRequestType` (the read side is plain text now) and
+  // `GetHireCatalogLocale` (the sign-in letter uses the enum first); the pins
+  // keep both names in the SDKs.
+  assert.equal(spec.types.length, 2064);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);

@@ -3566,6 +3566,22 @@ package UARP.Models is
    function To_JSON (Model : Admin_Set_Video_Template_Preview_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Set_Video_Template_Preview_Request;
 
+   --  The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+   --  Empty `user` means none, and that mail goes from the primary sender.
+   type Admin_Smtp_Config_Kv_Notify is record
+      Has_User : Boolean := False;
+      User : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_From : Boolean := False;
+      From : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_From_Name : Boolean := False;
+      From_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Has_Password : Boolean := False;
+      Has_Password : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Admin_Smtp_Config_Kv_Notify) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Smtp_Config_Kv_Notify;
+
    --  What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
    type Admin_Smtp_Config_Kv is record
       Has_Host : Boolean := False;
@@ -3581,10 +3597,33 @@ package UARP.Models is
       --  Whether a credential is stored. The password itself is never returned by any read.
       Has_Has_Password : Boolean := False;
       Has_Password : Standard.Boolean := False;
+      --  The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+      --  Empty `user` means none, and that mail goes from the primary sender.
+      Has_Notify : Boolean := False;
+      Notify : UARP.Models.Admin_Smtp_Config_Kv_Notify;
+      --  Reply-To on notify mail. Empty means none.
+      Has_Reply_To : Boolean := False;
+      Reply_To : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Admin_Smtp_Config_Kv) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Smtp_Config_Kv;
+
+   --  The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+   --  Empty `user` means none, and that mail goes from the primary sender.
+   type Admin_Smtp_Config_Env_Notify is record
+      Has_User : Boolean := False;
+      User : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_From : Boolean := False;
+      From : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_From_Name : Boolean := False;
+      From_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Has_Password : Boolean := False;
+      Has_Password : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Admin_Smtp_Config_Env_Notify) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Smtp_Config_Env_Notify;
 
    --  What the environment supplies. `port` defaults to 465 when unset or unparseable.
    type Admin_Smtp_Config_Env is record
@@ -3601,6 +3640,13 @@ package UARP.Models is
       --  Whether a credential is stored. The password itself is never returned by any read.
       Has_Has_Password : Boolean := False;
       Has_Password : Standard.Boolean := False;
+      --  The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+      --  Empty `user` means none, and that mail goes from the primary sender.
+      Has_Notify : Boolean := False;
+      Notify : UARP.Models.Admin_Smtp_Config_Env_Notify;
+      --  Reply-To on notify mail. Empty means none.
+      Has_Reply_To : Boolean := False;
+      Reply_To : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Admin_Smtp_Config_Env) return UARP.JSON_Support.JSON_Value;
@@ -5272,7 +5318,9 @@ package UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Update_Effort_Policy;
 
    --  Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
-   --  their stored values.
+   --  their stored values. `null` clears the whole block and a key set to `null` is removed, so
+   --  the agent falls back to the platform's limits (since 2026-10-17; before, `null` was 422 and
+   --  `{}` changed nothing).
    type Agent_Update_Resource_Limits is record
       Has_Max_Duration_Ms : Boolean := False;
       Max_Duration_Ms : UARP.Types.Float_Value := 0.0;
@@ -5759,7 +5807,9 @@ package UARP.Models is
       Has_Context_Window_Size : Boolean := False;
       Context_Window_Size : UARP.Types.Float_Value := 0.0;
       --  Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
-      --  their stored values.
+      --  their stored values. `null` clears the whole block and a key set to `null` is removed, so
+      --  the agent falls back to the platform's limits (since 2026-10-17; before, `null` was 422 and
+      --  `{}` changed nothing).
       Has_Resource_Limits : Boolean := False;
       Resource_Limits : UARP.Models.Agent_Update_Resource_Limits;
       --  Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
@@ -5990,27 +6040,6 @@ package UARP.Models is
    package Ambassador_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Ambassador);
 
-   --  Values of `AmbassadorRequestType`.
-   --  A value the API introduces later decodes as Ambassador_Request_Type_Unrecognized
-   --  with the original text kept in Raw.
-   type Ambassador_Request_Type_Kind is
-     (Ambassador_Request_Type_Clarification,
-   Ambassador_Request_Type_Approval,
-   Ambassador_Request_Type_Escalation,
-   Ambassador_Request_Type_Report,
-   Ambassador_Request_Type_Unrecognized);
-
-   type Ambassador_Request_Type is record
-      Kind : Ambassador_Request_Type_Kind := Ambassador_Request_Type_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Ambassador_Request_Type (Value : String) return Ambassador_Request_Type;
-   function To_Ambassador_Request_Type (Kind : Ambassador_Request_Type_Kind) return Ambassador_Request_Type;
-   function Image (Model : Ambassador_Request_Type) return String;
-   function To_JSON (Model : Ambassador_Request_Type) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Ambassador_Request_Type;
-
    --  Values of `AmbassadorRequestStatus`.
    --  A value the API introduces later decodes as Ambassador_Request_Status_Unrecognized
    --  with the original text kept in Raw.
@@ -6036,7 +6065,10 @@ package UARP.Models is
       Request_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       From_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Type_K : UARP.Models.Ambassador_Request_Type;
+      --  One of `clarification`, `approval`, `escalation`, `report` for every request written since
+      --  2026-10-17. Not an enum on read: rows stored before then were not validated and can carry
+      --  other text (production holds `question` and probe strings).
+      Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
       Subject : UARP.Types.Text := UARP.Types.Empty_Text;
       Body_K : UARP.Types.Text := UARP.Types.Empty_Text;
       Status : UARP.Models.Ambassador_Request_Status;
@@ -6052,6 +6084,27 @@ package UARP.Models is
 
    package Ambassador_Request_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Ambassador_Request);
+
+   --  Values of `AmbassadorRequestType`.
+   --  A value the API introduces later decodes as Ambassador_Request_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Ambassador_Request_Type_Kind is
+     (Ambassador_Request_Type_Clarification,
+   Ambassador_Request_Type_Approval,
+   Ambassador_Request_Type_Escalation,
+   Ambassador_Request_Type_Report,
+   Ambassador_Request_Type_Unrecognized);
+
+   type Ambassador_Request_Type is record
+      Kind : Ambassador_Request_Type_Kind := Ambassador_Request_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Ambassador_Request_Type (Value : String) return Ambassador_Request_Type;
+   function To_Ambassador_Request_Type (Kind : Ambassador_Request_Type_Kind) return Ambassador_Request_Type;
+   function Image (Model : Ambassador_Request_Type) return String;
+   function To_JSON (Model : Ambassador_Request_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Ambassador_Request_Type;
 
    --  `AmbassadorVetoRequest` model.
    type Ambassador_Veto_Request is record
@@ -11152,7 +11205,7 @@ package UARP.Models is
    --  `CreateAmbassadorRequestRequest` model.
    type Create_Ambassador_Request_Request is record
       From_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Ambassador_Request_Type;
       Subject : UARP.Types.Text := UARP.Types.Empty_Text;
       Body_K : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -12378,6 +12431,25 @@ package UARP.Models is
    function To_JSON (Model : Create_Run_Request_Input) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Run_Request_Input;
 
+   --  This run's limits, laid over the agent's. A key not listed here is refused with 422 naming
+   --  the accepted keys (since 2026-10-17; before, it was dropped and the run ran without the cap
+   --  the caller meant).
+   type Create_Run_Request_Resource_Limits is record
+      Has_Max_Duration_Ms : Boolean := False;
+      Max_Duration_Ms : UARP.Types.Float_Value := 0.0;
+      Has_Max_Steps : Boolean := False;
+      Max_Steps : UARP.Types.Float_Value := 0.0;
+      Has_Max_Tool_Calls : Boolean := False;
+      Max_Tool_Calls : UARP.Types.Float_Value := 0.0;
+      Has_Max_Tokens_Per_Run : Boolean := False;
+      Max_Tokens_Per_Run : UARP.Types.Float_Value := 0.0;
+      Has_Max_Cost_Usd : Boolean := False;
+      Max_Cost_Usd : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Create_Run_Request_Resource_Limits) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Run_Request_Resource_Limits;
+
    --  `CreateRunRequest` model.
    type Create_Run_Request is record
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -12396,8 +12468,11 @@ package UARP.Models is
       --  agent.
       Has_Version : Boolean := False;
       Version : UARP.Types.Integer_Value := 0;
+      --  This run's limits, laid over the agent's. A key not listed here is refused with 422 naming
+      --  the accepted keys (since 2026-10-17; before, it was dropped and the run ran without the cap
+      --  the caller meant).
       Has_Resource_Limits : Boolean := False;
-      Resource_Limits : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Resource_Limits : UARP.Models.Create_Run_Request_Resource_Limits;
       Has_Metadata : Boolean := False;
       Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
    end record;
@@ -13257,6 +13332,9 @@ package UARP.Models is
       Status : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Tenant_Id : Boolean := False;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  When the invite was last re-sent. Absent until the first resend.
+      Has_Last_Sent_At : Boolean := False;
+      Last_Sent_At : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Invite) return UARP.JSON_Support.JSON_Value;
@@ -16682,7 +16760,9 @@ package UARP.Models is
    function To_JSON (Model : Get_Health_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Health_Response;
 
-   --  Values of `GetHireCatalogLocale`.
+   --  Language of the letter (since 2026-10-17). Without it: the language the person chose before,
+   --  else Accept-Language, else English. The browser's language is remembered for later letters
+   --  until the person sets one in GET/PUT /api/v1/me/email-preferences.
    --  A value the API introduces later decodes as Get_Hire_Catalog_Locale_Unrecognized
    --  with the original text kept in Raw.
    type Get_Hire_Catalog_Locale_Kind is
@@ -17117,8 +17197,8 @@ package UARP.Models is
 
    --  `GetMemoriesByEntityResponse` model.
    type Get_Memories_By_Entity_Response is record
-      Has_Items : Boolean := False;
-      Items : UARP.Models.Memory_Entry_Vectors.Vector;
+      Entries : UARP.Models.Memory_Entry_Vectors.Vector;
+      Total : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : Get_Memories_By_Entity_Response) return UARP.JSON_Support.JSON_Value;
@@ -17153,6 +17233,12 @@ package UARP.Models is
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Slug : UARP.Types.Text := UARP.Types.Empty_Text;
       Plan : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Head_Agent_Id : Boolean := False;
+      Head_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Logo_URL : Boolean := False;
+      Logo_URL : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Shared_Workspace_Id : Boolean := False;
+      Shared_Workspace_Id : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Get_Me_Response_Tenant) return UARP.JSON_Support.JSON_Value;
@@ -17330,6 +17416,22 @@ package UARP.Models is
    function To_JSON (Model : Get_Mission_Performance_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Mission_Performance_Response;
 
+   --  `GetMyEmailPreferencesResponse` model.
+   type Get_My_Email_Preferences_Response is record
+      --  Language of every letter; null until the person or a browser sets it (English then).
+      Has_Locale : Boolean := False;
+      Locale : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The Monday summary for owners and admins.
+      Weekly_Digest : Standard.Boolean := False;
+      --  The day-1 and day-3 letters to a company that has not started.
+      Product_Tips : Standard.Boolean := False;
+      Has_Updated_At : Boolean := False;
+      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Get_My_Email_Preferences_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_My_Email_Preferences_Response;
+
    --  Values of `GetMyHeadAgentTemplateResponseRecommended`.
    --  A value the API introduces later decodes as Get_My_Head_Agent_Template_Response_Recommended_Unrecognized
    --  with the original text kept in Raw.
@@ -17370,6 +17472,34 @@ package UARP.Models is
    function To_JSON (Model : Get_My_Head_Agent_Template_Response_Tier_Tier_Required_Plan) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_My_Head_Agent_Template_Response_Tier_Tier_Required_Plan;
 
+   --  `GetMyHeadAgentTemplateResponseTierTierResourceLimits` model.
+   type Get_My_Head_Agent_Template_Response_Tier_Tier_Resource_Limits is record
+      Has_Max_Duration_Ms : Boolean := False;
+      Max_Duration_Ms : UARP.Types.Integer_Value := 0;
+      Has_Max_Steps : Boolean := False;
+      Max_Steps : UARP.Types.Integer_Value := 0;
+      Has_Max_Tokens_Per_Run : Boolean := False;
+      Max_Tokens_Per_Run : UARP.Types.Integer_Value := 0;
+      Has_Thinking_Budget_Tokens : Boolean := False;
+      Thinking_Budget_Tokens : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Get_My_Head_Agent_Template_Response_Tier_Tier_Resource_Limits) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_My_Head_Agent_Template_Response_Tier_Tier_Resource_Limits;
+
+   --  `GetMyHeadAgentTemplateResponseTierTierAutoInjectOverrides` model.
+   type Get_My_Head_Agent_Template_Response_Tier_Tier_Auto_Inject_Overrides is record
+      Has_Kb_Tools : Boolean := False;
+      Kb_Tools : Standard.Boolean := False;
+      Has_Memory_Tools : Boolean := False;
+      Memory_Tools : Standard.Boolean := False;
+      Has_Core_Memory_Tools : Boolean := False;
+      Core_Memory_Tools : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Get_My_Head_Agent_Template_Response_Tier_Tier_Auto_Inject_Overrides) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_My_Head_Agent_Template_Response_Tier_Tier_Auto_Inject_Overrides;
+
    --  `GetMyHeadAgentTemplateResponseTierTier` model.
    type Get_My_Head_Agent_Template_Response_Tier_Tier is record
       Has_Id : Boolean := False;
@@ -17382,14 +17512,40 @@ package UARP.Models is
       Required_Plan : UARP.Models.Get_My_Head_Agent_Template_Response_Tier_Tier_Required_Plan;
       Has_Spec_Ids : Boolean := False;
       Spec_Ids : UARP.Types.Text_Vectors.Vector;
+      --  Per-SPEC tool names this tier advertises; a SPEC absent here advertises all its tools.
+      Has_Tool_Allowlists : Boolean := False;
+      Tool_Allowlists : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Has_Resource_Limits : Boolean := False;
+      Resource_Limits : UARP.Models.Get_My_Head_Agent_Template_Response_Tier_Tier_Resource_Limits;
+      Has_Initial_Budget_Usd : Boolean := False;
+      Initial_Budget_Usd : UARP.Types.Float_Value := 0.0;
+      Has_Auto_Inject_Overrides : Boolean := False;
+      Auto_Inject_Overrides : UARP.Models.Get_My_Head_Agent_Template_Response_Tier_Tier_Auto_Inject_Overrides;
    end record;
 
    function To_JSON (Model : Get_My_Head_Agent_Template_Response_Tier_Tier) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_My_Head_Agent_Template_Response_Tier_Tier;
 
+   --  `GetMyHeadAgentTemplateResponseTierResourceLimits` model.
+   type Get_My_Head_Agent_Template_Response_Tier_Resource_Limits is record
+      Has_Max_Duration_Ms : Boolean := False;
+      Max_Duration_Ms : UARP.Types.Integer_Value := 0;
+      Has_Max_Steps : Boolean := False;
+      Max_Steps : UARP.Types.Integer_Value := 0;
+      Has_Max_Tokens_Per_Run : Boolean := False;
+      Max_Tokens_Per_Run : UARP.Types.Integer_Value := 0;
+      Has_Thinking_Budget_Tokens : Boolean := False;
+      Thinking_Budget_Tokens : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Get_My_Head_Agent_Template_Response_Tier_Resource_Limits) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_My_Head_Agent_Template_Response_Tier_Resource_Limits;
+
    --  `GetMyHeadAgentTemplateResponseTierInstallSpec` model.
    type Get_My_Head_Agent_Template_Response_Tier_Install_Spec is record
       Spec_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tool_Allowlist : Boolean := False;
+      Tool_Allowlist : UARP.Types.Text_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Get_My_Head_Agent_Template_Response_Tier_Install_Spec) return UARP.JSON_Support.JSON_Value;
@@ -17402,6 +17558,13 @@ package UARP.Models is
    type Get_My_Head_Agent_Template_Response_Tier is record
       Has_Tier : Boolean := False;
       Tier : UARP.Models.Get_My_Head_Agent_Template_Response_Tier_Tier;
+      Has_Resource_Limits : Boolean := False;
+      Resource_Limits : UARP.Models.Get_My_Head_Agent_Template_Response_Tier_Resource_Limits;
+      Has_Initial_Budget_Usd : Boolean := False;
+      Initial_Budget_Usd : UARP.Types.Float_Value := 0.0;
+      --  The tools the tier's Head Agent gets. Empty for a locked tier.
+      Has_Built_In_Tools : Boolean := False;
+      Built_In_Tools : UARP.Types.Text_Vectors.Vector;
       Has_Available : Boolean := False;
       Available : Standard.Boolean := False;
       Has_Install_Specs : Boolean := False;
@@ -17724,47 +17887,6 @@ package UARP.Models is
 
    function To_JSON (Model : Get_Public_State_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Public_State_Response;
-
-   --  Values of `GetReadyResponseStatus`.
-   --  A value the API introduces later decodes as Get_Ready_Response_Status_Unrecognized
-   --  with the original text kept in Raw.
-   type Get_Ready_Response_Status_Kind is
-     (Get_Ready_Response_Status_Ready,
-   Get_Ready_Response_Status_Not_Ready,
-   Get_Ready_Response_Status_Unrecognized);
-
-   type Get_Ready_Response_Status is record
-      Kind : Get_Ready_Response_Status_Kind := Get_Ready_Response_Status_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Get_Ready_Response_Status (Value : String) return Get_Ready_Response_Status;
-   function To_Get_Ready_Response_Status (Kind : Get_Ready_Response_Status_Kind) return Get_Ready_Response_Status;
-   function Image (Model : Get_Ready_Response_Status) return String;
-   function To_JSON (Model : Get_Ready_Response_Status) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Ready_Response_Status;
-
-   --  `GetReadyResponseChecks` model.
-   type Get_Ready_Response_Checks is record
-      Has_Kv : Boolean := False;
-      Kv : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Get_Ready_Response_Checks) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Ready_Response_Checks;
-
-   --  `GetReadyResponse` model.
-   type Get_Ready_Response is record
-      Has_Status : Boolean := False;
-      Status : UARP.Models.Get_Ready_Response_Status;
-      Has_Timestamp : Boolean := False;
-      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Checks : Boolean := False;
-      Checks : UARP.Models.Get_Ready_Response_Checks;
-   end record;
-
-   function To_JSON (Model : Get_Ready_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Ready_Response;
 
    --  `GetReconciliationResponse` model.
    type Get_Reconciliation_Response is record
@@ -18889,8 +19011,26 @@ package UARP.Models is
    function To_JSON (Model : Get_Team_Chat_History_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Team_Chat_History_Response;
 
+   --  The graph envelope: ids of its nodes and edges and the CAS `version` every mutation
+   --  increments.
+   type Get_Team_Graph_Response_Graph is record
+      Team_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Node_Ids : UARP.Types.Text_Vectors.Vector;
+      Edge_Ids : UARP.Types.Text_Vectors.Vector;
+      Version : UARP.Types.Integer_Value := 0;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Get_Team_Graph_Response_Graph) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Team_Graph_Response_Graph;
+
    --  `GetTeamGraphResponse` model.
    type Get_Team_Graph_Response is record
+      --  The graph envelope: ids of its nodes and edges and the CAS `version` every mutation
+      --  increments.
+      Has_Graph : Boolean := False;
+      Graph : UARP.Models.Get_Team_Graph_Response_Graph;
       Has_Nodes : Boolean := False;
       Nodes : UARP.Models.Team_Graph_Node_Vectors.Vector;
       Has_Edges : Boolean := False;
@@ -19763,6 +19903,9 @@ package UARP.Models is
       Action : UARP.Models.Guardrail_Action;
       Has_Timeout_Ms : Boolean := False;
       Timeout_Ms : UARP.Types.Integer_Value := 0;
+      --  Whether a signing secret is set. The secret itself is never answered.
+      Has_Has_Secret : Boolean := False;
+      Has_Secret : Standard.Boolean := False;
       Has_Created_At : Boolean := False;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -19858,7 +20001,73 @@ package UARP.Models is
    --  `HealthzAliasResponse` model.
    type Healthz_Alias_Response is record
       Has_Status : Boolean := False;
-      Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Models.Get_Health_Response_Status;
+      Has_Timestamp : Boolean := False;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Kv_Connected : Boolean := False;
+      Kv_Connected : Standard.Boolean := False;
+      Has_Uptime_Seconds : Boolean := False;
+      Uptime_Seconds : UARP.Types.Float_Value := 0.0;
+      --  The API contract version, a DATE STAMP - `2026-09-10` - bumped only on a breaking change,
+      --  and the same value the `X-API-Version` RESPONSE header carries. The server does not read a
+      --  request header of that name: pinning a date negotiates nothing. Not a release number and not
+      --  semver: it cannot be ordered against a semver string, so a client that compares it to one is
+      --  wrong in a way that appears to work for as long as both happen to sort the same. Compare it
+      --  for equality, or read it as a date. It says nothing about which BUILD is running - for that,
+      --  read `build_sha`.
+      Has_Version : Boolean := False;
+      Version : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The commit this running build was made from, baked in at image build time. This is the only
+      --  value on the wire that identifies the deployed code: `version` is the contract stamp and is
+      --  constant across deploys, and a restart proves a restart rather than an identity. `"unknown"`
+      --  means the image was built without the build argument (a local build, or a deploy predating
+      --  this field) and must be read as UNKNOWN, never as a match. Documentation that pins a claim
+      --  about platform behaviour can cite it.
+      Has_Build_Sha : Boolean := False;
+      Build_Sha : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  When the running image was built, ISO-8601 UTC, baked in at image build time next to
+      --  `build_sha`. `"unknown"` when the build argument was absent or did not parse as a date. Like
+      --  `build_sha` it identifies the BUILD; `version` is the API contract stamp (the
+      --  `X-API-Version` header) and does not change between deploys.
+      Has_Build_Time : Boolean := False;
+      Build_Time : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Always 0. Kept for compatibility - there is no resume-parking state: `RunStatus` has no
+      --  `waiting_for_resume`, and startup reconciliation FAILS an interrupted run rather than
+      --  holding it for resume. It previously reported the queue depth under this name, which reads
+      --  as recovery progress on the one endpoint an operator watches during a deploy. Use
+      --  `runs_queued` for the queue, and run status for recovery.
+      Has_Pending_Resumes : Boolean := False;
+      Pending_Resumes : UARP.Types.Integer_Value := 0;
+      --  What this build can do, by name - gate a feature on it instead of on a 404. Names are added
+      --  when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
+      --  `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
+      --  `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
+      --  `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+      --  `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+      --  COVERS, so here is the coverage - added 2026-10-13 because a client asked which name gates
+      --  `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+      --  `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+      --  `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+      --  `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+      --  /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+      --  `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+      --  `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+      --  `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+      --  /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+      --  `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+      --  `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+      --  `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+      --  `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+      --  /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+      --  `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+      --  /company/versions` AND `POST /company/restore` - there is deliberately no separate
+      --  `company_restore`, since a snapshot and the rollback to it ship together.
+      Has_Capabilities : Boolean := False;
+      Capabilities : UARP.Types.Text_Vectors.Vector;
+      --  Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
+      --  falls as they are picked up - but it is a queue depth, not a count of recoveries.
+      Has_Runs_Queued : Boolean := False;
+      Runs_Queued : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : Healthz_Alias_Response) return UARP.JSON_Support.JSON_Value;
@@ -20263,9 +20472,11 @@ package UARP.Models is
       Status : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Created_At : Boolean := False;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  What the run was asked to do - the first line of its request (message, prompt, text or
-      --  instruction), at most 140 characters. Absent when the run carries no text. Since 2026-10-16:
-      --  a failed row used to carry only its error, so clients titled the task with it.
+      --  What the run was asked to do - the first line of its request (`title` when the platform gave
+      --  the run one - an event-started reaction run says "Looking into a failed run of <agent>"
+      --  rather than its event envelope - else message, prompt, text or instruction), at most 140
+      --  characters. Absent when the run carries no text. Since 2026-10-16: a failed row used to
+      --  carry only its error, so clients titled the task with it.
       Has_Goal : Boolean := False;
       Goal : UARP.Types.Text := UARP.Types.Empty_Text;
       --  One line: the tool being requested, the question, or the error.
@@ -20603,6 +20814,9 @@ package UARP.Models is
       Status : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Tenant_Id : Boolean := False;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  When the invite was last re-sent. Absent until the first resend.
+      Has_Last_Sent_At : Boolean := False;
+      Last_Sent_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Email_Sent : Standard.Boolean := False;
    end record;
 
@@ -21260,6 +21474,8 @@ package UARP.Models is
    type List_Agent_Scorers_Response is record
       Has_Scorers : Boolean := False;
       Scorers : UARP.Models.Agent_Scorer_Vectors.Vector;
+      Has_Total : Boolean := False;
+      Total : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : List_Agent_Scorers_Response) return UARP.JSON_Support.JSON_Value;
@@ -22311,6 +22527,18 @@ package UARP.Models is
       Created : UARP.Types.Integer_Value := 0;
       Has_Owned_By : Boolean := False;
       Owned_By : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Permission : Boolean := False;
+      Permission : UARP.JSON_Support.JSON_Value;
+      Has_Root : Boolean := False;
+      Root : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent : Boolean := False;
+      Parent : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The agent's or team's name. Absent when it has none.
+      Has_Display_Name : Boolean := False;
+      Display_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Context window: the agent model's `max_context_tokens`, else 128000.
+      Has_Max_Tokens : Boolean := False;
+      Max_Tokens : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : List_Models_Response_Data_Item) return UARP.JSON_Support.JSON_Value;
@@ -23267,6 +23495,8 @@ package UARP.Models is
    type Public_Tenant_Stats is record
       Total_Runs : UARP.Types.Integer_Value := 0;
       Total_Agents : UARP.Types.Integer_Value := 0;
+      Has_Total_Ratings : Boolean := False;
+      Total_Ratings : UARP.Types.Integer_Value := 0;
       Avg_Rating : UARP.Types.Float_Value := 0.0;
    end record;
 
@@ -25090,6 +25320,9 @@ package UARP.Models is
       Webhook_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Deliveries : UARP.Models.Webhook_Delivery_Attempt_Vectors.Vector;
       Total : UARP.Types.Integer_Value := 0;
+      --  True when the scan hit its bound, so older deliveries exist that this list does not count.
+      Has_Truncated : Boolean := False;
+      Truncated : Standard.Boolean := False;
       --  Present only when `limit` was sent: whether another page follows.
       Has_Has_More : Boolean := False;
       Has_More : Standard.Boolean := False;
@@ -28454,6 +28687,7 @@ package UARP.Models is
    Repair_Agent_Records_Request_Op_Head_Pod_Descriptions,
    Repair_Agent_Records_Request_Op_Initial_Versions,
    Repair_Agent_Records_Request_Op_Orphan_Schedules,
+   Repair_Agent_Records_Request_Op_Cancel_Lessons,
    Repair_Agent_Records_Request_Op_Unrecognized);
 
    type Repair_Agent_Records_Request_Op is record
@@ -28528,6 +28762,15 @@ package UARP.Models is
    function To_JSON (Model : Repair_Agent_Records_Response_Orphan_Schedules) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Repair_Agent_Records_Response_Orphan_Schedules;
 
+   --  `RepairAgentRecordsResponseCancelLessons` model.
+   type Repair_Agent_Records_Response_Cancel_Lessons is record
+      Has_Removed : Boolean := False;
+      Removed : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Repair_Agent_Records_Response_Cancel_Lessons) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Repair_Agent_Records_Response_Cancel_Lessons;
+
    --  `RepairAgentRecordsResponseError` model.
    type Repair_Agent_Records_Response_Error is record
       Has_Tenant_Id : Boolean := False;
@@ -28553,6 +28796,7 @@ package UARP.Models is
       Head_Pod_Descriptions : UARP.Models.Repair_Agent_Records_Response_Head_Pod_Descriptions;
       Initial_Versions : UARP.Models.Repair_Agent_Records_Response_Initial_Versions;
       Orphan_Schedules : UARP.Models.Repair_Agent_Records_Response_Orphan_Schedules;
+      Cancel_Lessons : UARP.Models.Repair_Agent_Records_Response_Cancel_Lessons;
       Errors : UARP.Models.Repair_Agent_Records_Response_Error_Vectors.Vector;
    end record;
 
@@ -28697,9 +28941,14 @@ package UARP.Models is
       Accept_Terms : Standard.Boolean := False;
       Has_Accept_Privacy : Boolean := False;
       Accept_Privacy : Standard.Boolean := False;
-      --  Anonymous visitor cookie, joining the landing visit to this request.
+      --  Anonymous visitor cookie; joins landing_visit to otp_requested.
       Has_Visitor_Id : Boolean := False;
       Visitor_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Language of the letter (since 2026-10-17). Without it: the language the person chose before,
+      --  else Accept-Language, else English. The browser's language is remembered for later letters
+      --  until the person sets one in GET/PUT /api/v1/me/email-preferences.
+      Has_Locale : Boolean := False;
+      Locale : UARP.Models.Get_Hire_Catalog_Locale;
    end record;
 
    function To_JSON (Model : Request_Otp_Code_Request) return UARP.JSON_Support.JSON_Value;
@@ -31144,6 +31393,25 @@ package UARP.Models is
    function To_JSON (Model : Share_Workspace_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Share_Workspace_Request;
 
+   --  Values of `ShowEmailUnsubscribeC`.
+   --  A value the API introduces later decodes as Show_Email_Unsubscribe_C_Unrecognized
+   --  with the original text kept in Raw.
+   type Show_Email_Unsubscribe_C_Kind is
+     (Show_Email_Unsubscribe_C_Weekly_Digest,
+   Show_Email_Unsubscribe_C_Product_Tips,
+   Show_Email_Unsubscribe_C_Unrecognized);
+
+   type Show_Email_Unsubscribe_C is record
+      Kind : Show_Email_Unsubscribe_C_Kind := Show_Email_Unsubscribe_C_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Show_Email_Unsubscribe_C (Value : String) return Show_Email_Unsubscribe_C;
+   function To_Show_Email_Unsubscribe_C (Kind : Show_Email_Unsubscribe_C_Kind) return Show_Email_Unsubscribe_C;
+   function Image (Model : Show_Email_Unsubscribe_C) return String;
+   function To_JSON (Model : Show_Email_Unsubscribe_C) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Show_Email_Unsubscribe_C;
+
    --  `SignUpForAndroidTestingRequest` model.
    type Sign_Up_For_Android_Testing_Request is record
       Email : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -32244,9 +32512,33 @@ package UARP.Models is
    function To_JSON (Model : Terminate_Agent_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Terminate_Agent_Response;
 
+   --  Which sender to test. `auth` (the default) sends sign-in codes; `notify` sends everything
+   --  else.
+   --  A value the API introduces later decodes as Test_Admin_Smtp_Config_Request_Profile_Unrecognized
+   --  with the original text kept in Raw.
+   type Test_Admin_Smtp_Config_Request_Profile_Kind is
+     (Test_Admin_Smtp_Config_Request_Profile_Auth,
+   Test_Admin_Smtp_Config_Request_Profile_Notify,
+   Test_Admin_Smtp_Config_Request_Profile_Unrecognized);
+
+   type Test_Admin_Smtp_Config_Request_Profile is record
+      Kind : Test_Admin_Smtp_Config_Request_Profile_Kind := Test_Admin_Smtp_Config_Request_Profile_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Test_Admin_Smtp_Config_Request_Profile (Value : String) return Test_Admin_Smtp_Config_Request_Profile;
+   function To_Test_Admin_Smtp_Config_Request_Profile (Kind : Test_Admin_Smtp_Config_Request_Profile_Kind) return Test_Admin_Smtp_Config_Request_Profile;
+   function Image (Model : Test_Admin_Smtp_Config_Request_Profile) return String;
+   function To_JSON (Model : Test_Admin_Smtp_Config_Request_Profile) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Test_Admin_Smtp_Config_Request_Profile;
+
    --  `TestAdminSmtpConfigRequest` model.
    type Test_Admin_Smtp_Config_Request is record
       To : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Which sender to test. `auth` (the default) sends sign-in codes; `notify` sends everything
+      --  else.
+      Has_Profile : Boolean := False;
+      Profile : UARP.Models.Test_Admin_Smtp_Config_Request_Profile;
    end record;
 
    function To_JSON (Model : Test_Admin_Smtp_Config_Request) return UARP.JSON_Support.JSON_Value;
@@ -33688,6 +33980,22 @@ package UARP.Models is
    function To_JSON (Model : Update_Admin_Setup_State_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Setup_State_Request;
 
+   --  The second sender (since 2026-10-17). The relay refuses a From its login does not own, so a
+   --  second address needs its own login. Same merge rules; `password: ""` clears it.
+   type Update_Admin_Smtp_Config_Request_Notify is record
+      Has_User : Boolean := False;
+      User : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Password : Boolean := False;
+      Password : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_From : Boolean := False;
+      From : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_From_Name : Boolean := False;
+      From_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Smtp_Config_Request_Notify) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Smtp_Config_Request_Notify;
+
    --  `UpdateAdminSmtpConfigRequest` model.
    type Update_Admin_Smtp_Config_Request is record
       Has_Host : Boolean := False;
@@ -33703,6 +34011,13 @@ package UARP.Models is
       From : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_From_Name : Boolean := False;
       From_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The second sender (since 2026-10-17). The relay refuses a From its login does not own, so a
+      --  second address needs its own login. Same merge rules; `password: ""` clears it.
+      Has_Notify : Boolean := False;
+      Notify : UARP.Models.Update_Admin_Smtp_Config_Request_Notify;
+      --  Reply-To on notify mail; `""` clears it.
+      Has_Reply_To : Boolean := False;
+      Reply_To : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
    end record;
 
    function To_JSON (Model : Update_Admin_Smtp_Config_Request) return UARP.JSON_Support.JSON_Value;
@@ -34286,6 +34601,35 @@ package UARP.Models is
 
    function To_JSON (Model : Update_Mission_Objective_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Mission_Objective_Request;
+
+   --  `UpdateMyEmailPreferencesRequest` model.
+   type Update_My_Email_Preferences_Request is record
+      Has_Locale : Boolean := False;
+      Locale : UARP.Models.Get_Hire_Catalog_Locale;
+      Has_Weekly_Digest : Boolean := False;
+      Weekly_Digest : Standard.Boolean := False;
+      Has_Product_Tips : Boolean := False;
+      Product_Tips : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_My_Email_Preferences_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_My_Email_Preferences_Request;
+
+   --  `UpdateMyEmailPreferencesResponse` model.
+   type Update_My_Email_Preferences_Response is record
+      --  Language of every letter; null until the person or a browser sets it (English then).
+      Has_Locale : Boolean := False;
+      Locale : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The Monday summary for owners and admins.
+      Weekly_Digest : Standard.Boolean := False;
+      --  The day-1 and day-3 letters to a company that has not started.
+      Product_Tips : Standard.Boolean := False;
+      Has_Updated_At : Boolean := False;
+      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Update_My_Email_Preferences_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_My_Email_Preferences_Response;
 
    --  `UpdateMyPreferencesRequest` model.
    type Update_My_Preferences_Request is record

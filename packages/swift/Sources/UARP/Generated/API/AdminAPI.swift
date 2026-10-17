@@ -1760,9 +1760,11 @@ public struct AdminAPI: Sendable {
     /// Agent). `head_pod_descriptions`: a head agent whose description still says "Pod" gets the
     /// Chief of Staff description, whatever its name. `initial_versions`: an agent with no version
     /// gets v1 from its current record. `orphan_schedules`: a cron schedule whose agent is gone is
-    /// deleted (it fired a run daily that failed with agent_not_found). A changed head agent gets a
-    /// new version, since chat runs pin the latest one. `dry_run: true` counts without writing.
-    /// Idempotent: a second run finds nothing to do. Since 2026-10-16.
+    /// deleted (it fired a run daily that failed with agent_not_found). `cancel_lessons`: an
+    /// episodic memory "[Failure] … failed: Run cancelled" — a person's stop stored as a lesson —
+    /// is deleted. A changed head agent gets a new version, since chat runs pin the latest one.
+    /// `dry_run: true` counts without writing. Idempotent: a second run finds nothing to do. Since
+    /// 2026-10-16.
     ///
     /// `POST /api/v1/admin/maintenance/agent-records`
     ///

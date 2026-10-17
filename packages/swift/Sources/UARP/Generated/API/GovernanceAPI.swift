@@ -169,9 +169,10 @@ public struct GovernanceAPI: Sendable {
     ///
     /// Submits a request from an agent to the tenant's ambassadors, stored with status `pending`.
     /// Unlike the other mutations on this sub-handler there is no admin gate — any caller the
-    /// governance router admits may file one. The body's `from_agent_id`, `type`, `subject` and
-    /// `body` are passed to the store without validation, so a missing field is stored as undefined
-    /// rather than refused. 201 with the created request.
+    /// governance router admits may file one. All four fields are required and `type` must be one
+    /// of `clarification`, `approval`, `escalation` or `report`; anything else answers 422 and
+    /// stores nothing (since 2026-10-17 — before that the body was stored unvalidated, so older
+    /// rows can carry other `type` text or missing fields). 201 with the created request.
     ///
     /// `POST /api/v1/governance/ambassador/requests`
     public func createAmbassadorRequest(body: CreateAmbassadorRequestRequest, options: RequestOptions = .init()) async throws -> AmbassadorRequest {

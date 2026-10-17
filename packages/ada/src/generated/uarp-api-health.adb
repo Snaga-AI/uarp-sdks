@@ -32,7 +32,7 @@ package body UARP.API.Health is
    function Get_Ready
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Ready_Response
+      return UARP.Models.Readiness_Report
    is
    begin
       return UARP.Models.From_JSON

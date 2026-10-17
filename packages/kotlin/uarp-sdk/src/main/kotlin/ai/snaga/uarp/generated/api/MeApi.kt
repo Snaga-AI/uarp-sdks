@@ -80,6 +80,27 @@ public class MeApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Read email preferences
+     *
+     * The language of every letter Snaga sends this person, and the two kinds of mail they may
+     * turn off (since 2026-10-17). Keyed by the email address, so the same answer in every company
+     * the person belongs to. Mail about the account itself (sign-in codes, invites, approvals,
+     * billing, security) is always sent. Requires a credential bound to a person; a key without a
+     * user identity is refused with 403.
+     *
+     * `GET /api/v1/me/email-preferences`
+     */
+    public suspend fun getMyEmailPreferences(options: RequestOptions = RequestOptions()): GetMyEmailPreferencesResponse {
+        return client.request<GetMyEmailPreferencesResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/me/email-preferences",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Read personal instructions
      *
      * Requires a credential bound to a person: an API key that carries no user identity is refused
@@ -139,6 +160,26 @@ public class MeApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/me/tenants/switch",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Update email preferences
+     *
+     * WRITE SEMANTICS: merges. A field the body omits keeps its value. Setting `locale` here fixes
+     * it: a browser's Accept-Language no longer changes it. An unknown locale is 422.
+     *
+     * `PUT /api/v1/me/email-preferences`
+     */
+    public suspend fun updateMyEmailPreferences(body: UpdateMyEmailPreferencesRequest, options: RequestOptions = RequestOptions()): UpdateMyEmailPreferencesResponse {
+        return client.request<UpdateMyEmailPreferencesResponse>(
+            RequestSpec(
+                method = "PUT",
+                path = "/api/v1/me/email-preferences",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,

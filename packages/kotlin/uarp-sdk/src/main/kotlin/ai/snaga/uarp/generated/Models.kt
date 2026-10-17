@@ -3146,6 +3146,30 @@ public data class AdminSmtpConfigEnv(
      */
     @SerialName("has_password")
     public val hasPassword: Boolean? = null,
+    /**
+     * The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+     * Empty `user` means none, and that mail goes from the primary sender.
+     */
+    public val notify: AdminSmtpConfigEnvNotify? = null,
+    /**
+     * Reply-To on notify mail. Empty means none.
+     */
+    @SerialName("reply_to")
+    public val replyTo: String? = null,
+)
+
+/**
+ * The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+ * Empty `user` means none, and that mail goes from the primary sender.
+ */
+@Serializable
+public data class AdminSmtpConfigEnvNotify(
+    public val user: String? = null,
+    public val from: String? = null,
+    @SerialName("from_name")
+    public val fromName: String? = null,
+    @SerialName("has_password")
+    public val hasPassword: Boolean? = null,
 )
 
 /**
@@ -3162,6 +3186,30 @@ public data class AdminSmtpConfigKv(
     /**
      * Whether a credential is stored. The password itself is never returned by any read.
      */
+    @SerialName("has_password")
+    public val hasPassword: Boolean? = null,
+    /**
+     * The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+     * Empty `user` means none, and that mail goes from the primary sender.
+     */
+    public val notify: AdminSmtpConfigKvNotify? = null,
+    /**
+     * Reply-To on notify mail. Empty means none.
+     */
+    @SerialName("reply_to")
+    public val replyTo: String? = null,
+)
+
+/**
+ * The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+ * Empty `user` means none, and that mail goes from the primary sender.
+ */
+@Serializable
+public data class AdminSmtpConfigKvNotify(
+    public val user: String? = null,
+    public val from: String? = null,
+    @SerialName("from_name")
+    public val fromName: String? = null,
     @SerialName("has_password")
     public val hasPassword: Boolean? = null,
 )
@@ -4753,7 +4801,9 @@ public data class AgentUpdate(
     public val contextWindowSize: Double? = null,
     /**
      * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
-     * their stored values.
+     * their stored values. `null` clears the whole block and a key set to `null` is removed, so
+     * the agent falls back to the platform's limits (since 2026-10-17; before, `null` was 422 and
+     * `{}` changed nothing).
      */
     @SerialName("resource_limits")
     public val resourceLimits: AgentUpdateResourceLimits? = null,
@@ -5262,7 +5312,9 @@ public data class AgentUpdatePublicConfig(
 
 /**
  * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
- * their stored values.
+ * their stored values. `null` clears the whole block and a key set to `null` is removed, so
+ * the agent falls back to the platform's limits (since 2026-10-17; before, `null` was 422 and
+ * `{}` changed nothing).
  */
 @Serializable
 public data class AgentUpdateResourceLimits(
@@ -5664,7 +5716,12 @@ public data class AmbassadorRequest(
     public val tenantId: String,
     @SerialName("from_agent_id")
     public val fromAgentId: String,
-    public val type: AmbassadorRequestType,
+    /**
+     * One of `clarification`, `approval`, `escalation`, `report` for every request written since
+     * 2026-10-17. Not an enum on read: rows stored before then were not validated and can carry
+     * other text (production holds `question` and probe strings).
+     */
+    public val type: String,
     public val subject: String,
     public val body: String,
     public val status: AmbassadorRequestStatus,
@@ -10336,7 +10393,7 @@ public data class CreateAgentVersionRequest(
 public data class CreateAmbassadorRequestRequest(
     @SerialName("from_agent_id")
     public val fromAgentId: String,
-    public val type: String,
+    public val type: AmbassadorRequestType,
     public val subject: String,
     public val body: String,
 )
@@ -11103,8 +11160,13 @@ public data class CreateRunRequest(
      * agent.
      */
     public val version: Long? = null,
+    /**
+     * This run's limits, laid over the agent's. A key not listed here is refused with 422 naming
+     * the accepted keys (since 2026-10-17; before, it was dropped and the run ran without the cap
+     * the caller meant).
+     */
     @SerialName("resource_limits")
-    public val resourceLimits: JsonObject? = null,
+    public val resourceLimits: CreateRunRequestResourceLimits? = null,
     public val metadata: JsonObject? = null,
 )
 
@@ -11120,6 +11182,25 @@ public data class CreateRunRequestInput(
     public val message: String? = null,
     @SerialName("file_ids")
     public val fileIds: List<String>? = null,
+)
+
+/**
+ * This run's limits, laid over the agent's. A key not listed here is refused with 422 naming
+ * the accepted keys (since 2026-10-17; before, it was dropped and the run ran without the cap
+ * the caller meant).
+ */
+@Serializable
+public data class CreateRunRequestResourceLimits(
+    @SerialName("max_duration_ms")
+    public val maxDurationMs: Double? = null,
+    @SerialName("max_steps")
+    public val maxSteps: Double? = null,
+    @SerialName("max_tool_calls")
+    public val maxToolCalls: Double? = null,
+    @SerialName("max_tokens_per_run")
+    public val maxTokensPerRun: Double? = null,
+    @SerialName("max_cost_usd")
+    public val maxCostUsd: Double? = null,
 )
 
 /**
@@ -15846,7 +15927,9 @@ public object GetHealthResponseStatusSerializer : KSerializer<GetHealthResponseS
 }
 
 /**
- * `GetHireCatalogLocale` values.
+ * Language of the letter (since 2026-10-17). Without it: the language the person chose before,
+ * else Accept-Language, else English. The browser's language is remembered for later letters
+ * until the person sets one in GET/PUT /api/v1/me/email-preferences.
  */
 ///
 /**
@@ -16028,7 +16111,8 @@ public data class GetMediaUsageResponseVideos(
  */
 @Serializable
 public data class GetMemoriesByEntityResponse(
-    public val items: List<MemoryEntry>? = null,
+    public val entries: List<MemoryEntry>,
+    public val total: Long,
 )
 
 /**
@@ -16095,6 +16179,12 @@ public data class GetMeResponseTenant(
     public val name: String,
     public val slug: String,
     public val plan: String,
+    @SerialName("head_agent_id")
+    public val headAgentId: String? = null,
+    @SerialName("logo_url")
+    public val logoURL: String? = null,
+    @SerialName("shared_workspace_id")
+    public val sharedWorkspaceId: String? = null,
 )
 
 /**
@@ -16273,6 +16363,29 @@ public data class GetMissionPerformanceResponseReviews(
 )
 
 /**
+ * `GetMyEmailPreferencesResponse` model.
+ */
+@Serializable
+public data class GetMyEmailPreferencesResponse(
+    /**
+     * Language of every letter; null until the person or a browser sets it (English then).
+     */
+    public val locale: String? = null,
+    /**
+     * The Monday summary for owners and admins.
+     */
+    @SerialName("weekly_digest")
+    public val weeklyDigest: Boolean,
+    /**
+     * The day-1 and day-3 letters to a company that has not started.
+     */
+    @SerialName("product_tips")
+    public val productTips: Boolean,
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
+)
+
+/**
  * `GetMyHeadAgentTemplateResponse` model.
  */
 @Serializable
@@ -16317,6 +16430,15 @@ public object GetMyHeadAgentTemplateResponseRecommendedSerializer : KSerializer<
 @Serializable
 public data class GetMyHeadAgentTemplateResponseTier(
     public val tier: GetMyHeadAgentTemplateResponseTierTier? = null,
+    @SerialName("resource_limits")
+    public val resourceLimits: GetMyHeadAgentTemplateResponseTierResourceLimits? = null,
+    @SerialName("initial_budget_usd")
+    public val initialBudgetUsd: Double? = null,
+    /**
+     * The tools the tier's Head Agent gets. Empty for a locked tier.
+     */
+    @SerialName("built_in_tools")
+    public val builtInTools: List<String>? = null,
     public val available: Boolean? = null,
     @SerialName("install_specs")
     public val installSpecs: List<GetMyHeadAgentTemplateResponseTierInstallSpec>? = null,
@@ -16333,6 +16455,23 @@ public data class GetMyHeadAgentTemplateResponseTier(
 public data class GetMyHeadAgentTemplateResponseTierInstallSpec(
     @SerialName("spec_id")
     public val specId: String,
+    @SerialName("tool_allowlist")
+    public val toolAllowlist: List<String>? = null,
+)
+
+/**
+ * `GetMyHeadAgentTemplateResponseTierResourceLimits` model.
+ */
+@Serializable
+public data class GetMyHeadAgentTemplateResponseTierResourceLimits(
+    @SerialName("max_duration_ms")
+    public val maxDurationMs: Long? = null,
+    @SerialName("max_steps")
+    public val maxSteps: Long? = null,
+    @SerialName("max_tokens_per_run")
+    public val maxTokensPerRun: Long? = null,
+    @SerialName("thinking_budget_tokens")
+    public val thinkingBudgetTokens: Long? = null,
 )
 
 /**
@@ -16347,6 +16486,30 @@ public data class GetMyHeadAgentTemplateResponseTierTier(
     public val requiredPlan: GetMyHeadAgentTemplateResponseTierTierRequiredPlan? = null,
     @SerialName("spec_ids")
     public val specIds: List<String>? = null,
+    /**
+     * Per-SPEC tool names this tier advertises; a SPEC absent here advertises all its tools.
+     */
+    @SerialName("tool_allowlists")
+    public val toolAllowlists: Map<String, List<String>>? = null,
+    @SerialName("resource_limits")
+    public val resourceLimits: GetMyHeadAgentTemplateResponseTierTierResourceLimits? = null,
+    @SerialName("initial_budget_usd")
+    public val initialBudgetUsd: Double? = null,
+    @SerialName("auto_inject_overrides")
+    public val autoInjectOverrides: GetMyHeadAgentTemplateResponseTierTierAutoInjectOverrides? = null,
+)
+
+/**
+ * `GetMyHeadAgentTemplateResponseTierTierAutoInjectOverrides` model.
+ */
+@Serializable
+public data class GetMyHeadAgentTemplateResponseTierTierAutoInjectOverrides(
+    @SerialName("kb_tools")
+    public val kbTools: Boolean? = null,
+    @SerialName("memory_tools")
+    public val memoryTools: Boolean? = null,
+    @SerialName("core_memory_tools")
+    public val coreMemoryTools: Boolean? = null,
 )
 
 /**
@@ -16377,6 +16540,21 @@ public object GetMyHeadAgentTemplateResponseTierTierRequiredPlanSerializer : KSe
     override fun serialize(encoder: Encoder, value: GetMyHeadAgentTemplateResponseTierTierRequiredPlan): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): GetMyHeadAgentTemplateResponseTierTierRequiredPlan = GetMyHeadAgentTemplateResponseTierTierRequiredPlan(decoder.decodeString())
 }
+
+/**
+ * `GetMyHeadAgentTemplateResponseTierTierResourceLimits` model.
+ */
+@Serializable
+public data class GetMyHeadAgentTemplateResponseTierTierResourceLimits(
+    @SerialName("max_duration_ms")
+    public val maxDurationMs: Long? = null,
+    @SerialName("max_steps")
+    public val maxSteps: Long? = null,
+    @SerialName("max_tokens_per_run")
+    public val maxTokensPerRun: Long? = null,
+    @SerialName("thinking_budget_tokens")
+    public val thinkingBudgetTokens: Long? = null,
+)
 
 /**
  * `GetPromoStateResponse` model.
@@ -16503,52 +16681,6 @@ public data class GetPublicStateResponse(
      */
     public val agents: List<PublicStateAgent>,
 )
-
-/**
- * `GetReadyResponse` model.
- */
-@Serializable
-public data class GetReadyResponse(
-    public val status: GetReadyResponseStatus? = null,
-    public val timestamp: String? = null,
-    public val checks: GetReadyResponseChecks? = null,
-)
-
-/**
- * `GetReadyResponseChecks` model.
- */
-@Serializable
-public data class GetReadyResponseChecks(
-    public val kv: String? = null,
-)
-
-/**
- * `GetReadyResponseStatus` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = GetReadyResponseStatusSerializer::class)
-@JvmInline
-public value class GetReadyResponseStatus(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val READY: GetReadyResponseStatus = GetReadyResponseStatus("ready")
-        public val NOT_READY: GetReadyResponseStatus = GetReadyResponseStatus("not_ready")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<GetReadyResponseStatus> = listOf(READY, NOT_READY)
-    }
-}
-
-public object GetReadyResponseStatusSerializer : KSerializer<GetReadyResponseStatus> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetReadyResponseStatus", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: GetReadyResponseStatus): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): GetReadyResponseStatus = GetReadyResponseStatus(decoder.decodeString())
-}
 
 /**
  * `GetReconciliationResponse` model.
@@ -17314,8 +17446,32 @@ public object GetTeamChatHistoryResponseChatStateSerializer : KSerializer<GetTea
  */
 @Serializable
 public data class GetTeamGraphResponse(
+    /**
+     * The graph envelope: ids of its nodes and edges and the CAS `version` every mutation
+     * increments.
+     */
+    public val graph: GetTeamGraphResponseGraph? = null,
     public val nodes: List<TeamGraphNode>? = null,
     public val edges: List<TeamGraphEdge>? = null,
+)
+
+/**
+ * The graph envelope: ids of its nodes and edges and the CAS `version` every mutation
+ * increments.
+ */
+@Serializable
+public data class GetTeamGraphResponseGraph(
+    @SerialName("team_id")
+    public val teamId: String,
+    @SerialName("node_ids")
+    public val nodeIds: List<String>,
+    @SerialName("edge_ids")
+    public val edgeIds: List<String>,
+    public val version: Long,
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("updated_at")
+    public val updatedAt: String,
 )
 
 /**
@@ -18371,6 +18527,11 @@ public data class Guardrail(
     public val action: GuardrailAction? = null,
     @SerialName("timeout_ms")
     public val timeoutMs: Long? = null,
+    /**
+     * Whether a signing secret is set. The secret itself is never answered.
+     */
+    @SerialName("has_secret")
+    public val hasSecret: Boolean? = null,
     @SerialName("created_at")
     public val createdAt: String? = null,
 )
@@ -18590,7 +18751,82 @@ public data class HealthLiveResponse(
  */
 @Serializable
 public data class HealthzAliasResponse(
-    public val status: String? = null,
+    public val status: GetHealthResponseStatus? = null,
+    public val timestamp: String? = null,
+    @SerialName("kv_connected")
+    public val kvConnected: Boolean? = null,
+    @SerialName("uptime_seconds")
+    public val uptimeSeconds: Double? = null,
+    /**
+     * The API contract version, a DATE STAMP — `2026-09-10` — bumped only on a breaking change,
+     * and the same value the `X-API-Version` RESPONSE header carries. The server does not read a
+     * request header of that name: pinning a date negotiates nothing. Not a release number and not
+     * semver: it cannot be ordered against a semver string, so a client that compares it to one is
+     * wrong in a way that appears to work for as long as both happen to sort the same. Compare it
+     * for equality, or read it as a date. It says nothing about which BUILD is running — for that,
+     * read `build_sha`.
+     */
+    public val version: String? = null,
+    /**
+     * The commit this running build was made from, baked in at image build time. This is the only
+     * value on the wire that identifies the deployed code: `version` is the contract stamp and is
+     * constant across deploys, and a restart proves a restart rather than an identity. `"unknown"`
+     * means the image was built without the build argument (a local build, or a deploy predating
+     * this field) and must be read as UNKNOWN, never as a match. Documentation that pins a claim
+     * about platform behaviour can cite it.
+     */
+    @SerialName("build_sha")
+    public val buildSha: String? = null,
+    /**
+     * When the running image was built, ISO-8601 UTC, baked in at image build time next to
+     * `build_sha`. `"unknown"` when the build argument was absent or did not parse as a date. Like
+     * `build_sha` it identifies the BUILD; `version` is the API contract stamp (the
+     * `X-API-Version` header) and does not change between deploys.
+     */
+    @SerialName("build_time")
+    public val buildTime: String? = null,
+    /**
+     * Always 0. Kept for compatibility — there is no resume-parking state: `RunStatus` has no
+     * `waiting_for_resume`, and startup reconciliation FAILS an interrupted run rather than
+     * holding it for resume. It previously reported the queue depth under this name, which reads
+     * as recovery progress on the one endpoint an operator watches during a deploy. Use
+     * `runs_queued` for the queue, and run status for recovery.
+     */
+    @SerialName("pending_resumes")
+    public val pendingResumes: Long? = null,
+    /**
+     * What this build can do, by name — gate a feature on it instead of on a 404. Names are added
+     * when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
+     * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
+     * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
+     * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+     * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+     * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+     * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+     * `initiatives` = `/initiatives&#47;*` (`/companies` is its deprecated old name);
+     * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+     * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+     * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+     * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+     * `reviews\[\]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+     * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+     * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+     * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+     * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+     * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+     * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+     * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+     * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+     * /company/versions` AND `POST /company/restore` — there is deliberately no separate
+     * `company_restore`, since a snapshot and the rollback to it ship together.
+     */
+    public val capabilities: List<String>? = null,
+    /**
+     * Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
+     * falls as they are picked up — but it is a queue depth, not a count of recoveries.
+     */
+    @SerialName("runs_queued")
+    public val runsQueued: Long? = null,
 )
 
 /**
@@ -19083,9 +19319,11 @@ public data class InboxItem(
     @SerialName("created_at")
     public val createdAt: String? = null,
     /**
-     * What the run was asked to do — the first line of its request (message, prompt, text or
-     * instruction), at most 140 characters. Absent when the run carries no text. Since 2026-10-16:
-     * a failed row used to carry only its error, so clients titled the task with it.
+     * What the run was asked to do — the first line of its request (`title` when the platform gave
+     * the run one — an event-started reaction run says "Looking into a failed run of <agent>"
+     * rather than its event envelope — else message, prompt, text or instruction), at most 140
+     * characters. Absent when the run carries no text. Since 2026-10-16: a failed row used to
+     * carry only its error, so clients titled the task with it.
      */
     public val goal: String? = null,
     /**
@@ -19487,6 +19725,11 @@ public data class Invite(
     public val status: String? = null,
     @SerialName("tenant_id")
     public val tenantId: String? = null,
+    /**
+     * When the invite was last re-sent. Absent until the first resend.
+     */
+    @SerialName("last_sent_at")
+    public val lastSentAt: String? = null,
 )
 
 /**
@@ -19544,6 +19787,11 @@ public data class InviteUserResponse(
     public val status: String? = null,
     @SerialName("tenant_id")
     public val tenantId: String? = null,
+    /**
+     * When the invite was last re-sent. Absent until the first resend.
+     */
+    @SerialName("last_sent_at")
+    public val lastSentAt: String? = null,
     @SerialName("email_sent")
     public val emailSent: Boolean,
 )
@@ -20782,6 +21030,7 @@ public data class ListAgentMCPServersResponse(
 @Serializable
 public data class ListAgentScorersResponse(
     public val scorers: List<AgentScorer>? = null,
+    public val total: Long? = null,
 )
 
 /**
@@ -21491,6 +21740,19 @@ public data class ListModelsResponseDataItem(
     public val created: Long? = null,
     @SerialName("owned_by")
     public val ownedBy: String? = null,
+    public val permission: List<JsonElement>? = null,
+    public val root: String? = null,
+    public val parent: String? = null,
+    /**
+     * The agent's or team's name. Absent when it has none.
+     */
+    @SerialName("display_name")
+    public val displayName: String? = null,
+    /**
+     * Context window: the agent model's `max_context_tokens`, else 128000.
+     */
+    @SerialName("max_tokens")
+    public val maxTokens: Long? = null,
 )
 
 /**
@@ -22472,6 +22734,10 @@ public data class ListWebhookDeliveriesResponse(
     public val webhookId: String,
     public val deliveries: List<WebhookDeliveryAttempt>,
     public val total: Long,
+    /**
+     * True when the scan hit its bound, so older deliveries exist that this list does not count.
+     */
+    public val truncated: Boolean? = null,
     /**
      * Present only when `limit` was sent: whether another page follows.
      */
@@ -28717,6 +28983,8 @@ public data class PublicTenantStats(
     public val totalRuns: Long,
     @SerialName("total_agents")
     public val totalAgents: Long,
+    @SerialName("total_ratings")
+    public val totalRatings: Long? = null,
     @SerialName("avg_rating")
     public val avgRating: Double,
 )
@@ -29769,9 +30037,10 @@ public value class RepairAgentRecordsRequestOp(public val value: String) {
         public val HEAD_POD_DESCRIPTIONS: RepairAgentRecordsRequestOp = RepairAgentRecordsRequestOp("head_pod_descriptions")
         public val INITIAL_VERSIONS: RepairAgentRecordsRequestOp = RepairAgentRecordsRequestOp("initial_versions")
         public val ORPHAN_SCHEDULES: RepairAgentRecordsRequestOp = RepairAgentRecordsRequestOp("orphan_schedules")
+        public val CANCEL_LESSONS: RepairAgentRecordsRequestOp = RepairAgentRecordsRequestOp("cancel_lessons")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<RepairAgentRecordsRequestOp> = listOf(HEAD_TOKEN_CAPS, HEAD_NAMES, HEAD_POD_DESCRIPTIONS, INITIAL_VERSIONS, ORPHAN_SCHEDULES)
+        public val knownValues: List<RepairAgentRecordsRequestOp> = listOf(HEAD_TOKEN_CAPS, HEAD_NAMES, HEAD_POD_DESCRIPTIONS, INITIAL_VERSIONS, ORPHAN_SCHEDULES, CANCEL_LESSONS)
     }
 }
 
@@ -29799,7 +30068,17 @@ public data class RepairAgentRecordsResponse(
     public val initialVersions: RepairAgentRecordsResponseInitialVersions,
     @SerialName("orphan_schedules")
     public val orphanSchedules: RepairAgentRecordsResponseOrphanSchedules,
+    @SerialName("cancel_lessons")
+    public val cancelLessons: RepairAgentRecordsResponseCancelLessons,
     public val errors: List<RepairAgentRecordsResponseError>,
+)
+
+/**
+ * `RepairAgentRecordsResponseCancelLessons` model.
+ */
+@Serializable
+public data class RepairAgentRecordsResponseCancelLessons(
+    public val removed: Long? = null,
 )
 
 /**
@@ -30023,10 +30302,16 @@ public data class RequestOtpCodeRequest(
     @SerialName("accept_privacy")
     public val acceptPrivacy: Boolean? = null,
     /**
-     * Anonymous visitor cookie, joining the landing visit to this request.
+     * Anonymous visitor cookie; joins landing_visit to otp_requested.
      */
     @SerialName("visitor_id")
     public val visitorId: String? = null,
+    /**
+     * Language of the letter (since 2026-10-17). Without it: the language the person chose before,
+     * else Accept-Language, else English. The browser's language is remembered for later letters
+     * until the person sets one in GET/PUT /api/v1/me/email-preferences.
+     */
+    public val locale: GetHireCatalogLocale? = null,
 )
 
 /**
@@ -33798,6 +34083,34 @@ public data class ShareWorkspaceRequest(
 )
 
 /**
+ * `ShowEmailUnsubscribeC` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ShowEmailUnsubscribeCSerializer::class)
+@JvmInline
+public value class ShowEmailUnsubscribeC(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val WEEKLY_DIGEST: ShowEmailUnsubscribeC = ShowEmailUnsubscribeC("weekly_digest")
+        public val PRODUCT_TIPS: ShowEmailUnsubscribeC = ShowEmailUnsubscribeC("product_tips")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ShowEmailUnsubscribeC> = listOf(WEEKLY_DIGEST, PRODUCT_TIPS)
+    }
+}
+
+public object ShowEmailUnsubscribeCSerializer : KSerializer<ShowEmailUnsubscribeC> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ShowEmailUnsubscribeC", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ShowEmailUnsubscribeC): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ShowEmailUnsubscribeC = ShowEmailUnsubscribeC(decoder.decodeString())
+}
+
+/**
  * `SignUpForAndroidTestingRequest` model.
  */
 @Serializable
@@ -36278,7 +36591,41 @@ public data class TerminateAgentResponse(
 @Serializable
 public data class TestAdminSmtpConfigRequest(
     public val to: String,
+    /**
+     * Which sender to test. `auth` (the default) sends sign-in codes; `notify` sends everything
+     * else.
+     */
+    public val profile: TestAdminSmtpConfigRequestProfile? = null,
 )
+
+/**
+ * Which sender to test. `auth` (the default) sends sign-in codes; `notify` sends everything
+ * else.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TestAdminSmtpConfigRequestProfileSerializer::class)
+@JvmInline
+public value class TestAdminSmtpConfigRequestProfile(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val AUTH: TestAdminSmtpConfigRequestProfile = TestAdminSmtpConfigRequestProfile("auth")
+        public val NOTIFY: TestAdminSmtpConfigRequestProfile = TestAdminSmtpConfigRequestProfile("notify")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TestAdminSmtpConfigRequestProfile> = listOf(AUTH, NOTIFY)
+    }
+}
+
+public object TestAdminSmtpConfigRequestProfileSerializer : KSerializer<TestAdminSmtpConfigRequestProfile> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TestAdminSmtpConfigRequestProfile", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TestAdminSmtpConfigRequestProfile): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TestAdminSmtpConfigRequestProfile = TestAdminSmtpConfigRequestProfile(decoder.decodeString())
+}
 
 /**
  * `TestAdminSmtpConfigResponse` model.
@@ -38083,6 +38430,29 @@ public data class UpdateAdminSmtpConfigRequest(
     public val from: String? = null,
     @SerialName("from_name")
     public val fromName: String? = null,
+    /**
+     * The second sender (since 2026-10-17). The relay refuses a From its login does not own, so a
+     * second address needs its own login. Same merge rules; `password: ""` clears it.
+     */
+    public val notify: UpdateAdminSmtpConfigRequestNotify? = null,
+    /**
+     * Reply-To on notify mail; `""` clears it.
+     */
+    @SerialName("reply_to")
+    public val replyTo: JsonElement? = null,
+)
+
+/**
+ * The second sender (since 2026-10-17). The relay refuses a From its login does not own, so a
+ * second address needs its own login. Same merge rules; `password: ""` clears it.
+ */
+@Serializable
+public data class UpdateAdminSmtpConfigRequestNotify(
+    public val user: String? = null,
+    public val password: String? = null,
+    public val from: String? = null,
+    @SerialName("from_name")
+    public val fromName: String? = null,
 )
 
 /**
@@ -38718,6 +39088,41 @@ public data class UpdateMissionObjectiveRequestBudget(
     public val maxTokens: Long? = null,
     @SerialName("max_cost_usd")
     public val maxCostUsd: Double? = null,
+)
+
+/**
+ * `UpdateMyEmailPreferencesRequest` model.
+ */
+@Serializable
+public data class UpdateMyEmailPreferencesRequest(
+    public val locale: GetHireCatalogLocale? = null,
+    @SerialName("weekly_digest")
+    public val weeklyDigest: Boolean? = null,
+    @SerialName("product_tips")
+    public val productTips: Boolean? = null,
+)
+
+/**
+ * `UpdateMyEmailPreferencesResponse` model.
+ */
+@Serializable
+public data class UpdateMyEmailPreferencesResponse(
+    /**
+     * Language of every letter; null until the person or a browser sets it (English then).
+     */
+    public val locale: String? = null,
+    /**
+     * The Monday summary for owners and admins.
+     */
+    @SerialName("weekly_digest")
+    public val weeklyDigest: Boolean,
+    /**
+     * The day-1 and day-3 letters to a company that has not started.
+     */
+    @SerialName("product_tips")
+    public val productTips: Boolean,
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
 )
 
 /**

@@ -16,6 +16,14 @@ use crate::pagination::CursorGuard;
 use crate::sse::EventStream;
 use crate::util::encode_path;
 
+/// Query and header parameters for `confirmEmailUnsubscribe`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConfirmEmailUnsubscribeParams {
+    pub e: String,
+    pub c: models::ShowEmailUnsubscribeC,
+    pub t: String,
+}
+
 /// Query and header parameters for `getAndroidTestingStatus`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetAndroidTestingStatusParams {
@@ -172,6 +180,16 @@ pub struct RetryPublicVideoOrderParams {
     pub x_order_token: String,
 }
 
+/// Query and header parameters for `showEmailUnsubscribe`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ShowEmailUnsubscribeParams {
+    /// The address, base64url.
+    pub e: String,
+    pub c: models::ShowEmailUnsubscribeC,
+    /// HMAC over the address and category.
+    pub t: String,
+}
+
 /// Unauthenticated public-facing endpoints
 #[derive(Debug, Clone)]
 pub struct PublicApi {
@@ -260,6 +278,26 @@ impl PublicApi {
                 method: Method::POST,
                 path: format!("/api/v1/public/sessions/{}/runs/{}/cancel", encode_path(session_id), encode_path(run_id)),
                 query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Turn one kind of mail off
+    ///
+    /// Turns the category in the link off for that address and answers an HTML page saying so. Also
+    /// what a mail client sends for RFC 8058 one-click unsubscribe (`List-Unsubscribe-Post:
+    /// List-Unsubscribe=One-Click`); the body is not read. Same query parameters as the GET.
+    ///
+    /// `POST /api/v1/public/email/unsubscribe`
+    pub async fn confirm_email_unsubscribe(&self, params: &ConfirmEmailUnsubscribeParams) -> Result<String> {
+        self.client
+            .request_text(Request {
+                method: Method::POST,
+                path: "/api/v1/public/email/unsubscribe".to_string(),
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: true,
@@ -1210,6 +1248,27 @@ impl PublicApi {
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: true,
+            })
+            .await
+    }
+
+    /// Unsubscribe page from a letter
+    ///
+    /// The link in the footer of a weekly summary or a tips letter (since 2026-10-17). Answers an
+    /// HTML page with one button and changes nothing, because mail scanners open every link in a
+    /// message. A link that was not signed by Snaga, or names an unknown category, answers 400 with
+    /// an HTML page. Rate limited to 30 per minute per IP.
+    ///
+    /// `GET /api/v1/public/email/unsubscribe`
+    pub async fn show_email_unsubscribe(&self, params: &ShowEmailUnsubscribeParams) -> Result<String> {
+        self.client
+            .request_text(Request {
+                method: Method::GET,
+                path: "/api/v1/public/email/unsubscribe".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
             })
             .await
     }

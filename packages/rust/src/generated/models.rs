@@ -2851,6 +2851,27 @@ pub struct AdminSmtpConfigEnv {
     /// Whether a credential is stored. The password itself is never returned by any read.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub has_password: Option<bool>,
+    /// The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+    /// Empty `user` means none, and that mail goes from the primary sender.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notify: Option<AdminSmtpConfigEnvNotify>,
+    /// Reply-To on notify mail. Empty means none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reply_to: Option<String>,
+}
+
+/// The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+/// Empty `user` means none, and that mail goes from the primary sender.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminSmtpConfigEnvNotify {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub has_password: Option<bool>,
 }
 
 /// What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
@@ -2867,6 +2888,27 @@ pub struct AdminSmtpConfigKv {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub from_name: Option<String>,
     /// Whether a credential is stored. The password itself is never returned by any read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub has_password: Option<bool>,
+    /// The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+    /// Empty `user` means none, and that mail goes from the primary sender.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notify: Option<AdminSmtpConfigKvNotify>,
+    /// Reply-To on notify mail. Empty means none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reply_to: Option<String>,
+}
+
+/// The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+/// Empty `user` means none, and that mail goes from the primary sender.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminSmtpConfigKvNotify {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub has_password: Option<bool>,
 }
@@ -4431,7 +4473,9 @@ pub struct AgentUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context_window_size: Option<f64>,
     /// Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
-    /// their stored values.
+    /// their stored values. `null` clears the whole block and a key set to `null` is removed, so
+    /// the agent falls back to the platform's limits (since 2026-10-17; before, `null` was 422 and
+    /// `{}` changed nothing).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource_limits: Option<AgentUpdateResourceLimits>,
     /// Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
@@ -4951,7 +4995,9 @@ pub struct AgentUpdatePublicConfig {
 }
 
 /// Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
-/// their stored values.
+/// their stored values. `null` clears the whole block and a key set to `null` is removed, so
+/// the agent falls back to the platform's limits (since 2026-10-17; before, `null` was 422 and
+/// `{}` changed nothing).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AgentUpdateResourceLimits {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5402,7 +5448,10 @@ pub struct AmbassadorRequest {
     pub request_id: String,
     pub tenant_id: String,
     pub from_agent_id: String,
-    pub r#type: AmbassadorRequestType,
+    /// One of `clarification`, `approval`, `escalation`, `report` for every request written since
+    /// 2026-10-17. Not an enum on read: rows stored before then were not validated and can carry
+    /// other text (production holds `question` and probe strings).
+    pub r#type: String,
     pub subject: String,
     pub body: String,
     pub status: AmbassadorRequestStatus,
@@ -10180,7 +10229,7 @@ pub struct CreateAgentVersionRequest {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateAmbassadorRequestRequest {
     pub from_agent_id: String,
-    pub r#type: String,
+    pub r#type: AmbassadorRequestType,
     pub subject: String,
     pub body: String,
 }
@@ -10848,8 +10897,11 @@ pub struct CreateRunRequest {
     /// agent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
+    /// This run's limits, laid over the agent's. A key not listed here is refused with 422 naming
+    /// the accepted keys (since 2026-10-17; before, it was dropped and the run ran without the cap
+    /// the caller meant).
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource_limits: Option<serde_json::Map<String, serde_json::Value>>,
+    pub resource_limits: Option<CreateRunRequestResourceLimits>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
 }
@@ -10865,6 +10917,23 @@ pub struct CreateRunRequestInput {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file_ids: Option<Vec<String>>,
+}
+
+/// This run's limits, laid over the agent's. A key not listed here is refused with 422 naming
+/// the accepted keys (since 2026-10-17; before, it was dropped and the run ran without the cap
+/// the caller meant).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateRunRequestResourceLimits {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_duration_ms: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_steps: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tool_calls: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens_per_run: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_cost_usd: Option<f64>,
 }
 
 /// `CreateSessionAnnotationRequest` model.
@@ -16125,7 +16194,9 @@ impl From<&str> for GetHealthResponseStatus {
     }
 }
 
-/// `GetHireCatalogLocale` enumeration.
+/// Language of the letter (since 2026-10-17). Without it: the language the person chose before,
+/// else Accept-Language, else English. The browser's language is remembered for later letters
+/// until the person sets one in GET/PUT /api/v1/me/email-preferences.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum GetHireCatalogLocale {
     #[default]
@@ -16298,8 +16369,8 @@ pub struct GetMediaUsageResponseVideos {
 /// `GetMemoriesByEntityResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetMemoriesByEntityResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<MemoryEntry>>,
+    pub entries: Vec<MemoryEntry>,
+    pub total: i64,
 }
 
 /// `GetMeResponse` model.
@@ -16374,6 +16445,12 @@ pub struct GetMeResponseTenant {
     pub name: String,
     pub slug: String,
     pub plan: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub head_agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shared_workspace_id: Option<String>,
 }
 
 /// `GetMeResponseUser` model.
@@ -16504,6 +16581,20 @@ pub struct GetMissionPerformanceResponseReviews {
     pub avg_revisions: Option<f64>,
 }
 
+/// `GetMyEmailPreferencesResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMyEmailPreferencesResponse {
+    /// Language of every letter; null until the person or a browser sets it (English then).
+    #[serde(default)]
+    pub locale: Option<String>,
+    /// The Monday summary for owners and admins.
+    pub weekly_digest: bool,
+    /// The day-1 and day-3 letters to a company that has not started.
+    pub product_tips: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
+}
+
 /// `GetMyHeadAgentTemplateResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetMyHeadAgentTemplateResponse {
@@ -16562,6 +16653,13 @@ pub struct GetMyHeadAgentTemplateResponseTier {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<GetMyHeadAgentTemplateResponseTierTier>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource_limits: Option<GetMyHeadAgentTemplateResponseTierResourceLimits>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub initial_budget_usd: Option<f64>,
+    /// The tools the tier's Head Agent gets. Empty for a locked tier.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub built_in_tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub available: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub install_specs: Option<Vec<GetMyHeadAgentTemplateResponseTierInstallSpec>>,
@@ -16575,6 +16673,21 @@ pub struct GetMyHeadAgentTemplateResponseTier {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetMyHeadAgentTemplateResponseTierInstallSpec {
     pub spec_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_allowlist: Option<Vec<String>>,
+}
+
+/// `GetMyHeadAgentTemplateResponseTierResourceLimits` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMyHeadAgentTemplateResponseTierResourceLimits {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_duration_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_steps: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens_per_run: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinking_budget_tokens: Option<i64>,
 }
 
 /// `GetMyHeadAgentTemplateResponseTierTier` model.
@@ -16590,6 +16703,26 @@ pub struct GetMyHeadAgentTemplateResponseTierTier {
     pub required_plan: Option<GetMyHeadAgentTemplateResponseTierTierRequiredPlan>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub spec_ids: Option<Vec<String>>,
+    /// Per-SPEC tool names this tier advertises; a SPEC absent here advertises all its tools.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_allowlists: Option<HashMap<String, Vec<String>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource_limits: Option<GetMyHeadAgentTemplateResponseTierTierResourceLimits>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub initial_budget_usd: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auto_inject_overrides: Option<GetMyHeadAgentTemplateResponseTierTierAutoInjectOverrides>,
+}
+
+/// `GetMyHeadAgentTemplateResponseTierTierAutoInjectOverrides` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMyHeadAgentTemplateResponseTierTierAutoInjectOverrides {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kb_tools: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_tools: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub core_memory_tools: Option<bool>,
 }
 
 /// `GetMyHeadAgentTemplateResponseTierTierRequiredPlan` enumeration.
@@ -16634,6 +16767,19 @@ impl From<&str> for GetMyHeadAgentTemplateResponseTierTierRequiredPlan {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `GetMyHeadAgentTemplateResponseTierTierResourceLimits` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMyHeadAgentTemplateResponseTierTierResourceLimits {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_duration_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_steps: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens_per_run: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinking_budget_tokens: Option<i64>,
 }
 
 /// `GetPromoStateResponse` model.
@@ -16746,64 +16892,6 @@ pub struct GetPublicStateResponse {
     pub tenant_id: String,
     /// Only this route joins the state's agents (public.ts); the list does not carry them.
     pub agents: Vec<PublicStateAgent>,
-}
-
-/// `GetReadyResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetReadyResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<GetReadyResponseStatus>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub checks: Option<GetReadyResponseChecks>,
-}
-
-/// `GetReadyResponseChecks` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetReadyResponseChecks {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kv: Option<String>,
-}
-
-/// `GetReadyResponseStatus` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum GetReadyResponseStatus {
-    #[default]
-    #[serde(rename = "ready")]
-    Ready,
-    #[serde(rename = "not_ready")]
-    NotReady,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl GetReadyResponseStatus {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Ready => "ready",
-            Self::NotReady => "not_ready",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for GetReadyResponseStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for GetReadyResponseStatus {
-    fn from(value: &str) -> Self {
-        match value {
-            "ready" => Self::Ready,
-            "not_ready" => Self::NotReady,
-            other => Self::Other(other.to_string()),
-        }
-    }
 }
 
 /// `GetReconciliationResponse` model.
@@ -17468,10 +17556,26 @@ impl From<&str> for GetTeamChatHistoryResponseChatState {
 /// `GetTeamGraphResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetTeamGraphResponse {
+    /// The graph envelope: ids of its nodes and edges and the CAS `version` every mutation
+    /// increments.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub graph: Option<GetTeamGraphResponseGraph>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nodes: Option<Vec<TeamGraphNode>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edges: Option<Vec<TeamGraphEdge>>,
+}
+
+/// The graph envelope: ids of its nodes and edges and the CAS `version` every mutation
+/// increments.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetTeamGraphResponseGraph {
+    pub team_id: String,
+    pub node_ids: Vec<String>,
+    pub edge_ids: Vec<String>,
+    pub version: i64,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 /// `GetTeamRunMessagesResponse` model.
@@ -18646,6 +18750,9 @@ pub struct Guardrail {
     pub action: Option<GuardrailAction>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout_ms: Option<i64>,
+    /// Whether a signing secret is set. The secret itself is never answered.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub has_secret: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
 }
@@ -18921,7 +19028,73 @@ pub struct HealthLiveResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct HealthzAliasResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
+    pub status: Option<GetHealthResponseStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kv_connected: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uptime_seconds: Option<f64>,
+    /// The API contract version, a DATE STAMP — `2026-09-10` — bumped only on a breaking change,
+    /// and the same value the `X-API-Version` RESPONSE header carries. The server does not read a
+    /// request header of that name: pinning a date negotiates nothing. Not a release number and not
+    /// semver: it cannot be ordered against a semver string, so a client that compares it to one is
+    /// wrong in a way that appears to work for as long as both happen to sort the same. Compare it
+    /// for equality, or read it as a date. It says nothing about which BUILD is running — for that,
+    /// read `build_sha`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    /// The commit this running build was made from, baked in at image build time. This is the only
+    /// value on the wire that identifies the deployed code: `version` is the contract stamp and is
+    /// constant across deploys, and a restart proves a restart rather than an identity. `"unknown"`
+    /// means the image was built without the build argument (a local build, or a deploy predating
+    /// this field) and must be read as UNKNOWN, never as a match. Documentation that pins a claim
+    /// about platform behaviour can cite it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub build_sha: Option<String>,
+    /// When the running image was built, ISO-8601 UTC, baked in at image build time next to
+    /// `build_sha`. `"unknown"` when the build argument was absent or did not parse as a date. Like
+    /// `build_sha` it identifies the BUILD; `version` is the API contract stamp (the
+    /// `X-API-Version` header) and does not change between deploys.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub build_time: Option<String>,
+    /// Always 0. Kept for compatibility — there is no resume-parking state: `RunStatus` has no
+    /// `waiting_for_resume`, and startup reconciliation FAILS an interrupted run rather than
+    /// holding it for resume. It previously reported the queue depth under this name, which reads
+    /// as recovery progress on the one endpoint an operator watches during a deploy. Use
+    /// `runs_queued` for the queue, and run status for recovery.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pending_resumes: Option<i64>,
+    /// What this build can do, by name — gate a feature on it instead of on a 404. Names are added
+    /// when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
+    /// `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
+    /// `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
+    /// `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+    /// `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+    /// COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+    /// `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+    /// `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+    /// `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+    /// `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+    /// /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+    /// `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+    /// `reviews\[\]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+    /// `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+    /// /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+    /// `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+    /// `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+    /// `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+    /// `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+    /// /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+    /// `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+    /// /company/versions` AND `POST /company/restore` — there is deliberately no separate
+    /// `company_restore`, since a snapshot and the rollback to it ship together.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capabilities: Option<Vec<String>>,
+    /// Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
+    /// falls as they are picked up — but it is a queue depth, not a count of recoveries.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runs_queued: Option<i64>,
 }
 
 /// `HireAgentRequest` model.
@@ -19470,9 +19643,11 @@ pub struct InboxItem {
     pub status: String,
     #[serde(default)]
     pub created_at: Option<String>,
-    /// What the run was asked to do — the first line of its request (message, prompt, text or
-    /// instruction), at most 140 characters. Absent when the run carries no text. Since 2026-10-16:
-    /// a failed row used to carry only its error, so clients titled the task with it.
+    /// What the run was asked to do — the first line of its request (`title` when the platform gave
+    /// the run one — an event-started reaction run says "Looking into a failed run of \<agent\>"
+    /// rather than its event envelope — else message, prompt, text or instruction), at most 140
+    /// characters. Absent when the run carries no text. Since 2026-10-16: a failed row used to
+    /// carry only its error, so clients titled the task with it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub goal: Option<String>,
     /// One line: the tool being requested, the question, or the error.
@@ -19870,6 +20045,9 @@ pub struct Invite {
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    /// When the invite was last re-sent. Absent until the first resend.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_sent_at: Option<String>,
 }
 
 /// `InviteUserRequest` model.
@@ -19942,6 +20120,9 @@ pub struct InviteUserResponse {
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    /// When the invite was last re-sent. Absent until the first resend.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_sent_at: Option<String>,
     pub email_sent: bool,
 }
 
@@ -21328,6 +21509,8 @@ pub struct ListAgentMCPServersResponse {
 pub struct ListAgentScorersResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scorers: Option<Vec<AgentScorer>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<i64>,
 }
 
 /// `ListAgentsResponse` model.
@@ -21930,6 +22113,18 @@ pub struct ListModelsResponseDataItem {
     pub created: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub owned_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub permission: Option<Vec<serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub root: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent: Option<String>,
+    /// The agent's or team's name. Absent when it has none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    /// Context window: the agent model's `max_context_tokens`, else 128000.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<i64>,
 }
 
 /// `ListMyTenantsResponse` model.
@@ -22799,6 +22994,9 @@ pub struct ListWebhookDeliveriesResponse {
     pub webhook_id: String,
     pub deliveries: Vec<WebhookDeliveryAttempt>,
     pub total: i64,
+    /// True when the scan hit its bound, so older deliveries exist that this list does not count.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub truncated: Option<bool>,
     /// Present only when `limit` was sent: whether another page follows.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub has_more: Option<bool>,
@@ -28587,6 +28785,8 @@ pub struct PublicTenantAgent {
 pub struct PublicTenantStats {
     pub total_runs: i64,
     pub total_agents: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_ratings: Option<i64>,
     pub avg_rating: f64,
 }
 
@@ -29633,6 +29833,8 @@ pub enum RepairAgentRecordsRequestOp {
     InitialVersions,
     #[serde(rename = "orphan_schedules")]
     OrphanSchedules,
+    #[serde(rename = "cancel_lessons")]
+    CancelLessons,
     /// A value the API introduced after this SDK was generated.
     #[serde(untagged)]
     Other(String),
@@ -29647,6 +29849,7 @@ impl RepairAgentRecordsRequestOp {
             Self::HeadPodDescriptions => "head_pod_descriptions",
             Self::InitialVersions => "initial_versions",
             Self::OrphanSchedules => "orphan_schedules",
+            Self::CancelLessons => "cancel_lessons",
             Self::Other(value) => value.as_str(),
         }
     }
@@ -29666,6 +29869,7 @@ impl From<&str> for RepairAgentRecordsRequestOp {
             "head_pod_descriptions" => Self::HeadPodDescriptions,
             "initial_versions" => Self::InitialVersions,
             "orphan_schedules" => Self::OrphanSchedules,
+            "cancel_lessons" => Self::CancelLessons,
             other => Self::Other(other.to_string()),
         }
     }
@@ -29681,7 +29885,15 @@ pub struct RepairAgentRecordsResponse {
     pub head_pod_descriptions: RepairAgentRecordsResponseHeadPodDescriptions,
     pub initial_versions: RepairAgentRecordsResponseInitialVersions,
     pub orphan_schedules: RepairAgentRecordsResponseOrphanSchedules,
+    pub cancel_lessons: RepairAgentRecordsResponseCancelLessons,
     pub errors: Vec<RepairAgentRecordsResponseError>,
+}
+
+/// `RepairAgentRecordsResponseCancelLessons` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RepairAgentRecordsResponseCancelLessons {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub removed: Option<i64>,
 }
 
 /// `RepairAgentRecordsResponseError` model.
@@ -29900,9 +30112,14 @@ pub struct RequestOtpCodeRequest {
     pub accept_terms: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub accept_privacy: Option<bool>,
-    /// Anonymous visitor cookie, joining the landing visit to this request.
+    /// Anonymous visitor cookie; joins landing_visit to otp_requested.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visitor_id: Option<String>,
+    /// Language of the letter (since 2026-10-17). Without it: the language the person chose before,
+    /// else Accept-Language, else English. The browser's language is remembered for later letters
+    /// until the person sets one in GET/PUT /api/v1/me/email-preferences.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locale: Option<GetHireCatalogLocale>,
 }
 
 /// `RequestOtpCodeResponse` model.
@@ -34005,6 +34222,46 @@ pub struct ShareWorkspaceRequest {
     pub agent_id: String,
 }
 
+/// `ShowEmailUnsubscribeC` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ShowEmailUnsubscribeC {
+    #[default]
+    #[serde(rename = "weekly_digest")]
+    WeeklyDigest,
+    #[serde(rename = "product_tips")]
+    ProductTips,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ShowEmailUnsubscribeC {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::WeeklyDigest => "weekly_digest",
+            Self::ProductTips => "product_tips",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ShowEmailUnsubscribeC {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ShowEmailUnsubscribeC {
+    fn from(value: &str) -> Self {
+        match value {
+            "weekly_digest" => Self::WeeklyDigest,
+            "product_tips" => Self::ProductTips,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `SignUpForAndroidTestingRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SignUpForAndroidTestingRequest {
@@ -36472,6 +36729,51 @@ pub struct TerminateAgentResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TestAdminSmtpConfigRequest {
     pub to: String,
+    /// Which sender to test. `auth` (the default) sends sign-in codes; `notify` sends everything
+    /// else.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile: Option<TestAdminSmtpConfigRequestProfile>,
+}
+
+/// Which sender to test. `auth` (the default) sends sign-in codes; `notify` sends everything
+/// else.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum TestAdminSmtpConfigRequestProfile {
+    #[default]
+    #[serde(rename = "auth")]
+    Auth,
+    #[serde(rename = "notify")]
+    Notify,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl TestAdminSmtpConfigRequestProfile {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Auth => "auth",
+            Self::Notify => "notify",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for TestAdminSmtpConfigRequestProfile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for TestAdminSmtpConfigRequestProfile {
+    fn from(value: &str) -> Self {
+        match value {
+            "auth" => Self::Auth,
+            "notify" => Self::Notify,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `TestAdminSmtpConfigResponse` model.
@@ -38135,6 +38437,27 @@ pub struct UpdateAdminSmtpConfigRequest {
     pub from: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub from_name: Option<String>,
+    /// The second sender (since 2026-10-17). The relay refuses a From its login does not own, so a
+    /// second address needs its own login. Same merge rules; `password: ""` clears it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notify: Option<UpdateAdminSmtpConfigRequestNotify>,
+    /// Reply-To on notify mail; `""` clears it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reply_to: Option<serde_json::Value>,
+}
+
+/// The second sender (since 2026-10-17). The relay refuses a From its login does not own, so a
+/// second address needs its own login. Same merge rules; `password: ""` clears it.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminSmtpConfigRequestNotify {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_name: Option<String>,
 }
 
 /// `UpdateAdminSSEConfigRequest` model.
@@ -38696,6 +39019,31 @@ pub struct UpdateMissionObjectiveRequestBudget {
     pub max_tokens: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_cost_usd: Option<f64>,
+}
+
+/// `UpdateMyEmailPreferencesRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateMyEmailPreferencesRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locale: Option<GetHireCatalogLocale>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weekly_digest: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub product_tips: Option<bool>,
+}
+
+/// `UpdateMyEmailPreferencesResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateMyEmailPreferencesResponse {
+    /// Language of every letter; null until the person or a browser sets it (English then).
+    #[serde(default)]
+    pub locale: Option<String>,
+    /// The Monday summary for owners and admins.
+    pub weekly_digest: bool,
+    /// The day-1 and day-3 letters to a company that has not started.
+    pub product_tips: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
 }
 
 /// `UpdateMyPreferencesRequest` model.

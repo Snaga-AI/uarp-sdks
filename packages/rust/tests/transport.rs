@@ -1491,8 +1491,8 @@ async fn an_extension_member_reaches_the_caller_beside_the_code() {
     assert_eq!(api.problem.extra.len(), 1, "{:?}", api.problem.extra);
 }
 
-/// batch19 local, unreleased: the 403 a refused X-Active-Tenant answers, captured by the API lane from handleRequest at d6b1c66e5 (2026-10-17). Re-capture from the wire after the deploy.
-const NOT_A_MEMBER_403: &str = r#"{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-dcaa-7ae1-9121-78d9959fba18","correlation_id":"01a14a66-dcaa-7ae1-9121-78d9959fba18","code":"FORBIDDEN","reason":"not_a_member"}"#;
+/// Real bytes: the 403 a refused X-Active-Tenant answers on production, build e0b37b03 (2026-10-17). membership_suspended is the API lane's capture from handleRequest at d6b1c66e5, the same code: producing it on the wire would mean suspending a membership on canon.
+const NOT_A_MEMBER_403: &str = r#"{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14b59-dd54-7a2f-aa6b-e4338e105419","correlation_id":"01a14b59-dd54-7a2f-aa6b-e4338e105419","code":"FORBIDDEN","reason":"not_a_member"}"#;
 const MEMBERSHIP_SUSPENDED_403: &str = r#"{"type":"about:blank","title":"Forbidden","status":403,"detail":"Your membership in the active tenant requested by X-Active-Tenant is suspended","correlationId":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","correlation_id":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","code":"FORBIDDEN","reason":"membership_suspended"}"#;
 /// Real bytes: the same refusal on production, build d926b90e (2026-10-17), before batch19: no code and no reason.
 const NOT_A_MEMBER_403_D926: &str = r#"{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-337b-7324-9a2a-9354a8fc02c6","correlation_id":"01a14a66-337b-7324-9a2a-9354a8fc02c6"}"#;

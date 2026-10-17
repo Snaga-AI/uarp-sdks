@@ -52,10 +52,20 @@ import type {
   SendPublicMessageRequest,
   SendPublicMessageResponse,
   SharePublicSessionResponse,
+  ShowEmailUnsubscribeC,
   SignUpForAndroidTestingRequest,
   UploadPublicSessionImageResponse,
   VideoOrder,
 } from '../models.js';
+
+/**
+ * Query and header parameters for `confirmEmailUnsubscribe`.
+ */
+export interface ConfirmEmailUnsubscribeParams {
+  e: string;
+  c: ShowEmailUnsubscribeC;
+  t: string;
+}
 
 /**
  * Query and header parameters for `getAndroidTestingStatus`.
@@ -240,6 +250,21 @@ export interface RetryPublicVideoOrderParams {
 }
 
 /**
+ * Query and header parameters for `showEmailUnsubscribe`.
+ */
+export interface ShowEmailUnsubscribeParams {
+  /**
+   * The address, base64url.
+   */
+  e: string;
+  c: ShowEmailUnsubscribeC;
+  /**
+   * HMAC over the address and category.
+   */
+  t: string;
+}
+
+/**
  * Unauthenticated public-facing endpoints
  */
 export class PublicResource extends APIResource {
@@ -284,6 +309,26 @@ export class PublicResource extends APIResource {
       method: 'POST',
       path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}/runs/${encodeURIComponent(String(runId))}/cancel`,
       idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Turn one kind of mail off
+   *
+   * Turns the category in the link off for that address and answers an HTML page saying so. Also
+   * what a mail client sends for RFC 8058 one-click unsubscribe (`List-Unsubscribe-Post:
+   * List-Unsubscribe=One-Click`); the body is not read. Same query parameters as the GET.
+   *
+   * `POST /api/v1/public/email/unsubscribe`
+   */
+  confirmEmailUnsubscribe(params: ConfirmEmailUnsubscribeParams, options?: RequestOptions): Promise<string> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/public/email/unsubscribe',
+      query: pick(params, ['e', 'c', 't']),
+      idempotent: true,
+      responseType: 'text',
       options,
     });
   }
@@ -1109,6 +1154,26 @@ export class PublicResource extends APIResource {
       method: 'POST',
       path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}/share`,
       idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Unsubscribe page from a letter
+   *
+   * The link in the footer of a weekly summary or a tips letter (since 2026-10-17). Answers an
+   * HTML page with one button and changes nothing, because mail scanners open every link in a
+   * message. A link that was not signed by Snaga, or names an unknown category, answers 400 with
+   * an HTML page. Rate limited to 30 per minute per IP.
+   *
+   * `GET /api/v1/public/email/unsubscribe`
+   */
+  showEmailUnsubscribe(params: ShowEmailUnsubscribeParams, options?: RequestOptions): Promise<string> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/email/unsubscribe',
+      query: pick(params, ['e', 'c', 't']),
+      responseType: 'text',
       options,
     });
   }

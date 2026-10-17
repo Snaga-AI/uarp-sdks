@@ -8,14 +8,17 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
-Build `d926b90e`, canonical digest `c7dd2655bb5b2722`. Five platform builds are
+Build `e0b37b03`, canonical digest `5d36773b0983a32a`. Six platform builds are
 collected here: `ef5b646d` (2026-10-12), `435ca06c` and `199b0863` (2026-10-13),
-`b108e9a9` (2026-10-15), `d926b90e` (2026-10-16). Against 0.10.0: 585 → 629
-paths, 789 → 839 operations (+50, −0), 382 → 415 schemas (+33, −0), 50 → 53
-groups, 1845 → 2053 named types (+208, −0).
+`b108e9a9` (2026-10-15), `d926b90e` (2026-10-16), `e0b37b03` (2026-10-17).
+Against 0.10.0: 585 → 631 paths, 789 → 843 operations (+54, −0), 382 → 415
+schemas (+33, −0), 50 → 53 groups, 1845 → 2064 named types (+219, −0 net).
 
-**No exported name leaves.** Measured against the released 0.10.0 rather than
-against the intermediate drafts: 248 names are added, none is removed, so every
+**One family of exported names leaves.** Measured against the released 0.10.0
+rather than against the intermediate drafts: 264 names are added and four are
+removed: `GetReadyResponse`, `GetReadyResponseChecks`, `GetReadyResponseStatus`
+and `GET_READY_RESPONSE_STATUS_VALUES`. `GET /ready` now answers the shared
+`ReadinessReport`, as `GET /health/ready` already did (below). Every other
 import that compiled against 0.10.0 still resolves. The eleven `/companies`
 operations warn at compile time rather than break.
 
@@ -23,7 +26,8 @@ operations warn at compile time rather than break.
 under their own names — `ResourceUsageEntry.limit` becomes nullable,
 `RunEventType` renames seven values, the workspace copy and move requests stop
 requiring their paths, build `b108e9a9` corrects eight of them to the wire,
-and `getSession` answers a new type (all below). Under 1.0 a caret does not
+`getSession` answers a new type, and build `e0b37b03` corrects five more to
+the wire (all below). Under 1.0 a caret does not
 cross the minor, so `^0.10` keeps building against 0.10.x.
 
 ### Changed — `ResourceUsageEntry.limit` is nullable
@@ -93,7 +97,7 @@ Two more things came out of reading real error bodies:
   and `retry_after`. Rust already had them in `problem.extra` and TypeScript in
   the index signature. Swift's `APIError` also gains `body`, the raw bytes,
   which Kotlin's `ApiException` and Ada's `Problem.Raw` already had.
-- **`reason`, typed.** A refused `X-Active-Tenant` will answer 403 `FORBIDDEN`
+- **`reason`, typed.** A refused `X-Active-Tenant` answers 403 `FORBIDDEN`
   with `reason` set to `not_a_member` or `membership_suspended`, which is how a
   client tells a lost company from any other refusal (the macOS lane's W33).
   `error.reason` / `api.reason()` / `Problem.Reason` read it in all five. It is
@@ -122,11 +126,12 @@ lane captured those bytes from the deployed handler, since reproducing the
 refusal on canon would take a write. Dropping the collected members turns 1
 test red in Swift and 1 in Kotlin, out of 63 each.
 
-`reason` is tested on three bodies. Two are the API lane's batch19 bytes,
-captured from `handleRequest` at `d6b1c66e5`, which is not deployed (both
-refusals, to be re-captured from the wire once it is). The third is the
-refusal production answers today at `d926b90e`, with no `code` and no
-`reason`: there `reason` must be absent, and is. Removing the read of `reason`
+`reason` is tested on three bodies. `not_a_member` is what production answers
+at `e0b37b03` (2026-10-17). `membership_suspended` is the API lane's capture
+from `handleRequest` at `d6b1c66e5`, the code that build deploys: producing it
+on the wire would mean suspending a membership on canon. The third is the same
+refusal as production answered it at `d926b90e`, the day before, with no `code`
+and no `reason`: there `reason` must be absent, and is. Removing the read of `reason`
 turns that one test red in each of TypeScript (1 of 68), Rust (1 of 46),
 Swift (2 assertions in 1 of 65) and Kotlin (1 of 65), and leaves every other
 test green. Ada's check is written, not run.
@@ -196,6 +201,49 @@ document named them:
   `summary_truncated`; the economics' `month_to_date_llm_usd` and
   `llm_run_rate_basis`; the AI system card's `tool_sources`;
 - ten `ErrorCode` values and the `session.context` run event.
+
+### Changed — build `e0b37b03`: five more types follow the wire
+
+The API lane checked the thirteen operations whose bodies carried keys the
+document did not name (listed from the canon sweep here) and fixed the document
+rather than the SDK. Three were document errors, and they change types 0.10.0
+exported:
+
+- **`getMemoriesByEntity`** answers `entries` and `total`. The `items` the
+  document named was never sent, so `GetMemoriesByEntityResponse.items` was
+  always empty; it is gone, and `entries` (required) replaces it.
+- **`getReady`** answers `components`, the same `ReadinessReport` as
+  `healthReady`, and returns that type. The `GetReadyResponse` family leaves.
+- **`getTeamGraph`** carries the stored graph envelope as `graph`
+  (`GetTeamGraphResponseGraph`) beside the nodes and edges.
+
+Two more change shape on purpose:
+
+- **`AmbassadorRequest.type`** is a `string` on read: stored rows hold
+  `question` and other values outside the four the platform now accepts.
+  `AmbassadorRequestType` stays, for `createAmbassadorRequest`, which the
+  server now refuses with 422 for any other value.
+- **`createRun`'s `resource_limits`** is `CreateRunRequestResourceLimits`
+  instead of a free JSON object; the server refuses unknown keys there. In
+  `AgentUpdate`, `resource_limits` and each of its limits may be `null`.
+
+Added, all optional: `getMe`'s `tenant.head_agent_id`, `logo_url` and
+`shared_workspace_id`; the invite's `last_sent_at`; the guardrail's
+`has_secret`; the public tenant's `stats.total_ratings`; the webhook
+deliveries' `truncated`; `listAgentScorers`' `total`; the model list's
+OpenAI fields; `healthzAlias` with the full `/health` body; the head-agent
+template's tier limits and tools. New operations: `getMyEmailPreferences` and
+`updateMyEmailPreferences`, and the unsubscribe page behind a letter
+(`showEmailUnsubscribe`, `confirmEmailUnsubscribe`, which answer HTML). The
+sign-in letter's request takes a `locale`, and the admin SMTP config gains a
+`notify` sender, `reply_to` and a test `profile`.
+
+Re-read on production at this build: all 209 bodies of the read-only canon
+sweep, fetched again, decode in Rust, Swift and Kotlin; the thirteen
+operations' keys are all declared now. Still not in the document: the agent
+row's `bridge_fingerprint` and a `status` of `inactive`, and two run metrics,
+`context_window_tokens` and `last_input_tokens`. They decode (the enum keeps an
+unknown value) and are reported to the API lane.
 
 ### Changed — `createTask` and memory search take typed bodies
 

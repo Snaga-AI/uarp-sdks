@@ -85,6 +85,26 @@ package body UARP.API.Public is
              Options => Options));
    end Cancel_Public_Session_Run;
 
+   function Confirm_Email_Unsubscribe
+     (Self : Client_Type;
+      Params : Confirm_Email_Unsubscribe_Params := No_Confirm_Email_Unsubscribe_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      UARP.Types.Add (Query, "e", Params.E);
+      UARP.Types.Add (Query, "c", UARP.Models.Image (Params.C));
+      UARP.Types.Add (Query, "t", Params.T);
+      return UARP.Client.Call_Raw
+         (Self,
+          "POST",
+          "/api/v1/public/email/unsubscribe",
+          Query => Query,
+          Idempotent => True,
+          Options => Options);
+   end Confirm_Email_Unsubscribe;
+
    function Create_Public_Session
      (Self : Client_Type;
       Payload : UARP.Models.Create_Public_Session_Request;
@@ -883,6 +903,25 @@ package body UARP.API.Public is
              Idempotent => True,
              Options => Options));
    end Share_Public_Session;
+
+   function Show_Email_Unsubscribe
+     (Self : Client_Type;
+      Params : Show_Email_Unsubscribe_Params := No_Show_Email_Unsubscribe_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      UARP.Types.Add (Query, "e", Params.E);
+      UARP.Types.Add (Query, "c", UARP.Models.Image (Params.C));
+      UARP.Types.Add (Query, "t", Params.T);
+      return UARP.Client.Call_Raw
+         (Self,
+          "GET",
+          "/api/v1/public/email/unsubscribe",
+          Query => Query,
+          Options => Options);
+   end Show_Email_Unsubscribe;
 
    function Sign_Up_For_Android_Testing
      (Self : Client_Type;
