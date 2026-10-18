@@ -6,7 +6,7 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.11.0 — 2026-10-17
 
 Build `0837bb4d`, canonical digest `47152b3cf58faed3`. Seven platform builds
 are collected here: `ef5b646d` (2026-10-12), `435ca06c` and `199b0863`
