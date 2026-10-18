@@ -6,7 +6,10 @@ All six SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.12.0 — 2026-10-18
+
+The same document as 0.11.0 (build `0837bb4d`, digest `47152b3cf58faed3`), so
+the five existing SDKs change only in their version. What is new is a sixth.
 
 ### Added — a Python SDK
 
