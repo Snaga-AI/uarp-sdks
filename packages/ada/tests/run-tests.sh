@@ -9,9 +9,8 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root="$(dirname "$here")"
 port="${UARP_TEST_PORT:-8931}"
 
-#  gprbuild's parallelism. Unset means its default, one job per core; CI sets
-#  2, because on a 4-core runner the default took over four hours to build what
-#  -j2 builds in under twenty minutes (measured 2026-10-18, PR #65).
+#  gprbuild's parallelism. Unset means its default, one job per core. CI sets
+#  2; see the comment there for what that did and did not change.
 jobs="${UARP_ADA_JOBS:-0}"
 
 cd "$root"
