@@ -26,24 +26,6 @@ import {
 } from './ir.ts';
 import { camel, pascal, singular, words } from './naming.ts';
 
-/**
- * Operations typed by a status other than the first settled 2xx, because the
- * document lists answers that a caller of this SDK can never receive.
- *
- * `createRun` (`POST /api/v1/runs`), since build 0837bb4d: 200 and 201 carry a
- * `QualificationSponsoredRunExcerpt`, but only for a body that holds
- * `execution_requirements` — the sponsored qualification path, which only the
- * Nestor server takes under a sponsorship grant. Every other body is answered
- * 202 with a `Run` (API lane, 2026-10-17: `wantsQualification()` in
- * packages/api/lib/qualification/runs.ts). Typed by the first 2xx, every SDK's
- * `runs.create` would demand `execution_requirements` and the strict decoders
- * would refuse every ordinary run. The API lane proposes listing only 202 in
- * the document; when it does, this entry is redundant and can go.
- */
-const TYPED_BY_STATUS: Record<string, number> = {
-  createRun: 202,
-};
-
 type Json = Record<string, any>;
 
 const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const;
@@ -490,7 +472,7 @@ class Parser {
     }
 
     const body = this.#requestBody(raw.requestBody, opName);
-    const { response, sse, errorStatuses } = this.#response(raw.responses ?? {}, opName, TYPED_BY_STATUS[raw.operationId]);
+    const { response, sse, errorStatuses } = this.#response(raw.responses ?? {}, opName);
     const pagination = this.#pagination(response, queryParams);
 
     // Scopes live in `x-scopes` on the operation since the contract's CTR-10
@@ -589,11 +571,7 @@ class Parser {
     };
   }
 
-  #response(
-    responses: Json,
-    opName: string,
-    forced?: number,
-  ): { response: ResponseInfo; sse: boolean; errorStatuses: number[] } {
+  #response(responses: Json, opName: string): { response: ResponseInfo; sse: boolean; errorStatuses: number[] } {
     const codes = Object.keys(responses)
       .map((c) => Number.parseInt(c, 10))
       .filter((n) => Number.isFinite(n));
@@ -606,12 +584,7 @@ class Parser {
     // status is the one the operation is typed by. Picking the lowest code
     // made fifteen 204 operations decode a body they never receive in 0.5.21.
     const settled = success.length > 1 ? success.filter((c) => c !== 202) : success;
-    if (forced !== undefined && !success.includes(forced)) {
-      //  An override that no longer matches the document must stop the build,
-      //  not quietly type the operation by something else.
-      throw new Error(`${opName}: TYPED_BY_STATUS names ${forced}, which the document no longer lists`);
-    }
-    const status = forced ?? settled[0] ?? 200;
+    const status = settled[0] ?? 200;
     const node = this.#deref(responses[String(status)] ?? {});
     const content: Json | undefined = node.content;
 

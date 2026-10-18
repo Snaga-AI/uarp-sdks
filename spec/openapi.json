@@ -34530,57 +34530,24 @@
                         }
                     }
                 },
-                "responses": {
+                "x-uarp-sponsored-responses": {
                     "200": {
                         "description": "Sponsored qualification run: the original run for an exact replay of its client request.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/QualificationSponsoredRunExcerpt"
-                                }
-                            }
-                        },
-                        "headers": {
-                            "X-RateLimit-Limit": {
-                                "$ref": "#/components/headers/XRateLimitLimit"
-                            },
-                            "X-RateLimit-Remaining": {
-                                "$ref": "#/components/headers/XRateLimitRemaining"
-                            },
-                            "X-RateLimit-Reset": {
-                                "$ref": "#/components/headers/XRateLimitReset"
-                            },
-                            "X-Idempotency-Replayed": {
-                                "$ref": "#/components/headers/XIdempotencyReplayed"
-                            }
+                        "schema": {
+                            "$ref": "#/components/schemas/QualificationSponsoredRunExcerpt"
                         }
                     },
                     "201": {
                         "description": "Sponsored qualification run: accepted, its grant consumed, dispatched.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/QualificationSponsoredRunExcerpt"
-                                }
-                            }
-                        },
-                        "headers": {
-                            "X-RateLimit-Limit": {
-                                "$ref": "#/components/headers/XRateLimitLimit"
-                            },
-                            "X-RateLimit-Remaining": {
-                                "$ref": "#/components/headers/XRateLimitRemaining"
-                            },
-                            "X-RateLimit-Reset": {
-                                "$ref": "#/components/headers/XRateLimitReset"
-                            },
-                            "X-Idempotency-Replayed": {
-                                "$ref": "#/components/headers/XIdempotencyReplayed"
-                            }
+                        "schema": {
+                            "$ref": "#/components/schemas/QualificationSponsoredRunExcerpt"
                         }
                     },
+                    "selected_by": "execution_requirements"
+                },
+                "responses": {
                     "202": {
-                        "description": "Run queued",
+                        "description": "Run queued. A body with `execution_requirements` (a sponsored qualification run, sent by a sponsor's server only) is answered 201 on admission and 200 on an exact replay, with a QualificationSponsoredRunExcerpt; see `x-uarp-sponsored-responses`.",
                         "content": {
                             "application/json": {
                                 "schema": {

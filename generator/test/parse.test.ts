@@ -980,9 +980,11 @@ test('a response media type decodes to text only when every declared type is tex
 });
 
 test('createRun is typed by its 202 Run, not by the sponsored 200/201 excerpt', () => {
-  //  Build 0837bb4d lists 200 and 201 with a QualificationSponsoredRunExcerpt
-  //  first; only a body carrying `execution_requirements` gets them, and no
-  //  SDK caller sends one (API lane, 2026-10-17).
+  //  Build 0837bb4d listed 200 and 201 with a QualificationSponsoredRunExcerpt
+  //  first, though only a body carrying `execution_requirements` gets them and
+  //  no SDK caller sends one; the generator pinned 202 until build c65c901c
+  //  moved those answers to `x-uarp-sponsored-responses`. This now holds from
+  //  the document alone.
   const op = productionSpec().groups.flatMap((g) => g.operations).find((o) => o.id === 'createRun')!;
   assert.equal(op.response.status, 202);
   assert.deepEqual(op.response.type, { kind: 'named', name: 'Run' });

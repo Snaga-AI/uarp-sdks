@@ -8,8 +8,17 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.12.0 — 2026-10-18
 
-The same document as 0.11.0 (build `0837bb4d`, digest `47152b3cf58faed3`), so
-the five existing SDKs change only in their version. What is new is a sixth.
+Build `c65c901c`, digest `092f377d6340cec2`. The five existing SDKs change only
+in their version; what is new is a sixth.
+
+### Changed — `runs.create` is typed by the document alone
+
+Build `c65c901c` lists `202` as the only success of `POST /api/v1/runs` and
+moves the sponsored `200`/`201` answers, which only a body carrying
+`execution_requirements` receives, to `x-uarp-sponsored-responses`. The
+generator's pin that typed `createRun` by its `202 Run` in 0.11.0 is removed;
+the generated code is byte-identical, and the test that pinned it now holds
+from the document (it fails against build `0837bb4d` without the pin).
 
 ### Added — a Python SDK
 
