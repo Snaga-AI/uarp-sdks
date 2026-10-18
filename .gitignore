@@ -52,3 +52,6 @@ smoke/.env
 
 # Live SDK scenario output
 smoke/live/out/
+
+# Cloudflare Wrangler state for the portal deploy
+.wrangler/
