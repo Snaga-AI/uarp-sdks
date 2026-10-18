@@ -9553,7 +9553,8 @@ package UARP.Models is
    subtype Proposal_Operation is UARP.JSON_Support.JSON_Value;
 
    package Proposal_Operation_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Proposal_Operation);
+     (Index_Type => Positive, Element_Type => Proposal_Operation,
+      "=" => UARP.JSON_Support.JSON."=");
 
    --  `CompanyProposalDiffItem` model.
    type Company_Proposal_Diff_Item is record

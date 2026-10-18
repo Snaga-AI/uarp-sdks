@@ -59,14 +59,13 @@ package body UARP.API.Qualification is
    begin
       UARP.Types.Add (Query, "purpose", Params.Purpose);
       UARP.Types.Add (Headers, "X-Active-Tenant", Params.X_Active_Tenant);
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "GET",
-             "/api/v1/tenants/me/data-processing-policy",
-             Query => Query,
-             Headers => Headers,
-             Options => Options));
+      return UARP.Client.Call
+         (Self,
+          "GET",
+          "/api/v1/tenants/me/data-processing-policy",
+          Query => Query,
+          Headers => Headers,
+          Options => Options);
    end Get_Data_Processing_Policy;
 
    function Get_Qualification_Sponsorship_Grant
