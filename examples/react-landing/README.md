@@ -115,48 +115,36 @@ newlines — a detail most hand-rolled parsers get wrong.
 
 ## Deployed
 
-This example is running at **<https://dev.snaga.ai>**.
+This example is running at **<https://dev.snaga.ai>**, as a Cloudflare Worker
+that serves the built page as static assets (`wrangler.jsonc`,
+`worker/index.ts`). It moved there on 2026-10-18, when the droplet that ran it
+as a container went offline. The custom-domain binding owns the `dev` DNS
+record, so a deploy does not touch any other record in the zone.
 
-It is the same code, with `server/serve.ts` instead of Vite: that file serves
-the built page and mounts the same `handleUarp`, which is the example's own
-claim about the proxy being ordinary Node put to the test.
+The live widget is **not** running there. Its proxy, `handleUarp`, keeps each
+visitor's key in the memory of one Node process, and a Worker has no such
+process: isolates come and go. Until the proxy is ported (a Durable Object would
+hold the same state), `/api/uarp/*` answers `503` with a message saying so,
+rather than falling through to `index.html`, which the widget would try to read
+as JSON. Everything else on the page is static.
 
-```
-Caddy (dev.snaga.ai)  ──▶  snaga-dev-portal:3001  ──uarp-sdk──▶  api.snaga.ai
-```
-
-A container on the same host as the API, behind the same Caddy, in its own
-block — nothing about the existing hosts changed.
-
-Because it is public, `/api/uarp/session` answers "is this key valid?" to
-anyone who asks, which makes it a guessing oracle. It is rate limited to ten
-attempts a minute per address. The keys visitors paste are their own; this
-deployment holds no key of its own.
-
-To redeploy:
-
-Two things in that command are not stylistic, and the previous version of it
-could not work:
-
-**Built from the repo root**, with `-f`, not from this directory. The Dockerfile
-says so in its own header — the build-time generators read SDK sources that live
-outside the landing (`packages/typescript/src/generated/`, `contract/SCENARIOS.md`
-and the five runners). Running `docker build .` from here fails with
-`"/examples/react-landing/package.json": not found`.
-
-**`fetch` + `reset --hard`, not `pull`.** The checkout on the droplet has twice
-been found with its working tree deleted — 547 files staged as `D`, HEAD intact.
-`git pull` reports success on such a tree and changes nothing, so the build runs
-against files that are not there.
+To redeploy, build from the **repo root's** checkout (the build-time generators
+read `packages/typescript/src/generated/`, `contract/SCENARIOS.md` and the
+runners, which live outside this directory), then deploy:
 
 ```sh
-ssh root@<host> "cd /opt/snaga/dev-portal/repo &&
-  git fetch -q origin && git reset --hard origin/main &&
-  docker build -q -f examples/react-landing/Dockerfile -t snaga-dev-portal:latest . &&
-  docker rm -f snaga-dev-portal &&
-  docker run -d --name snaga-dev-portal --restart unless-stopped \
-    --network snaga-net -e PORT=3001 snaga-dev-portal:latest"
+npm ci && npm run build
+npx -y wrangler@4.147.0 deploy      # after `wrangler login` to the account that owns snaga.ai
 ```
+
+Verify by comparing the `assets/index-*.js` name that `https://dev.snaga.ai/`
+references with the one in `dist/assets/`.
+
+`server/serve.ts` still runs the whole example, widget included, as ordinary
+Node anywhere: `npm run build && npm run serve`. Because it is public there,
+`/api/uarp/session` answers "is this key valid?" to anyone who asks, which makes
+it a guessing oracle; it is rate limited to ten attempts a minute per address.
+The keys visitors paste are their own; the deployment holds no key of its own.
 
 ## Tests
 
