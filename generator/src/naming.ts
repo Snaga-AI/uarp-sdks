@@ -130,6 +130,16 @@ const ADA_RESERVED = new Set([
 ]);
 
 /**
+ * Python's keywords. A soft keyword (`match`, `case`, `type`) is a legal name
+ * and needs nothing; a digit cannot start a name at all.
+ */
+const PYTHON_RESERVED = new Set([
+  'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 'break', 'class', 'continue',
+  'def', 'del', 'elif', 'else', 'except', 'finally', 'for', 'from', 'global', 'if', 'import', 'in',
+  'is', 'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return', 'try', 'while', 'with', 'yield',
+]);
+
+/**
  * Escape a TypeScript *binding* name. Property and method names never need
  * this — `{ delete(): void }` is legal — but a parameter or local called
  * `default` is not.
@@ -157,4 +167,9 @@ export function adaIdent(name: string): string {
 /** True when a JS property name can be written without quotes. */
 export function isPlainJsKey(name: string): boolean {
   return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name);
+}
+
+export function pythonIdent(name: string): string {
+  if (/^[0-9]/.test(name)) return `v_${name}`;
+  return PYTHON_RESERVED.has(name) ? `${name}_` : name;
 }

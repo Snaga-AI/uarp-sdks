@@ -22,6 +22,7 @@ import { emitRust } from './emit/rust.ts';
 import { emitSwift } from './emit/swift.ts';
 import { emitKotlin } from './emit/kotlin.ts';
 import { emitAda } from './emit/ada.ts';
+import { emitPython } from './emit/python.ts';
 
 export interface GeneratedFile {
   /** Path relative to the package root. */
@@ -51,6 +52,7 @@ export const TARGETS: Record<string, Target> = {
     emit: emitKotlin,
   },
   ada: { packageDir: 'packages/ada', generatedDir: 'src/generated', emit: emitAda },
+  python: { packageDir: 'packages/python', generatedDir: 'src/uarp_sdk/generated', emit: emitPython },
 };
 
 export const DEFAULT_SPEC_PATH = join(repoRoot, 'spec/openapi.json');
@@ -132,6 +134,9 @@ function existingFiles(root: string): string[] {
       return; //  Nothing generated yet.
     }
     for (const entry of entries) {
+      //  Python's bytecode cache, written beside the generated modules by any
+      //  import of them; never an emitter's output, and gitignored.
+      if (entry === '__pycache__') continue;
       const full = join(directory, entry);
       if (statSync(full).isDirectory()) walk(full);
       else out.push(relative(root, full).split(sep).join('/'));

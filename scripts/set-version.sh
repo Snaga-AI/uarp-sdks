@@ -70,6 +70,9 @@ for lock in packages/typescript/package-lock.json generator/package-lock.json; d
     ' "$version" "$lock"
 done
 edit "s/^version = \".*\"/version = \"$version\"/" packages/rust/Cargo.toml
+# The only `version = ` at the start of a line in pyproject.toml is the
+# project's own; dependencies are written inline in `dependencies = [...]`.
+edit "s/^version = \".*\"/version = \"$version\"/" packages/python/pyproject.toml
 edit "s/^    version = \".*\"/    version = \"$version\"/" packages/kotlin/build.gradle.kts
 
 # Cargo.lock carries the crate's OWN version beside those of 42 dependencies.
@@ -105,7 +108,7 @@ edit "s/SDK_Version : constant String := \".*\"/SDK_Version : constant String :=
 
 node generator/src/index.ts >/dev/null
 
-# The goldens bake SDK_VERSION into their expected output, in four languages.
+# The goldens bake SDK_VERSION into their expected output, in five languages.
 # Regenerating the SDKs does not touch them, so a bump leaves the generator
 # suite RED — 48 of 114 on 2026-09-22, and 40 of 100 at the first v0.6.0 tag,
 # which published NOTHING because every language job died before its publish
@@ -118,6 +121,7 @@ node generator/src/index.ts >/dev/null
 echo "set to $version:"
 grep -h "\"version\"" packages/typescript/package.json | head -1
 grep -h "^version" packages/rust/Cargo.toml | head -1
+grep -h "^version" packages/python/pyproject.toml | head -1
 grep -h "version = " packages/kotlin/build.gradle.kts | head -1
 grep -h "^version" packages/ada/alire.toml | head -1
 echo

@@ -1,6 +1,6 @@
 # Publishing
 
-Five languages, five ecosystems, one version. `scripts/set-version.sh` writes
+Six languages, six ecosystems, one version. `scripts/set-version.sh` writes
 the number everywhere; a `v<version>` tag triggers
 [.github/workflows/release.yml](.github/workflows/release.yml), which refuses to
 run if the tag and `VERSION` disagree or the CHANGELOG has no entry.
@@ -18,6 +18,7 @@ automated, and one structural quirk that is easy to get wrong.
 | `packages/kotlin` | Maven Central | `ai.snaga:uarp-sdk` | namespace verification |
 | `packages/swift` | SwiftPM | `github.com/Snaga-AI/uarp-swift` | the repository itself |
 | `packages/ada` | Alire | `uarp_sdk` | a pull request to the index |
+| `packages/python` | PyPI | `uarp-sdk` | a pending trusted publisher, then the first publish |
 
 ## Swift is the odd one out
 
@@ -58,6 +59,31 @@ Sign in with GitHub, create an API token, store it as
 `CARGO_REGISTRY_TOKEN`. The name is claimed by the first publish and cannot be
 transferred later without asking the crates.io team, so publish something early
 even if it is a preview.
+
+### PyPI — minutes, and no token at all
+
+PyPI publishes through **trusted publishing**: the `pypi` job presents GitHub's
+OIDC token, and PyPI accepts it for `uarp-sdk` because a publisher registered
+on pypi.org names this repository, this workflow and this environment. Nothing
+is stored in the repository, so there is nothing to expire or leak.
+
+Arranged on 2026-10-17:
+
+1. On pypi.org (2FA on), **Publishing → Add a new pending publisher → GitHub**:
+   project `uarp-sdk`, owner `Snaga-AI`, repository `uarp-sdks`, workflow
+   `release.yml`, environment `pypi`. A pending publisher reserves the name; the
+   first publish turns it into the project. It lapses if nothing is published
+   in time, so check it is still listed before the first Python release.
+2. In this repository, the **`pypi` environment**, with one deployment rule:
+   tags matching `v*`. That is why the workflow builds the wheel in
+   `pypi-build` and uploads only in `pypi`: a dry run from a branch builds and
+   tests, and is never admitted to the environment.
+
+Check the GitHub half with
+`gh api repos/Snaga-AI/uarp-sdks/environments/pypi/deployment-branch-policies`.
+The PyPI half is visible only from the owner's account.
+
+A version can be yanked but never re-uploaded with different contents.
 
 ### Maven Central — the slow one
 
@@ -126,6 +152,8 @@ through FFI and has spent most of its life on macOS.
 1. **npm** — `npm unpublish` works for 72 hours.
 2. **crates.io** — no delete; `cargo yank` only hides a version from new
    dependency resolution.
+   **PyPI** is the same: a release can be yanked, and its file name can never
+   be used again.
 3. **SwiftPM mirror** — a tag can be deleted, but anyone who resolved it already
    has it cached.
 4. **Maven Central** — permanent. Nothing can be removed, ever.
@@ -138,8 +166,8 @@ you find out where it is cheapest.
 
 ```sh
 make check                       # generated output matches the spec
-make test                        # all five build and pass
-make contract                    # the five agree on the wire
+make test                        # all six build and pass
+make contract                    # the six agree on the wire
 UARP_API_KEY=… make smoke        # the spec agrees with the server
 ```
 

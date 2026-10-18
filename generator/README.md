@@ -1,6 +1,6 @@
 # @uarp/codegen
 
-Turns `spec/openapi.json` into five SDKs.
+Turns `spec/openapi.json` into six SDKs.
 
 ```sh
 node src/index.ts                 # every target
@@ -23,12 +23,12 @@ src/parse.ts        OpenAPI 3.1  ->  IR
 src/ir.ts           the IR every emitter consumes
 src/naming.ts       casing rules and per-language reserved words
 src/writer.ts       indentation-aware source writer
-src/emit/*.ts       IR -> TypeScript, Rust, Swift, Kotlin, Ada
+src/emit/*.ts       IR -> TypeScript, Rust, Swift, Kotlin, Ada, Python
 src/index.ts        CLI: wipes each target's generated directory, writes files
 ```
 
 `parse.ts` is where every "what does the API look like" decision lives, so the
-five emitters cannot disagree about nullability, naming or pagination. **No
+six emitters cannot disagree about nullability, naming or pagination. **No
 emitter reads the raw OpenAPI document.**
 
 ## What the parser does
@@ -81,7 +81,9 @@ Golden files record whatever the emitters produce, including code that would
 not compile, which is why `compile.test.ts` exists: it emits every fixture next
 to a copy of the hand-written core and compiles the lot in one pass — `tsc` for
 TypeScript, `cargo check` over a throwaway workspace for Rust, `swift build`
-over a package of eight modules for Swift. Each check skips itself when its
+over a package of eight modules for Swift, and for Python — which has no
+compiler — an import of every generated module, a decoder built for every model
+and a `mypy --strict` pass. Each check skips itself when its
 toolchain is missing, and `UARP_COMPILE_TARGETS=swift` narrows the run to one
 language; CI uses that to check Swift on the macOS runner it already pays for.
 
@@ -102,13 +104,13 @@ emitters produce for the edge cases.
 2. Decide whether it is a parser bug or an emitter bug. **If you find yourself
    deducing something about the API inside an emitter, it belongs in the IR.**
    A wrong shape in one language is an emitter bug; wrong nullability, a wrong
-   type or missing pagination is a parser bug and affects all five.
+   type or missing pagination is a parser bug and affects all six.
 
 3. Fix, then `npm test`. A golden diff tells you exactly which languages
    changed and how; `npm run test:update-golden` accepts it once you have read
    it.
 
-4. Finish with `make test` from the repository root — the five real SDKs
+4. Finish with `make test` from the repository root — the six real SDKs
    compiling against the full spec is the last line of defence, and each
    language catches a different class of mistake.
 
@@ -131,7 +133,8 @@ a stale file behind.
 - Every emitted file starts with a `DO NOT EDIT` banner.
 - Doc comments are escaped per language: Rust escapes `[` (intra-doc links),
   Kotlin escapes both `/*` and `*/` (its block comments nest), TypeScript
-  escapes `*/`, and Ada folds non-ASCII to ASCII because GNAT reads Latin-1.
+  escapes `*/`, Ada folds non-ASCII to ASCII because GNAT reads Latin-1, and
+  Python escapes backslashes and `"""` inside docstrings.
 - Names that would shadow the standard library are suffixed — the spec really
   does define a schema called `Error`, which would break `throws` in Swift.
 - Reserved words are escaped per language (`r#type`, `` `object` ``, `Type_K`).

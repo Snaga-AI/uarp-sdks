@@ -1,7 +1,7 @@
 # UARP SDKs
 
 Client libraries for the **UARP — Universal Agent Runtime Platform** API
-(<https://snaga.ai>), in five languages, generated from one OpenAPI document.
+(<https://snaga.ai>), in six languages, generated from one OpenAPI document.
 
 | Language | Package | Artifact | Requirements |
 | --- | --- | --- | --- |
@@ -10,6 +10,7 @@ Client libraries for the **UARP — Universal Agent Runtime Platform** API
 | Swift | `packages/swift` | `Snaga-AI/uarp-swift` (SwiftPM) | Swift 5.9+, macOS 12 / iOS 15 |
 | Kotlin / Android | `packages/kotlin` | `ai.snaga:uarp-sdk` (Maven) | Kotlin 2.2+, JVM 11+, Android 21+ |
 | Ada | `packages/ada` | `uarp_sdk` (Alire) | GNAT 2022, libcurl |
+| Python | `packages/python` | `uarp-sdk` (PyPI) | Python 3.10+, httpx |
 
 Every SDK covers the **whole** API surface — at 0.10.0, 789 operations across 50
 resource groups, 1845 named types, 15 server-sent-event streams and the
@@ -36,9 +37,9 @@ cursor-paginated endpoints — plus the platform's auth, idempotency and retry s
   error carrying the status, title, detail, the stable `code` to switch on
   (`SESSION_NOT_ACTIVE`, `QUOTA_EXCEEDED`, …), the request id, any field-level
   validation failures, and every other member the server sent.
-- **Streaming.** The 11 SSE endpoints return a native async stream — an
-  `AsyncIterable`, a `futures::Stream`, an `AsyncSequence`, a `Flow`, or a
-  dispatching sink in Ada — that reopens with `Last-Event-ID` when the
+- **Streaming.** The SSE endpoints return a native stream — an
+  `AsyncIterable`, a `futures::Stream`, an `AsyncSequence`, a `Flow`, an
+  iterator (or async iterator) in Python, or a dispatching sink in Ada — that reopens with `Last-Event-ID` when the
   connection ends. A connection that delivered at least one event earns a fresh
   reconnect budget, so a flapping server cannot spin the loop.
 - **Pagination.** Cursor-paginated endpoints get an extra method that walks
@@ -50,7 +51,8 @@ cursor-paginated endpoints — plus the platform's auth, idempotency and retry s
 - **Forward compatibility.** An enum value the server adds tomorrow decodes
   into the existing type rather than failing.
 - **Per-call overrides.** Timeout, retry budget, idempotency key and extra
-  headers can be set for one call. Four SDKs take them as a trailing argument;
+  headers can be set for one call. Five SDKs take them as a trailing argument
+  (`request_options=` in Python);
   Rust, which has no default arguments, takes them on a cheap clone of the
   client (`client.with_timeout(..).agents().get(id)`).
 
@@ -84,6 +86,15 @@ val client = UarpClient.fromEnvironment()
 val page = client.agents.list(limit = 50)
 ```
 
+```python
+# Python
+from uarp_sdk import Client
+
+client = Client()  # reads UARP_API_KEY
+for agent in client.agents.list_all(limit=50):
+    print(agent.name)
+```
+
 ```ada
 --  Ada
 Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
@@ -98,13 +109,14 @@ handling and the escape hatch for endpoints you would rather call by hand.
 
 ```
 spec/openapi.json          vendored API description (the single source of truth)
-generator/                 OpenAPI -> IR -> five emitters
-contract/                  one scenario, five SDKs, one comparison of the traffic
+generator/                 OpenAPI -> IR -> six emitters
+contract/                  one scenario, six SDKs, one comparison of the traffic
 packages/typescript        uarp-sdk           (src/core hand-written, src/generated emitted)
 packages/rust              uarp-sdk crate     (src/*.rs hand-written, src/generated emitted)
 packages/swift             UARP SwiftPM       (Sources/UARP/Core, Sources/UARP/Generated)
 packages/kotlin            ai.snaga:uarp-sdk  (ai/snaga/uarp, ai/snaga/uarp/generated)
 packages/ada               uarp_sdk Alire     (src, src/generated)
+packages/python            uarp-sdk PyPI      (src/uarp_sdk hand-written, src/uarp_sdk/generated emitted)
 scripts/generate.sh        regenerate every target
 ```
 
@@ -117,7 +129,7 @@ Generated files start with a `DO NOT EDIT` banner — change the emitter instead
 ```sh
 make generate            # every target
 make generate T=rust     # one target
-make test                # build and test all five packages
+make test                # build and test all six packages
 ```
 
 or directly:
@@ -138,10 +150,10 @@ curl -s https://snaga.ai/openapi.json | python3 -m json.tool > spec/openapi.json
 make generate && make test
 ```
 
-## Proving the five agree
+## Proving the six agree
 
 Unit tests check each SDK against its own idea of correct. The contract check
-asks a different question: given the same logical call, do all five put the
+asks a different question: given the same logical call, do all six put the
 same bytes on the wire?
 
 ```sh
@@ -157,7 +169,7 @@ compared exactly.
 
 The last scenario asks the mirror-image question: given one awkward payload —
 an enum value none of them has seen, an explicit `null`, an absent optional, an
-empty array and an integer beyond 2^53 — do the five read the same values out
+empty array and an integer beyond 2^53 — do the six read the same values out
 of it? Each runner reports what it decoded and those reports are compared too.
 
 It has already earned its keep. It caught Kotlin sending
@@ -216,13 +228,15 @@ the output of their own `GET`, and thirty error responses that were not the RFC
 9457 documents every SDK decodes.
 
 [smoke/live/](smoke/live/SCENARIO.md) closes the last gap by running one fixed
-scenario through all five SDKs against the real server and comparing what each
+scenario through all six SDKs against the real server and comparing what each
 decoded — the only check that exercises the Rust, Swift, Kotlin and Ada
 transports against real TLS and real infrastructure rather than a local mock.
+(The Python runner is in place; its first run against production waits on a
+scenario run that is allowed to create and delete its agent there.)
 
 ## Releasing
 
-All five packages share one version and one tag.
+All six packages share one version and one tag.
 
 ```sh
 scripts/set-version.sh X.Y.Z   # VERSION, every manifest, then regenerate
@@ -232,8 +246,8 @@ git commit -am "Release X.Y.Z" && git tag vX.Y.Z && git push --follow-tags
 ```
 
 The tag triggers `.github/workflows/release.yml`, which re-runs each package's
-tests and then publishes: npm and crates.io directly, Maven Central through the
-publisher API, and a GitHub release with the changelog entry.
+tests and then publishes: npm and crates.io directly, PyPI through trusted publishing (no
+token), Maven Central through the publisher API, and a GitHub release with the changelog entry.
 
 Swift is the exception worth knowing about. SwiftPM resolves a git URL and
 expects `Package.swift` at the root of the repository — a package in a
@@ -277,9 +291,9 @@ The two endpoints that are multipart-only (`registryPublish`,
 `llmTranscribeAudio`) send real multipart bodies.
 
 **Unions.** The three `oneOf` bodies in the spec are exposed as raw JSON in
-Rust, Swift, Kotlin and Ada; TypeScript renders them as real union types.
+Rust, Swift, Kotlin, Ada and Python; TypeScript renders them as real union types.
 
-**Unknown fields.** All five SDKs ignore response keys they do not model,
+**Unknown fields.** All six SDKs ignore response keys they do not model,
 except on the two schemas that declare `additionalProperties`, where the extra
 keys are kept and sent back unchanged.
 

@@ -16,6 +16,10 @@
  *   node scripts/check-docs.ts          every language whose compiler is present
  *   node scripts/check-docs.ts rust     one of them
  *
+ * Python samples are type-checked with mypy rather than compiled, which is the
+ * nearest Python has: a sample that calls a method or reads an attribute the
+ * SDK does not have fails the check.
+ *
  * Swift, Kotlin and Ada samples are still read by hand. Each mixes declarations
  * with statements that belong in different parts of a compilation unit, and
  * splitting them automatically is guesswork — the wrong kind of cleverness in a
@@ -104,6 +108,19 @@ const RUST_PARAMETERS = [
   'my_reqwest_client: reqwest::Client',
 ].join(', ');
 
+/** The names a Python fragment may lean on, as parameters of the function it is put in. */
+const PYTHON_PARAMETERS = [
+  'client: Client',
+  'run_id: str',
+  'id: str',
+  'agent_id: str',
+  'trace_id: str',
+  'body: CreateAgentRequest',
+].join(', ');
+
+/** The interpreter with the SDK's dependencies and mypy: `$UARP_PYTHON`, or the package's virtualenv. */
+const PYTHON = process.env.UARP_PYTHON ?? resolve(ROOT, 'packages/python/.venv/bin/python');
+
 const LANGUAGES: Record<string, Language> = {
   ts: {
     fence: 'ts',
@@ -158,6 +175,44 @@ const LANGUAGES: Record<string, Language> = {
       return {
         command: resolve(ROOT, 'packages/typescript/node_modules/.bin/tsc'),
         args: ['-p', workspace],
+      };
+    },
+  },
+
+  python: {
+    fence: 'python',
+    tool: PYTHON,
+    sources: ['README.md', 'packages/python/README.md'],
+    isStandalone: () => false,
+    prepare(workspace, blocks) {
+      const source: string[] = [
+        '# Generated from the documentation — edit the markdown, not this.',
+        'from uarp_sdk import Client',
+        'from uarp_sdk.models import CreateAgentRequest',
+      ];
+      const origin = new Map<number, string>();
+      for (const [index, block] of blocks.entries()) {
+        //  Imports go to the top of the module; the rest becomes the body of a
+        //  function whose parameters are the names the prose introduced. A
+        //  sample that awaits at its own top level needs an `async def`.
+        const lines = block.code.split('\n');
+        const isImport = (line: string) => /^(import|from)\s/.test(line);
+        source.push(...lines.filter(isImport));
+        const rest = lines.filter((line) => !isImport(line));
+        const awaits = rest.some((line) => /^(await |async (for|with) )/.test(line) || /^\S.*\bawait\b/.test(line));
+        source.push('', '', `${awaits ? 'async def' : 'def'} ${symbol(block, index)}(${PYTHON_PARAMETERS}) -> None:`);
+        for (const [offset, line] of rest.entries()) {
+          origin.set(source.length + 1, `${block.file}:${block.line + offset + 1}`);
+          source.push(line === '' ? '' : `    ${line}`);
+        }
+        source.push('    pass');
+      }
+      writeFileSync(join(workspace, 'samples.py'), source.join('\n') + '\n');
+      return {
+        command: PYTHON,
+        args: ['-m', 'mypy', '--strict', '--no-incremental', '--allow-untyped-calls', join(workspace, 'samples.py')],
+        locate: (output) =>
+          output.replace(/\S*samples\.py:(\d+)/g, (whole, line: string) => origin.get(Number(line)) ?? whole),
       };
     },
   },

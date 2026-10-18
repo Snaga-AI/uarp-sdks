@@ -1,10 +1,10 @@
 # Live SDK scenario
 
 The probe in `smoke/src` drives one SDK's transport. This scenario drives all
-five, against the real server, and checks they agree — the last place a
+six, against the real server, and checks they agree — the last place a
 per-language transport bug could still hide.
 
-`contract/` already proves the five put identical bytes on the wire, but it
+`contract/` already proves the six put identical bytes on the wire, but it
 proves it against a mock written in Python. Real infrastructure differs: TLS,
 HTTP/2 negotiation, chunked transfer, proxies, compression, redirects, real
 latency. A runner that passes here has talked to production.

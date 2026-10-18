@@ -1,11 +1,11 @@
 # Contract scenarios
 
 Every runner performs exactly these calls, in this order, against
-`contract/server.py`. The server answers identically for all five and records
-what it received; `contract/run.sh` then compares the five traces.
+`contract/server.py`. The server answers identically for all six and records
+what it received; `contract/run.sh` then compares the six traces.
 
 The point is not that each call succeeds — the unit tests cover that — but that
-all five SDKs put **the same bytes on the wire** for the same logical request.
+all six SDKs put **the same bytes on the wire** for the same logical request.
 
 | # | Call | What it pins down |
 | --- | --- | --- |
@@ -113,7 +113,7 @@ Everything else — method, path, query, `Accept`, `Content-Type`,
 
 ## Decoding
 
-Scenario 16 answers the mirror-image question: given one payload, do the five
+Scenario 16 answers the mirror-image question: given one payload, do the six
 SDKs read the same values out of it? The payload carries an enum value none of
 them has seen, an explicit `null`, an absent optional, an empty array, a nested
 object and an integer larger than a double holds exactly.

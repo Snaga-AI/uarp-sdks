@@ -3,7 +3,7 @@
   "version": "0.11.0",
   "private": true,
   "type": "module",
-  "description": "Generates the UARP (Snaga) SDKs for TypeScript, Rust, Swift, Kotlin and Ada from spec/openapi.json",
+  "description": "Generates the UARP (Snaga) SDKs for TypeScript, Rust, Swift, Kotlin, Ada and Python from spec/openapi.json",
   "engines": {
     "node": ">=22.6"
   },
