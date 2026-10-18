@@ -4600,6 +4600,9 @@ public struct AdminVoicePresets: Codable, Hashable, Sendable {
 
 /// `Agent` model.
 public struct Agent: Codable, Hashable, Sendable {
+    /// Bridge agents only: the stable fingerprint of the machine that enrolled it, used to adopt
+    /// the same agent after a reconnect. Absent on records enrolled before 2026-09-03.
+    public var bridgeFingerprint: String?
     /// The initiative (`/initiatives`) this agent works for, when it has one. Its runs are charged
     /// to that initiative's budget, and automated runs are refused (`INITIATIVE_PAUSED`) while it
     /// is paused or (`INITIATIVE_BUDGET_EXHAUSTED`) out of budget; agents and squads it creates
@@ -4732,7 +4735,8 @@ public struct Agent: Codable, Hashable, Sendable {
     public var createdAt: String
     public var updatedAt: String?
 
-    public init(initiativeId: String? = nil, specs: [AgentSpec]? = nil, coreMemory: AgentCoreMemory? = nil, autoApproveTools: [String]? = nil, commandRelationships: AgentCommandRelationships? = nil, accessControl: AgentAccessControl? = nil, metadata: AgentMetadata? = nil, agentId: String, tenantId: String, name: String, `description`: String? = nil, version: String? = nil, model: AgentModelConfig, prompts: AgentPrompts? = nil, mcp: JSONObject? = nil, policies: JSONObject? = nil, thinking: JSONObject? = nil, effortPolicy: JSONObject? = nil, resourceLimits: JSONObject? = nil, memory: JSONObject? = nil, guardrails: JSONObject? = nil, approvalRequiredTools: [String]? = nil, builtInTools: [String]? = nil, imageGeneration: JSONObject? = nil, knowledgeBaseId: String? = nil, knowledgeBaseIds: [String]? = nil, visibility: AgentUpdateVisibility? = nil, status: AgentStatus? = nil, statusChangedAt: String? = nil, statusReason: String? = nil, statusReasonCode: AgentStatusReasonCode? = nil, statusReasonDetails: JSONObject? = nil, autonomy: AgentAutonomy? = nil, toolOverrides: [AgentToolOverride]? = nil, publicConfig: AgentPublicConfig? = nil, bridge: AgentBridgeState? = nil, fallbackModel: JSONObject? = nil, executionMode: AgentExecutionMode? = nil, bridgeServed: Bool? = nil, bridgeDisconnectedAt: String? = nil, bridgeApp: String? = nil, parentAgentId: String? = nil, childrenCount: Int? = nil, bridgeStatus: AgentBridgeStatus? = nil, hire: AgentHire? = nil, workerReuse: Bool? = nil, schedule: JSONObject? = nil, a2a: JSONObject? = nil, riskClassification: JSONObject? = nil, workspaceId: String? = nil, contextStrategy: AgentContextStrategy? = nil, contextWindowSize: Int? = nil, createdAt: String, updatedAt: String? = nil) {
+    public init(bridgeFingerprint: String? = nil, initiativeId: String? = nil, specs: [AgentSpec]? = nil, coreMemory: AgentCoreMemory? = nil, autoApproveTools: [String]? = nil, commandRelationships: AgentCommandRelationships? = nil, accessControl: AgentAccessControl? = nil, metadata: AgentMetadata? = nil, agentId: String, tenantId: String, name: String, `description`: String? = nil, version: String? = nil, model: AgentModelConfig, prompts: AgentPrompts? = nil, mcp: JSONObject? = nil, policies: JSONObject? = nil, thinking: JSONObject? = nil, effortPolicy: JSONObject? = nil, resourceLimits: JSONObject? = nil, memory: JSONObject? = nil, guardrails: JSONObject? = nil, approvalRequiredTools: [String]? = nil, builtInTools: [String]? = nil, imageGeneration: JSONObject? = nil, knowledgeBaseId: String? = nil, knowledgeBaseIds: [String]? = nil, visibility: AgentUpdateVisibility? = nil, status: AgentStatus? = nil, statusChangedAt: String? = nil, statusReason: String? = nil, statusReasonCode: AgentStatusReasonCode? = nil, statusReasonDetails: JSONObject? = nil, autonomy: AgentAutonomy? = nil, toolOverrides: [AgentToolOverride]? = nil, publicConfig: AgentPublicConfig? = nil, bridge: AgentBridgeState? = nil, fallbackModel: JSONObject? = nil, executionMode: AgentExecutionMode? = nil, bridgeServed: Bool? = nil, bridgeDisconnectedAt: String? = nil, bridgeApp: String? = nil, parentAgentId: String? = nil, childrenCount: Int? = nil, bridgeStatus: AgentBridgeStatus? = nil, hire: AgentHire? = nil, workerReuse: Bool? = nil, schedule: JSONObject? = nil, a2a: JSONObject? = nil, riskClassification: JSONObject? = nil, workspaceId: String? = nil, contextStrategy: AgentContextStrategy? = nil, contextWindowSize: Int? = nil, createdAt: String, updatedAt: String? = nil) {
+        self.bridgeFingerprint = bridgeFingerprint
         self.initiativeId = initiativeId
         self.specs = specs
         self.coreMemory = coreMemory
@@ -4790,6 +4794,7 @@ public struct Agent: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case bridgeFingerprint = "bridge_fingerprint"
         case initiativeId = "initiative_id"
         case specs = "specs"
         case coreMemory = "core_memory"
@@ -6028,9 +6033,10 @@ public struct AgentStatus: RawRepresentable, Codable, Hashable, Sendable, Expres
     public static let suspended = AgentStatus(rawValue: "suspended")
     public static let terminated = AgentStatus(rawValue: "terminated")
     public static let deposed = AgentStatus(rawValue: "deposed")
+    public static let inactive = AgentStatus(rawValue: "inactive")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [AgentStatus] = [.active, .suspended, .terminated, .deposed]
+    public static let knownValues: [AgentStatus] = [.active, .suspended, .terminated, .deposed, .inactive]
 }
 
 /// Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
@@ -7298,13 +7304,13 @@ public struct AgentVersion: Codable, Hashable, Sendable {
     /// canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
     /// provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
     /// detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-    /// provisioned`, `Platform agent config migrated on boot`, `Hired`, `Registered from a local
-    /// app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`,
-    /// `Token cap removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N =
-    /// the version rolled back to), `Self-improvement: N changes based on N analysis` (the
-    /// self-improvement loop: the first N is a count, the second is one of errors, ratings or
-    /// feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC
-    /// 11).
+    /// provisioned`, `Platform agent config migrated on boot`, `Qualification evaluator template
+    /// revision N` (N = the template revision), `Hired`, `Registered from a local app`, `Token cap
+    /// removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap
+    /// removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version
+    /// rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement
+    /// loop: the first N is a count, the second is one of errors, ratings or feedback — words, not
+    /// a number). A reason code beside the prose is the owner's decision (DEC 11).
     public var changelog: String?
     public var createdAt: String
     public var createdBy: String?
@@ -12031,6 +12037,56 @@ public struct CompleteOAuthLoginResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `ConfirmDataProcessingPolicyRequest` model.
+public struct ConfirmDataProcessingPolicyRequest: Codable, Hashable, Sendable {
+    public var processorName: String?
+    public var processingRegion: String?
+    public var llmTrainingUse: QualificationProcessingPolicyLLMTrainingUse
+    public var archiveEnabled: Bool?
+    public var storage: QualificationStoragePolicy
+    public var evidenceHash: QualificationDigest?
+    public var recoveryWindowSeconds: Int
+    public var observedAtUnix: Int
+    public var expiresAtUnix: Int
+
+    public init(processorName: String? = nil, processingRegion: String? = nil, llmTrainingUse: QualificationProcessingPolicyLLMTrainingUse, archiveEnabled: Bool? = nil, storage: QualificationStoragePolicy, evidenceHash: QualificationDigest? = nil, recoveryWindowSeconds: Int, observedAtUnix: Int, expiresAtUnix: Int) {
+        self.processorName = processorName
+        self.processingRegion = processingRegion
+        self.llmTrainingUse = llmTrainingUse
+        self.archiveEnabled = archiveEnabled
+        self.storage = storage
+        self.evidenceHash = evidenceHash
+        self.recoveryWindowSeconds = recoveryWindowSeconds
+        self.observedAtUnix = observedAtUnix
+        self.expiresAtUnix = expiresAtUnix
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case processorName = "processor_name"
+        case processingRegion = "processing_region"
+        case llmTrainingUse = "llm_training_use"
+        case archiveEnabled = "archive_enabled"
+        case storage = "storage"
+        case evidenceHash = "evidence_hash"
+        case recoveryWindowSeconds = "recovery_window_seconds"
+        case observedAtUnix = "observed_at_unix"
+        case expiresAtUnix = "expires_at_unix"
+    }
+}
+
+/// `ConfirmDataProcessingPolicyResponse` model.
+public struct ConfirmDataProcessingPolicyResponse: Codable, Hashable, Sendable {
+    public var current: JSONObject?
+
+    public init(current: JSONObject? = nil) {
+        self.current = current
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case current = "current"
+    }
+}
+
 /// `ConfirmSessionTodoRequest` model.
 public struct ConfirmSessionTodoRequest: Codable, Hashable, Sendable {
     public var execute: Bool?
@@ -12831,6 +12887,10 @@ public struct ConversationEntryImportance: RawRepresentable, Codable, Hashable, 
 /// On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
 /// publicRunMetrics).
 public struct ConversationEntryRunMetrics: Codable, Hashable, Sendable {
+    /// The context window of the model that served the run, in tokens.
+    public var contextWindowTokens: Int?
+    /// Input tokens of the run's last model call: how full the window was at the end.
+    public var lastInputTokens: Int?
     /// How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
     public var pricingConfidence: String?
     /// Time the run spent executing, in ms — summed over every attempt, so a run paused and resumed
@@ -12854,7 +12914,9 @@ public struct ConversationEntryRunMetrics: Codable, Hashable, Sendable {
     /// Estimated total cost in USD
     public var totalCostUsd: Double?
 
-    public init(pricingConfidence: String? = nil, durationMs: Double? = nil, stepsCount: Int? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, thinkingTokens: Int? = nil, cachedTokens: Int? = nil, toolCallsCount: Int? = nil, llmCallsCount: Int? = nil, guardrailChecks: Int? = nil, guardrailViolations: Int? = nil, memoryRetrievals: Int? = nil, memoryExtractions: Int? = nil, totalCostUsd: Double? = nil) {
+    public init(contextWindowTokens: Int? = nil, lastInputTokens: Int? = nil, pricingConfidence: String? = nil, durationMs: Double? = nil, stepsCount: Int? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, thinkingTokens: Int? = nil, cachedTokens: Int? = nil, toolCallsCount: Int? = nil, llmCallsCount: Int? = nil, guardrailChecks: Int? = nil, guardrailViolations: Int? = nil, memoryRetrievals: Int? = nil, memoryExtractions: Int? = nil, totalCostUsd: Double? = nil) {
+        self.contextWindowTokens = contextWindowTokens
+        self.lastInputTokens = lastInputTokens
         self.pricingConfidence = pricingConfidence
         self.durationMs = durationMs
         self.stepsCount = stepsCount
@@ -12872,6 +12934,8 @@ public struct ConversationEntryRunMetrics: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case contextWindowTokens = "context_window_tokens"
+        case lastInputTokens = "last_input_tokens"
         case pricingConfidence = "pricing_confidence"
         case durationMs = "duration_ms"
         case stepsCount = "steps_count"
@@ -18115,12 +18179,14 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let alreadyExists = ErrorCode(rawValue: "ALREADY_EXISTS")
     public static let anonBusy = ErrorCode(rawValue: "ANON_BUSY")
     public static let artifactIntegrityError = ErrorCode(rawValue: "ARTIFACT_INTEGRITY_ERROR")
+    public static let assessmentIsolationRequired = ErrorCode(rawValue: "ASSESSMENT_ISOLATION_REQUIRED")
     public static let authError = ErrorCode(rawValue: "AUTH_ERROR")
     public static let billingCancelled = ErrorCode(rawValue: "BILLING_CANCELLED")
     public static let billingDisputed = ErrorCode(rawValue: "BILLING_DISPUTED")
     public static let billingPastDue = ErrorCode(rawValue: "BILLING_PAST_DUE")
     public static let budgetExceeded = ErrorCode(rawValue: "BUDGET_EXCEEDED")
     public static let checksumMismatch = ErrorCode(rawValue: "CHECKSUM_MISMATCH")
+    public static let clientRequestConflict = ErrorCode(rawValue: "CLIENT_REQUEST_CONFLICT")
     public static let companyNotReady = ErrorCode(rawValue: "COMPANY_NOT_READY")
     public static let companyPaused = ErrorCode(rawValue: "COMPANY_PAUSED")
     public static let concurrencyLimit = ErrorCode(rawValue: "CONCURRENCY_LIMIT")
@@ -18133,6 +18199,8 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let dailyLimit = ErrorCode(rawValue: "DAILY_LIMIT")
     public static let dependencyExists = ErrorCode(rawValue: "DEPENDENCY_EXISTS")
     public static let eventStoreError = ErrorCode(rawValue: "EVENT_STORE_ERROR")
+    public static let executionProfileUnverifiable = ErrorCode(rawValue: "EXECUTION_PROFILE_UNVERIFIABLE")
+    public static let executionReceiptPending = ErrorCode(rawValue: "EXECUTION_RECEIPT_PENDING")
     public static let externalServiceError = ErrorCode(rawValue: "EXTERNAL_SERVICE_ERROR")
     public static let featuredSetContended = ErrorCode(rawValue: "FEATURED_SET_CONTENDED")
     public static let featureDisabled = ErrorCode(rawValue: "FEATURE_DISABLED")
@@ -18140,6 +18208,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let fileTypeNotAllowed = ErrorCode(rawValue: "FILE_TYPE_NOT_ALLOWED")
     public static let forbidden = ErrorCode(rawValue: "FORBIDDEN")
     public static let guardrailViolation = ErrorCode(rawValue: "GUARDRAIL_VIOLATION")
+    public static let idempotencyConflict = ErrorCode(rawValue: "IDEMPOTENCY_CONFLICT")
     public static let idempotencyKeyReused = ErrorCode(rawValue: "IDEMPOTENCY_KEY_REUSED")
     public static let initiativeBudgetExhausted = ErrorCode(rawValue: "INITIATIVE_BUDGET_EXHAUSTED")
     public static let initiativePaused = ErrorCode(rawValue: "INITIATIVE_PAUSED")
@@ -18153,7 +18222,9 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let invalidShareList = ErrorCode(rawValue: "INVALID_SHARE_LIST")
     public static let invalidShareTarget = ErrorCode(rawValue: "INVALID_SHARE_TARGET")
     public static let invalidStateTransition = ErrorCode(rawValue: "INVALID_STATE_TRANSITION")
+    public static let isolationViolation = ErrorCode(rawValue: "ISOLATION_VIOLATION")
     public static let llmError = ErrorCode(rawValue: "LLM_ERROR")
+    public static let managedAgent = ErrorCode(rawValue: "MANAGED_AGENT")
     public static let maxDurationExceeded = ErrorCode(rawValue: "MAX_DURATION_EXCEEDED")
     public static let maxTokensExceeded = ErrorCode(rawValue: "MAX_TOKENS_EXCEEDED")
     public static let methodNotAllowed = ErrorCode(rawValue: "METHOD_NOT_ALLOWED")
@@ -18171,6 +18242,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let notYanked = ErrorCode(rawValue: "NOT_YANKED")
     public static let noRunnableTarget = ErrorCode(rawValue: "NO_RUNNABLE_TARGET")
     public static let oauthFailed = ErrorCode(rawValue: "OAUTH_FAILED")
+    public static let outputTooLarge = ErrorCode(rawValue: "OUTPUT_TOO_LARGE")
     public static let payloadTooLarge = ErrorCode(rawValue: "PAYLOAD_TOO_LARGE")
     public static let persistenceError = ErrorCode(rawValue: "PERSISTENCE_ERROR")
     public static let plannerOutputInvalid = ErrorCode(rawValue: "PLANNER_OUTPUT_INVALID")
@@ -18179,9 +18251,15 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let prerequisiteMissing = ErrorCode(rawValue: "PREREQUISITE_MISSING")
     public static let pricingUnavailable = ErrorCode(rawValue: "PRICING_UNAVAILABLE")
     public static let privateNotShared = ErrorCode(rawValue: "PRIVATE_NOT_SHARED")
+    public static let processingPolicyChanged = ErrorCode(rawValue: "PROCESSING_POLICY_CHANGED")
+    public static let processingPolicyNotReady = ErrorCode(rawValue: "PROCESSING_POLICY_NOT_READY")
     public static let promoRedemptionFailed = ErrorCode(rawValue: "PROMO_REDEMPTION_FAILED")
     public static let proposalExpired = ErrorCode(rawValue: "PROPOSAL_EXPIRED")
+    public static let qualificationBudgetStop = ErrorCode(rawValue: "QUALIFICATION_BUDGET_STOP")
+    public static let qualificationRouteMismatch = ErrorCode(rawValue: "QUALIFICATION_ROUTE_MISMATCH")
+    public static let qualificationVersionUnavailable = ErrorCode(rawValue: "QUALIFICATION_VERSION_UNAVAILABLE")
     public static let quotaExceeded = ErrorCode(rawValue: "QUOTA_EXCEEDED")
+    public static let rateLimited = ErrorCode(rawValue: "RATE_LIMITED")
     public static let rateLimitExceeded = ErrorCode(rawValue: "RATE_LIMIT_EXCEEDED")
     public static let referenceNotFound = ErrorCode(rawValue: "REFERENCE_NOT_FOUND")
     public static let reservedScope = ErrorCode(rawValue: "RESERVED_SCOPE")
@@ -18198,12 +18276,28 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let signingNotConfigured = ErrorCode(rawValue: "SIGNING_NOT_CONFIGURED")
     public static let sizeLimit = ErrorCode(rawValue: "SIZE_LIMIT")
     public static let specNotFound = ErrorCode(rawValue: "SPEC_NOT_FOUND")
+    public static let sponsorshipBudgetBelowCommitted = ErrorCode(rawValue: "SPONSORSHIP_BUDGET_BELOW_COMMITTED")
+    public static let sponsorshipBudgetExhausted = ErrorCode(rawValue: "SPONSORSHIP_BUDGET_EXHAUSTED")
+    public static let sponsorshipCandidateLimit = ErrorCode(rawValue: "SPONSORSHIP_CANDIDATE_LIMIT")
+    public static let sponsorshipConcurrencyLimit = ErrorCode(rawValue: "SPONSORSHIP_CONCURRENCY_LIMIT")
+    public static let sponsorshipFundingUnavailable = ErrorCode(rawValue: "SPONSORSHIP_FUNDING_UNAVAILABLE")
+    public static let sponsorshipGrantConflict = ErrorCode(rawValue: "SPONSORSHIP_GRANT_CONFLICT")
+    public static let sponsorshipGrantInUse = ErrorCode(rawValue: "SPONSORSHIP_GRANT_IN_USE")
+    public static let sponsorshipGrantMismatch = ErrorCode(rawValue: "SPONSORSHIP_GRANT_MISMATCH")
+    public static let sponsorshipGrantUnavailable = ErrorCode(rawValue: "SPONSORSHIP_GRANT_UNAVAILABLE")
+    public static let sponsorshipOutcomeUnknown = ErrorCode(rawValue: "SPONSORSHIP_OUTCOME_UNKNOWN")
+    public static let sponsorshipProgramImmutable = ErrorCode(rawValue: "SPONSORSHIP_PROGRAM_IMMUTABLE")
+    public static let sponsorshipProgramInactive = ErrorCode(rawValue: "SPONSORSHIP_PROGRAM_INACTIVE")
+    public static let sponsorshipProgramRevisionConflict = ErrorCode(rawValue: "SPONSORSHIP_PROGRAM_REVISION_CONFLICT")
+    public static let sponsorshipRequired = ErrorCode(rawValue: "SPONSORSHIP_REQUIRED")
+    public static let sponsorshipScopeRequired = ErrorCode(rawValue: "SPONSORSHIP_SCOPE_REQUIRED")
     public static let startedByAnotherUser = ErrorCode(rawValue: "STARTED_BY_ANOTHER_USER")
     public static let strategistModelUnconfigured = ErrorCode(rawValue: "STRATEGIST_MODEL_UNCONFIGURED")
     public static let taskGraphFailed = ErrorCode(rawValue: "TASK_GRAPH_FAILED")
     public static let teamAbort = ErrorCode(rawValue: "TEAM_ABORT")
     public static let termsNotAccepted = ErrorCode(rawValue: "TERMS_NOT_ACCEPTED")
     public static let textExtractionFailed = ErrorCode(rawValue: "TEXT_EXTRACTION_FAILED")
+    public static let unauthenticated = ErrorCode(rawValue: "UNAUTHENTICATED")
     public static let userRequired = ErrorCode(rawValue: "USER_REQUIRED")
     public static let validationError = ErrorCode(rawValue: "VALIDATION_ERROR")
     public static let verificationFailed = ErrorCode(rawValue: "VERIFICATION_FAILED")
@@ -18245,7 +18339,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let providerNotConfigured = ErrorCode(rawValue: "provider_not_configured")
     public static let providerRateLimited = ErrorCode(rawValue: "provider_rate_limited")
     public static let quotaExceeded_ = ErrorCode(rawValue: "quota_exceeded")
-    public static let rateLimited = ErrorCode(rawValue: "rate_limited")
+    public static let rateLimited_ = ErrorCode(rawValue: "rate_limited")
     public static let resourceLimitReached = ErrorCode(rawValue: "resource_limit_reached")
     public static let runApprovalExpired = ErrorCode(rawValue: "run_approval_expired")
     public static let runInputTimeout = ErrorCode(rawValue: "run_input_timeout")
@@ -18262,7 +18356,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let videoSlotInvalid = ErrorCode(rawValue: "video_slot_invalid")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .activeTenantNotSupported, .alreadyExists, .anonBusy, .artifactIntegrityError, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .companyNotReady, .companyPaused, .concurrencyLimit, .concurrentModification, .configurationError, .confirmationRequired, .conflict, .contextLengthExceeded, .countLimitReached, .dailyLimit, .dependencyExists, .eventStoreError, .externalServiceError, .featuredSetContended, .featureDisabled, .fileNotFound, .fileTypeNotAllowed, .forbidden, .guardrailViolation, .idempotencyKeyReused, .initiativeBudgetExhausted, .initiativePaused, .internalError, .invalidArchive, .invalidBody, .invalidCursor, .invalidManifest, .invalidQuery, .invalidRequest, .invalidShareList, .invalidShareTarget, .invalidStateTransition, .llmError, .maxDurationExceeded, .maxTokensExceeded, .methodNotAllowed, .migrationConflict, .missingField, .missingScope, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notBridgeAgent, .notFound, .notYanked, .noRunnableTarget, .oauthFailed, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .prerequisiteMissing, .pricingUnavailable, .privateNotShared, .promoRedemptionFailed, .proposalExpired, .quotaExceeded, .rateLimitExceeded, .referenceNotFound, .reservedScope, .runActive, .runCancelled, .scopeMismatch, .scopeTaken, .searchProviderNotConfigured, .searchUpstreamFailed, .searchUpstreamTimeout, .securityScanFailed, .sessionNotActive, .shareListConflict, .signingNotConfigured, .sizeLimit, .specNotFound, .startedByAnotherUser, .strategistModelUnconfigured, .taskGraphFailed, .teamAbort, .termsNotAccepted, .textExtractionFailed, .userRequired, .validationError, .verificationFailed, .versionConflict, .versionNotFound, .workspaceStorageLimit, .wouldOrphan, .yankConflict, .agentDeleted, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .consentRequired, .cvInvalid, .cvTooLarge, .duplicateApplication, .governanceNotEnabled, .hireCatalogUnknown, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .jobApplyElsewhere, .jobClosed, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbEmbeddingFailed, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .mfaRequired, .noEligibleArbiter, .notHired, .planUpgradeRequired, .proposalRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited, .resourceLimitReached, .runApprovalExpired, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded, .runStalled, .secretWouldMove, .videoConsentRequired, .videoOrderState, .videoPhotoInvalid, .videoPhotoRejected, .videoRegenUnavailable, .videoSlotInvalid]
+    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .activeTenantNotSupported, .alreadyExists, .anonBusy, .artifactIntegrityError, .assessmentIsolationRequired, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .clientRequestConflict, .companyNotReady, .companyPaused, .concurrencyLimit, .concurrentModification, .configurationError, .confirmationRequired, .conflict, .contextLengthExceeded, .countLimitReached, .dailyLimit, .dependencyExists, .eventStoreError, .executionProfileUnverifiable, .executionReceiptPending, .externalServiceError, .featuredSetContended, .featureDisabled, .fileNotFound, .fileTypeNotAllowed, .forbidden, .guardrailViolation, .idempotencyConflict, .idempotencyKeyReused, .initiativeBudgetExhausted, .initiativePaused, .internalError, .invalidArchive, .invalidBody, .invalidCursor, .invalidManifest, .invalidQuery, .invalidRequest, .invalidShareList, .invalidShareTarget, .invalidStateTransition, .isolationViolation, .llmError, .managedAgent, .maxDurationExceeded, .maxTokensExceeded, .methodNotAllowed, .migrationConflict, .missingField, .missingScope, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notBridgeAgent, .notFound, .notYanked, .noRunnableTarget, .oauthFailed, .outputTooLarge, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .prerequisiteMissing, .pricingUnavailable, .privateNotShared, .processingPolicyChanged, .processingPolicyNotReady, .promoRedemptionFailed, .proposalExpired, .qualificationBudgetStop, .qualificationRouteMismatch, .qualificationVersionUnavailable, .quotaExceeded, .rateLimited, .rateLimitExceeded, .referenceNotFound, .reservedScope, .runActive, .runCancelled, .scopeMismatch, .scopeTaken, .searchProviderNotConfigured, .searchUpstreamFailed, .searchUpstreamTimeout, .securityScanFailed, .sessionNotActive, .shareListConflict, .signingNotConfigured, .sizeLimit, .specNotFound, .sponsorshipBudgetBelowCommitted, .sponsorshipBudgetExhausted, .sponsorshipCandidateLimit, .sponsorshipConcurrencyLimit, .sponsorshipFundingUnavailable, .sponsorshipGrantConflict, .sponsorshipGrantInUse, .sponsorshipGrantMismatch, .sponsorshipGrantUnavailable, .sponsorshipOutcomeUnknown, .sponsorshipProgramImmutable, .sponsorshipProgramInactive, .sponsorshipProgramRevisionConflict, .sponsorshipRequired, .sponsorshipScopeRequired, .startedByAnotherUser, .strategistModelUnconfigured, .taskGraphFailed, .teamAbort, .termsNotAccepted, .textExtractionFailed, .unauthenticated, .userRequired, .validationError, .verificationFailed, .versionConflict, .versionNotFound, .workspaceStorageLimit, .wouldOrphan, .yankConflict, .agentDeleted, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .consentRequired, .cvInvalid, .cvTooLarge, .duplicateApplication, .governanceNotEnabled, .hireCatalogUnknown, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .jobApplyElsewhere, .jobClosed, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbEmbeddingFailed, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .mfaRequired, .noEligibleArbiter, .notHired, .planUpgradeRequired, .proposalRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited_, .resourceLimitReached, .runApprovalExpired, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded, .runStalled, .secretWouldMove, .videoConsentRequired, .videoOrderState, .videoPhotoInvalid, .videoPhotoRejected, .videoRegenUnavailable, .videoSlotInvalid]
 }
 
 /// `ErrorError` model.
@@ -19845,6 +19939,19 @@ public struct GetAdminBlogConfigResponse: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case config = "config"
+    }
+}
+
+/// `GetAdminDataProcessingPolicyResponse` model.
+public struct GetAdminDataProcessingPolicyResponse: Codable, Hashable, Sendable {
+    public var current: JSONObject?
+
+    public init(current: JSONObject? = nil) {
+        self.current = current
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case current = "current"
     }
 }
 
@@ -22474,6 +22581,14 @@ public struct GetRunQueuePositionResponse: Codable, Hashable, Sendable {
 
 /// `GetRunResponse` model.
 public struct GetRunResponse: Codable, Hashable, Sendable {
+    /// Sponsored qualification runs only: the requirements the run was admitted under, stored as
+    /// accepted.
+    public var executionRequirements: QualificationExecutionRequirementsV2?
+    /// Sponsored qualification runs only: until when the run is recoverable by its client request
+    /// id.
+    public var recoveryExpiresAtUnix: Int?
+    /// Sponsored qualification runs only: the grant that paid for it.
+    public var sponsorshipGrantId: String?
     /// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
     /// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
     /// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -22550,7 +22665,10 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
     /// running.
     public var pendingInput: GetRunResponsePendingInput?
 
-    public init(executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: RunOutput? = nil, metrics: RunMetrics? = nil, error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, approvals: [GetRunResponseApproval]? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: GetRunResponseResourceLimits? = nil, changedFiles: [String]? = nil, pendingApprovals: [PendingApproval]? = nil, pendingInput: GetRunResponsePendingInput? = nil) {
+    public init(executionRequirements: QualificationExecutionRequirementsV2? = nil, recoveryExpiresAtUnix: Int? = nil, sponsorshipGrantId: String? = nil, executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: RunOutput? = nil, metrics: RunMetrics? = nil, error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, approvals: [GetRunResponseApproval]? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: GetRunResponseResourceLimits? = nil, changedFiles: [String]? = nil, pendingApprovals: [PendingApproval]? = nil, pendingInput: GetRunResponsePendingInput? = nil) {
+        self.executionRequirements = executionRequirements
+        self.recoveryExpiresAtUnix = recoveryExpiresAtUnix
+        self.sponsorshipGrantId = sponsorshipGrantId
         self.executionMode = executionMode
         self.runId = runId
         self.tenantId = tenantId
@@ -22578,6 +22696,9 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case executionRequirements = "execution_requirements"
+        case recoveryExpiresAtUnix = "recovery_expires_at_unix"
+        case sponsorshipGrantId = "sponsorship_grant_id"
         case executionMode = "execution_mode"
         case runId = "run_id"
         case tenantId = "tenant_id"
@@ -37917,6 +38038,1728 @@ public struct PutCareersConfigResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `PutQualificationPricingRevisionRequest` model.
+public struct PutQualificationPricingRevisionRequest: Codable, Hashable, Sendable {
+    public var provider: String
+    public var model: String
+    public var inputMicrousdPerMillionTokens: QualificationPositiveMicrousd
+    public var outputMicrousdPerMillionTokens: QualificationPositiveMicrousd
+
+    public init(provider: String, model: String, inputMicrousdPerMillionTokens: QualificationPositiveMicrousd, outputMicrousdPerMillionTokens: QualificationPositiveMicrousd) {
+        self.provider = provider
+        self.model = model
+        self.inputMicrousdPerMillionTokens = inputMicrousdPerMillionTokens
+        self.outputMicrousdPerMillionTokens = outputMicrousdPerMillionTokens
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case provider = "provider"
+        case model = "model"
+        case inputMicrousdPerMillionTokens = "input_microusd_per_million_tokens"
+        case outputMicrousdPerMillionTokens = "output_microusd_per_million_tokens"
+    }
+}
+
+/// `PutQualificationSponsorKeyRequest` model.
+public struct PutQualificationSponsorKeyRequest: Codable, Hashable, Sendable {
+    public var tenantId: String
+    public var programs: [String]
+
+    public init(tenantId: String, programs: [String]) {
+        self.tenantId = tenantId
+        self.programs = programs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tenantId = "tenant_id"
+        case programs = "programs"
+    }
+}
+
+/// Prepared Nestor message only. No files or attachments. Source is untrusted data and must not
+/// become instructions.
+public struct QualificationAssessmentInputMessage: Codable, Hashable, Sendable {
+    public var message: String
+
+    public init(message: String) {
+        self.message = message
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case message = "message"
+    }
+}
+
+/// policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+/// incomplete readiness. confirmed requires current verified terms, not_used training and no
+/// unknown storage categories.
+public struct QualificationConfirmedPolicyResponse: Codable, Hashable, Sendable {
+    public var kind: JSONValue
+    public var policy: QualificationConfirmedProcessingPolicy
+    public var policyHash: QualificationDigest
+    public var readiness: QualificationConfirmedPolicyResponseReadiness
+    public var blockers: [QualificationConfirmedPolicyResponseBlocker]
+
+    public init(kind: JSONValue, policy: QualificationConfirmedProcessingPolicy, policyHash: QualificationDigest, readiness: QualificationConfirmedPolicyResponseReadiness, blockers: [QualificationConfirmedPolicyResponseBlocker]) {
+        self.kind = kind
+        self.policy = policy
+        self.policyHash = policyHash
+        self.readiness = readiness
+        self.blockers = blockers
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case policy = "policy"
+        case policyHash = "policy_hash"
+        case readiness = "readiness"
+        case blockers = "blockers"
+    }
+}
+
+/// `QualificationConfirmedPolicyResponseBlocker` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationConfirmedPolicyResponseBlocker: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let policyNotConfigured = QualificationConfirmedPolicyResponseBlocker(rawValue: "POLICY_NOT_CONFIGURED")
+    public static let retentionUnknown = QualificationConfirmedPolicyResponseBlocker(rawValue: "RETENTION_UNKNOWN")
+    public static let llmTrainingUnconfirmed = QualificationConfirmedPolicyResponseBlocker(rawValue: "LLM_TRAINING_UNCONFIRMED")
+    public static let llmTrainingUsed = QualificationConfirmedPolicyResponseBlocker(rawValue: "LLM_TRAINING_USED")
+    public static let processorUnconfirmed = QualificationConfirmedPolicyResponseBlocker(rawValue: "PROCESSOR_UNCONFIRMED")
+    public static let evidenceUnconfirmed = QualificationConfirmedPolicyResponseBlocker(rawValue: "EVIDENCE_UNCONFIRMED")
+    public static let policyExpired = QualificationConfirmedPolicyResponseBlocker(rawValue: "POLICY_EXPIRED")
+    public static let policyRevoked = QualificationConfirmedPolicyResponseBlocker(rawValue: "POLICY_REVOKED")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationConfirmedPolicyResponseBlocker] = [.policyNotConfigured, .retentionUnknown, .llmTrainingUnconfirmed, .llmTrainingUsed, .processorUnconfirmed, .evidenceUnconfirmed, .policyExpired, .policyRevoked]
+}
+
+/// `QualificationConfirmedPolicyResponseReadiness` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationConfirmedPolicyResponseReadiness: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let confirmed = QualificationConfirmedPolicyResponseReadiness(rawValue: "confirmed")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationConfirmedPolicyResponseReadiness] = [.confirmed]
+}
+
+/// Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+/// 86400 seconds later. recovery_window_seconds is the minimum durable client request
+/// reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+/// run records or receipt identifiers persist.
+public struct QualificationConfirmedProcessingPolicy: Codable, Hashable, Sendable {
+    public var schemaVersion: JSONValue
+    public var id: String
+    public var revision: Int
+    public var tenantId: String
+    public var purpose: JSONValue
+    public var recipient: JSONValue
+    public var processorName: String
+    public var processingRegion: String
+    public var llmTrainingUse: JSONValue
+    public var archiveEnabled: Bool
+    public var storage: QualificationConfirmedStoragePolicy
+    public var evidenceHash: QualificationDigest
+    public var recoveryWindowSeconds: Int
+    public var observedAtUnix: Int
+    public var expiresAtUnix: Int
+
+    public init(schemaVersion: JSONValue, id: String, revision: Int, tenantId: String, purpose: JSONValue, recipient: JSONValue, processorName: String, processingRegion: String, llmTrainingUse: JSONValue, archiveEnabled: Bool, storage: QualificationConfirmedStoragePolicy, evidenceHash: QualificationDigest, recoveryWindowSeconds: Int, observedAtUnix: Int, expiresAtUnix: Int) {
+        self.schemaVersion = schemaVersion
+        self.id = id
+        self.revision = revision
+        self.tenantId = tenantId
+        self.purpose = purpose
+        self.recipient = recipient
+        self.processorName = processorName
+        self.processingRegion = processingRegion
+        self.llmTrainingUse = llmTrainingUse
+        self.archiveEnabled = archiveEnabled
+        self.storage = storage
+        self.evidenceHash = evidenceHash
+        self.recoveryWindowSeconds = recoveryWindowSeconds
+        self.observedAtUnix = observedAtUnix
+        self.expiresAtUnix = expiresAtUnix
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case id = "id"
+        case revision = "revision"
+        case tenantId = "tenant_id"
+        case purpose = "purpose"
+        case recipient = "recipient"
+        case processorName = "processor_name"
+        case processingRegion = "processing_region"
+        case llmTrainingUse = "llm_training_use"
+        case archiveEnabled = "archive_enabled"
+        case storage = "storage"
+        case evidenceHash = "evidence_hash"
+        case recoveryWindowSeconds = "recovery_window_seconds"
+        case observedAtUnix = "observed_at_unix"
+        case expiresAtUnix = "expires_at_unix"
+    }
+}
+
+public typealias QualificationConfirmedRetentionRule = JSONValue
+
+/// `QualificationConfirmedRetentionRuleVariant1` model.
+public struct QualificationConfirmedRetentionRuleVariant1: Codable, Hashable, Sendable {
+    public var mode: JSONValue
+    public var maxSeconds: Int
+
+    public init(mode: JSONValue, maxSeconds: Int) {
+        self.mode = mode
+        self.maxSeconds = maxSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mode = "mode"
+        case maxSeconds = "max_seconds"
+    }
+}
+
+/// `QualificationConfirmedRetentionRuleVariant2` model.
+public struct QualificationConfirmedRetentionRuleVariant2: Codable, Hashable, Sendable {
+    public var mode: JSONValue
+    public var maxSeconds: JSONValue
+
+    public init(mode: JSONValue, maxSeconds: JSONValue) {
+        self.mode = mode
+        self.maxSeconds = maxSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mode = "mode"
+        case maxSeconds = "max_seconds"
+    }
+}
+
+/// `QualificationConfirmedRetentionRuleVariant3` model.
+public struct QualificationConfirmedRetentionRuleVariant3: Codable, Hashable, Sendable {
+    public var mode: QualificationConfirmedRetentionRuleVariant3mode
+    public var maxSeconds: JSONValue?
+
+    public init(mode: QualificationConfirmedRetentionRuleVariant3mode, maxSeconds: JSONValue? = nil) {
+        self.mode = mode
+        self.maxSeconds = maxSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mode = "mode"
+        case maxSeconds = "max_seconds"
+    }
+}
+
+/// `QualificationConfirmedRetentionRuleVariant3mode` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationConfirmedRetentionRuleVariant3mode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let indefinite = QualificationConfirmedRetentionRuleVariant3mode(rawValue: "indefinite")
+    public static let notApplicable = QualificationConfirmedRetentionRuleVariant3mode(rawValue: "not_applicable")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationConfirmedRetentionRuleVariant3mode] = [.indefinite, .notApplicable]
+}
+
+/// `QualificationConfirmedStoragePolicy` model.
+public struct QualificationConfirmedStoragePolicy: Codable, Hashable, Sendable {
+    public var runs: QualificationConfirmedRetentionRule
+    public var events: QualificationConfirmedRetentionRule
+    public var artifacts: QualificationConfirmedRetentionRule
+    public var checkpoints: QualificationConfirmedRetentionRule
+    public var archives: QualificationConfirmedRetentionRule
+    public var backups: QualificationConfirmedRetentionRule
+    public var llm: QualificationConfirmedRetentionRule
+
+    public init(runs: QualificationConfirmedRetentionRule, events: QualificationConfirmedRetentionRule, artifacts: QualificationConfirmedRetentionRule, checkpoints: QualificationConfirmedRetentionRule, archives: QualificationConfirmedRetentionRule, backups: QualificationConfirmedRetentionRule, llm: QualificationConfirmedRetentionRule) {
+        self.runs = runs
+        self.events = events
+        self.artifacts = artifacts
+        self.checkpoints = checkpoints
+        self.archives = archives
+        self.backups = backups
+        self.llm = llm
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case runs = "runs"
+        case events = "events"
+        case artifacts = "artifacts"
+        case checkpoints = "checkpoints"
+        case archives = "archives"
+        case backups = "backups"
+        case llm = "llm"
+    }
+}
+
+public typealias QualificationDigest = String
+
+/// receipt_hash binds only receipt. profile_status and its observation time are current
+/// server-owned validity outside immutable history. Authenticated HTTPS readback is mandatory;
+/// a hash alone does not authenticate a server.
+public struct QualificationExecutionReceiptResponseV2: Codable, Hashable, Sendable {
+    public var kind: JSONValue
+    public var receipt: QualificationExecutionReceiptV2
+    public var receiptHash: QualificationDigest
+    public var profileStatus: QualificationExecutionReceiptResponseV2profileStatus
+    public var profileStatusObservedAtUnix: Int
+
+    public init(kind: JSONValue, receipt: QualificationExecutionReceiptV2, receiptHash: QualificationDigest, profileStatus: QualificationExecutionReceiptResponseV2profileStatus, profileStatusObservedAtUnix: Int) {
+        self.kind = kind
+        self.receipt = receipt
+        self.receiptHash = receiptHash
+        self.profileStatus = profileStatus
+        self.profileStatusObservedAtUnix = profileStatusObservedAtUnix
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case receipt = "receipt"
+        case receiptHash = "receipt_hash"
+        case profileStatus = "profile_status"
+        case profileStatusObservedAtUnix = "profile_status_observed_at_unix"
+    }
+}
+
+/// `QualificationExecutionReceiptResponseV2profileStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationExecutionReceiptResponseV2profileStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let active = QualificationExecutionReceiptResponseV2profileStatus(rawValue: "active")
+    public static let revoked = QualificationExecutionReceiptResponseV2profileStatus(rawValue: "revoked")
+    public static let unknown = QualificationExecutionReceiptResponseV2profileStatus(rawValue: "unknown")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationExecutionReceiptResponseV2profileStatus] = [.active, .revoked, .unknown]
+}
+
+public typealias QualificationExecutionReceiptV2 = JSONValue
+
+/// Hash material only, never accepted by POST /runs. Omit exactly sponsorship_grant_id to avoid
+/// a circular grant/hash dependency.
+public struct QualificationExecutionRequirementsBeforeGrantV2: Codable, Hashable, Sendable {
+    public var schemaVersion: JSONValue
+    public var purpose: JSONValue
+    public var clientRequestId: String
+    public var processingPolicyId: String
+    public var processingPolicyHash: QualificationDigest
+    public var isolationProfile: JSONValue
+    public var requireVerifiableExecution: Bool
+    public var expectedExecutionProfileHash: QualificationDigest?
+
+    public init(schemaVersion: JSONValue, purpose: JSONValue, clientRequestId: String, processingPolicyId: String, processingPolicyHash: QualificationDigest, isolationProfile: JSONValue, requireVerifiableExecution: Bool, expectedExecutionProfileHash: QualificationDigest? = nil) {
+        self.schemaVersion = schemaVersion
+        self.purpose = purpose
+        self.clientRequestId = clientRequestId
+        self.processingPolicyId = processingPolicyId
+        self.processingPolicyHash = processingPolicyHash
+        self.isolationProfile = isolationProfile
+        self.requireVerifiableExecution = requireVerifiableExecution
+        self.expectedExecutionProfileHash = expectedExecutionProfileHash
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case purpose = "purpose"
+        case clientRequestId = "client_request_id"
+        case processingPolicyId = "processing_policy_id"
+        case processingPolicyHash = "processing_policy_hash"
+        case isolationProfile = "isolation_profile"
+        case requireVerifiableExecution = "require_verifiable_execution"
+        case expectedExecutionProfileHash = "expected_execution_profile_hash"
+    }
+}
+
+/// Closed sponsored v2. Existing v1 remains unchanged. Phase A uses false/null; strict mode
+/// still requires independently accepted evidence/calibration.
+public struct QualificationExecutionRequirementsV2: Codable, Hashable, Sendable {
+    public var schemaVersion: JSONValue
+    public var purpose: JSONValue
+    public var clientRequestId: String
+    public var processingPolicyId: String
+    public var processingPolicyHash: QualificationDigest
+    public var isolationProfile: JSONValue
+    public var requireVerifiableExecution: Bool
+    public var expectedExecutionProfileHash: QualificationDigest?
+    public var sponsorshipGrantId: String
+
+    public init(schemaVersion: JSONValue, purpose: JSONValue, clientRequestId: String, processingPolicyId: String, processingPolicyHash: QualificationDigest, isolationProfile: JSONValue, requireVerifiableExecution: Bool, expectedExecutionProfileHash: QualificationDigest? = nil, sponsorshipGrantId: String) {
+        self.schemaVersion = schemaVersion
+        self.purpose = purpose
+        self.clientRequestId = clientRequestId
+        self.processingPolicyId = processingPolicyId
+        self.processingPolicyHash = processingPolicyHash
+        self.isolationProfile = isolationProfile
+        self.requireVerifiableExecution = requireVerifiableExecution
+        self.expectedExecutionProfileHash = expectedExecutionProfileHash
+        self.sponsorshipGrantId = sponsorshipGrantId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case purpose = "purpose"
+        case clientRequestId = "client_request_id"
+        case processingPolicyId = "processing_policy_id"
+        case processingPolicyHash = "processing_policy_hash"
+        case isolationProfile = "isolation_profile"
+        case requireVerifiableExecution = "require_verifiable_execution"
+        case expectedExecutionProfileHash = "expected_execution_profile_hash"
+        case sponsorshipGrantId = "sponsorship_grant_id"
+    }
+}
+
+/// One immutable settlement per grant, later corrections are unique append-only credits, never
+/// additional debits. Unknown-cost cap is a conservative sponsor charge, not provider actual
+/// cost.
+public struct QualificationGrant: Codable, Hashable, Sendable {
+    public var authorization: QualificationGrantAuthorization
+    public var grantHash: QualificationDigest
+    public var status: QualificationGrantStatus
+    public var runId: String?
+    public var chargedMicrousd: QualificationMicrousd?
+    public var refundedMicrousd: QualificationMicrousd
+    public var billingBasis: QualificationGrantBillingBasisVariant1?
+    public var unknownCostReason: QualificationGrantUnknownCostReasonVariant1?
+    public var settlementId: String?
+
+    public init(authorization: QualificationGrantAuthorization, grantHash: QualificationDigest, status: QualificationGrantStatus, runId: String? = nil, chargedMicrousd: QualificationMicrousd? = nil, refundedMicrousd: QualificationMicrousd, billingBasis: QualificationGrantBillingBasisVariant1? = nil, unknownCostReason: QualificationGrantUnknownCostReasonVariant1? = nil, settlementId: String? = nil) {
+        self.authorization = authorization
+        self.grantHash = grantHash
+        self.status = status
+        self.runId = runId
+        self.chargedMicrousd = chargedMicrousd
+        self.refundedMicrousd = refundedMicrousd
+        self.billingBasis = billingBasis
+        self.unknownCostReason = unknownCostReason
+        self.settlementId = settlementId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case authorization = "authorization"
+        case grantHash = "grant_hash"
+        case status = "status"
+        case runId = "run_id"
+        case chargedMicrousd = "charged_microusd"
+        case refundedMicrousd = "refunded_microusd"
+        case billingBasis = "billing_basis"
+        case unknownCostReason = "unknown_cost_reason"
+        case settlementId = "settlement_id"
+    }
+}
+
+/// Immutable server authorization snapshot. grant_hash hashes only this object, not mutable
+/// envelope fields.
+public struct QualificationGrantAuthorization: Codable, Hashable, Sendable {
+    public var grantId: String
+    public var programId: String
+    public var purpose: JSONValue
+    public var candidateTenantId: String
+    public var candidateUserId: String
+    public var clientRequestId: String
+    public var runInputHash: QualificationDigest
+    public var runAuthorizationHash: QualificationDigest
+    public var agentId: String
+    public var agentVersionId: String
+    public var agentVersion: Int
+    public var templateHash: QualificationDigest
+    /// Positive integer micro-USD string, at most USD 1.
+    public var maxCostMicrousd: String
+    public var expiresAtUnix: Int
+    public var pricingRevision: String
+    public var createdAtUnix: Int
+
+    public init(grantId: String, programId: String, purpose: JSONValue, candidateTenantId: String, candidateUserId: String, clientRequestId: String, runInputHash: QualificationDigest, runAuthorizationHash: QualificationDigest, agentId: String, agentVersionId: String, agentVersion: Int, templateHash: QualificationDigest, maxCostMicrousd: String, expiresAtUnix: Int, pricingRevision: String, createdAtUnix: Int) {
+        self.grantId = grantId
+        self.programId = programId
+        self.purpose = purpose
+        self.candidateTenantId = candidateTenantId
+        self.candidateUserId = candidateUserId
+        self.clientRequestId = clientRequestId
+        self.runInputHash = runInputHash
+        self.runAuthorizationHash = runAuthorizationHash
+        self.agentId = agentId
+        self.agentVersionId = agentVersionId
+        self.agentVersion = agentVersion
+        self.templateHash = templateHash
+        self.maxCostMicrousd = maxCostMicrousd
+        self.expiresAtUnix = expiresAtUnix
+        self.pricingRevision = pricingRevision
+        self.createdAtUnix = createdAtUnix
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case grantId = "grant_id"
+        case programId = "program_id"
+        case purpose = "purpose"
+        case candidateTenantId = "candidate_tenant_id"
+        case candidateUserId = "candidate_user_id"
+        case clientRequestId = "client_request_id"
+        case runInputHash = "run_input_hash"
+        case runAuthorizationHash = "run_authorization_hash"
+        case agentId = "agent_id"
+        case agentVersionId = "agent_version_id"
+        case agentVersion = "agent_version"
+        case templateHash = "template_hash"
+        case maxCostMicrousd = "max_cost_microusd"
+        case expiresAtUnix = "expires_at_unix"
+        case pricingRevision = "pricing_revision"
+        case createdAtUnix = "created_at_unix"
+    }
+}
+
+/// `QualificationGrantBillingBasisVariant1` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationGrantBillingBasisVariant1: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let metered = QualificationGrantBillingBasisVariant1(rawValue: "metered")
+    public static let reservedCapUnknown = QualificationGrantBillingBasisVariant1(rawValue: "reserved_cap_unknown")
+    public static let noDispatch = QualificationGrantBillingBasisVariant1(rawValue: "no_dispatch")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationGrantBillingBasisVariant1] = [.metered, .reservedCapUnknown, .noDispatch]
+}
+
+/// No raw input, credential or payer override. Canonical body hash binds expiry too. Unique
+/// durable program/tenant/user/client_request_id; replay returns original grant current state,
+/// never another reserve.
+public struct QualificationGrantCreate: Codable, Hashable, Sendable {
+    public var programId: String
+    public var purpose: JSONValue
+    public var candidateTenantId: String
+    public var candidateUserId: String
+    public var clientRequestId: String
+    public var runInputHash: QualificationDigest
+    public var runAuthorizationHash: QualificationDigest
+    public var agentId: String
+    public var agentVersionId: String
+    public var agentVersion: Int
+    public var templateHash: QualificationDigest
+    /// Positive integer micro-USD string, at most USD 1.
+    public var maxCostMicrousd: String
+    public var expiresAtUnix: Int
+
+    public init(programId: String, purpose: JSONValue, candidateTenantId: String, candidateUserId: String, clientRequestId: String, runInputHash: QualificationDigest, runAuthorizationHash: QualificationDigest, agentId: String, agentVersionId: String, agentVersion: Int, templateHash: QualificationDigest, maxCostMicrousd: String, expiresAtUnix: Int) {
+        self.programId = programId
+        self.purpose = purpose
+        self.candidateTenantId = candidateTenantId
+        self.candidateUserId = candidateUserId
+        self.clientRequestId = clientRequestId
+        self.runInputHash = runInputHash
+        self.runAuthorizationHash = runAuthorizationHash
+        self.agentId = agentId
+        self.agentVersionId = agentVersionId
+        self.agentVersion = agentVersion
+        self.templateHash = templateHash
+        self.maxCostMicrousd = maxCostMicrousd
+        self.expiresAtUnix = expiresAtUnix
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case programId = "program_id"
+        case purpose = "purpose"
+        case candidateTenantId = "candidate_tenant_id"
+        case candidateUserId = "candidate_user_id"
+        case clientRequestId = "client_request_id"
+        case runInputHash = "run_input_hash"
+        case runAuthorizationHash = "run_authorization_hash"
+        case agentId = "agent_id"
+        case agentVersionId = "agent_version_id"
+        case agentVersion = "agent_version"
+        case templateHash = "template_hash"
+        case maxCostMicrousd = "max_cost_microusd"
+        case expiresAtUnix = "expires_at_unix"
+    }
+}
+
+/// `QualificationGrantPage` model.
+public struct QualificationGrantPage: Codable, Hashable, Sendable {
+    public var items: [QualificationGrant]
+    public var hasMore: JSONValue
+    public var cursor: JSONValue?
+
+    public init(items: [QualificationGrant], hasMore: JSONValue, cursor: JSONValue? = nil) {
+        self.items = items
+        self.hasMore = hasMore
+        self.cursor = cursor
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case items = "items"
+        case hasMore = "has_more"
+        case cursor = "cursor"
+    }
+}
+
+/// `QualificationGrantStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationGrantStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let reserved = QualificationGrantStatus(rawValue: "reserved")
+    public static let consumed = QualificationGrantStatus(rawValue: "consumed")
+    public static let settled = QualificationGrantStatus(rawValue: "settled")
+    public static let released = QualificationGrantStatus(rawValue: "released")
+    public static let expired = QualificationGrantStatus(rawValue: "expired")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationGrantStatus] = [.reserved, .consumed, .settled, .released, .expired]
+}
+
+/// `QualificationGrantUnknownCostReasonVariant1` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationGrantUnknownCostReasonVariant1: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let providerOutcomeUnknown = QualificationGrantUnknownCostReasonVariant1(rawValue: "provider_outcome_unknown")
+    public static let attemptLedgerIncomplete = QualificationGrantUnknownCostReasonVariant1(rawValue: "attempt_ledger_incomplete")
+    public static let pricingObservationIncomplete = QualificationGrantUnknownCostReasonVariant1(rawValue: "pricing_observation_incomplete")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationGrantUnknownCostReasonVariant1] = [.providerOutcomeUnknown, .attemptLedgerIncomplete, .pricingObservationIncomplete]
+}
+
+/// policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+/// incomplete readiness. confirmed requires current verified terms, not_used training and no
+/// unknown storage categories.
+public struct QualificationInactivePolicyResponse: Codable, Hashable, Sendable {
+    public var kind: JSONValue
+    public var policy: QualificationProcessingPolicy
+    public var policyHash: QualificationDigest
+    public var readiness: QualificationInactivePolicyResponseReadiness
+    public var blockers: [QualificationConfirmedPolicyResponseBlocker]
+
+    public init(kind: JSONValue, policy: QualificationProcessingPolicy, policyHash: QualificationDigest, readiness: QualificationInactivePolicyResponseReadiness, blockers: [QualificationConfirmedPolicyResponseBlocker]) {
+        self.kind = kind
+        self.policy = policy
+        self.policyHash = policyHash
+        self.readiness = readiness
+        self.blockers = blockers
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case policy = "policy"
+        case policyHash = "policy_hash"
+        case readiness = "readiness"
+        case blockers = "blockers"
+    }
+}
+
+/// `QualificationInactivePolicyResponseReadiness` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationInactivePolicyResponseReadiness: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let expired = QualificationInactivePolicyResponseReadiness(rawValue: "expired")
+    public static let revoked = QualificationInactivePolicyResponseReadiness(rawValue: "revoked")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationInactivePolicyResponseReadiness] = [.expired, .revoked]
+}
+
+/// policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+/// incomplete readiness. confirmed requires current verified terms, not_used training and no
+/// unknown storage categories.
+public struct QualificationIncompletePolicyResponse: Codable, Hashable, Sendable {
+    public var kind: JSONValue
+    public var policy: QualificationProcessingPolicy
+    public var policyHash: QualificationDigest
+    public var readiness: QualificationIncompletePolicyResponseReadiness
+    public var blockers: [QualificationConfirmedPolicyResponseBlocker]
+
+    public init(kind: JSONValue, policy: QualificationProcessingPolicy, policyHash: QualificationDigest, readiness: QualificationIncompletePolicyResponseReadiness, blockers: [QualificationConfirmedPolicyResponseBlocker]) {
+        self.kind = kind
+        self.policy = policy
+        self.policyHash = policyHash
+        self.readiness = readiness
+        self.blockers = blockers
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case policy = "policy"
+        case policyHash = "policy_hash"
+        case readiness = "readiness"
+        case blockers = "blockers"
+    }
+}
+
+/// `QualificationIncompletePolicyResponseReadiness` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationIncompletePolicyResponseReadiness: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let incomplete = QualificationIncompletePolicyResponseReadiness(rawValue: "incomplete")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationIncompletePolicyResponseReadiness] = [.incomplete]
+}
+
+/// One private managed binding per tenant/purpose; immutable applied version and template,
+/// independent of personal agent/version caps. Readback with candidate credential required.
+public struct QualificationManagedEvaluator: Codable, Hashable, Sendable {
+    public var agentId: String
+    public var agentVersionId: String
+    public var agentVersion: Int
+    public var templateRevision: Int
+    public var templateHash: QualificationDigest
+    public var managedBy: JSONValue
+    public var governance: QualificationManagedEvaluatorGovernance
+
+    public init(agentId: String, agentVersionId: String, agentVersion: Int, templateRevision: Int, templateHash: QualificationDigest, managedBy: JSONValue, governance: QualificationManagedEvaluatorGovernance) {
+        self.agentId = agentId
+        self.agentVersionId = agentVersionId
+        self.agentVersion = agentVersion
+        self.templateRevision = templateRevision
+        self.templateHash = templateHash
+        self.managedBy = managedBy
+        self.governance = governance
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentId = "agent_id"
+        case agentVersionId = "agent_version_id"
+        case agentVersion = "agent_version"
+        case templateRevision = "template_revision"
+        case templateHash = "template_hash"
+        case managedBy = "managed_by"
+        case governance = "governance"
+    }
+}
+
+/// `QualificationManagedEvaluatorGovernance` model.
+public struct QualificationManagedEvaluatorGovernance: Codable, Hashable, Sendable {
+    public var canSpawn: JSONValue
+    public var maxSpawnDepth: JSONValue
+    public var canSelfModify: JSONValue
+    public var maxBudgetPerRunUsd: JSONValue
+
+    public init(canSpawn: JSONValue, maxSpawnDepth: JSONValue, canSelfModify: JSONValue, maxBudgetPerRunUsd: JSONValue) {
+        self.canSpawn = canSpawn
+        self.maxSpawnDepth = maxSpawnDepth
+        self.canSelfModify = canSelfModify
+        self.maxBudgetPerRunUsd = maxBudgetPerRunUsd
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case canSpawn = "can_spawn"
+        case maxSpawnDepth = "max_spawn_depth"
+        case canSelfModify = "can_self_modify"
+        case maxBudgetPerRunUsd = "max_budget_per_run_usd"
+    }
+}
+
+/// Integer micro-USD string. 1000000 = USD 1. No float or FX.
+public typealias QualificationMicrousd = String
+
+/// policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+/// incomplete readiness. confirmed requires current verified terms, not_used training and no
+/// unknown storage categories.
+public struct QualificationMissingPolicyResponse: Codable, Hashable, Sendable {
+    public var kind: JSONValue
+    public var policy: JSONValue?
+    public var policyHash: JSONValue?
+    public var readiness: QualificationIncompletePolicyResponseReadiness
+    public var blockers: [QualificationConfirmedPolicyResponseBlocker]
+
+    public init(kind: JSONValue, policy: JSONValue? = nil, policyHash: JSONValue? = nil, readiness: QualificationIncompletePolicyResponseReadiness, blockers: [QualificationConfirmedPolicyResponseBlocker]) {
+        self.kind = kind
+        self.policy = policy
+        self.policyHash = policyHash
+        self.readiness = readiness
+        self.blockers = blockers
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case policy = "policy"
+        case policyHash = "policy_hash"
+        case readiness = "readiness"
+        case blockers = "blockers"
+    }
+}
+
+public typealias QualificationPositiveMicrousd = String
+
+/// Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+/// 86400 seconds later. recovery_window_seconds is the minimum durable client request
+/// reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+/// run records or receipt identifiers persist.
+public struct QualificationProcessingPolicy: Codable, Hashable, Sendable {
+    public var schemaVersion: JSONValue
+    public var id: String
+    public var revision: Int
+    public var tenantId: String
+    public var purpose: JSONValue
+    public var recipient: JSONValue
+    public var processorName: String?
+    public var processingRegion: String?
+    public var llmTrainingUse: QualificationProcessingPolicyLLMTrainingUse
+    public var archiveEnabled: Bool?
+    public var storage: QualificationStoragePolicy
+    public var evidenceHash: QualificationDigest?
+    public var recoveryWindowSeconds: Int
+    public var observedAtUnix: Int
+    public var expiresAtUnix: Int
+
+    public init(schemaVersion: JSONValue, id: String, revision: Int, tenantId: String, purpose: JSONValue, recipient: JSONValue, processorName: String? = nil, processingRegion: String? = nil, llmTrainingUse: QualificationProcessingPolicyLLMTrainingUse, archiveEnabled: Bool? = nil, storage: QualificationStoragePolicy, evidenceHash: QualificationDigest? = nil, recoveryWindowSeconds: Int, observedAtUnix: Int, expiresAtUnix: Int) {
+        self.schemaVersion = schemaVersion
+        self.id = id
+        self.revision = revision
+        self.tenantId = tenantId
+        self.purpose = purpose
+        self.recipient = recipient
+        self.processorName = processorName
+        self.processingRegion = processingRegion
+        self.llmTrainingUse = llmTrainingUse
+        self.archiveEnabled = archiveEnabled
+        self.storage = storage
+        self.evidenceHash = evidenceHash
+        self.recoveryWindowSeconds = recoveryWindowSeconds
+        self.observedAtUnix = observedAtUnix
+        self.expiresAtUnix = expiresAtUnix
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case id = "id"
+        case revision = "revision"
+        case tenantId = "tenant_id"
+        case purpose = "purpose"
+        case recipient = "recipient"
+        case processorName = "processor_name"
+        case processingRegion = "processing_region"
+        case llmTrainingUse = "llm_training_use"
+        case archiveEnabled = "archive_enabled"
+        case storage = "storage"
+        case evidenceHash = "evidence_hash"
+        case recoveryWindowSeconds = "recovery_window_seconds"
+        case observedAtUnix = "observed_at_unix"
+        case expiresAtUnix = "expires_at_unix"
+    }
+}
+
+/// `QualificationProcessingPolicyLLMTrainingUse` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationProcessingPolicyLLMTrainingUse: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let notUsed = QualificationProcessingPolicyLLMTrainingUse(rawValue: "not_used")
+    public static let used = QualificationProcessingPolicyLLMTrainingUse(rawValue: "used")
+    public static let unknown = QualificationProcessingPolicyLLMTrainingUse(rawValue: "unknown")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationProcessingPolicyLLMTrainingUse] = [.notUsed, .used, .unknown]
+}
+
+public typealias QualificationProcessingPolicyResponse = JSONValue
+
+/// budget_limit = reserved + spent + remaining, exact integer arithmetic. Configuration
+/// revision is not incremented for ledger activity.
+public struct QualificationProgram: Codable, Hashable, Sendable {
+    public var programId: String
+    public var revision: Int
+    public var purpose: JSONValue
+    public var sponsorTenantId: String
+    public var budgetLimitMicrousd: QualificationPositiveMicrousd
+    public var reservedMicrousd: QualificationMicrousd
+    public var spentMicrousd: QualificationMicrousd
+    public var remainingMicrousd: QualificationMicrousd
+    public var pricingRevision: String
+    public var limits: QualificationProgramLimits
+    public var active: Bool
+
+    public init(programId: String, revision: Int, purpose: JSONValue, sponsorTenantId: String, budgetLimitMicrousd: QualificationPositiveMicrousd, reservedMicrousd: QualificationMicrousd, spentMicrousd: QualificationMicrousd, remainingMicrousd: QualificationMicrousd, pricingRevision: String, limits: QualificationProgramLimits, active: Bool) {
+        self.programId = programId
+        self.revision = revision
+        self.purpose = purpose
+        self.sponsorTenantId = sponsorTenantId
+        self.budgetLimitMicrousd = budgetLimitMicrousd
+        self.reservedMicrousd = reservedMicrousd
+        self.spentMicrousd = spentMicrousd
+        self.remainingMicrousd = remainingMicrousd
+        self.pricingRevision = pricingRevision
+        self.limits = limits
+        self.active = active
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case programId = "program_id"
+        case revision = "revision"
+        case purpose = "purpose"
+        case sponsorTenantId = "sponsor_tenant_id"
+        case budgetLimitMicrousd = "budget_limit_microusd"
+        case reservedMicrousd = "reserved_microusd"
+        case spentMicrousd = "spent_microusd"
+        case remainingMicrousd = "remaining_microusd"
+        case pricingRevision = "pricing_revision"
+        case limits = "limits"
+        case active = "active"
+    }
+}
+
+/// Every cap is required. Per-run cap <=1000000 and daily amount >= per-run cap are server
+/// invariants. Daily counters aggregate the same user across candidate tenants. Reserved and
+/// consumed grants both occupy active slots.
+public struct QualificationProgramLimits: Codable, Hashable, Sendable {
+    /// Positive integer micro-USD string, at most USD 1.
+    public var maxCostPerRunMicrousd: String
+    public var maxGrantsPerCandidatePerUtcDay: Int
+    public var maxIssuedPerCandidatePerUtcDayMicrousd: QualificationPositiveMicrousd
+    public var maxActiveGrantsPerCandidate: Int
+    public var maxActiveGrants: Int
+    public var grantTtlSecondsMax: Int
+    public var maxAttemptsPerRun: JSONValue
+
+    public init(maxCostPerRunMicrousd: String, maxGrantsPerCandidatePerUtcDay: Int, maxIssuedPerCandidatePerUtcDayMicrousd: QualificationPositiveMicrousd, maxActiveGrantsPerCandidate: Int, maxActiveGrants: Int, grantTtlSecondsMax: Int, maxAttemptsPerRun: JSONValue) {
+        self.maxCostPerRunMicrousd = maxCostPerRunMicrousd
+        self.maxGrantsPerCandidatePerUtcDay = maxGrantsPerCandidatePerUtcDay
+        self.maxIssuedPerCandidatePerUtcDayMicrousd = maxIssuedPerCandidatePerUtcDayMicrousd
+        self.maxActiveGrantsPerCandidate = maxActiveGrantsPerCandidate
+        self.maxActiveGrants = maxActiveGrants
+        self.grantTtlSecondsMax = grantTtlSecondsMax
+        self.maxAttemptsPerRun = maxAttemptsPerRun
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxCostPerRunMicrousd = "max_cost_per_run_microusd"
+        case maxGrantsPerCandidatePerUtcDay = "max_grants_per_candidate_per_utc_day"
+        case maxIssuedPerCandidatePerUtcDayMicrousd = "max_issued_per_candidate_per_utc_day_microusd"
+        case maxActiveGrantsPerCandidate = "max_active_grants_per_candidate"
+        case maxActiveGrants = "max_active_grants"
+        case grantTtlSecondsMax = "grant_ttl_seconds_max"
+        case maxAttemptsPerRun = "max_attempts_per_run"
+    }
+}
+
+/// Full configuration replacement, not merge. Initial expected_revision=0. Immutable
+/// purpose/sponsor/pricing. Funded ceiling, not mint/charge endpoint. Ceiling cannot fall below
+/// spent+reserved.
+public struct QualificationProgramPut: Codable, Hashable, Sendable {
+    public var expectedRevision: Int
+    public var purpose: JSONValue
+    public var sponsorTenantId: String
+    public var budgetLimitMicrousd: QualificationPositiveMicrousd
+    public var pricingRevision: String
+    public var limits: QualificationProgramLimits
+    public var active: Bool
+
+    public init(expectedRevision: Int, purpose: JSONValue, sponsorTenantId: String, budgetLimitMicrousd: QualificationPositiveMicrousd, pricingRevision: String, limits: QualificationProgramLimits, active: Bool) {
+        self.expectedRevision = expectedRevision
+        self.purpose = purpose
+        self.sponsorTenantId = sponsorTenantId
+        self.budgetLimitMicrousd = budgetLimitMicrousd
+        self.pricingRevision = pricingRevision
+        self.limits = limits
+        self.active = active
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case expectedRevision = "expected_revision"
+        case purpose = "purpose"
+        case sponsorTenantId = "sponsor_tenant_id"
+        case budgetLimitMicrousd = "budget_limit_microusd"
+        case pricingRevision = "pricing_revision"
+        case limits = "limits"
+        case active = "active"
+    }
+}
+
+/// `QualificationReceiptPending` model.
+public struct QualificationReceiptPending: Codable, Hashable, Sendable {
+    public var code: JSONValue
+    public var runId: String
+
+    public init(code: JSONValue, runId: String) {
+        self.code = code
+        self.runId = runId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case code = "code"
+        case runId = "run_id"
+    }
+}
+
+public typealias QualificationRetentionRule = JSONValue
+
+/// `QualificationRetentionRuleVariant1` model.
+public struct QualificationRetentionRuleVariant1: Codable, Hashable, Sendable {
+    public var mode: JSONValue
+    public var maxSeconds: Int
+
+    public init(mode: JSONValue, maxSeconds: Int) {
+        self.mode = mode
+        self.maxSeconds = maxSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mode = "mode"
+        case maxSeconds = "max_seconds"
+    }
+}
+
+/// `QualificationRetentionRuleVariant2` model.
+public struct QualificationRetentionRuleVariant2: Codable, Hashable, Sendable {
+    public var mode: JSONValue
+    public var maxSeconds: JSONValue
+
+    public init(mode: JSONValue, maxSeconds: JSONValue) {
+        self.mode = mode
+        self.maxSeconds = maxSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mode = "mode"
+        case maxSeconds = "max_seconds"
+    }
+}
+
+/// `QualificationRetentionRuleVariant3` model.
+public struct QualificationRetentionRuleVariant3: Codable, Hashable, Sendable {
+    public var mode: QualificationRetentionRuleVariant3mode
+    public var maxSeconds: JSONValue?
+
+    public init(mode: QualificationRetentionRuleVariant3mode, maxSeconds: JSONValue? = nil) {
+        self.mode = mode
+        self.maxSeconds = maxSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mode = "mode"
+        case maxSeconds = "max_seconds"
+    }
+}
+
+/// `QualificationRetentionRuleVariant3mode` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationRetentionRuleVariant3mode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let indefinite = QualificationRetentionRuleVariant3mode(rawValue: "indefinite")
+    public static let notApplicable = QualificationRetentionRuleVariant3mode(rawValue: "not_applicable")
+    public static let unknown = QualificationRetentionRuleVariant3mode(rawValue: "unknown")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationRetentionRuleVariant3mode] = [.indefinite, .notApplicable, .unknown]
+}
+
+/// Hash material, not a createRun command.
+public struct QualificationRunBeforeGrantV2: Codable, Hashable, Sendable {
+    public var agentId: String
+    public var version: Int
+    public var input: QualificationAssessmentInputMessage
+    public var resourceLimits: QualificationSponsoredLimits
+    public var metadata: QualificationRunMetadata
+    public var executionRequirements: QualificationExecutionRequirementsBeforeGrantV2
+
+    public init(agentId: String, version: Int, input: QualificationAssessmentInputMessage, resourceLimits: QualificationSponsoredLimits, metadata: QualificationRunMetadata, executionRequirements: QualificationExecutionRequirementsBeforeGrantV2) {
+        self.agentId = agentId
+        self.version = version
+        self.input = input
+        self.resourceLimits = resourceLimits
+        self.metadata = metadata
+        self.executionRequirements = executionRequirements
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentId = "agent_id"
+        case version = "version"
+        case input = "input"
+        case resourceLimits = "resource_limits"
+        case metadata = "metadata"
+        case executionRequirements = "execution_requirements"
+    }
+}
+
+/// Exact canonical metadata is hashed. No credentials, raw code or security authority in
+/// metadata.
+public typealias QualificationRunMetadata = [String: JSONValue]
+
+/// Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+/// as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+/// required fields cannot be stated.
+public struct QualificationSafetyObservations: Codable, Hashable, Sendable {
+    public var traceComplete: Bool
+    public var toolCallsCount: Int
+    public var memoryRetrievals: Int
+    public var memoryExtractions: Int
+    public var spawnedAgentsCount: Int
+    public var guardrailViolations: Int
+    public var llmCallsCount: Int
+    public var stepsCount: Int
+    public var durationMs: Double
+    public var inputTokens: Int
+    public var outputTokens: Int
+    public var totalCostUsd: Double
+    public var truncated: Bool
+    public var continuationUsed: Bool
+
+    public init(traceComplete: Bool, toolCallsCount: Int, memoryRetrievals: Int, memoryExtractions: Int, spawnedAgentsCount: Int, guardrailViolations: Int, llmCallsCount: Int, stepsCount: Int, durationMs: Double, inputTokens: Int, outputTokens: Int, totalCostUsd: Double, truncated: Bool, continuationUsed: Bool) {
+        self.traceComplete = traceComplete
+        self.toolCallsCount = toolCallsCount
+        self.memoryRetrievals = memoryRetrievals
+        self.memoryExtractions = memoryExtractions
+        self.spawnedAgentsCount = spawnedAgentsCount
+        self.guardrailViolations = guardrailViolations
+        self.llmCallsCount = llmCallsCount
+        self.stepsCount = stepsCount
+        self.durationMs = durationMs
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.totalCostUsd = totalCostUsd
+        self.truncated = truncated
+        self.continuationUsed = continuationUsed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case traceComplete = "trace_complete"
+        case toolCallsCount = "tool_calls_count"
+        case memoryRetrievals = "memory_retrievals"
+        case memoryExtractions = "memory_extractions"
+        case spawnedAgentsCount = "spawned_agents_count"
+        case guardrailViolations = "guardrail_violations"
+        case llmCallsCount = "llm_calls_count"
+        case stepsCount = "steps_count"
+        case durationMs = "duration_ms"
+        case inputTokens = "input_tokens"
+        case outputTokens = "output_tokens"
+        case totalCostUsd = "total_cost_usd"
+        case truncated = "truncated"
+        case continuationUsed = "continuation_used"
+    }
+}
+
+/// Wire-compatible limits. Actual tool calls are forbidden by isolation regardless of
+/// max_tool_calls=1. Aggregate budgets include all attempts.
+public struct QualificationSponsoredLimits: Codable, Hashable, Sendable {
+    public var maxDurationMs: JSONValue
+    public var maxSteps: JSONValue
+    public var maxToolCalls: JSONValue
+    public var maxTokensPerRun: JSONValue
+    /// Legacy run DTO unit. Must convert exactly to integer micro-USD and be <= grant cap. No
+    /// rounding up or silently raising the grant.
+    public var maxCostUsd: Double
+
+    public init(maxDurationMs: JSONValue, maxSteps: JSONValue, maxToolCalls: JSONValue, maxTokensPerRun: JSONValue, maxCostUsd: Double) {
+        self.maxDurationMs = maxDurationMs
+        self.maxSteps = maxSteps
+        self.maxToolCalls = maxToolCalls
+        self.maxTokensPerRun = maxTokensPerRun
+        self.maxCostUsd = maxCostUsd
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxDurationMs = "max_duration_ms"
+        case maxSteps = "max_steps"
+        case maxToolCalls = "max_tool_calls"
+        case maxTokensPerRun = "max_tokens_per_run"
+        case maxCostUsd = "max_cost_usd"
+    }
+}
+
+/// JCS SHA-256 of this exact object is run_authorization_hash. UARP reconstructs it from the
+/// authenticated user, grant and immutable evaluator/run facts, never trusting metadata as
+/// authority.
+public struct QualificationSponsoredRunAuthorizationMaterial: Codable, Hashable, Sendable {
+    public var schemaVersion: JSONValue
+    public var programId: String
+    public var candidateTenantId: String
+    public var candidateUserId: String
+    public var agentVersionId: String
+    public var templateHash: QualificationDigest
+    /// Positive integer micro-USD string, at most USD 1.
+    public var maxCostMicrousd: String
+    public var run: QualificationRunBeforeGrantV2
+
+    public init(schemaVersion: JSONValue, programId: String, candidateTenantId: String, candidateUserId: String, agentVersionId: String, templateHash: QualificationDigest, maxCostMicrousd: String, run: QualificationRunBeforeGrantV2) {
+        self.schemaVersion = schemaVersion
+        self.programId = programId
+        self.candidateTenantId = candidateTenantId
+        self.candidateUserId = candidateUserId
+        self.agentVersionId = agentVersionId
+        self.templateHash = templateHash
+        self.maxCostMicrousd = maxCostMicrousd
+        self.run = run
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case programId = "program_id"
+        case candidateTenantId = "candidate_tenant_id"
+        case candidateUserId = "candidate_user_id"
+        case agentVersionId = "agent_version_id"
+        case templateHash = "template_hash"
+        case maxCostMicrousd = "max_cost_microusd"
+        case run = "run"
+    }
+}
+
+/// Sponsored subset of canonical POST /runs; <=131072 UTF-8 bytes, duplicate JSON keys
+/// rejected. Other purposes retain the canonical API behavior. All metadata is explicit, even
+/// if empty.
+public struct QualificationSponsoredRunCreateV2: Codable, Hashable, Sendable {
+    public var agentId: String
+    public var version: Int
+    public var input: QualificationAssessmentInputMessage
+    public var resourceLimits: QualificationSponsoredLimits
+    public var metadata: QualificationRunMetadata
+    public var executionRequirements: QualificationExecutionRequirementsV2
+
+    public init(agentId: String, version: Int, input: QualificationAssessmentInputMessage, resourceLimits: QualificationSponsoredLimits, metadata: QualificationRunMetadata, executionRequirements: QualificationExecutionRequirementsV2) {
+        self.agentId = agentId
+        self.version = version
+        self.input = input
+        self.resourceLimits = resourceLimits
+        self.metadata = metadata
+        self.executionRequirements = executionRequirements
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentId = "agent_id"
+        case version = "version"
+        case input = "input"
+        case resourceLimits = "resource_limits"
+        case metadata = "metadata"
+        case executionRequirements = "execution_requirements"
+    }
+}
+
+/// Excerpt of existing Run with additive server-stored execution_requirements and recovery
+/// horizon. Existing fields remain available. A full canonical Run read is required for Nestor
+/// validation.
+public struct QualificationSponsoredRunExcerpt: Codable, Hashable, Sendable {
+    public var runId: String
+    public var tenantId: String
+    public var agentId: String
+    public var status: String
+    public var input: JSONObject
+    public var output: JSONObject?
+    public var metadata: JSONObject?
+    public var executionRequirements: QualificationExecutionRequirementsV2
+    public var recoveryExpiresAtUnix: Int
+    /// Properties the server returned that this SDK does not model.
+    public var additionalProperties: [String: JSONValue]
+
+    public init(runId: String, tenantId: String, agentId: String, status: String, input: JSONObject, output: JSONObject? = nil, metadata: JSONObject? = nil, executionRequirements: QualificationExecutionRequirementsV2, recoveryExpiresAtUnix: Int, additionalProperties: [String: JSONValue] = [:]) {
+        self.runId = runId
+        self.tenantId = tenantId
+        self.agentId = agentId
+        self.status = status
+        self.input = input
+        self.output = output
+        self.metadata = metadata
+        self.executionRequirements = executionRequirements
+        self.recoveryExpiresAtUnix = recoveryExpiresAtUnix
+        self.additionalProperties = additionalProperties
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case runId = "run_id"
+        case tenantId = "tenant_id"
+        case agentId = "agent_id"
+        case status = "status"
+        case input = "input"
+        case output = "output"
+        case metadata = "metadata"
+        case executionRequirements = "execution_requirements"
+        case recoveryExpiresAtUnix = "recovery_expires_at_unix"
+    }
+
+    private struct DynamicKey: CodingKey {
+        let stringValue: String
+        var intValue: Int? { nil }
+        init(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.runId = try container.decode(String.self, forKey: .runId)
+        self.tenantId = try container.decode(String.self, forKey: .tenantId)
+        self.agentId = try container.decode(String.self, forKey: .agentId)
+        self.status = try container.decode(String.self, forKey: .status)
+        self.input = try container.decode(JSONObject.self, forKey: .input)
+        self.output = try container.decodeIfPresent(JSONObject.self, forKey: .output)
+        self.metadata = try container.decodeIfPresent(JSONObject.self, forKey: .metadata)
+        self.executionRequirements = try container.decode(QualificationExecutionRequirementsV2.self, forKey: .executionRequirements)
+        self.recoveryExpiresAtUnix = try container.decode(Int.self, forKey: .recoveryExpiresAtUnix)
+        let dynamic = try decoder.container(keyedBy: DynamicKey.self)
+        let known: Set<String> = ["run_id", "tenant_id", "agent_id", "status", "input", "output", "metadata", "execution_requirements", "recovery_expires_at_unix"]
+        var extra: [String: JSONValue] = [:]
+        for key in dynamic.allKeys where !known.contains(key.stringValue) {
+            extra[key.stringValue] = try dynamic.decode(JSONValue.self, forKey: key)
+        }
+        self.additionalProperties = extra
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(runId, forKey: .runId)
+        try container.encode(tenantId, forKey: .tenantId)
+        try container.encode(agentId, forKey: .agentId)
+        try container.encode(status, forKey: .status)
+        try container.encode(input, forKey: .input)
+        try container.encodeIfPresent(output, forKey: .output)
+        try container.encodeIfPresent(metadata, forKey: .metadata)
+        try container.encode(executionRequirements, forKey: .executionRequirements)
+        try container.encode(recoveryExpiresAtUnix, forKey: .recoveryExpiresAtUnix)
+        var dynamic = encoder.container(keyedBy: DynamicKey.self)
+        for (key, value) in additionalProperties {
+            try dynamic.encode(value, forKey: DynamicKey(stringValue: key))
+        }
+    }
+}
+
+/// `QualificationStoragePolicy` model.
+public struct QualificationStoragePolicy: Codable, Hashable, Sendable {
+    public var runs: QualificationRetentionRule
+    public var events: QualificationRetentionRule
+    public var artifacts: QualificationRetentionRule
+    public var checkpoints: QualificationRetentionRule
+    public var archives: QualificationRetentionRule
+    public var backups: QualificationRetentionRule
+    public var llm: QualificationRetentionRule
+
+    public init(runs: QualificationRetentionRule, events: QualificationRetentionRule, artifacts: QualificationRetentionRule, checkpoints: QualificationRetentionRule, archives: QualificationRetentionRule, backups: QualificationRetentionRule, llm: QualificationRetentionRule) {
+        self.runs = runs
+        self.events = events
+        self.artifacts = artifacts
+        self.checkpoints = checkpoints
+        self.archives = archives
+        self.backups = backups
+        self.llm = llm
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case runs = "runs"
+        case events = "events"
+        case artifacts = "artifacts"
+        case checkpoints = "checkpoints"
+        case archives = "archives"
+        case backups = "backups"
+        case llm = "llm"
+    }
+}
+
+/// Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+/// hash identifies stable actual resolved configuration; it excludes
+/// run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+/// verified does not mean the engineer is qualified or that a failed run is acceptable.
+public struct QualificationUnverifiableExecutionReceiptV2: Codable, Hashable, Sendable {
+    public var schemaVersion: JSONValue
+    public var runId: String
+    public var tenantId: String
+    public var initiatorUserId: String
+    public var agentId: String
+    public var agentVersionId: String
+    public var agentVersion: Int
+    public var clientRequestId: String
+    public var purpose: JSONValue
+    public var processingPolicyId: String
+    public var processingPolicyHash: QualificationDigest
+    public var executionRequirements: QualificationExecutionRequirementsV2
+    public var executionProfileHash: QualificationDigest?
+    public var runInputHash: QualificationDigest
+    public var runOutputHash: QualificationDigest
+    public var executionTraceHash: QualificationDigest?
+    public var executionOrigin: QualificationUnverifiableExecutionReceiptV2executionOrigin
+    public var runStatus: QualificationVerifiedExecutionReceiptV2runStatus
+    public var completedAt: String
+    public var verificationStatus: JSONValue
+    public var reasonCodes: [QualificationVerifiedExecutionReceiptV2reasonCode]
+    public var observations: QualificationSafetyObservations?
+
+    public init(schemaVersion: JSONValue, runId: String, tenantId: String, initiatorUserId: String, agentId: String, agentVersionId: String, agentVersion: Int, clientRequestId: String, purpose: JSONValue, processingPolicyId: String, processingPolicyHash: QualificationDigest, executionRequirements: QualificationExecutionRequirementsV2, executionProfileHash: QualificationDigest? = nil, runInputHash: QualificationDigest, runOutputHash: QualificationDigest, executionTraceHash: QualificationDigest? = nil, executionOrigin: QualificationUnverifiableExecutionReceiptV2executionOrigin, runStatus: QualificationVerifiedExecutionReceiptV2runStatus, completedAt: String, verificationStatus: JSONValue, reasonCodes: [QualificationVerifiedExecutionReceiptV2reasonCode], observations: QualificationSafetyObservations? = nil) {
+        self.schemaVersion = schemaVersion
+        self.runId = runId
+        self.tenantId = tenantId
+        self.initiatorUserId = initiatorUserId
+        self.agentId = agentId
+        self.agentVersionId = agentVersionId
+        self.agentVersion = agentVersion
+        self.clientRequestId = clientRequestId
+        self.purpose = purpose
+        self.processingPolicyId = processingPolicyId
+        self.processingPolicyHash = processingPolicyHash
+        self.executionRequirements = executionRequirements
+        self.executionProfileHash = executionProfileHash
+        self.runInputHash = runInputHash
+        self.runOutputHash = runOutputHash
+        self.executionTraceHash = executionTraceHash
+        self.executionOrigin = executionOrigin
+        self.runStatus = runStatus
+        self.completedAt = completedAt
+        self.verificationStatus = verificationStatus
+        self.reasonCodes = reasonCodes
+        self.observations = observations
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case runId = "run_id"
+        case tenantId = "tenant_id"
+        case initiatorUserId = "initiator_user_id"
+        case agentId = "agent_id"
+        case agentVersionId = "agent_version_id"
+        case agentVersion = "agent_version"
+        case clientRequestId = "client_request_id"
+        case purpose = "purpose"
+        case processingPolicyId = "processing_policy_id"
+        case processingPolicyHash = "processing_policy_hash"
+        case executionRequirements = "execution_requirements"
+        case executionProfileHash = "execution_profile_hash"
+        case runInputHash = "run_input_hash"
+        case runOutputHash = "run_output_hash"
+        case executionTraceHash = "execution_trace_hash"
+        case executionOrigin = "execution_origin"
+        case runStatus = "run_status"
+        case completedAt = "completed_at"
+        case verificationStatus = "verification_status"
+        case reasonCodes = "reason_codes"
+        case observations = "observations"
+    }
+}
+
+/// `QualificationUnverifiableExecutionReceiptV2executionOrigin` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationUnverifiableExecutionReceiptV2executionOrigin: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let cloudRuntime = QualificationUnverifiableExecutionReceiptV2executionOrigin(rawValue: "cloud_runtime")
+    public static let bridge = QualificationUnverifiableExecutionReceiptV2executionOrigin(rawValue: "bridge")
+    public static let unknown = QualificationUnverifiableExecutionReceiptV2executionOrigin(rawValue: "unknown")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationUnverifiableExecutionReceiptV2executionOrigin] = [.cloudRuntime, .bridge, .unknown]
+}
+
+/// Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+/// hash identifies stable actual resolved configuration; it excludes
+/// run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+/// verified does not mean the engineer is qualified or that a failed run is acceptable.
+public struct QualificationVerifiedExecutionReceiptV2: Codable, Hashable, Sendable {
+    public var schemaVersion: JSONValue
+    public var runId: String
+    public var tenantId: String
+    public var initiatorUserId: String
+    public var agentId: String
+    public var agentVersionId: String
+    public var agentVersion: Int
+    public var clientRequestId: String
+    public var purpose: JSONValue
+    public var processingPolicyId: String
+    public var processingPolicyHash: QualificationDigest
+    public var executionRequirements: QualificationExecutionRequirementsV2
+    public var executionProfileHash: QualificationDigest
+    public var runInputHash: QualificationDigest
+    public var runOutputHash: QualificationDigest
+    public var executionTraceHash: QualificationDigest
+    public var executionOrigin: JSONValue
+    public var runStatus: QualificationVerifiedExecutionReceiptV2runStatus
+    public var completedAt: String
+    public var verificationStatus: JSONValue
+    public var reasonCodes: [QualificationVerifiedExecutionReceiptV2reasonCode]
+    public var observations: QualificationVerifiedSafetyObservations
+
+    public init(schemaVersion: JSONValue, runId: String, tenantId: String, initiatorUserId: String, agentId: String, agentVersionId: String, agentVersion: Int, clientRequestId: String, purpose: JSONValue, processingPolicyId: String, processingPolicyHash: QualificationDigest, executionRequirements: QualificationExecutionRequirementsV2, executionProfileHash: QualificationDigest, runInputHash: QualificationDigest, runOutputHash: QualificationDigest, executionTraceHash: QualificationDigest, executionOrigin: JSONValue, runStatus: QualificationVerifiedExecutionReceiptV2runStatus, completedAt: String, verificationStatus: JSONValue, reasonCodes: [QualificationVerifiedExecutionReceiptV2reasonCode], observations: QualificationVerifiedSafetyObservations) {
+        self.schemaVersion = schemaVersion
+        self.runId = runId
+        self.tenantId = tenantId
+        self.initiatorUserId = initiatorUserId
+        self.agentId = agentId
+        self.agentVersionId = agentVersionId
+        self.agentVersion = agentVersion
+        self.clientRequestId = clientRequestId
+        self.purpose = purpose
+        self.processingPolicyId = processingPolicyId
+        self.processingPolicyHash = processingPolicyHash
+        self.executionRequirements = executionRequirements
+        self.executionProfileHash = executionProfileHash
+        self.runInputHash = runInputHash
+        self.runOutputHash = runOutputHash
+        self.executionTraceHash = executionTraceHash
+        self.executionOrigin = executionOrigin
+        self.runStatus = runStatus
+        self.completedAt = completedAt
+        self.verificationStatus = verificationStatus
+        self.reasonCodes = reasonCodes
+        self.observations = observations
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case runId = "run_id"
+        case tenantId = "tenant_id"
+        case initiatorUserId = "initiator_user_id"
+        case agentId = "agent_id"
+        case agentVersionId = "agent_version_id"
+        case agentVersion = "agent_version"
+        case clientRequestId = "client_request_id"
+        case purpose = "purpose"
+        case processingPolicyId = "processing_policy_id"
+        case processingPolicyHash = "processing_policy_hash"
+        case executionRequirements = "execution_requirements"
+        case executionProfileHash = "execution_profile_hash"
+        case runInputHash = "run_input_hash"
+        case runOutputHash = "run_output_hash"
+        case executionTraceHash = "execution_trace_hash"
+        case executionOrigin = "execution_origin"
+        case runStatus = "run_status"
+        case completedAt = "completed_at"
+        case verificationStatus = "verification_status"
+        case reasonCodes = "reason_codes"
+        case observations = "observations"
+    }
+}
+
+/// `QualificationVerifiedExecutionReceiptV2reasonCode` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationVerifiedExecutionReceiptV2reasonCode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let modelRevisionUnresolved = QualificationVerifiedExecutionReceiptV2reasonCode(rawValue: "MODEL_REVISION_UNRESOLVED")
+    public static let executionTraceIncomplete = QualificationVerifiedExecutionReceiptV2reasonCode(rawValue: "EXECUTION_TRACE_INCOMPLETE")
+    public static let mixedExecutionProfiles = QualificationVerifiedExecutionReceiptV2reasonCode(rawValue: "MIXED_EXECUTION_PROFILES")
+    public static let runtimeNotAttestable = QualificationVerifiedExecutionReceiptV2reasonCode(rawValue: "RUNTIME_NOT_ATTESTABLE")
+    public static let meteringIncomplete = QualificationVerifiedExecutionReceiptV2reasonCode(rawValue: "METERING_INCOMPLETE")
+    public static let isolationNotProven = QualificationVerifiedExecutionReceiptV2reasonCode(rawValue: "ISOLATION_NOT_PROVEN")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationVerifiedExecutionReceiptV2reasonCode] = [.modelRevisionUnresolved, .executionTraceIncomplete, .mixedExecutionProfiles, .runtimeNotAttestable, .meteringIncomplete, .isolationNotProven]
+}
+
+/// `QualificationVerifiedExecutionReceiptV2runStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct QualificationVerifiedExecutionReceiptV2runStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let completed = QualificationVerifiedExecutionReceiptV2runStatus(rawValue: "completed")
+    public static let failed = QualificationVerifiedExecutionReceiptV2runStatus(rawValue: "failed")
+    public static let cancelled = QualificationVerifiedExecutionReceiptV2runStatus(rawValue: "cancelled")
+    public static let timeout = QualificationVerifiedExecutionReceiptV2runStatus(rawValue: "timeout")
+    public static let guardrailBlocked = QualificationVerifiedExecutionReceiptV2runStatus(rawValue: "guardrail_blocked")
+    public static let rejected = QualificationVerifiedExecutionReceiptV2runStatus(rawValue: "rejected")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [QualificationVerifiedExecutionReceiptV2runStatus] = [.completed, .failed, .cancelled, .timeout, .guardrailBlocked, .rejected]
+}
+
+/// Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+/// as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+/// required fields cannot be stated.
+public struct QualificationVerifiedSafetyObservations: Codable, Hashable, Sendable {
+    public var traceComplete: JSONValue
+    public var toolCallsCount: Int
+    public var memoryRetrievals: Int
+    public var memoryExtractions: Int
+    public var spawnedAgentsCount: Int
+    public var guardrailViolations: Int
+    public var llmCallsCount: Int
+    public var stepsCount: Int
+    public var durationMs: Double
+    public var inputTokens: Int
+    public var outputTokens: Int
+    public var totalCostUsd: Double
+    public var truncated: Bool
+    public var continuationUsed: Bool
+
+    public init(traceComplete: JSONValue, toolCallsCount: Int, memoryRetrievals: Int, memoryExtractions: Int, spawnedAgentsCount: Int, guardrailViolations: Int, llmCallsCount: Int, stepsCount: Int, durationMs: Double, inputTokens: Int, outputTokens: Int, totalCostUsd: Double, truncated: Bool, continuationUsed: Bool) {
+        self.traceComplete = traceComplete
+        self.toolCallsCount = toolCallsCount
+        self.memoryRetrievals = memoryRetrievals
+        self.memoryExtractions = memoryExtractions
+        self.spawnedAgentsCount = spawnedAgentsCount
+        self.guardrailViolations = guardrailViolations
+        self.llmCallsCount = llmCallsCount
+        self.stepsCount = stepsCount
+        self.durationMs = durationMs
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.totalCostUsd = totalCostUsd
+        self.truncated = truncated
+        self.continuationUsed = continuationUsed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case traceComplete = "trace_complete"
+        case toolCallsCount = "tool_calls_count"
+        case memoryRetrievals = "memory_retrievals"
+        case memoryExtractions = "memory_extractions"
+        case spawnedAgentsCount = "spawned_agents_count"
+        case guardrailViolations = "guardrail_violations"
+        case llmCallsCount = "llm_calls_count"
+        case stepsCount = "steps_count"
+        case durationMs = "duration_ms"
+        case inputTokens = "input_tokens"
+        case outputTokens = "output_tokens"
+        case totalCostUsd = "total_cost_usd"
+        case truncated = "truncated"
+        case continuationUsed = "continuation_used"
+    }
+}
+
 /// A limit refusal. `code` separates a throttle from a wall: `rate_limit_exceeded` clears in
 /// seconds (see `Retry-After`); `quota_exceeded` clears at `quota.resets_at`; `limit_reached`
 /// does not clear on a clock and needs a plan change; `run_quota_exceeded` is the run
@@ -40127,6 +41970,22 @@ public struct RevokeAPIKeyResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `RevokeDataProcessingPolicyResponse` model.
+public struct RevokeDataProcessingPolicyResponse: Codable, Hashable, Sendable {
+    public var revoked: Bool?
+    public var current: JSONObject?
+
+    public init(revoked: Bool? = nil, current: JSONObject? = nil) {
+        self.revoked = revoked
+        self.current = current
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case revoked = "revoked"
+        case current = "current"
+    }
+}
+
 /// `RevokeMeSessionResponse` model.
 public struct RevokeMeSessionResponse: Codable, Hashable, Sendable {
     public var ok: Bool
@@ -40317,6 +42176,14 @@ public struct RotateAgentIdentityResponse: Codable, Hashable, Sendable {
 
 /// `Run` model.
 public struct Run: Codable, Hashable, Sendable {
+    /// Sponsored qualification runs only: the requirements the run was admitted under, stored as
+    /// accepted.
+    public var executionRequirements: QualificationExecutionRequirementsV2?
+    /// Sponsored qualification runs only: until when the run is recoverable by its client request
+    /// id.
+    public var recoveryExpiresAtUnix: Int?
+    /// Sponsored qualification runs only: the grant that paid for it.
+    public var sponsorshipGrantId: String?
     /// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
     /// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
     /// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -40373,7 +42240,10 @@ public struct Run: Codable, Hashable, Sendable {
     /// Resource limits for the run
     public var resourceLimits: RunResourceLimits?
 
-    public init(executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: RunOutput? = nil, metrics: RunMetrics? = nil, error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, approvals: [RunApproval]? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: RunResourceLimits? = nil) {
+    public init(executionRequirements: QualificationExecutionRequirementsV2? = nil, recoveryExpiresAtUnix: Int? = nil, sponsorshipGrantId: String? = nil, executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: RunOutput? = nil, metrics: RunMetrics? = nil, error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, approvals: [RunApproval]? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: RunResourceLimits? = nil) {
+        self.executionRequirements = executionRequirements
+        self.recoveryExpiresAtUnix = recoveryExpiresAtUnix
+        self.sponsorshipGrantId = sponsorshipGrantId
         self.executionMode = executionMode
         self.runId = runId
         self.tenantId = tenantId
@@ -40398,6 +42268,9 @@ public struct Run: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case executionRequirements = "execution_requirements"
+        case recoveryExpiresAtUnix = "recovery_expires_at_unix"
+        case sponsorshipGrantId = "sponsorship_grant_id"
         case executionMode = "execution_mode"
         case runId = "run_id"
         case tenantId = "tenant_id"
@@ -41274,6 +43147,10 @@ public struct RunFeedbackSet: Codable, Hashable, Sendable {
 
 /// `RunMetrics` model.
 public struct RunMetrics: Codable, Hashable, Sendable {
+    /// The context window of the model that served the run, in tokens.
+    public var contextWindowTokens: Int?
+    /// Input tokens of the run's last model call: how full the window was at the end.
+    public var lastInputTokens: Int?
     /// How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
     public var pricingConfidence: String?
     /// Time the run spent executing, in ms — summed over every attempt, so a run paused and resumed
@@ -41297,7 +43174,9 @@ public struct RunMetrics: Codable, Hashable, Sendable {
     /// Estimated total cost in USD
     public var totalCostUsd: Double?
 
-    public init(pricingConfidence: String? = nil, durationMs: Double? = nil, stepsCount: Int? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, thinkingTokens: Int? = nil, cachedTokens: Int? = nil, toolCallsCount: Int? = nil, llmCallsCount: Int? = nil, guardrailChecks: Int? = nil, guardrailViolations: Int? = nil, memoryRetrievals: Int? = nil, memoryExtractions: Int? = nil, totalCostUsd: Double? = nil) {
+    public init(contextWindowTokens: Int? = nil, lastInputTokens: Int? = nil, pricingConfidence: String? = nil, durationMs: Double? = nil, stepsCount: Int? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, thinkingTokens: Int? = nil, cachedTokens: Int? = nil, toolCallsCount: Int? = nil, llmCallsCount: Int? = nil, guardrailChecks: Int? = nil, guardrailViolations: Int? = nil, memoryRetrievals: Int? = nil, memoryExtractions: Int? = nil, totalCostUsd: Double? = nil) {
+        self.contextWindowTokens = contextWindowTokens
+        self.lastInputTokens = lastInputTokens
         self.pricingConfidence = pricingConfidence
         self.durationMs = durationMs
         self.stepsCount = stepsCount
@@ -41315,6 +43194,8 @@ public struct RunMetrics: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case contextWindowTokens = "context_window_tokens"
+        case lastInputTokens = "last_input_tokens"
         case pricingConfidence = "pricing_confidence"
         case durationMs = "duration_ms"
         case stepsCount = "steps_count"

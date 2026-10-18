@@ -1874,6 +1874,11 @@ export interface AdminVoicePresets {
 
 export interface Agent {
   /**
+   * Bridge agents only: the stable fingerprint of the machine that enrolled it, used to adopt
+   * the same agent after a reconnect. Absent on records enrolled before 2026-09-03.
+   */
+  bridge_fingerprint?: string;
+  /**
    * The initiative (`/initiatives`) this agent works for, when it has one. Its runs are charged
    * to that initiative's budget, and automated runs are refused (`INITIATIVE_PAUSED`) while it
    * is paused or (`INITIATIVE_BUDGET_EXHAUSTED`) out of budget; agents and squads it creates
@@ -2539,9 +2544,9 @@ export const AGENT_SPEC_PERMISSIONS_GRANTED_ITEM_GRANTED_BY_VALUES = ['wizard', 
 /**
  * Governance state, distinct from a run's status.
  */
-export type AgentStatus = 'active' | 'suspended' | 'terminated' | 'deposed';
+export type AgentStatus = 'active' | 'suspended' | 'terminated' | 'deposed' | 'inactive';
 
-export const AGENT_STATUS_VALUES = ['active', 'suspended', 'terminated', 'deposed'] as const;
+export const AGENT_STATUS_VALUES = ['active', 'suspended', 'terminated', 'deposed', 'inactive'] as const;
 
 /**
  * Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
@@ -3115,13 +3120,13 @@ export interface AgentVersion {
    * canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
    * provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
    * detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-   * provisioned`, `Platform agent config migrated on boot`, `Hired`, `Registered from a local
-   * app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`,
-   * `Token cap removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N =
-   * the version rolled back to), `Self-improvement: N changes based on N analysis` (the
-   * self-improvement loop: the first N is a count, the second is one of errors, ratings or
-   * feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC
-   * 11).
+   * provisioned`, `Platform agent config migrated on boot`, `Qualification evaluator template
+   * revision N` (N = the template revision), `Hired`, `Registered from a local app`, `Token cap
+   * removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap
+   * removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version
+   * rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement
+   * loop: the first N is a count, the second is one of errors, ratings or feedback — words, not
+   * a number). A reason code beside the prose is the owner's decision (DEC 11).
    */
   changelog?: string | null;
   created_at: string;
@@ -5059,6 +5064,22 @@ export interface CompleteOAuthLoginResponse {
   email: string;
 }
 
+export interface ConfirmDataProcessingPolicyRequest {
+  processor_name: string | null;
+  processing_region: string | null;
+  llm_training_use: QualificationProcessingPolicyLLMTrainingUse;
+  archive_enabled: boolean | null;
+  storage: QualificationStoragePolicy;
+  evidence_hash: QualificationDigest | null;
+  recovery_window_seconds: number;
+  observed_at_unix: number;
+  expires_at_unix: number;
+}
+
+export interface ConfirmDataProcessingPolicyResponse {
+  current?: JsonObject;
+}
+
 export interface ConfirmSessionTodoRequest {
   execute?: boolean;
 }
@@ -5398,6 +5419,14 @@ export const CONVERSATION_ENTRY_IMPORTANCE_VALUES = ['high', 'normal'] as const;
  * publicRunMetrics).
  */
 export interface ConversationEntryRunMetrics {
+  /**
+   * The context window of the model that served the run, in tokens.
+   */
+  context_window_tokens?: number;
+  /**
+   * Input tokens of the run's last model call: how full the window was at the end.
+   */
+  last_input_tokens?: number;
   /**
    * How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
    */
@@ -7646,9 +7675,9 @@ export interface Error {
  * code only when its call site names one. Other statuses: absent when there is no
  * machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURED_SET_CONTENDED' | 'FEATURE_DISABLED' | 'FILE_NOT_FOUND' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INTERNAL_ERROR' | 'INVALID_ARCHIVE' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_MANIFEST' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSING_SCOPE' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SECURITY_SCAN_FAILED' | 'SESSION_NOT_ACTIVE' | 'SHARE_LIST_CONFLICT' | 'SIGNING_NOT_CONFIGURED' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'hire_catalog_unknown' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'not_hired' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'ASSESSMENT_ISOLATION_REQUIRED' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CLIENT_REQUEST_CONFLICT' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXECUTION_PROFILE_UNVERIFIABLE' | 'EXECUTION_RECEIPT_PENDING' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURED_SET_CONTENDED' | 'FEATURE_DISABLED' | 'FILE_NOT_FOUND' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_CONFLICT' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INTERNAL_ERROR' | 'INVALID_ARCHIVE' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_MANIFEST' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'ISOLATION_VIOLATION' | 'LLM_ERROR' | 'MANAGED_AGENT' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSING_SCOPE' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'OUTPUT_TOO_LARGE' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROCESSING_POLICY_CHANGED' | 'PROCESSING_POLICY_NOT_READY' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUALIFICATION_BUDGET_STOP' | 'QUALIFICATION_ROUTE_MISMATCH' | 'QUALIFICATION_VERSION_UNAVAILABLE' | 'QUOTA_EXCEEDED' | 'RATE_LIMITED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SECURITY_SCAN_FAILED' | 'SESSION_NOT_ACTIVE' | 'SHARE_LIST_CONFLICT' | 'SIGNING_NOT_CONFIGURED' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'SPONSORSHIP_BUDGET_BELOW_COMMITTED' | 'SPONSORSHIP_BUDGET_EXHAUSTED' | 'SPONSORSHIP_CANDIDATE_LIMIT' | 'SPONSORSHIP_CONCURRENCY_LIMIT' | 'SPONSORSHIP_FUNDING_UNAVAILABLE' | 'SPONSORSHIP_GRANT_CONFLICT' | 'SPONSORSHIP_GRANT_IN_USE' | 'SPONSORSHIP_GRANT_MISMATCH' | 'SPONSORSHIP_GRANT_UNAVAILABLE' | 'SPONSORSHIP_OUTCOME_UNKNOWN' | 'SPONSORSHIP_PROGRAM_IMMUTABLE' | 'SPONSORSHIP_PROGRAM_INACTIVE' | 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT' | 'SPONSORSHIP_REQUIRED' | 'SPONSORSHIP_SCOPE_REQUIRED' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'UNAUTHENTICATED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'hire_catalog_unknown' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'not_hired' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURED_SET_CONTENDED', 'FEATURE_DISABLED', 'FILE_NOT_FOUND', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INTERNAL_ERROR', 'INVALID_ARCHIVE', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_MANIFEST', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSING_SCOPE', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SECURITY_SCAN_FAILED', 'SESSION_NOT_ACTIVE', 'SHARE_LIST_CONFLICT', 'SIGNING_NOT_CONFIGURED', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'hire_catalog_unknown', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'not_hired', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'ASSESSMENT_ISOLATION_REQUIRED', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CLIENT_REQUEST_CONFLICT', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXECUTION_PROFILE_UNVERIFIABLE', 'EXECUTION_RECEIPT_PENDING', 'EXTERNAL_SERVICE_ERROR', 'FEATURED_SET_CONTENDED', 'FEATURE_DISABLED', 'FILE_NOT_FOUND', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INTERNAL_ERROR', 'INVALID_ARCHIVE', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_MANIFEST', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'ISOLATION_VIOLATION', 'LLM_ERROR', 'MANAGED_AGENT', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSING_SCOPE', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'OUTPUT_TOO_LARGE', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROCESSING_POLICY_CHANGED', 'PROCESSING_POLICY_NOT_READY', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUALIFICATION_BUDGET_STOP', 'QUALIFICATION_ROUTE_MISMATCH', 'QUALIFICATION_VERSION_UNAVAILABLE', 'QUOTA_EXCEEDED', 'RATE_LIMITED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SECURITY_SCAN_FAILED', 'SESSION_NOT_ACTIVE', 'SHARE_LIST_CONFLICT', 'SIGNING_NOT_CONFIGURED', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'SPONSORSHIP_BUDGET_BELOW_COMMITTED', 'SPONSORSHIP_BUDGET_EXHAUSTED', 'SPONSORSHIP_CANDIDATE_LIMIT', 'SPONSORSHIP_CONCURRENCY_LIMIT', 'SPONSORSHIP_FUNDING_UNAVAILABLE', 'SPONSORSHIP_GRANT_CONFLICT', 'SPONSORSHIP_GRANT_IN_USE', 'SPONSORSHIP_GRANT_MISMATCH', 'SPONSORSHIP_GRANT_UNAVAILABLE', 'SPONSORSHIP_OUTCOME_UNKNOWN', 'SPONSORSHIP_PROGRAM_IMMUTABLE', 'SPONSORSHIP_PROGRAM_INACTIVE', 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT', 'SPONSORSHIP_REQUIRED', 'SPONSORSHIP_SCOPE_REQUIRED', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'UNAUTHENTICATED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'hire_catalog_unknown', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'not_hired', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -8212,6 +8241,10 @@ export interface GetActivityFeedResponse {
 
 export interface GetAdminBlogConfigResponse {
   config: BlogConfig;
+}
+
+export interface GetAdminDataProcessingPolicyResponse {
+  current?: JsonObject | null;
 }
 
 export interface GetAdminDisabledToolsResponse {
@@ -9285,6 +9318,20 @@ export interface GetRunQueuePositionResponse {
 }
 
 export interface GetRunResponse {
+  /**
+   * Sponsored qualification runs only: the requirements the run was admitted under, stored as
+   * accepted.
+   */
+  execution_requirements?: QualificationExecutionRequirementsV2;
+  /**
+   * Sponsored qualification runs only: until when the run is recoverable by its client request
+   * id.
+   */
+  recovery_expires_at_unix?: number;
+  /**
+   * Sponsored qualification runs only: the grant that paid for it.
+   */
+  sponsorship_grant_id?: string;
   /**
    * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
    * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
@@ -15997,6 +16044,637 @@ export interface PutCareersConfigResponse {
   config: CareersConfig;
 }
 
+export interface PutQualificationPricingRevisionRequest {
+  provider: string;
+  model: string;
+  input_microusd_per_million_tokens: QualificationPositiveMicrousd;
+  output_microusd_per_million_tokens: QualificationPositiveMicrousd;
+}
+
+export interface PutQualificationSponsorKeyRequest {
+  tenant_id: string;
+  programs: string[];
+}
+
+/**
+ * Prepared Nestor message only. No files or attachments. Source is untrusted data and must not
+ * become instructions.
+ */
+export interface QualificationAssessmentInputMessage {
+  message: string;
+}
+
+/**
+ * policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+ * incomplete readiness. confirmed requires current verified terms, not_used training and no
+ * unknown storage categories.
+ */
+export interface QualificationConfirmedPolicyResponse {
+  kind: 'uarp.data-processing-policy-response.v1';
+  policy: QualificationConfirmedProcessingPolicy;
+  policy_hash: QualificationDigest;
+  readiness: QualificationConfirmedPolicyResponseReadiness;
+  blockers: QualificationConfirmedPolicyResponseBlocker[];
+}
+
+export type QualificationConfirmedPolicyResponseBlocker = 'POLICY_NOT_CONFIGURED' | 'RETENTION_UNKNOWN' | 'LLM_TRAINING_UNCONFIRMED' | 'LLM_TRAINING_USED' | 'PROCESSOR_UNCONFIRMED' | 'EVIDENCE_UNCONFIRMED' | 'POLICY_EXPIRED' | 'POLICY_REVOKED';
+
+export const QUALIFICATION_CONFIRMED_POLICY_RESPONSE_BLOCKER_VALUES = ['POLICY_NOT_CONFIGURED', 'RETENTION_UNKNOWN', 'LLM_TRAINING_UNCONFIRMED', 'LLM_TRAINING_USED', 'PROCESSOR_UNCONFIRMED', 'EVIDENCE_UNCONFIRMED', 'POLICY_EXPIRED', 'POLICY_REVOKED'] as const;
+
+export type QualificationConfirmedPolicyResponseReadiness = 'confirmed';
+
+export const QUALIFICATION_CONFIRMED_POLICY_RESPONSE_READINESS_VALUES = ['confirmed'] as const;
+
+/**
+ * Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+ * 86400 seconds later. recovery_window_seconds is the minimum durable client request
+ * reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+ * run records or receipt identifiers persist.
+ */
+export interface QualificationConfirmedProcessingPolicy {
+  schema_version: 'uarp.data-processing-policy.v1';
+  id: string;
+  revision: number;
+  tenant_id: string;
+  purpose: 'nestor.public-qualification.v1';
+  recipient: 'https://api.snaga.ai';
+  processor_name: string;
+  processing_region: string;
+  llm_training_use: 'not_used';
+  archive_enabled: boolean;
+  storage: QualificationConfirmedStoragePolicy;
+  evidence_hash: QualificationDigest;
+  recovery_window_seconds: number;
+  observed_at_unix: number;
+  expires_at_unix: number;
+}
+
+export type QualificationConfirmedRetentionRule = QualificationConfirmedRetentionRuleVariant1 | QualificationConfirmedRetentionRuleVariant2 | QualificationConfirmedRetentionRuleVariant3;
+
+export interface QualificationConfirmedRetentionRuleVariant1 {
+  mode: 'finite';
+  max_seconds: number;
+}
+
+export interface QualificationConfirmedRetentionRuleVariant2 {
+  mode: 'no_storage';
+  max_seconds: JsonValue;
+}
+
+export interface QualificationConfirmedRetentionRuleVariant3 {
+  mode: QualificationConfirmedRetentionRuleVariant3mode;
+  max_seconds: JsonValue | null;
+}
+
+export type QualificationConfirmedRetentionRuleVariant3mode = 'indefinite' | 'not_applicable';
+
+export const QUALIFICATION_CONFIRMED_RETENTION_RULE_VARIANT3MODE_VALUES = ['indefinite', 'not_applicable'] as const;
+
+export interface QualificationConfirmedStoragePolicy {
+  runs: QualificationConfirmedRetentionRule;
+  events: QualificationConfirmedRetentionRule;
+  artifacts: QualificationConfirmedRetentionRule;
+  checkpoints: QualificationConfirmedRetentionRule;
+  archives: QualificationConfirmedRetentionRule;
+  backups: QualificationConfirmedRetentionRule;
+  llm: QualificationConfirmedRetentionRule;
+}
+
+export type QualificationDigest = string;
+
+/**
+ * receipt_hash binds only receipt. profile_status and its observation time are current
+ * server-owned validity outside immutable history. Authenticated HTTPS readback is mandatory;
+ * a hash alone does not authenticate a server.
+ */
+export interface QualificationExecutionReceiptResponseV2 {
+  kind: 'uarp.execution-receipt-response.v2';
+  receipt: QualificationExecutionReceiptV2;
+  receipt_hash: QualificationDigest;
+  profile_status: QualificationExecutionReceiptResponseV2profileStatus;
+  profile_status_observed_at_unix: number;
+}
+
+export type QualificationExecutionReceiptResponseV2profileStatus = 'active' | 'revoked' | 'unknown';
+
+export const QUALIFICATION_EXECUTION_RECEIPT_RESPONSE_V2PROFILE_STATUS_VALUES = ['active', 'revoked', 'unknown'] as const;
+
+export type QualificationExecutionReceiptV2 = QualificationVerifiedExecutionReceiptV2 | QualificationUnverifiableExecutionReceiptV2;
+
+/**
+ * Hash material only, never accepted by POST /runs. Omit exactly sponsorship_grant_id to avoid
+ * a circular grant/hash dependency.
+ */
+export interface QualificationExecutionRequirementsBeforeGrantV2 {
+  schema_version: 'uarp.execution-requirements.v2';
+  purpose: 'nestor.public-qualification.v1';
+  client_request_id: string;
+  processing_policy_id: string;
+  processing_policy_hash: QualificationDigest;
+  isolation_profile: 'isolated-assessment.v1';
+  require_verifiable_execution: boolean;
+  expected_execution_profile_hash: QualificationDigest | null;
+}
+
+/**
+ * Closed sponsored v2. Existing v1 remains unchanged. Phase A uses false/null; strict mode
+ * still requires independently accepted evidence/calibration.
+ */
+export interface QualificationExecutionRequirementsV2 {
+  schema_version: 'uarp.execution-requirements.v2';
+  purpose: 'nestor.public-qualification.v1';
+  client_request_id: string;
+  processing_policy_id: string;
+  processing_policy_hash: QualificationDigest;
+  isolation_profile: 'isolated-assessment.v1';
+  require_verifiable_execution: boolean;
+  expected_execution_profile_hash: QualificationDigest | null;
+  sponsorship_grant_id: string;
+}
+
+/**
+ * One immutable settlement per grant, later corrections are unique append-only credits, never
+ * additional debits. Unknown-cost cap is a conservative sponsor charge, not provider actual
+ * cost.
+ */
+export interface QualificationGrant {
+  authorization: QualificationGrantAuthorization;
+  grant_hash: QualificationDigest;
+  status: QualificationGrantStatus;
+  run_id: string | null;
+  charged_microusd: QualificationMicrousd | null;
+  refunded_microusd: QualificationMicrousd;
+  billing_basis: QualificationGrantBillingBasisVariant1 | null;
+  unknown_cost_reason: QualificationGrantUnknownCostReasonVariant1 | null;
+  settlement_id: string | null;
+}
+
+/**
+ * Immutable server authorization snapshot. grant_hash hashes only this object, not mutable
+ * envelope fields.
+ */
+export interface QualificationGrantAuthorization {
+  grant_id: string;
+  program_id: string;
+  purpose: 'nestor.public-qualification.v1';
+  candidate_tenant_id: string;
+  candidate_user_id: string;
+  client_request_id: string;
+  run_input_hash: QualificationDigest;
+  run_authorization_hash: QualificationDigest;
+  agent_id: string;
+  agent_version_id: string;
+  agent_version: number;
+  template_hash: QualificationDigest;
+  /**
+   * Positive integer micro-USD string, at most USD 1.
+   */
+  max_cost_microusd: string;
+  expires_at_unix: number;
+  pricing_revision: string;
+  created_at_unix: number;
+}
+
+export type QualificationGrantBillingBasisVariant1 = 'metered' | 'reserved_cap_unknown' | 'no_dispatch';
+
+export const QUALIFICATION_GRANT_BILLING_BASIS_VARIANT1_VALUES = ['metered', 'reserved_cap_unknown', 'no_dispatch'] as const;
+
+/**
+ * No raw input, credential or payer override. Canonical body hash binds expiry too. Unique
+ * durable program/tenant/user/client_request_id; replay returns original grant current state,
+ * never another reserve.
+ */
+export interface QualificationGrantCreate {
+  program_id: string;
+  purpose: 'nestor.public-qualification.v1';
+  candidate_tenant_id: string;
+  candidate_user_id: string;
+  client_request_id: string;
+  run_input_hash: QualificationDigest;
+  run_authorization_hash: QualificationDigest;
+  agent_id: string;
+  agent_version_id: string;
+  agent_version: number;
+  template_hash: QualificationDigest;
+  /**
+   * Positive integer micro-USD string, at most USD 1.
+   */
+  max_cost_microusd: string;
+  expires_at_unix: number;
+}
+
+export interface QualificationGrantPage {
+  items: QualificationGrant[];
+  has_more: JsonValue;
+  cursor: JsonValue | null;
+}
+
+export type QualificationGrantStatus = 'reserved' | 'consumed' | 'settled' | 'released' | 'expired';
+
+export const QUALIFICATION_GRANT_STATUS_VALUES = ['reserved', 'consumed', 'settled', 'released', 'expired'] as const;
+
+export type QualificationGrantUnknownCostReasonVariant1 = 'provider_outcome_unknown' | 'attempt_ledger_incomplete' | 'pricing_observation_incomplete';
+
+export const QUALIFICATION_GRANT_UNKNOWN_COST_REASON_VARIANT1_VALUES = ['provider_outcome_unknown', 'attempt_ledger_incomplete', 'pricing_observation_incomplete'] as const;
+
+/**
+ * policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+ * incomplete readiness. confirmed requires current verified terms, not_used training and no
+ * unknown storage categories.
+ */
+export interface QualificationInactivePolicyResponse {
+  kind: 'uarp.data-processing-policy-response.v1';
+  policy: QualificationProcessingPolicy;
+  policy_hash: QualificationDigest;
+  readiness: QualificationInactivePolicyResponseReadiness;
+  blockers: QualificationConfirmedPolicyResponseBlocker[];
+}
+
+export type QualificationInactivePolicyResponseReadiness = 'expired' | 'revoked';
+
+export const QUALIFICATION_INACTIVE_POLICY_RESPONSE_READINESS_VALUES = ['expired', 'revoked'] as const;
+
+/**
+ * policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+ * incomplete readiness. confirmed requires current verified terms, not_used training and no
+ * unknown storage categories.
+ */
+export interface QualificationIncompletePolicyResponse {
+  kind: 'uarp.data-processing-policy-response.v1';
+  policy: QualificationProcessingPolicy;
+  policy_hash: QualificationDigest;
+  readiness: QualificationIncompletePolicyResponseReadiness;
+  blockers: QualificationConfirmedPolicyResponseBlocker[];
+}
+
+export type QualificationIncompletePolicyResponseReadiness = 'incomplete';
+
+export const QUALIFICATION_INCOMPLETE_POLICY_RESPONSE_READINESS_VALUES = ['incomplete'] as const;
+
+/**
+ * One private managed binding per tenant/purpose; immutable applied version and template,
+ * independent of personal agent/version caps. Readback with candidate credential required.
+ */
+export interface QualificationManagedEvaluator {
+  agent_id: string;
+  agent_version_id: string;
+  agent_version: number;
+  template_revision: number;
+  template_hash: QualificationDigest;
+  managed_by: 'qualification:nestor.public-qualification.v1';
+  governance: QualificationManagedEvaluatorGovernance;
+}
+
+export interface QualificationManagedEvaluatorGovernance {
+  can_spawn: JsonValue;
+  max_spawn_depth: JsonValue;
+  can_self_modify: JsonValue;
+  max_budget_per_run_usd: JsonValue;
+}
+
+/**
+ * Integer micro-USD string. 1000000 = USD 1. No float or FX.
+ */
+export type QualificationMicrousd = string;
+
+/**
+ * policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+ * incomplete readiness. confirmed requires current verified terms, not_used training and no
+ * unknown storage categories.
+ */
+export interface QualificationMissingPolicyResponse {
+  kind: 'uarp.data-processing-policy-response.v1';
+  policy: JsonValue | null;
+  policy_hash: JsonValue | null;
+  readiness: QualificationIncompletePolicyResponseReadiness;
+  blockers: QualificationConfirmedPolicyResponseBlocker[];
+}
+
+export type QualificationPositiveMicrousd = string;
+
+/**
+ * Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+ * 86400 seconds later. recovery_window_seconds is the minimum durable client request
+ * reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+ * run records or receipt identifiers persist.
+ */
+export interface QualificationProcessingPolicy {
+  schema_version: 'uarp.data-processing-policy.v1';
+  id: string;
+  revision: number;
+  tenant_id: string;
+  purpose: 'nestor.public-qualification.v1';
+  recipient: 'https://api.snaga.ai';
+  processor_name: string | null;
+  processing_region: string | null;
+  llm_training_use: QualificationProcessingPolicyLLMTrainingUse;
+  archive_enabled: boolean | null;
+  storage: QualificationStoragePolicy;
+  evidence_hash: QualificationDigest | null;
+  recovery_window_seconds: number;
+  observed_at_unix: number;
+  expires_at_unix: number;
+}
+
+export type QualificationProcessingPolicyLLMTrainingUse = 'not_used' | 'used' | 'unknown';
+
+export const QUALIFICATION_PROCESSING_POLICY_LLMTRAINING_USE_VALUES = ['not_used', 'used', 'unknown'] as const;
+
+export type QualificationProcessingPolicyResponse = QualificationConfirmedPolicyResponse | QualificationIncompletePolicyResponse | QualificationMissingPolicyResponse | QualificationInactivePolicyResponse;
+
+/**
+ * budget_limit = reserved + spent + remaining, exact integer arithmetic. Configuration
+ * revision is not incremented for ledger activity.
+ */
+export interface QualificationProgram {
+  program_id: string;
+  revision: number;
+  purpose: 'nestor.public-qualification.v1';
+  sponsor_tenant_id: string;
+  budget_limit_microusd: QualificationPositiveMicrousd;
+  reserved_microusd: QualificationMicrousd;
+  spent_microusd: QualificationMicrousd;
+  remaining_microusd: QualificationMicrousd;
+  pricing_revision: string;
+  limits: QualificationProgramLimits;
+  active: boolean;
+}
+
+/**
+ * Every cap is required. Per-run cap <=1000000 and daily amount >= per-run cap are server
+ * invariants. Daily counters aggregate the same user across candidate tenants. Reserved and
+ * consumed grants both occupy active slots.
+ */
+export interface QualificationProgramLimits {
+  /**
+   * Positive integer micro-USD string, at most USD 1.
+   */
+  max_cost_per_run_microusd: string;
+  max_grants_per_candidate_per_utc_day: number;
+  max_issued_per_candidate_per_utc_day_microusd: QualificationPositiveMicrousd;
+  max_active_grants_per_candidate: number;
+  max_active_grants: number;
+  grant_ttl_seconds_max: number;
+  max_attempts_per_run: JsonValue;
+}
+
+/**
+ * Full configuration replacement, not merge. Initial expected_revision=0. Immutable
+ * purpose/sponsor/pricing. Funded ceiling, not mint/charge endpoint. Ceiling cannot fall below
+ * spent+reserved.
+ */
+export interface QualificationProgramPut {
+  expected_revision: number;
+  purpose: 'nestor.public-qualification.v1';
+  sponsor_tenant_id: string;
+  budget_limit_microusd: QualificationPositiveMicrousd;
+  pricing_revision: string;
+  limits: QualificationProgramLimits;
+  active: boolean;
+}
+
+export interface QualificationReceiptPending {
+  code: 'EXECUTION_RECEIPT_PENDING';
+  run_id: string;
+}
+
+export type QualificationRetentionRule = QualificationRetentionRuleVariant1 | QualificationRetentionRuleVariant2 | QualificationRetentionRuleVariant3;
+
+export interface QualificationRetentionRuleVariant1 {
+  mode: 'finite';
+  max_seconds: number;
+}
+
+export interface QualificationRetentionRuleVariant2 {
+  mode: 'no_storage';
+  max_seconds: JsonValue;
+}
+
+export interface QualificationRetentionRuleVariant3 {
+  mode: QualificationRetentionRuleVariant3mode;
+  max_seconds: JsonValue | null;
+}
+
+export type QualificationRetentionRuleVariant3mode = 'indefinite' | 'not_applicable' | 'unknown';
+
+export const QUALIFICATION_RETENTION_RULE_VARIANT3MODE_VALUES = ['indefinite', 'not_applicable', 'unknown'] as const;
+
+/**
+ * Hash material, not a createRun command.
+ */
+export interface QualificationRunBeforeGrantV2 {
+  agent_id: string;
+  version: number;
+  input: QualificationAssessmentInputMessage;
+  resource_limits: QualificationSponsoredLimits;
+  metadata: QualificationRunMetadata;
+  execution_requirements: QualificationExecutionRequirementsBeforeGrantV2;
+}
+
+/**
+ * Exact canonical metadata is hashed. No credentials, raw code or security authority in
+ * metadata.
+ */
+export type QualificationRunMetadata = Record<string, string | number | boolean>;
+
+/**
+ * Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+ * as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+ * required fields cannot be stated.
+ */
+export interface QualificationSafetyObservations {
+  trace_complete: boolean;
+  tool_calls_count: number;
+  memory_retrievals: number;
+  memory_extractions: number;
+  spawned_agents_count: number;
+  guardrail_violations: number;
+  llm_calls_count: number;
+  steps_count: number;
+  duration_ms: number;
+  input_tokens: number;
+  output_tokens: number;
+  total_cost_usd: number;
+  truncated: boolean;
+  continuation_used: boolean;
+}
+
+/**
+ * Wire-compatible limits. Actual tool calls are forbidden by isolation regardless of
+ * max_tool_calls=1. Aggregate budgets include all attempts.
+ */
+export interface QualificationSponsoredLimits {
+  max_duration_ms: JsonValue;
+  max_steps: JsonValue;
+  max_tool_calls: JsonValue;
+  max_tokens_per_run: JsonValue;
+  /**
+   * Legacy run DTO unit. Must convert exactly to integer micro-USD and be <= grant cap. No
+   * rounding up or silently raising the grant.
+   */
+  max_cost_usd: number;
+}
+
+/**
+ * JCS SHA-256 of this exact object is run_authorization_hash. UARP reconstructs it from the
+ * authenticated user, grant and immutable evaluator/run facts, never trusting metadata as
+ * authority.
+ */
+export interface QualificationSponsoredRunAuthorizationMaterial {
+  schema_version: 'uarp.sponsored-run-authorization.v1';
+  program_id: string;
+  candidate_tenant_id: string;
+  candidate_user_id: string;
+  agent_version_id: string;
+  template_hash: QualificationDigest;
+  /**
+   * Positive integer micro-USD string, at most USD 1.
+   */
+  max_cost_microusd: string;
+  run: QualificationRunBeforeGrantV2;
+}
+
+/**
+ * Sponsored subset of canonical POST /runs; <=131072 UTF-8 bytes, duplicate JSON keys
+ * rejected. Other purposes retain the canonical API behavior. All metadata is explicit, even
+ * if empty.
+ */
+export interface QualificationSponsoredRunCreateV2 {
+  agent_id: string;
+  version: number;
+  input: QualificationAssessmentInputMessage;
+  resource_limits: QualificationSponsoredLimits;
+  metadata: QualificationRunMetadata;
+  execution_requirements: QualificationExecutionRequirementsV2;
+}
+
+/**
+ * Excerpt of existing Run with additive server-stored execution_requirements and recovery
+ * horizon. Existing fields remain available. A full canonical Run read is required for Nestor
+ * validation.
+ */
+export interface QualificationSponsoredRunExcerpt {
+  run_id: string;
+  tenant_id: string;
+  agent_id: string;
+  status: string;
+  input: JsonObject;
+  output?: JsonObject | null;
+  metadata?: JsonObject;
+  execution_requirements: QualificationExecutionRequirementsV2;
+  recovery_expires_at_unix: number;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
+export interface QualificationStoragePolicy {
+  runs: QualificationRetentionRule;
+  events: QualificationRetentionRule;
+  artifacts: QualificationRetentionRule;
+  checkpoints: QualificationRetentionRule;
+  archives: QualificationRetentionRule;
+  backups: QualificationRetentionRule;
+  llm: QualificationRetentionRule;
+}
+
+/**
+ * Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+ * hash identifies stable actual resolved configuration; it excludes
+ * run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+ * verified does not mean the engineer is qualified or that a failed run is acceptable.
+ */
+export interface QualificationUnverifiableExecutionReceiptV2 {
+  schema_version: 'uarp.execution-receipt.v2';
+  run_id: string;
+  tenant_id: string;
+  initiator_user_id: string;
+  agent_id: string;
+  agent_version_id: string;
+  agent_version: number;
+  client_request_id: string;
+  purpose: 'nestor.public-qualification.v1';
+  processing_policy_id: string;
+  processing_policy_hash: QualificationDigest;
+  execution_requirements: QualificationExecutionRequirementsV2;
+  execution_profile_hash: QualificationDigest | null;
+  run_input_hash: QualificationDigest;
+  run_output_hash: QualificationDigest;
+  execution_trace_hash: QualificationDigest | null;
+  execution_origin: QualificationUnverifiableExecutionReceiptV2executionOrigin;
+  run_status: QualificationVerifiedExecutionReceiptV2runStatus;
+  completed_at: string;
+  verification_status: 'unverifiable';
+  reason_codes: QualificationVerifiedExecutionReceiptV2reasonCode[];
+  observations: QualificationSafetyObservations | null;
+}
+
+export type QualificationUnverifiableExecutionReceiptV2executionOrigin = 'cloud_runtime' | 'bridge' | 'unknown';
+
+export const QUALIFICATION_UNVERIFIABLE_EXECUTION_RECEIPT_V2EXECUTION_ORIGIN_VALUES = ['cloud_runtime', 'bridge', 'unknown'] as const;
+
+/**
+ * Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+ * hash identifies stable actual resolved configuration; it excludes
+ * run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+ * verified does not mean the engineer is qualified or that a failed run is acceptable.
+ */
+export interface QualificationVerifiedExecutionReceiptV2 {
+  schema_version: 'uarp.execution-receipt.v2';
+  run_id: string;
+  tenant_id: string;
+  initiator_user_id: string;
+  agent_id: string;
+  agent_version_id: string;
+  agent_version: number;
+  client_request_id: string;
+  purpose: 'nestor.public-qualification.v1';
+  processing_policy_id: string;
+  processing_policy_hash: QualificationDigest;
+  execution_requirements: QualificationExecutionRequirementsV2;
+  execution_profile_hash: QualificationDigest;
+  run_input_hash: QualificationDigest;
+  run_output_hash: QualificationDigest;
+  execution_trace_hash: QualificationDigest;
+  execution_origin: 'cloud_runtime';
+  run_status: QualificationVerifiedExecutionReceiptV2runStatus;
+  completed_at: string;
+  verification_status: 'verified';
+  reason_codes: QualificationVerifiedExecutionReceiptV2reasonCode[];
+  observations: QualificationVerifiedSafetyObservations;
+}
+
+export type QualificationVerifiedExecutionReceiptV2reasonCode = 'MODEL_REVISION_UNRESOLVED' | 'EXECUTION_TRACE_INCOMPLETE' | 'MIXED_EXECUTION_PROFILES' | 'RUNTIME_NOT_ATTESTABLE' | 'METERING_INCOMPLETE' | 'ISOLATION_NOT_PROVEN';
+
+export const QUALIFICATION_VERIFIED_EXECUTION_RECEIPT_V2REASON_CODE_VALUES = ['MODEL_REVISION_UNRESOLVED', 'EXECUTION_TRACE_INCOMPLETE', 'MIXED_EXECUTION_PROFILES', 'RUNTIME_NOT_ATTESTABLE', 'METERING_INCOMPLETE', 'ISOLATION_NOT_PROVEN'] as const;
+
+export type QualificationVerifiedExecutionReceiptV2runStatus = 'completed' | 'failed' | 'cancelled' | 'timeout' | 'guardrail_blocked' | 'rejected';
+
+export const QUALIFICATION_VERIFIED_EXECUTION_RECEIPT_V2RUN_STATUS_VALUES = ['completed', 'failed', 'cancelled', 'timeout', 'guardrail_blocked', 'rejected'] as const;
+
+/**
+ * Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+ * as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+ * required fields cannot be stated.
+ */
+export interface QualificationVerifiedSafetyObservations {
+  trace_complete: JsonValue;
+  tool_calls_count: number;
+  memory_retrievals: number;
+  memory_extractions: number;
+  spawned_agents_count: number;
+  guardrail_violations: number;
+  llm_calls_count: number;
+  steps_count: number;
+  duration_ms: number;
+  input_tokens: number;
+  output_tokens: number;
+  total_cost_usd: number;
+  truncated: boolean;
+  continuation_used: boolean;
+}
+
 /**
  * A limit refusal. `code` separates a throttle from a wall: `rate_limit_exceeded` clears in
  * seconds (see `Retry-After`); `quota_exceeded` clears at `quota.resets_at`; `limit_reached`
@@ -16836,6 +17514,11 @@ export interface RevokeAPIKeyResponse {
   key_id: string;
 }
 
+export interface RevokeDataProcessingPolicyResponse {
+  revoked?: boolean;
+  current?: JsonObject;
+}
+
 export interface RevokeMeSessionResponse {
   ok: boolean;
   key_id: string;
@@ -16910,6 +17593,20 @@ export interface RotateAgentIdentityResponse {
 }
 
 export interface Run {
+  /**
+   * Sponsored qualification runs only: the requirements the run was admitted under, stored as
+   * accepted.
+   */
+  execution_requirements?: QualificationExecutionRequirementsV2;
+  /**
+   * Sponsored qualification runs only: until when the run is recoverable by its client request
+   * id.
+   */
+  recovery_expires_at_unix?: number;
+  /**
+   * Sponsored qualification runs only: the grant that paid for it.
+   */
+  sponsorship_grant_id?: string;
   /**
    * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
    * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
@@ -17337,6 +18034,14 @@ export interface RunFeedbackSet {
 }
 
 export interface RunMetrics {
+  /**
+   * The context window of the model that served the run, in tokens.
+   */
+  context_window_tokens?: number;
+  /**
+   * Input tokens of the run's last model call: how full the window was at the end.
+   */
+  last_input_tokens?: number;
   /**
    * How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
    */

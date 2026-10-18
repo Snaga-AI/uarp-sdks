@@ -35,6 +35,8 @@ import type {
   AdminRegistrationConfig,
   AdminSmtpConfig,
   AdminStripeConfig,
+  ConfirmDataProcessingPolicyRequest,
+  ConfirmDataProcessingPolicyResponse,
   CreatePlanStripePriceRequest,
   CreatePlanStripePriceResponse,
   CustomPlanInput,
@@ -43,6 +45,7 @@ import type {
   DeletePromoCodeResponse,
   ExportAdminConfigResponse,
   ExportDataExplorerIncludeSensitive,
+  GetAdminDataProcessingPolicyResponse,
   GetAdminDisabledToolsResponse,
   GetAdminPlansResponse,
   GetAdminToolOverridesResponse,
@@ -52,11 +55,17 @@ import type {
   ImportAdminConfigRequest,
   ImportAdminConfigResponse,
   JsonObject,
+  JsonValue,
   ListCustomPlansResponse,
   ListPromoCodesResponse,
   ListPromoRewardsResponse,
   PlanLLMLimitsTierAccessItem,
   PromoCodeInput,
+  PutQualificationPricingRevisionRequest,
+  PutQualificationSponsorKeyRequest,
+  QualificationProgram,
+  QualificationProgramPut,
+  RevokeDataProcessingPolicyResponse,
   RunReconciliationResponse,
   SetFeatureFlagsResponse,
   SetModelPricingOverrideRequest,
@@ -148,6 +157,29 @@ export interface DeleteCustomPlanParams {
  * Platform configuration: pricing, plans, feature flags, rate limits, runtime
  */
 export class AdminConfigResource extends APIResource {
+  /**
+   * Confirm the facts as a new revision
+   *
+   * WRITE SEMANTICS: replaces — each call stores a new immutable revision from the full body;
+   * nothing is merged or extended. Super-admin only. Refused with 422 when the confirmation
+   * breaks an invariant: lifetime over 86400 s or not after `observed_at_unix`;
+   * `archive_enabled=false` without `archives.mode=not_applicable`; runs `no_storage`; a finite
+   * runs retention shorter than `recovery_window_seconds`.
+   *
+   * `PUT /api/v1/admin/data-processing-policies/{purpose}`
+   *
+   * Required scopes: `admin`.
+   */
+  confirmDataProcessingPolicy(purpose: string, body: ConfirmDataProcessingPolicyRequest, options?: RequestOptions): Promise<ConfirmDataProcessingPolicyResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: `/api/v1/admin/data-processing-policies/${encodeURIComponent(String(purpose))}`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
   /**
    * Create Stripe Product+Price for plan
    *
@@ -335,6 +367,24 @@ export class AdminConfigResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/code-interpreter',
+      options,
+    });
+  }
+
+  /**
+   * Current policy confirmation
+   *
+   * Super-admin only. The current revision of the operator confirmation, revoked or not;
+   * `current: null` when none.
+   *
+   * `GET /api/v1/admin/data-processing-policies/{purpose}`
+   *
+   * Required scopes: `admin`.
+   */
+  getAdminDataProcessingPolicy(purpose: string, options?: RequestOptions): Promise<GetAdminDataProcessingPolicyResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/admin/data-processing-policies/${encodeURIComponent(String(purpose))}`,
       options,
     });
   }
@@ -1108,6 +1158,93 @@ export class AdminConfigResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/admin/config/promo-codes/${encodeURIComponent(String(code))}/rewards`,
+      options,
+    });
+  }
+
+  /**
+   * Pin an accounting rate
+   *
+   * WRITE SEMANTICS: replaces, once — the first body is stored and never changed. Super-admin
+   * only (UARP addition to the contract). The provider, model and micro-USD per million input
+   * and output tokens a program's runs are accounted at; a qualification run refuses any other
+   * provider or model. The same body again answers 200; another body for an existing revision is
+   * 409 `SPONSORSHIP_PROGRAM_IMMUTABLE`. This is UARP's accounting rate, not the provider's
+   * invoice.
+   *
+   * `PUT /api/v1/admin/qualification/pricing-revisions/{pricing_revision}`
+   *
+   * Required scopes: `admin`.
+   */
+  putQualificationPricingRevision(pricingRevision: string, body: PutQualificationPricingRevisionRequest, options?: RequestOptions): Promise<JsonValue> {
+    return this._client.request({
+      method: 'PUT',
+      path: `/api/v1/admin/qualification/pricing-revisions/${encodeURIComponent(String(pricingRevision))}`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Make a key a sponsor key
+   *
+   * WRITE SEMANTICS: replaces — the record is the body (company and program list). Super-admin
+   * only (UARP addition). Names the API key of the sponsor's company (Nestor's server) and the
+   * programs it may spend from; a key with no programs spends nothing. The role cannot be
+   * created by the key's own company, a header, metadata or a role.
+   *
+   * `PUT /api/v1/admin/qualification/sponsor-keys/{key_id}`
+   *
+   * Required scopes: `admin`.
+   */
+  putQualificationSponsorKey(keyId: string, body: PutQualificationSponsorKeyRequest, options?: RequestOptions): Promise<JsonValue> {
+    return this._client.request({
+      method: 'PUT',
+      path: `/api/v1/admin/qualification/sponsor-keys/${encodeURIComponent(String(keyId))}`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Configure a sponsorship program
+   *
+   * WRITE SEMANTICS: replaces — full configuration, never merged; the ledger is kept.
+   * Super-admin only, under `expected_revision` (0 creates); `Idempotency-Key` required.
+   * Purpose, sponsor company and pricing revision are immutable. The budget is a funded ceiling,
+   * never below `reserved + spent`. Ledger activity does not change the revision.
+   *
+   * `PUT /api/v1/admin/qualification/sponsorship-programs/{program_id}`
+   *
+   * Required scopes: `admin`.
+   */
+  putQualificationSponsorshipProgram(programId: string, body: QualificationProgramPut, options?: RequestOptions): Promise<QualificationProgram> {
+    return this._client.request({
+      method: 'PUT',
+      path: `/api/v1/admin/qualification/sponsorship-programs/${encodeURIComponent(String(programId))}`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Revoke the current confirmation
+   *
+   * Super-admin only. The revision stays readable and reads as `revoked`; new qualification runs
+   * are refused. 409 when there is nothing current to revoke.
+   *
+   * `POST /api/v1/admin/data-processing-policies/{purpose}/revoke`
+   *
+   * Required scopes: `admin`.
+   */
+  revokeDataProcessingPolicy(purpose: string, options?: RequestOptions): Promise<RevokeDataProcessingPolicyResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/admin/data-processing-policies/${encodeURIComponent(String(purpose))}/revoke`,
+      idempotent: true,
       options,
     });
   }

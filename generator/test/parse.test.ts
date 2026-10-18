@@ -460,7 +460,11 @@ test('parses the production document into the expected shape', () => {
   // reader's email preferences (`GET`/`PUT /me/email-preferences`) and the
   // one-click unsubscribe page behind a letter (`GET`/`POST
   // /public/email/unsubscribe`, which answer HTML).
-  assert.equal(ops.length, 843);
+  // 843 -> 857 on 2026-10-17 (build 0837bb4d): fourteen and none removed —
+  // qualification sponsorship (programs, grants, sponsor keys, pricing
+  // revisions, the tenant's evaluator), data-processing policies (tenant and
+  // admin, with revoke) and a run's execution receipt.
+  assert.equal(ops.length, 857);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -469,7 +473,8 @@ test('parses the production document into the expected shape', () => {
   // 49 -> 50 on 2026-10-05 (0.8.0): Anthropic Compat, for `/v1/messages`.
   // 50 -> 52 on 2026-10-12 (build ef5b646d): Company and Initiatives.
   // 52 -> 53 on 2026-10-17 (build d926b90e): Hire.
-  assert.equal(spec.groups.length, 53);
+  // 53 -> 54 on 2026-10-17 (build 0837bb4d): Qualification.
+  assert.equal(spec.groups.length, 54);
   // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
   // `auto_approve_tools`, `command_relationships`, `access_control` and
   // `metadata`, each nested object becoming its own named type. The server had
@@ -741,7 +746,10 @@ test('parses the production document into the expected shape', () => {
   // `AmbassadorRequestType` (the read side is plain text now) and
   // `GetHireCatalogLocale` (the sign-in letter uses the enum first); the pins
   // keep both names in the SDKs.
-  assert.equal(spec.types.length, 2064);
+  // 2064 -> 2129 on 2026-10-17 (build 0837bb4d): +65, none removed — the
+  // qualification sponsorship and execution-receipt schemas, data-processing
+  // policies, and fourteen new operations' hoisted bodies.
+  assert.equal(spec.types.length, 2129);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);
@@ -969,4 +977,13 @@ test('a response media type decodes to text only when every declared type is tex
     if (!byId.has(id)) continue;
     assert.equal(byId.get(id), prim, `${id} should decode as ${prim}`);
   }
+});
+
+test('createRun is typed by its 202 Run, not by the sponsored 200/201 excerpt', () => {
+  //  Build 0837bb4d lists 200 and 201 with a QualificationSponsoredRunExcerpt
+  //  first; only a body carrying `execution_requirements` gets them, and no
+  //  SDK caller sends one (API lane, 2026-10-17).
+  const op = productionSpec().groups.flatMap((g) => g.operations).find((o) => o.id === 'createRun')!;
+  assert.equal(op.response.status, 202);
+  assert.deepEqual(op.response.type, { kind: 'named', name: 'Run' });
 });

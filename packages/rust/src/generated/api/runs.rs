@@ -70,6 +70,14 @@ pub struct GetRunStepsParams {
 /// Query and header parameters for `listRuns`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListRunsParams {
+    /// Recover a sponsored qualification run: with `purpose`, and no other filter, answers the
+    /// caller's own run for that client request, 0 or 1 item, `has_more: false`. Any other
+    /// combination is 400.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub client_request_id: Option<String>,
+    /// Required with `client_request_id`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub purpose: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -201,6 +209,18 @@ impl RunsApi {
     /// avoid duplicate runs on retries; a repeated request with the same key returns the cached 202
     /// response (same run_id). Pin a specific agent version with `version` to bypass the head
     /// pointer.
+    ///
+    /// A body carrying `execution_requirements` is a sponsored qualification run (Nestor, since
+    /// 2026-10-17) and has its own admission: `QualificationSponsoredRunCreateV2`, strict JSON
+    /// (repeated member names refused, at most 131072 bytes), `metadata` names not starting with
+    /// `_`. The first acceptance answers 201, an exact replay of the same `client_request_id`
+    /// command answers 200 with the original run, another command under that id is 409
+    /// `CLIENT_REQUEST_CONFLICT`. Refusals: 403 `SPONSORSHIP_REQUIRED` (a v1 command: the candidate
+    /// never pays), 403 `SPONSORSHIP_GRANT_MISMATCH` with `reason`, 409
+    /// `SPONSORSHIP_GRANT_UNAVAILABLE` / `SPONSORSHIP_PROGRAM_INACTIVE`, 412
+    /// `PROCESSING_POLICY_NOT_READY` / `PROCESSING_POLICY_CHANGED`, 422
+    /// `EXECUTION_PROFILE_UNVERIFIABLE` / `INVALID_REQUEST`. The managed evaluator cannot be run
+    /// without one (403 `MANAGED_AGENT`).
     ///
     /// `POST /api/v1/runs`
     ///

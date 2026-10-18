@@ -3322,6 +3322,12 @@ public data class AdminVoicePresets(
 @Serializable
 public data class Agent(
     /**
+     * Bridge agents only: the stable fingerprint of the machine that enrolled it, used to adopt
+     * the same agent after a reconnect. Absent on records enrolled before 2026-09-03.
+     */
+    @SerialName("bridge_fingerprint")
+    public val bridgeFingerprint: String? = null,
+    /**
      * The initiative (`/initiatives`) this agent works for, when it has one. Its runs are charged
      * to that initiative's budget, and automated runs are refused (`INITIATIVE_PAUSED`) while it
      * is paused or (`INITIATIVE_BUDGET_EXHAUSTED`) out of budget; agents and squads it creates
@@ -4534,9 +4540,10 @@ public value class AgentStatus(public val value: String) {
         public val SUSPENDED: AgentStatus = AgentStatus("suspended")
         public val TERMINATED: AgentStatus = AgentStatus("terminated")
         public val DEPOSED: AgentStatus = AgentStatus("deposed")
+        public val INACTIVE: AgentStatus = AgentStatus("inactive")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<AgentStatus> = listOf(ACTIVE, SUSPENDED, TERMINATED, DEPOSED)
+        public val knownValues: List<AgentStatus> = listOf(ACTIVE, SUSPENDED, TERMINATED, DEPOSED, INACTIVE)
     }
 }
 
@@ -5590,13 +5597,13 @@ public data class AgentVersion(
      * canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
      * provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
      * detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-     * provisioned`, `Platform agent config migrated on boot`, `Hired`, `Registered from a local
-     * app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`,
-     * `Token cap removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N =
-     * the version rolled back to), `Self-improvement: N changes based on N analysis` (the
-     * self-improvement loop: the first N is a count, the second is one of errors, ratings or
-     * feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC
-     * 11).
+     * provisioned`, `Platform agent config migrated on boot`, `Qualification evaluator template
+     * revision N` (N = the template revision), `Hired`, `Registered from a local app`, `Token cap
+     * removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap
+     * removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version
+     * rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement
+     * loop: the first N is a count, the second is one of errors, ratings or feedback — words, not
+     * a number). A reason code beside the prose is the owner's decision (DEC 11).
      */
     public val changelog: String? = null,
     @SerialName("created_at")
@@ -9153,6 +9160,38 @@ public data class CompleteOAuthLoginResponse(
 )
 
 /**
+ * `ConfirmDataProcessingPolicyRequest` model.
+ */
+@Serializable
+public data class ConfirmDataProcessingPolicyRequest(
+    @SerialName("processor_name")
+    public val processorName: String? = null,
+    @SerialName("processing_region")
+    public val processingRegion: String? = null,
+    @SerialName("llm_training_use")
+    public val llmTrainingUse: QualificationProcessingPolicyLLMTrainingUse,
+    @SerialName("archive_enabled")
+    public val archiveEnabled: Boolean? = null,
+    public val storage: QualificationStoragePolicy,
+    @SerialName("evidence_hash")
+    public val evidenceHash: QualificationDigest? = null,
+    @SerialName("recovery_window_seconds")
+    public val recoveryWindowSeconds: Long,
+    @SerialName("observed_at_unix")
+    public val observedAtUnix: Long,
+    @SerialName("expires_at_unix")
+    public val expiresAtUnix: Long,
+)
+
+/**
+ * `ConfirmDataProcessingPolicyResponse` model.
+ */
+@Serializable
+public data class ConfirmDataProcessingPolicyResponse(
+    public val current: JsonObject? = null,
+)
+
+/**
  * `ConfirmSessionTodoRequest` model.
  */
 @Serializable
@@ -9871,6 +9910,16 @@ public object ConversationEntryImportanceSerializer : KSerializer<ConversationEn
  */
 @Serializable
 public data class ConversationEntryRunMetrics(
+    /**
+     * The context window of the model that served the run, in tokens.
+     */
+    @SerialName("context_window_tokens")
+    public val contextWindowTokens: Long? = null,
+    /**
+     * Input tokens of the run's last model call: how full the window was at the end.
+     */
+    @SerialName("last_input_tokens")
+    public val lastInputTokens: Long? = null,
     /**
      * How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
      */
@@ -13672,12 +13721,14 @@ public value class ErrorCode(public val value: String) {
         public val ALREADY_EXISTS: ErrorCode = ErrorCode("ALREADY_EXISTS")
         public val ANON_BUSY: ErrorCode = ErrorCode("ANON_BUSY")
         public val ARTIFACT_INTEGRITY_ERROR: ErrorCode = ErrorCode("ARTIFACT_INTEGRITY_ERROR")
+        public val ASSESSMENT_ISOLATION_REQUIRED: ErrorCode = ErrorCode("ASSESSMENT_ISOLATION_REQUIRED")
         public val AUTH_ERROR: ErrorCode = ErrorCode("AUTH_ERROR")
         public val BILLING_CANCELLED: ErrorCode = ErrorCode("BILLING_CANCELLED")
         public val BILLING_DISPUTED: ErrorCode = ErrorCode("BILLING_DISPUTED")
         public val BILLING_PAST_DUE: ErrorCode = ErrorCode("BILLING_PAST_DUE")
         public val BUDGET_EXCEEDED: ErrorCode = ErrorCode("BUDGET_EXCEEDED")
         public val CHECKSUM_MISMATCH: ErrorCode = ErrorCode("CHECKSUM_MISMATCH")
+        public val CLIENT_REQUEST_CONFLICT: ErrorCode = ErrorCode("CLIENT_REQUEST_CONFLICT")
         public val COMPANY_NOT_READY: ErrorCode = ErrorCode("COMPANY_NOT_READY")
         public val COMPANY_PAUSED: ErrorCode = ErrorCode("COMPANY_PAUSED")
         public val CONCURRENCY_LIMIT: ErrorCode = ErrorCode("CONCURRENCY_LIMIT")
@@ -13690,6 +13741,8 @@ public value class ErrorCode(public val value: String) {
         public val DAILY_LIMIT: ErrorCode = ErrorCode("DAILY_LIMIT")
         public val DEPENDENCY_EXISTS: ErrorCode = ErrorCode("DEPENDENCY_EXISTS")
         public val EVENT_STORE_ERROR: ErrorCode = ErrorCode("EVENT_STORE_ERROR")
+        public val EXECUTION_PROFILE_UNVERIFIABLE: ErrorCode = ErrorCode("EXECUTION_PROFILE_UNVERIFIABLE")
+        public val EXECUTION_RECEIPT_PENDING: ErrorCode = ErrorCode("EXECUTION_RECEIPT_PENDING")
         public val EXTERNAL_SERVICE_ERROR: ErrorCode = ErrorCode("EXTERNAL_SERVICE_ERROR")
         public val FEATURED_SET_CONTENDED: ErrorCode = ErrorCode("FEATURED_SET_CONTENDED")
         public val FEATURE_DISABLED: ErrorCode = ErrorCode("FEATURE_DISABLED")
@@ -13697,6 +13750,7 @@ public value class ErrorCode(public val value: String) {
         public val FILE_TYPE_NOT_ALLOWED: ErrorCode = ErrorCode("FILE_TYPE_NOT_ALLOWED")
         public val FORBIDDEN: ErrorCode = ErrorCode("FORBIDDEN")
         public val GUARDRAIL_VIOLATION: ErrorCode = ErrorCode("GUARDRAIL_VIOLATION")
+        public val IDEMPOTENCY_CONFLICT: ErrorCode = ErrorCode("IDEMPOTENCY_CONFLICT")
         public val IDEMPOTENCY_KEY_REUSED: ErrorCode = ErrorCode("IDEMPOTENCY_KEY_REUSED")
         public val INITIATIVE_BUDGET_EXHAUSTED: ErrorCode = ErrorCode("INITIATIVE_BUDGET_EXHAUSTED")
         public val INITIATIVE_PAUSED: ErrorCode = ErrorCode("INITIATIVE_PAUSED")
@@ -13710,7 +13764,9 @@ public value class ErrorCode(public val value: String) {
         public val INVALID_SHARE_LIST: ErrorCode = ErrorCode("INVALID_SHARE_LIST")
         public val INVALID_SHARE_TARGET: ErrorCode = ErrorCode("INVALID_SHARE_TARGET")
         public val INVALID_STATE_TRANSITION: ErrorCode = ErrorCode("INVALID_STATE_TRANSITION")
+        public val ISOLATION_VIOLATION: ErrorCode = ErrorCode("ISOLATION_VIOLATION")
         public val LLM_ERROR: ErrorCode = ErrorCode("LLM_ERROR")
+        public val MANAGED_AGENT: ErrorCode = ErrorCode("MANAGED_AGENT")
         public val MAX_DURATION_EXCEEDED: ErrorCode = ErrorCode("MAX_DURATION_EXCEEDED")
         public val MAX_TOKENS_EXCEEDED: ErrorCode = ErrorCode("MAX_TOKENS_EXCEEDED")
         public val METHOD_NOT_ALLOWED: ErrorCode = ErrorCode("METHOD_NOT_ALLOWED")
@@ -13728,6 +13784,7 @@ public value class ErrorCode(public val value: String) {
         public val NOT_YANKED: ErrorCode = ErrorCode("NOT_YANKED")
         public val NO_RUNNABLE_TARGET: ErrorCode = ErrorCode("NO_RUNNABLE_TARGET")
         public val OAUTH_FAILED: ErrorCode = ErrorCode("OAUTH_FAILED")
+        public val OUTPUT_TOO_LARGE: ErrorCode = ErrorCode("OUTPUT_TOO_LARGE")
         public val PAYLOAD_TOO_LARGE: ErrorCode = ErrorCode("PAYLOAD_TOO_LARGE")
         public val PERSISTENCE_ERROR: ErrorCode = ErrorCode("PERSISTENCE_ERROR")
         public val PLANNER_OUTPUT_INVALID: ErrorCode = ErrorCode("PLANNER_OUTPUT_INVALID")
@@ -13736,9 +13793,15 @@ public value class ErrorCode(public val value: String) {
         public val PREREQUISITE_MISSING: ErrorCode = ErrorCode("PREREQUISITE_MISSING")
         public val PRICING_UNAVAILABLE: ErrorCode = ErrorCode("PRICING_UNAVAILABLE")
         public val PRIVATE_NOT_SHARED: ErrorCode = ErrorCode("PRIVATE_NOT_SHARED")
+        public val PROCESSING_POLICY_CHANGED: ErrorCode = ErrorCode("PROCESSING_POLICY_CHANGED")
+        public val PROCESSING_POLICY_NOT_READY: ErrorCode = ErrorCode("PROCESSING_POLICY_NOT_READY")
         public val PROMO_REDEMPTION_FAILED: ErrorCode = ErrorCode("PROMO_REDEMPTION_FAILED")
         public val PROPOSAL_EXPIRED: ErrorCode = ErrorCode("PROPOSAL_EXPIRED")
+        public val QUALIFICATION_BUDGET_STOP: ErrorCode = ErrorCode("QUALIFICATION_BUDGET_STOP")
+        public val QUALIFICATION_ROUTE_MISMATCH: ErrorCode = ErrorCode("QUALIFICATION_ROUTE_MISMATCH")
+        public val QUALIFICATION_VERSION_UNAVAILABLE: ErrorCode = ErrorCode("QUALIFICATION_VERSION_UNAVAILABLE")
         public val QUOTA_EXCEEDED: ErrorCode = ErrorCode("QUOTA_EXCEEDED")
+        public val RATE_LIMITED: ErrorCode = ErrorCode("RATE_LIMITED")
         public val RATE_LIMIT_EXCEEDED: ErrorCode = ErrorCode("RATE_LIMIT_EXCEEDED")
         public val REFERENCE_NOT_FOUND: ErrorCode = ErrorCode("REFERENCE_NOT_FOUND")
         public val RESERVED_SCOPE: ErrorCode = ErrorCode("RESERVED_SCOPE")
@@ -13755,12 +13818,28 @@ public value class ErrorCode(public val value: String) {
         public val SIGNING_NOT_CONFIGURED: ErrorCode = ErrorCode("SIGNING_NOT_CONFIGURED")
         public val SIZE_LIMIT: ErrorCode = ErrorCode("SIZE_LIMIT")
         public val SPEC_NOT_FOUND: ErrorCode = ErrorCode("SPEC_NOT_FOUND")
+        public val SPONSORSHIP_BUDGET_BELOW_COMMITTED: ErrorCode = ErrorCode("SPONSORSHIP_BUDGET_BELOW_COMMITTED")
+        public val SPONSORSHIP_BUDGET_EXHAUSTED: ErrorCode = ErrorCode("SPONSORSHIP_BUDGET_EXHAUSTED")
+        public val SPONSORSHIP_CANDIDATE_LIMIT: ErrorCode = ErrorCode("SPONSORSHIP_CANDIDATE_LIMIT")
+        public val SPONSORSHIP_CONCURRENCY_LIMIT: ErrorCode = ErrorCode("SPONSORSHIP_CONCURRENCY_LIMIT")
+        public val SPONSORSHIP_FUNDING_UNAVAILABLE: ErrorCode = ErrorCode("SPONSORSHIP_FUNDING_UNAVAILABLE")
+        public val SPONSORSHIP_GRANT_CONFLICT: ErrorCode = ErrorCode("SPONSORSHIP_GRANT_CONFLICT")
+        public val SPONSORSHIP_GRANT_IN_USE: ErrorCode = ErrorCode("SPONSORSHIP_GRANT_IN_USE")
+        public val SPONSORSHIP_GRANT_MISMATCH: ErrorCode = ErrorCode("SPONSORSHIP_GRANT_MISMATCH")
+        public val SPONSORSHIP_GRANT_UNAVAILABLE: ErrorCode = ErrorCode("SPONSORSHIP_GRANT_UNAVAILABLE")
+        public val SPONSORSHIP_OUTCOME_UNKNOWN: ErrorCode = ErrorCode("SPONSORSHIP_OUTCOME_UNKNOWN")
+        public val SPONSORSHIP_PROGRAM_IMMUTABLE: ErrorCode = ErrorCode("SPONSORSHIP_PROGRAM_IMMUTABLE")
+        public val SPONSORSHIP_PROGRAM_INACTIVE: ErrorCode = ErrorCode("SPONSORSHIP_PROGRAM_INACTIVE")
+        public val SPONSORSHIP_PROGRAM_REVISION_CONFLICT: ErrorCode = ErrorCode("SPONSORSHIP_PROGRAM_REVISION_CONFLICT")
+        public val SPONSORSHIP_REQUIRED: ErrorCode = ErrorCode("SPONSORSHIP_REQUIRED")
+        public val SPONSORSHIP_SCOPE_REQUIRED: ErrorCode = ErrorCode("SPONSORSHIP_SCOPE_REQUIRED")
         public val STARTED_BY_ANOTHER_USER: ErrorCode = ErrorCode("STARTED_BY_ANOTHER_USER")
         public val STRATEGIST_MODEL_UNCONFIGURED: ErrorCode = ErrorCode("STRATEGIST_MODEL_UNCONFIGURED")
         public val TASK_GRAPH_FAILED: ErrorCode = ErrorCode("TASK_GRAPH_FAILED")
         public val TEAM_ABORT: ErrorCode = ErrorCode("TEAM_ABORT")
         public val TERMS_NOT_ACCEPTED: ErrorCode = ErrorCode("TERMS_NOT_ACCEPTED")
         public val TEXT_EXTRACTION_FAILED: ErrorCode = ErrorCode("TEXT_EXTRACTION_FAILED")
+        public val UNAUTHENTICATED: ErrorCode = ErrorCode("UNAUTHENTICATED")
         public val USER_REQUIRED: ErrorCode = ErrorCode("USER_REQUIRED")
         public val VALIDATION_ERROR: ErrorCode = ErrorCode("VALIDATION_ERROR")
         public val VERIFICATION_FAILED: ErrorCode = ErrorCode("VERIFICATION_FAILED")
@@ -13802,7 +13881,7 @@ public value class ErrorCode(public val value: String) {
         public val PROVIDER_NOT_CONFIGURED: ErrorCode = ErrorCode("provider_not_configured")
         public val PROVIDER_RATE_LIMITED: ErrorCode = ErrorCode("provider_rate_limited")
         public val QUOTA_EXCEEDED_: ErrorCode = ErrorCode("quota_exceeded")
-        public val RATE_LIMITED: ErrorCode = ErrorCode("rate_limited")
+        public val RATE_LIMITED_: ErrorCode = ErrorCode("rate_limited")
         public val RESOURCE_LIMIT_REACHED: ErrorCode = ErrorCode("resource_limit_reached")
         public val RUN_APPROVAL_EXPIRED: ErrorCode = ErrorCode("run_approval_expired")
         public val RUN_INPUT_TIMEOUT: ErrorCode = ErrorCode("run_input_timeout")
@@ -13819,7 +13898,7 @@ public value class ErrorCode(public val value: String) {
         public val VIDEO_SLOT_INVALID: ErrorCode = ErrorCode("video_slot_invalid")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, COMPANY_NOT_READY, COMPANY_PAUSED, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FEATURED_SET_CONTENDED, FEATURE_DISABLED, FILE_NOT_FOUND, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_KEY_REUSED, INITIATIVE_BUDGET_EXHAUSTED, INITIATIVE_PAUSED, INTERNAL_ERROR, INVALID_ARCHIVE, INVALID_BODY, INVALID_CURSOR, INVALID_MANIFEST, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, METHOD_NOT_ALLOWED, MIGRATION_CONFLICT, MISSING_FIELD, MISSING_SCOPE, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, PROPOSAL_EXPIRED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SECURITY_SCAN_FAILED, SESSION_NOT_ACTIVE, SHARE_LIST_CONFLICT, SIGNING_NOT_CONFIGURED, SIZE_LIMIT, SPEC_NOT_FOUND, STARTED_BY_ANOTHER_USER, STRATEGIST_MODEL_UNCONFIGURED, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, HIRE_CATALOG_UNKNOWN, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, NOT_HIRED, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
+        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, ASSESSMENT_ISOLATION_REQUIRED, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CLIENT_REQUEST_CONFLICT, COMPANY_NOT_READY, COMPANY_PAUSED, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXECUTION_PROFILE_UNVERIFIABLE, EXECUTION_RECEIPT_PENDING, EXTERNAL_SERVICE_ERROR, FEATURED_SET_CONTENDED, FEATURE_DISABLED, FILE_NOT_FOUND, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_CONFLICT, IDEMPOTENCY_KEY_REUSED, INITIATIVE_BUDGET_EXHAUSTED, INITIATIVE_PAUSED, INTERNAL_ERROR, INVALID_ARCHIVE, INVALID_BODY, INVALID_CURSOR, INVALID_MANIFEST, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, ISOLATION_VIOLATION, LLM_ERROR, MANAGED_AGENT, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, METHOD_NOT_ALLOWED, MIGRATION_CONFLICT, MISSING_FIELD, MISSING_SCOPE, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, OUTPUT_TOO_LARGE, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROCESSING_POLICY_CHANGED, PROCESSING_POLICY_NOT_READY, PROMO_REDEMPTION_FAILED, PROPOSAL_EXPIRED, QUALIFICATION_BUDGET_STOP, QUALIFICATION_ROUTE_MISMATCH, QUALIFICATION_VERSION_UNAVAILABLE, QUOTA_EXCEEDED, RATE_LIMITED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SECURITY_SCAN_FAILED, SESSION_NOT_ACTIVE, SHARE_LIST_CONFLICT, SIGNING_NOT_CONFIGURED, SIZE_LIMIT, SPEC_NOT_FOUND, SPONSORSHIP_BUDGET_BELOW_COMMITTED, SPONSORSHIP_BUDGET_EXHAUSTED, SPONSORSHIP_CANDIDATE_LIMIT, SPONSORSHIP_CONCURRENCY_LIMIT, SPONSORSHIP_FUNDING_UNAVAILABLE, SPONSORSHIP_GRANT_CONFLICT, SPONSORSHIP_GRANT_IN_USE, SPONSORSHIP_GRANT_MISMATCH, SPONSORSHIP_GRANT_UNAVAILABLE, SPONSORSHIP_OUTCOME_UNKNOWN, SPONSORSHIP_PROGRAM_IMMUTABLE, SPONSORSHIP_PROGRAM_INACTIVE, SPONSORSHIP_PROGRAM_REVISION_CONFLICT, SPONSORSHIP_REQUIRED, SPONSORSHIP_SCOPE_REQUIRED, STARTED_BY_ANOTHER_USER, STRATEGIST_MODEL_UNCONFIGURED, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, UNAUTHENTICATED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, HIRE_CATALOG_UNKNOWN, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, NOT_HIRED, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED_, RESOURCE_LIMIT_REACHED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
     }
 }
 
@@ -14969,6 +15048,14 @@ public data class GetActivityFeedResponse(
 @Serializable
 public data class GetAdminBlogConfigResponse(
     public val config: BlogConfig,
+)
+
+/**
+ * `GetAdminDataProcessingPolicyResponse` model.
+ */
+@Serializable
+public data class GetAdminDataProcessingPolicyResponse(
+    public val current: JsonObject? = null,
 )
 
 /**
@@ -16863,6 +16950,23 @@ public data class GetRunQueuePositionResponse(
  */
 @Serializable
 public data class GetRunResponse(
+    /**
+     * Sponsored qualification runs only: the requirements the run was admitted under, stored as
+     * accepted.
+     */
+    @SerialName("execution_requirements")
+    public val executionRequirements: QualificationExecutionRequirementsV2? = null,
+    /**
+     * Sponsored qualification runs only: until when the run is recoverable by its client request
+     * id.
+     */
+    @SerialName("recovery_expires_at_unix")
+    public val recoveryExpiresAtUnix: Long? = null,
+    /**
+     * Sponsored qualification runs only: the grant that paid for it.
+     */
+    @SerialName("sponsorship_grant_id")
+    public val sponsorshipGrantId: String? = null,
     /**
      * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
      * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
@@ -29281,6 +29385,1341 @@ public data class PutCareersConfigResponse(
 )
 
 /**
+ * `PutQualificationPricingRevisionRequest` model.
+ */
+@Serializable
+public data class PutQualificationPricingRevisionRequest(
+    public val provider: String,
+    public val model: String,
+    @SerialName("input_microusd_per_million_tokens")
+    public val inputMicrousdPerMillionTokens: QualificationPositiveMicrousd,
+    @SerialName("output_microusd_per_million_tokens")
+    public val outputMicrousdPerMillionTokens: QualificationPositiveMicrousd,
+)
+
+/**
+ * `PutQualificationSponsorKeyRequest` model.
+ */
+@Serializable
+public data class PutQualificationSponsorKeyRequest(
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val programs: List<String>,
+)
+
+/**
+ * Prepared Nestor message only. No files or attachments. Source is untrusted data and must not
+ * become instructions.
+ */
+@Serializable
+public data class QualificationAssessmentInputMessage(
+    public val message: String,
+)
+
+/**
+ * policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+ * incomplete readiness. confirmed requires current verified terms, not_used training and no
+ * unknown storage categories.
+ */
+@Serializable
+public data class QualificationConfirmedPolicyResponse(
+    public val kind: JsonElement,
+    public val policy: QualificationConfirmedProcessingPolicy,
+    @SerialName("policy_hash")
+    public val policyHash: QualificationDigest,
+    public val readiness: QualificationConfirmedPolicyResponseReadiness,
+    public val blockers: List<QualificationConfirmedPolicyResponseBlocker>,
+)
+
+/**
+ * `QualificationConfirmedPolicyResponseBlocker` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationConfirmedPolicyResponseBlockerSerializer::class)
+@JvmInline
+public value class QualificationConfirmedPolicyResponseBlocker(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val POLICY_NOT_CONFIGURED: QualificationConfirmedPolicyResponseBlocker = QualificationConfirmedPolicyResponseBlocker("POLICY_NOT_CONFIGURED")
+        public val RETENTION_UNKNOWN: QualificationConfirmedPolicyResponseBlocker = QualificationConfirmedPolicyResponseBlocker("RETENTION_UNKNOWN")
+        public val LLM_TRAINING_UNCONFIRMED: QualificationConfirmedPolicyResponseBlocker = QualificationConfirmedPolicyResponseBlocker("LLM_TRAINING_UNCONFIRMED")
+        public val LLM_TRAINING_USED: QualificationConfirmedPolicyResponseBlocker = QualificationConfirmedPolicyResponseBlocker("LLM_TRAINING_USED")
+        public val PROCESSOR_UNCONFIRMED: QualificationConfirmedPolicyResponseBlocker = QualificationConfirmedPolicyResponseBlocker("PROCESSOR_UNCONFIRMED")
+        public val EVIDENCE_UNCONFIRMED: QualificationConfirmedPolicyResponseBlocker = QualificationConfirmedPolicyResponseBlocker("EVIDENCE_UNCONFIRMED")
+        public val POLICY_EXPIRED: QualificationConfirmedPolicyResponseBlocker = QualificationConfirmedPolicyResponseBlocker("POLICY_EXPIRED")
+        public val POLICY_REVOKED: QualificationConfirmedPolicyResponseBlocker = QualificationConfirmedPolicyResponseBlocker("POLICY_REVOKED")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationConfirmedPolicyResponseBlocker> = listOf(POLICY_NOT_CONFIGURED, RETENTION_UNKNOWN, LLM_TRAINING_UNCONFIRMED, LLM_TRAINING_USED, PROCESSOR_UNCONFIRMED, EVIDENCE_UNCONFIRMED, POLICY_EXPIRED, POLICY_REVOKED)
+    }
+}
+
+public object QualificationConfirmedPolicyResponseBlockerSerializer : KSerializer<QualificationConfirmedPolicyResponseBlocker> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationConfirmedPolicyResponseBlocker", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationConfirmedPolicyResponseBlocker): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationConfirmedPolicyResponseBlocker = QualificationConfirmedPolicyResponseBlocker(decoder.decodeString())
+}
+
+/**
+ * `QualificationConfirmedPolicyResponseReadiness` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationConfirmedPolicyResponseReadinessSerializer::class)
+@JvmInline
+public value class QualificationConfirmedPolicyResponseReadiness(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val CONFIRMED: QualificationConfirmedPolicyResponseReadiness = QualificationConfirmedPolicyResponseReadiness("confirmed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationConfirmedPolicyResponseReadiness> = listOf(CONFIRMED)
+    }
+}
+
+public object QualificationConfirmedPolicyResponseReadinessSerializer : KSerializer<QualificationConfirmedPolicyResponseReadiness> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationConfirmedPolicyResponseReadiness", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationConfirmedPolicyResponseReadiness): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationConfirmedPolicyResponseReadiness = QualificationConfirmedPolicyResponseReadiness(decoder.decodeString())
+}
+
+/**
+ * Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+ * 86400 seconds later. recovery_window_seconds is the minimum durable client request
+ * reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+ * run records or receipt identifiers persist.
+ */
+@Serializable
+public data class QualificationConfirmedProcessingPolicy(
+    @SerialName("schema_version")
+    public val schemaVersion: JsonElement,
+    public val id: String,
+    public val revision: Long,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val purpose: JsonElement,
+    public val recipient: JsonElement,
+    @SerialName("processor_name")
+    public val processorName: String,
+    @SerialName("processing_region")
+    public val processingRegion: String,
+    @SerialName("llm_training_use")
+    public val llmTrainingUse: JsonElement,
+    @SerialName("archive_enabled")
+    public val archiveEnabled: Boolean,
+    public val storage: QualificationConfirmedStoragePolicy,
+    @SerialName("evidence_hash")
+    public val evidenceHash: QualificationDigest,
+    @SerialName("recovery_window_seconds")
+    public val recoveryWindowSeconds: Long,
+    @SerialName("observed_at_unix")
+    public val observedAtUnix: Long,
+    @SerialName("expires_at_unix")
+    public val expiresAtUnix: Long,
+)
+
+public typealias QualificationConfirmedRetentionRule = JsonElement
+
+/**
+ * `QualificationConfirmedRetentionRuleVariant1` model.
+ */
+@Serializable
+public data class QualificationConfirmedRetentionRuleVariant1(
+    public val mode: JsonElement,
+    @SerialName("max_seconds")
+    public val maxSeconds: Long,
+)
+
+/**
+ * `QualificationConfirmedRetentionRuleVariant2` model.
+ */
+@Serializable
+public data class QualificationConfirmedRetentionRuleVariant2(
+    public val mode: JsonElement,
+    @SerialName("max_seconds")
+    public val maxSeconds: JsonElement,
+)
+
+/**
+ * `QualificationConfirmedRetentionRuleVariant3` model.
+ */
+@Serializable
+public data class QualificationConfirmedRetentionRuleVariant3(
+    public val mode: QualificationConfirmedRetentionRuleVariant3mode,
+    @SerialName("max_seconds")
+    public val maxSeconds: JsonElement? = null,
+)
+
+/**
+ * `QualificationConfirmedRetentionRuleVariant3mode` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationConfirmedRetentionRuleVariant3modeSerializer::class)
+@JvmInline
+public value class QualificationConfirmedRetentionRuleVariant3mode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val INDEFINITE: QualificationConfirmedRetentionRuleVariant3mode = QualificationConfirmedRetentionRuleVariant3mode("indefinite")
+        public val NOT_APPLICABLE: QualificationConfirmedRetentionRuleVariant3mode = QualificationConfirmedRetentionRuleVariant3mode("not_applicable")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationConfirmedRetentionRuleVariant3mode> = listOf(INDEFINITE, NOT_APPLICABLE)
+    }
+}
+
+public object QualificationConfirmedRetentionRuleVariant3modeSerializer : KSerializer<QualificationConfirmedRetentionRuleVariant3mode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationConfirmedRetentionRuleVariant3mode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationConfirmedRetentionRuleVariant3mode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationConfirmedRetentionRuleVariant3mode = QualificationConfirmedRetentionRuleVariant3mode(decoder.decodeString())
+}
+
+/**
+ * `QualificationConfirmedStoragePolicy` model.
+ */
+@Serializable
+public data class QualificationConfirmedStoragePolicy(
+    public val runs: QualificationConfirmedRetentionRule,
+    public val events: QualificationConfirmedRetentionRule,
+    public val artifacts: QualificationConfirmedRetentionRule,
+    public val checkpoints: QualificationConfirmedRetentionRule,
+    public val archives: QualificationConfirmedRetentionRule,
+    public val backups: QualificationConfirmedRetentionRule,
+    public val llm: QualificationConfirmedRetentionRule,
+)
+
+public typealias QualificationDigest = String
+
+/**
+ * receipt_hash binds only receipt. profile_status and its observation time are current
+ * server-owned validity outside immutable history. Authenticated HTTPS readback is mandatory;
+ * a hash alone does not authenticate a server.
+ */
+@Serializable
+public data class QualificationExecutionReceiptResponseV2(
+    public val kind: JsonElement,
+    public val receipt: QualificationExecutionReceiptV2,
+    @SerialName("receipt_hash")
+    public val receiptHash: QualificationDigest,
+    @SerialName("profile_status")
+    public val profileStatus: QualificationExecutionReceiptResponseV2profileStatus,
+    @SerialName("profile_status_observed_at_unix")
+    public val profileStatusObservedAtUnix: Long,
+)
+
+/**
+ * `QualificationExecutionReceiptResponseV2profileStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationExecutionReceiptResponseV2profileStatusSerializer::class)
+@JvmInline
+public value class QualificationExecutionReceiptResponseV2profileStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ACTIVE: QualificationExecutionReceiptResponseV2profileStatus = QualificationExecutionReceiptResponseV2profileStatus("active")
+        public val REVOKED: QualificationExecutionReceiptResponseV2profileStatus = QualificationExecutionReceiptResponseV2profileStatus("revoked")
+        public val UNKNOWN: QualificationExecutionReceiptResponseV2profileStatus = QualificationExecutionReceiptResponseV2profileStatus("unknown")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationExecutionReceiptResponseV2profileStatus> = listOf(ACTIVE, REVOKED, UNKNOWN)
+    }
+}
+
+public object QualificationExecutionReceiptResponseV2profileStatusSerializer : KSerializer<QualificationExecutionReceiptResponseV2profileStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationExecutionReceiptResponseV2profileStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationExecutionReceiptResponseV2profileStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationExecutionReceiptResponseV2profileStatus = QualificationExecutionReceiptResponseV2profileStatus(decoder.decodeString())
+}
+
+public typealias QualificationExecutionReceiptV2 = JsonElement
+
+/**
+ * Hash material only, never accepted by POST /runs. Omit exactly sponsorship_grant_id to avoid
+ * a circular grant/hash dependency.
+ */
+@Serializable
+public data class QualificationExecutionRequirementsBeforeGrantV2(
+    @SerialName("schema_version")
+    public val schemaVersion: JsonElement,
+    public val purpose: JsonElement,
+    @SerialName("client_request_id")
+    public val clientRequestId: String,
+    @SerialName("processing_policy_id")
+    public val processingPolicyId: String,
+    @SerialName("processing_policy_hash")
+    public val processingPolicyHash: QualificationDigest,
+    @SerialName("isolation_profile")
+    public val isolationProfile: JsonElement,
+    @SerialName("require_verifiable_execution")
+    public val requireVerifiableExecution: Boolean,
+    @SerialName("expected_execution_profile_hash")
+    public val expectedExecutionProfileHash: QualificationDigest? = null,
+)
+
+/**
+ * Closed sponsored v2. Existing v1 remains unchanged. Phase A uses false/null; strict mode
+ * still requires independently accepted evidence/calibration.
+ */
+@Serializable
+public data class QualificationExecutionRequirementsV2(
+    @SerialName("schema_version")
+    public val schemaVersion: JsonElement,
+    public val purpose: JsonElement,
+    @SerialName("client_request_id")
+    public val clientRequestId: String,
+    @SerialName("processing_policy_id")
+    public val processingPolicyId: String,
+    @SerialName("processing_policy_hash")
+    public val processingPolicyHash: QualificationDigest,
+    @SerialName("isolation_profile")
+    public val isolationProfile: JsonElement,
+    @SerialName("require_verifiable_execution")
+    public val requireVerifiableExecution: Boolean,
+    @SerialName("expected_execution_profile_hash")
+    public val expectedExecutionProfileHash: QualificationDigest? = null,
+    @SerialName("sponsorship_grant_id")
+    public val sponsorshipGrantId: String,
+)
+
+/**
+ * One immutable settlement per grant, later corrections are unique append-only credits, never
+ * additional debits. Unknown-cost cap is a conservative sponsor charge, not provider actual
+ * cost.
+ */
+@Serializable
+public data class QualificationGrant(
+    public val authorization: QualificationGrantAuthorization,
+    @SerialName("grant_hash")
+    public val grantHash: QualificationDigest,
+    public val status: QualificationGrantStatus,
+    @SerialName("run_id")
+    public val runId: String? = null,
+    @SerialName("charged_microusd")
+    public val chargedMicrousd: QualificationMicrousd? = null,
+    @SerialName("refunded_microusd")
+    public val refundedMicrousd: QualificationMicrousd,
+    @SerialName("billing_basis")
+    public val billingBasis: QualificationGrantBillingBasisVariant1? = null,
+    @SerialName("unknown_cost_reason")
+    public val unknownCostReason: QualificationGrantUnknownCostReasonVariant1? = null,
+    @SerialName("settlement_id")
+    public val settlementId: String? = null,
+)
+
+/**
+ * Immutable server authorization snapshot. grant_hash hashes only this object, not mutable
+ * envelope fields.
+ */
+@Serializable
+public data class QualificationGrantAuthorization(
+    @SerialName("grant_id")
+    public val grantId: String,
+    @SerialName("program_id")
+    public val programId: String,
+    public val purpose: JsonElement,
+    @SerialName("candidate_tenant_id")
+    public val candidateTenantId: String,
+    @SerialName("candidate_user_id")
+    public val candidateUserId: String,
+    @SerialName("client_request_id")
+    public val clientRequestId: String,
+    @SerialName("run_input_hash")
+    public val runInputHash: QualificationDigest,
+    @SerialName("run_authorization_hash")
+    public val runAuthorizationHash: QualificationDigest,
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("agent_version_id")
+    public val agentVersionId: String,
+    @SerialName("agent_version")
+    public val agentVersion: Long,
+    @SerialName("template_hash")
+    public val templateHash: QualificationDigest,
+    /**
+     * Positive integer micro-USD string, at most USD 1.
+     */
+    @SerialName("max_cost_microusd")
+    public val maxCostMicrousd: String,
+    @SerialName("expires_at_unix")
+    public val expiresAtUnix: Long,
+    @SerialName("pricing_revision")
+    public val pricingRevision: String,
+    @SerialName("created_at_unix")
+    public val createdAtUnix: Long,
+)
+
+/**
+ * `QualificationGrantBillingBasisVariant1` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationGrantBillingBasisVariant1Serializer::class)
+@JvmInline
+public value class QualificationGrantBillingBasisVariant1(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val METERED: QualificationGrantBillingBasisVariant1 = QualificationGrantBillingBasisVariant1("metered")
+        public val RESERVED_CAP_UNKNOWN: QualificationGrantBillingBasisVariant1 = QualificationGrantBillingBasisVariant1("reserved_cap_unknown")
+        public val NO_DISPATCH: QualificationGrantBillingBasisVariant1 = QualificationGrantBillingBasisVariant1("no_dispatch")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationGrantBillingBasisVariant1> = listOf(METERED, RESERVED_CAP_UNKNOWN, NO_DISPATCH)
+    }
+}
+
+public object QualificationGrantBillingBasisVariant1Serializer : KSerializer<QualificationGrantBillingBasisVariant1> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationGrantBillingBasisVariant1", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationGrantBillingBasisVariant1): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationGrantBillingBasisVariant1 = QualificationGrantBillingBasisVariant1(decoder.decodeString())
+}
+
+/**
+ * No raw input, credential or payer override. Canonical body hash binds expiry too. Unique
+ * durable program/tenant/user/client_request_id; replay returns original grant current state,
+ * never another reserve.
+ */
+@Serializable
+public data class QualificationGrantCreate(
+    @SerialName("program_id")
+    public val programId: String,
+    public val purpose: JsonElement,
+    @SerialName("candidate_tenant_id")
+    public val candidateTenantId: String,
+    @SerialName("candidate_user_id")
+    public val candidateUserId: String,
+    @SerialName("client_request_id")
+    public val clientRequestId: String,
+    @SerialName("run_input_hash")
+    public val runInputHash: QualificationDigest,
+    @SerialName("run_authorization_hash")
+    public val runAuthorizationHash: QualificationDigest,
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("agent_version_id")
+    public val agentVersionId: String,
+    @SerialName("agent_version")
+    public val agentVersion: Long,
+    @SerialName("template_hash")
+    public val templateHash: QualificationDigest,
+    /**
+     * Positive integer micro-USD string, at most USD 1.
+     */
+    @SerialName("max_cost_microusd")
+    public val maxCostMicrousd: String,
+    @SerialName("expires_at_unix")
+    public val expiresAtUnix: Long,
+)
+
+/**
+ * `QualificationGrantPage` model.
+ */
+@Serializable
+public data class QualificationGrantPage(
+    public val items: List<QualificationGrant>,
+    @SerialName("has_more")
+    public val hasMore: JsonElement,
+    public val cursor: JsonElement? = null,
+)
+
+/**
+ * `QualificationGrantStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationGrantStatusSerializer::class)
+@JvmInline
+public value class QualificationGrantStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RESERVED: QualificationGrantStatus = QualificationGrantStatus("reserved")
+        public val CONSUMED: QualificationGrantStatus = QualificationGrantStatus("consumed")
+        public val SETTLED: QualificationGrantStatus = QualificationGrantStatus("settled")
+        public val RELEASED: QualificationGrantStatus = QualificationGrantStatus("released")
+        public val EXPIRED: QualificationGrantStatus = QualificationGrantStatus("expired")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationGrantStatus> = listOf(RESERVED, CONSUMED, SETTLED, RELEASED, EXPIRED)
+    }
+}
+
+public object QualificationGrantStatusSerializer : KSerializer<QualificationGrantStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationGrantStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationGrantStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationGrantStatus = QualificationGrantStatus(decoder.decodeString())
+}
+
+/**
+ * `QualificationGrantUnknownCostReasonVariant1` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationGrantUnknownCostReasonVariant1Serializer::class)
+@JvmInline
+public value class QualificationGrantUnknownCostReasonVariant1(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val PROVIDER_OUTCOME_UNKNOWN: QualificationGrantUnknownCostReasonVariant1 = QualificationGrantUnknownCostReasonVariant1("provider_outcome_unknown")
+        public val ATTEMPT_LEDGER_INCOMPLETE: QualificationGrantUnknownCostReasonVariant1 = QualificationGrantUnknownCostReasonVariant1("attempt_ledger_incomplete")
+        public val PRICING_OBSERVATION_INCOMPLETE: QualificationGrantUnknownCostReasonVariant1 = QualificationGrantUnknownCostReasonVariant1("pricing_observation_incomplete")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationGrantUnknownCostReasonVariant1> = listOf(PROVIDER_OUTCOME_UNKNOWN, ATTEMPT_LEDGER_INCOMPLETE, PRICING_OBSERVATION_INCOMPLETE)
+    }
+}
+
+public object QualificationGrantUnknownCostReasonVariant1Serializer : KSerializer<QualificationGrantUnknownCostReasonVariant1> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationGrantUnknownCostReasonVariant1", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationGrantUnknownCostReasonVariant1): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationGrantUnknownCostReasonVariant1 = QualificationGrantUnknownCostReasonVariant1(decoder.decodeString())
+}
+
+/**
+ * policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+ * incomplete readiness. confirmed requires current verified terms, not_used training and no
+ * unknown storage categories.
+ */
+@Serializable
+public data class QualificationInactivePolicyResponse(
+    public val kind: JsonElement,
+    public val policy: QualificationProcessingPolicy,
+    @SerialName("policy_hash")
+    public val policyHash: QualificationDigest,
+    public val readiness: QualificationInactivePolicyResponseReadiness,
+    public val blockers: List<QualificationConfirmedPolicyResponseBlocker>,
+)
+
+/**
+ * `QualificationInactivePolicyResponseReadiness` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationInactivePolicyResponseReadinessSerializer::class)
+@JvmInline
+public value class QualificationInactivePolicyResponseReadiness(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val EXPIRED: QualificationInactivePolicyResponseReadiness = QualificationInactivePolicyResponseReadiness("expired")
+        public val REVOKED: QualificationInactivePolicyResponseReadiness = QualificationInactivePolicyResponseReadiness("revoked")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationInactivePolicyResponseReadiness> = listOf(EXPIRED, REVOKED)
+    }
+}
+
+public object QualificationInactivePolicyResponseReadinessSerializer : KSerializer<QualificationInactivePolicyResponseReadiness> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationInactivePolicyResponseReadiness", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationInactivePolicyResponseReadiness): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationInactivePolicyResponseReadiness = QualificationInactivePolicyResponseReadiness(decoder.decodeString())
+}
+
+/**
+ * policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+ * incomplete readiness. confirmed requires current verified terms, not_used training and no
+ * unknown storage categories.
+ */
+@Serializable
+public data class QualificationIncompletePolicyResponse(
+    public val kind: JsonElement,
+    public val policy: QualificationProcessingPolicy,
+    @SerialName("policy_hash")
+    public val policyHash: QualificationDigest,
+    public val readiness: QualificationIncompletePolicyResponseReadiness,
+    public val blockers: List<QualificationConfirmedPolicyResponseBlocker>,
+)
+
+/**
+ * `QualificationIncompletePolicyResponseReadiness` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationIncompletePolicyResponseReadinessSerializer::class)
+@JvmInline
+public value class QualificationIncompletePolicyResponseReadiness(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val INCOMPLETE: QualificationIncompletePolicyResponseReadiness = QualificationIncompletePolicyResponseReadiness("incomplete")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationIncompletePolicyResponseReadiness> = listOf(INCOMPLETE)
+    }
+}
+
+public object QualificationIncompletePolicyResponseReadinessSerializer : KSerializer<QualificationIncompletePolicyResponseReadiness> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationIncompletePolicyResponseReadiness", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationIncompletePolicyResponseReadiness): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationIncompletePolicyResponseReadiness = QualificationIncompletePolicyResponseReadiness(decoder.decodeString())
+}
+
+/**
+ * One private managed binding per tenant/purpose; immutable applied version and template,
+ * independent of personal agent/version caps. Readback with candidate credential required.
+ */
+@Serializable
+public data class QualificationManagedEvaluator(
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("agent_version_id")
+    public val agentVersionId: String,
+    @SerialName("agent_version")
+    public val agentVersion: Long,
+    @SerialName("template_revision")
+    public val templateRevision: Long,
+    @SerialName("template_hash")
+    public val templateHash: QualificationDigest,
+    @SerialName("managed_by")
+    public val managedBy: JsonElement,
+    public val governance: QualificationManagedEvaluatorGovernance,
+)
+
+/**
+ * `QualificationManagedEvaluatorGovernance` model.
+ */
+@Serializable
+public data class QualificationManagedEvaluatorGovernance(
+    @SerialName("can_spawn")
+    public val canSpawn: JsonElement,
+    @SerialName("max_spawn_depth")
+    public val maxSpawnDepth: JsonElement,
+    @SerialName("can_self_modify")
+    public val canSelfModify: JsonElement,
+    @SerialName("max_budget_per_run_usd")
+    public val maxBudgetPerRunUsd: JsonElement,
+)
+
+/**
+ * Integer micro-USD string. 1000000 = USD 1. No float or FX.
+ */
+public typealias QualificationMicrousd = String
+
+/**
+ * policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+ * incomplete readiness. confirmed requires current verified terms, not_used training and no
+ * unknown storage categories.
+ */
+@Serializable
+public data class QualificationMissingPolicyResponse(
+    public val kind: JsonElement,
+    public val policy: JsonElement? = null,
+    @SerialName("policy_hash")
+    public val policyHash: JsonElement? = null,
+    public val readiness: QualificationIncompletePolicyResponseReadiness,
+    public val blockers: List<QualificationConfirmedPolicyResponseBlocker>,
+)
+
+public typealias QualificationPositiveMicrousd = String
+
+/**
+ * Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+ * 86400 seconds later. recovery_window_seconds is the minimum durable client request
+ * reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+ * run records or receipt identifiers persist.
+ */
+@Serializable
+public data class QualificationProcessingPolicy(
+    @SerialName("schema_version")
+    public val schemaVersion: JsonElement,
+    public val id: String,
+    public val revision: Long,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val purpose: JsonElement,
+    public val recipient: JsonElement,
+    @SerialName("processor_name")
+    public val processorName: String? = null,
+    @SerialName("processing_region")
+    public val processingRegion: String? = null,
+    @SerialName("llm_training_use")
+    public val llmTrainingUse: QualificationProcessingPolicyLLMTrainingUse,
+    @SerialName("archive_enabled")
+    public val archiveEnabled: Boolean? = null,
+    public val storage: QualificationStoragePolicy,
+    @SerialName("evidence_hash")
+    public val evidenceHash: QualificationDigest? = null,
+    @SerialName("recovery_window_seconds")
+    public val recoveryWindowSeconds: Long,
+    @SerialName("observed_at_unix")
+    public val observedAtUnix: Long,
+    @SerialName("expires_at_unix")
+    public val expiresAtUnix: Long,
+)
+
+/**
+ * `QualificationProcessingPolicyLLMTrainingUse` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationProcessingPolicyLLMTrainingUseSerializer::class)
+@JvmInline
+public value class QualificationProcessingPolicyLLMTrainingUse(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val NOT_USED: QualificationProcessingPolicyLLMTrainingUse = QualificationProcessingPolicyLLMTrainingUse("not_used")
+        public val USED: QualificationProcessingPolicyLLMTrainingUse = QualificationProcessingPolicyLLMTrainingUse("used")
+        public val UNKNOWN: QualificationProcessingPolicyLLMTrainingUse = QualificationProcessingPolicyLLMTrainingUse("unknown")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationProcessingPolicyLLMTrainingUse> = listOf(NOT_USED, USED, UNKNOWN)
+    }
+}
+
+public object QualificationProcessingPolicyLLMTrainingUseSerializer : KSerializer<QualificationProcessingPolicyLLMTrainingUse> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationProcessingPolicyLLMTrainingUse", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationProcessingPolicyLLMTrainingUse): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationProcessingPolicyLLMTrainingUse = QualificationProcessingPolicyLLMTrainingUse(decoder.decodeString())
+}
+
+public typealias QualificationProcessingPolicyResponse = JsonElement
+
+/**
+ * budget_limit = reserved + spent + remaining, exact integer arithmetic. Configuration
+ * revision is not incremented for ledger activity.
+ */
+@Serializable
+public data class QualificationProgram(
+    @SerialName("program_id")
+    public val programId: String,
+    public val revision: Long,
+    public val purpose: JsonElement,
+    @SerialName("sponsor_tenant_id")
+    public val sponsorTenantId: String,
+    @SerialName("budget_limit_microusd")
+    public val budgetLimitMicrousd: QualificationPositiveMicrousd,
+    @SerialName("reserved_microusd")
+    public val reservedMicrousd: QualificationMicrousd,
+    @SerialName("spent_microusd")
+    public val spentMicrousd: QualificationMicrousd,
+    @SerialName("remaining_microusd")
+    public val remainingMicrousd: QualificationMicrousd,
+    @SerialName("pricing_revision")
+    public val pricingRevision: String,
+    public val limits: QualificationProgramLimits,
+    public val active: Boolean,
+)
+
+/**
+ * Every cap is required. Per-run cap <=1000000 and daily amount >= per-run cap are server
+ * invariants. Daily counters aggregate the same user across candidate tenants. Reserved and
+ * consumed grants both occupy active slots.
+ */
+@Serializable
+public data class QualificationProgramLimits(
+    /**
+     * Positive integer micro-USD string, at most USD 1.
+     */
+    @SerialName("max_cost_per_run_microusd")
+    public val maxCostPerRunMicrousd: String,
+    @SerialName("max_grants_per_candidate_per_utc_day")
+    public val maxGrantsPerCandidatePerUtcDay: Long,
+    @SerialName("max_issued_per_candidate_per_utc_day_microusd")
+    public val maxIssuedPerCandidatePerUtcDayMicrousd: QualificationPositiveMicrousd,
+    @SerialName("max_active_grants_per_candidate")
+    public val maxActiveGrantsPerCandidate: Long,
+    @SerialName("max_active_grants")
+    public val maxActiveGrants: Long,
+    @SerialName("grant_ttl_seconds_max")
+    public val grantTtlSecondsMax: Long,
+    @SerialName("max_attempts_per_run")
+    public val maxAttemptsPerRun: JsonElement,
+)
+
+/**
+ * Full configuration replacement, not merge. Initial expected_revision=0. Immutable
+ * purpose/sponsor/pricing. Funded ceiling, not mint/charge endpoint. Ceiling cannot fall below
+ * spent+reserved.
+ */
+@Serializable
+public data class QualificationProgramPut(
+    @SerialName("expected_revision")
+    public val expectedRevision: Long,
+    public val purpose: JsonElement,
+    @SerialName("sponsor_tenant_id")
+    public val sponsorTenantId: String,
+    @SerialName("budget_limit_microusd")
+    public val budgetLimitMicrousd: QualificationPositiveMicrousd,
+    @SerialName("pricing_revision")
+    public val pricingRevision: String,
+    public val limits: QualificationProgramLimits,
+    public val active: Boolean,
+)
+
+/**
+ * `QualificationReceiptPending` model.
+ */
+@Serializable
+public data class QualificationReceiptPending(
+    public val code: JsonElement,
+    @SerialName("run_id")
+    public val runId: String,
+)
+
+public typealias QualificationRetentionRule = JsonElement
+
+/**
+ * `QualificationRetentionRuleVariant1` model.
+ */
+@Serializable
+public data class QualificationRetentionRuleVariant1(
+    public val mode: JsonElement,
+    @SerialName("max_seconds")
+    public val maxSeconds: Long,
+)
+
+/**
+ * `QualificationRetentionRuleVariant2` model.
+ */
+@Serializable
+public data class QualificationRetentionRuleVariant2(
+    public val mode: JsonElement,
+    @SerialName("max_seconds")
+    public val maxSeconds: JsonElement,
+)
+
+/**
+ * `QualificationRetentionRuleVariant3` model.
+ */
+@Serializable
+public data class QualificationRetentionRuleVariant3(
+    public val mode: QualificationRetentionRuleVariant3mode,
+    @SerialName("max_seconds")
+    public val maxSeconds: JsonElement? = null,
+)
+
+/**
+ * `QualificationRetentionRuleVariant3mode` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationRetentionRuleVariant3modeSerializer::class)
+@JvmInline
+public value class QualificationRetentionRuleVariant3mode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val INDEFINITE: QualificationRetentionRuleVariant3mode = QualificationRetentionRuleVariant3mode("indefinite")
+        public val NOT_APPLICABLE: QualificationRetentionRuleVariant3mode = QualificationRetentionRuleVariant3mode("not_applicable")
+        public val UNKNOWN: QualificationRetentionRuleVariant3mode = QualificationRetentionRuleVariant3mode("unknown")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationRetentionRuleVariant3mode> = listOf(INDEFINITE, NOT_APPLICABLE, UNKNOWN)
+    }
+}
+
+public object QualificationRetentionRuleVariant3modeSerializer : KSerializer<QualificationRetentionRuleVariant3mode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationRetentionRuleVariant3mode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationRetentionRuleVariant3mode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationRetentionRuleVariant3mode = QualificationRetentionRuleVariant3mode(decoder.decodeString())
+}
+
+/**
+ * Hash material, not a createRun command.
+ */
+@Serializable
+public data class QualificationRunBeforeGrantV2(
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val version: Long,
+    public val input: QualificationAssessmentInputMessage,
+    @SerialName("resource_limits")
+    public val resourceLimits: QualificationSponsoredLimits,
+    public val metadata: QualificationRunMetadata,
+    @SerialName("execution_requirements")
+    public val executionRequirements: QualificationExecutionRequirementsBeforeGrantV2,
+)
+
+/**
+ * Exact canonical metadata is hashed. No credentials, raw code or security authority in
+ * metadata.
+ */
+public typealias QualificationRunMetadata = Map<String, JsonElement>
+
+/**
+ * Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+ * as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+ * required fields cannot be stated.
+ */
+@Serializable
+public data class QualificationSafetyObservations(
+    @SerialName("trace_complete")
+    public val traceComplete: Boolean,
+    @SerialName("tool_calls_count")
+    public val toolCallsCount: Long,
+    @SerialName("memory_retrievals")
+    public val memoryRetrievals: Long,
+    @SerialName("memory_extractions")
+    public val memoryExtractions: Long,
+    @SerialName("spawned_agents_count")
+    public val spawnedAgentsCount: Long,
+    @SerialName("guardrail_violations")
+    public val guardrailViolations: Long,
+    @SerialName("llm_calls_count")
+    public val llmCallsCount: Long,
+    @SerialName("steps_count")
+    public val stepsCount: Long,
+    @SerialName("duration_ms")
+    public val durationMs: Double,
+    @SerialName("input_tokens")
+    public val inputTokens: Long,
+    @SerialName("output_tokens")
+    public val outputTokens: Long,
+    @SerialName("total_cost_usd")
+    public val totalCostUsd: Double,
+    public val truncated: Boolean,
+    @SerialName("continuation_used")
+    public val continuationUsed: Boolean,
+)
+
+/**
+ * Wire-compatible limits. Actual tool calls are forbidden by isolation regardless of
+ * max_tool_calls=1. Aggregate budgets include all attempts.
+ */
+@Serializable
+public data class QualificationSponsoredLimits(
+    @SerialName("max_duration_ms")
+    public val maxDurationMs: JsonElement,
+    @SerialName("max_steps")
+    public val maxSteps: JsonElement,
+    @SerialName("max_tool_calls")
+    public val maxToolCalls: JsonElement,
+    @SerialName("max_tokens_per_run")
+    public val maxTokensPerRun: JsonElement,
+    /**
+     * Legacy run DTO unit. Must convert exactly to integer micro-USD and be <= grant cap. No
+     * rounding up or silently raising the grant.
+     */
+    @SerialName("max_cost_usd")
+    public val maxCostUsd: Double,
+)
+
+/**
+ * JCS SHA-256 of this exact object is run_authorization_hash. UARP reconstructs it from the
+ * authenticated user, grant and immutable evaluator/run facts, never trusting metadata as
+ * authority.
+ */
+@Serializable
+public data class QualificationSponsoredRunAuthorizationMaterial(
+    @SerialName("schema_version")
+    public val schemaVersion: JsonElement,
+    @SerialName("program_id")
+    public val programId: String,
+    @SerialName("candidate_tenant_id")
+    public val candidateTenantId: String,
+    @SerialName("candidate_user_id")
+    public val candidateUserId: String,
+    @SerialName("agent_version_id")
+    public val agentVersionId: String,
+    @SerialName("template_hash")
+    public val templateHash: QualificationDigest,
+    /**
+     * Positive integer micro-USD string, at most USD 1.
+     */
+    @SerialName("max_cost_microusd")
+    public val maxCostMicrousd: String,
+    public val run: QualificationRunBeforeGrantV2,
+)
+
+/**
+ * Sponsored subset of canonical POST /runs; <=131072 UTF-8 bytes, duplicate JSON keys
+ * rejected. Other purposes retain the canonical API behavior. All metadata is explicit, even
+ * if empty.
+ */
+@Serializable
+public data class QualificationSponsoredRunCreateV2(
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val version: Long,
+    public val input: QualificationAssessmentInputMessage,
+    @SerialName("resource_limits")
+    public val resourceLimits: QualificationSponsoredLimits,
+    public val metadata: QualificationRunMetadata,
+    @SerialName("execution_requirements")
+    public val executionRequirements: QualificationExecutionRequirementsV2,
+)
+
+/**
+ * Excerpt of existing Run with additive server-stored execution_requirements and recovery
+ * horizon. Existing fields remain available. A full canonical Run read is required for Nestor
+ * validation.
+ */
+@Serializable(with = QualificationSponsoredRunExcerptSerializer::class)
+public data class QualificationSponsoredRunExcerpt(
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val status: String,
+    public val input: JsonObject,
+    public val output: JsonObject? = null,
+    public val metadata: JsonObject? = null,
+    @SerialName("execution_requirements")
+    public val executionRequirements: QualificationExecutionRequirementsV2,
+    @SerialName("recovery_expires_at_unix")
+    public val recoveryExpiresAtUnix: Long,
+    /**
+     * Properties the server returned that this SDK does not model.
+     */
+    public val additionalProperties: JsonObject = JsonObject(emptyMap()),
+)
+
+/**
+ * Serializer for \[QualificationSponsoredRunExcerpt\] that preserves unmodelled properties.
+ */
+public object QualificationSponsoredRunExcerptSerializer : KSerializer<QualificationSponsoredRunExcerpt> {
+    @Serializable
+    @SerialName("QualificationSponsoredRunExcerpt")
+    private data class Surrogate(
+        @SerialName("run_id")
+        val runId: String,
+        @SerialName("tenant_id")
+        val tenantId: String,
+        @SerialName("agent_id")
+        val agentId: String,
+        val status: String,
+        val input: JsonObject,
+        val output: JsonObject? = null,
+        val metadata: JsonObject? = null,
+        @SerialName("execution_requirements")
+        val executionRequirements: QualificationExecutionRequirementsV2,
+        @SerialName("recovery_expires_at_unix")
+        val recoveryExpiresAtUnix: Long,
+    )
+
+    private val declaredNames: Set<String> = setOf("run_id", "tenant_id", "agent_id", "status", "input", "output", "metadata", "execution_requirements", "recovery_expires_at_unix")
+
+    override val descriptor: SerialDescriptor = Surrogate.serializer().descriptor
+
+    override fun deserialize(decoder: Decoder): QualificationSponsoredRunExcerpt {
+        val input = decoder as? JsonDecoder
+            ?: throw SerializationException("QualificationSponsoredRunExcerpt can only be read from JSON")
+        val node = input.decodeJsonElement().jsonObject
+        val declared = input.json.decodeFromJsonElement(Surrogate.serializer(), node)
+        return QualificationSponsoredRunExcerpt(
+            runId = declared.runId,
+            tenantId = declared.tenantId,
+            agentId = declared.agentId,
+            status = declared.status,
+            input = declared.input,
+            output = declared.output,
+            metadata = declared.metadata,
+            executionRequirements = declared.executionRequirements,
+            recoveryExpiresAtUnix = declared.recoveryExpiresAtUnix,
+            additionalProperties = JsonObject(node.filterKeys { it !in declaredNames }),
+        )
+    }
+
+    override fun serialize(encoder: Encoder, value: QualificationSponsoredRunExcerpt) {
+        val output = encoder as? JsonEncoder
+            ?: throw SerializationException("QualificationSponsoredRunExcerpt can only be written as JSON")
+        val declared = Surrogate(
+            runId = value.runId,
+            tenantId = value.tenantId,
+            agentId = value.agentId,
+            status = value.status,
+            input = value.input,
+            output = value.output,
+            metadata = value.metadata,
+            executionRequirements = value.executionRequirements,
+            recoveryExpiresAtUnix = value.recoveryExpiresAtUnix,
+        )
+        val rendered = output.json.encodeToJsonElement(Surrogate.serializer(), declared).jsonObject
+        output.encodeJsonElement(JsonObject(rendered + value.additionalProperties))
+    }
+}
+
+/**
+ * `QualificationStoragePolicy` model.
+ */
+@Serializable
+public data class QualificationStoragePolicy(
+    public val runs: QualificationRetentionRule,
+    public val events: QualificationRetentionRule,
+    public val artifacts: QualificationRetentionRule,
+    public val checkpoints: QualificationRetentionRule,
+    public val archives: QualificationRetentionRule,
+    public val backups: QualificationRetentionRule,
+    public val llm: QualificationRetentionRule,
+)
+
+/**
+ * Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+ * hash identifies stable actual resolved configuration; it excludes
+ * run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+ * verified does not mean the engineer is qualified or that a failed run is acceptable.
+ */
+@Serializable
+public data class QualificationUnverifiableExecutionReceiptV2(
+    @SerialName("schema_version")
+    public val schemaVersion: JsonElement,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    @SerialName("initiator_user_id")
+    public val initiatorUserId: String,
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("agent_version_id")
+    public val agentVersionId: String,
+    @SerialName("agent_version")
+    public val agentVersion: Long,
+    @SerialName("client_request_id")
+    public val clientRequestId: String,
+    public val purpose: JsonElement,
+    @SerialName("processing_policy_id")
+    public val processingPolicyId: String,
+    @SerialName("processing_policy_hash")
+    public val processingPolicyHash: QualificationDigest,
+    @SerialName("execution_requirements")
+    public val executionRequirements: QualificationExecutionRequirementsV2,
+    @SerialName("execution_profile_hash")
+    public val executionProfileHash: QualificationDigest? = null,
+    @SerialName("run_input_hash")
+    public val runInputHash: QualificationDigest,
+    @SerialName("run_output_hash")
+    public val runOutputHash: QualificationDigest,
+    @SerialName("execution_trace_hash")
+    public val executionTraceHash: QualificationDigest? = null,
+    @SerialName("execution_origin")
+    public val executionOrigin: QualificationUnverifiableExecutionReceiptV2executionOrigin,
+    @SerialName("run_status")
+    public val runStatus: QualificationVerifiedExecutionReceiptV2runStatus,
+    @SerialName("completed_at")
+    public val completedAt: String,
+    @SerialName("verification_status")
+    public val verificationStatus: JsonElement,
+    @SerialName("reason_codes")
+    public val reasonCodes: List<QualificationVerifiedExecutionReceiptV2reasonCode>,
+    public val observations: QualificationSafetyObservations? = null,
+)
+
+/**
+ * `QualificationUnverifiableExecutionReceiptV2executionOrigin` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationUnverifiableExecutionReceiptV2executionOriginSerializer::class)
+@JvmInline
+public value class QualificationUnverifiableExecutionReceiptV2executionOrigin(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val CLOUD_RUNTIME: QualificationUnverifiableExecutionReceiptV2executionOrigin = QualificationUnverifiableExecutionReceiptV2executionOrigin("cloud_runtime")
+        public val BRIDGE: QualificationUnverifiableExecutionReceiptV2executionOrigin = QualificationUnverifiableExecutionReceiptV2executionOrigin("bridge")
+        public val UNKNOWN: QualificationUnverifiableExecutionReceiptV2executionOrigin = QualificationUnverifiableExecutionReceiptV2executionOrigin("unknown")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationUnverifiableExecutionReceiptV2executionOrigin> = listOf(CLOUD_RUNTIME, BRIDGE, UNKNOWN)
+    }
+}
+
+public object QualificationUnverifiableExecutionReceiptV2executionOriginSerializer : KSerializer<QualificationUnverifiableExecutionReceiptV2executionOrigin> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationUnverifiableExecutionReceiptV2executionOrigin", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationUnverifiableExecutionReceiptV2executionOrigin): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationUnverifiableExecutionReceiptV2executionOrigin = QualificationUnverifiableExecutionReceiptV2executionOrigin(decoder.decodeString())
+}
+
+/**
+ * Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+ * hash identifies stable actual resolved configuration; it excludes
+ * run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+ * verified does not mean the engineer is qualified or that a failed run is acceptable.
+ */
+@Serializable
+public data class QualificationVerifiedExecutionReceiptV2(
+    @SerialName("schema_version")
+    public val schemaVersion: JsonElement,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    @SerialName("initiator_user_id")
+    public val initiatorUserId: String,
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("agent_version_id")
+    public val agentVersionId: String,
+    @SerialName("agent_version")
+    public val agentVersion: Long,
+    @SerialName("client_request_id")
+    public val clientRequestId: String,
+    public val purpose: JsonElement,
+    @SerialName("processing_policy_id")
+    public val processingPolicyId: String,
+    @SerialName("processing_policy_hash")
+    public val processingPolicyHash: QualificationDigest,
+    @SerialName("execution_requirements")
+    public val executionRequirements: QualificationExecutionRequirementsV2,
+    @SerialName("execution_profile_hash")
+    public val executionProfileHash: QualificationDigest,
+    @SerialName("run_input_hash")
+    public val runInputHash: QualificationDigest,
+    @SerialName("run_output_hash")
+    public val runOutputHash: QualificationDigest,
+    @SerialName("execution_trace_hash")
+    public val executionTraceHash: QualificationDigest,
+    @SerialName("execution_origin")
+    public val executionOrigin: JsonElement,
+    @SerialName("run_status")
+    public val runStatus: QualificationVerifiedExecutionReceiptV2runStatus,
+    @SerialName("completed_at")
+    public val completedAt: String,
+    @SerialName("verification_status")
+    public val verificationStatus: JsonElement,
+    @SerialName("reason_codes")
+    public val reasonCodes: List<QualificationVerifiedExecutionReceiptV2reasonCode>,
+    public val observations: QualificationVerifiedSafetyObservations,
+)
+
+/**
+ * `QualificationVerifiedExecutionReceiptV2reasonCode` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationVerifiedExecutionReceiptV2reasonCodeSerializer::class)
+@JvmInline
+public value class QualificationVerifiedExecutionReceiptV2reasonCode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val MODEL_REVISION_UNRESOLVED: QualificationVerifiedExecutionReceiptV2reasonCode = QualificationVerifiedExecutionReceiptV2reasonCode("MODEL_REVISION_UNRESOLVED")
+        public val EXECUTION_TRACE_INCOMPLETE: QualificationVerifiedExecutionReceiptV2reasonCode = QualificationVerifiedExecutionReceiptV2reasonCode("EXECUTION_TRACE_INCOMPLETE")
+        public val MIXED_EXECUTION_PROFILES: QualificationVerifiedExecutionReceiptV2reasonCode = QualificationVerifiedExecutionReceiptV2reasonCode("MIXED_EXECUTION_PROFILES")
+        public val RUNTIME_NOT_ATTESTABLE: QualificationVerifiedExecutionReceiptV2reasonCode = QualificationVerifiedExecutionReceiptV2reasonCode("RUNTIME_NOT_ATTESTABLE")
+        public val METERING_INCOMPLETE: QualificationVerifiedExecutionReceiptV2reasonCode = QualificationVerifiedExecutionReceiptV2reasonCode("METERING_INCOMPLETE")
+        public val ISOLATION_NOT_PROVEN: QualificationVerifiedExecutionReceiptV2reasonCode = QualificationVerifiedExecutionReceiptV2reasonCode("ISOLATION_NOT_PROVEN")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationVerifiedExecutionReceiptV2reasonCode> = listOf(MODEL_REVISION_UNRESOLVED, EXECUTION_TRACE_INCOMPLETE, MIXED_EXECUTION_PROFILES, RUNTIME_NOT_ATTESTABLE, METERING_INCOMPLETE, ISOLATION_NOT_PROVEN)
+    }
+}
+
+public object QualificationVerifiedExecutionReceiptV2reasonCodeSerializer : KSerializer<QualificationVerifiedExecutionReceiptV2reasonCode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationVerifiedExecutionReceiptV2reasonCode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationVerifiedExecutionReceiptV2reasonCode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationVerifiedExecutionReceiptV2reasonCode = QualificationVerifiedExecutionReceiptV2reasonCode(decoder.decodeString())
+}
+
+/**
+ * `QualificationVerifiedExecutionReceiptV2runStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationVerifiedExecutionReceiptV2runStatusSerializer::class)
+@JvmInline
+public value class QualificationVerifiedExecutionReceiptV2runStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val COMPLETED: QualificationVerifiedExecutionReceiptV2runStatus = QualificationVerifiedExecutionReceiptV2runStatus("completed")
+        public val FAILED: QualificationVerifiedExecutionReceiptV2runStatus = QualificationVerifiedExecutionReceiptV2runStatus("failed")
+        public val CANCELLED: QualificationVerifiedExecutionReceiptV2runStatus = QualificationVerifiedExecutionReceiptV2runStatus("cancelled")
+        public val TIMEOUT: QualificationVerifiedExecutionReceiptV2runStatus = QualificationVerifiedExecutionReceiptV2runStatus("timeout")
+        public val GUARDRAIL_BLOCKED: QualificationVerifiedExecutionReceiptV2runStatus = QualificationVerifiedExecutionReceiptV2runStatus("guardrail_blocked")
+        public val REJECTED: QualificationVerifiedExecutionReceiptV2runStatus = QualificationVerifiedExecutionReceiptV2runStatus("rejected")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationVerifiedExecutionReceiptV2runStatus> = listOf(COMPLETED, FAILED, CANCELLED, TIMEOUT, GUARDRAIL_BLOCKED, REJECTED)
+    }
+}
+
+public object QualificationVerifiedExecutionReceiptV2runStatusSerializer : KSerializer<QualificationVerifiedExecutionReceiptV2runStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationVerifiedExecutionReceiptV2runStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationVerifiedExecutionReceiptV2runStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationVerifiedExecutionReceiptV2runStatus = QualificationVerifiedExecutionReceiptV2runStatus(decoder.decodeString())
+}
+
+/**
+ * Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+ * as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+ * required fields cannot be stated.
+ */
+@Serializable
+public data class QualificationVerifiedSafetyObservations(
+    @SerialName("trace_complete")
+    public val traceComplete: JsonElement,
+    @SerialName("tool_calls_count")
+    public val toolCallsCount: Long,
+    @SerialName("memory_retrievals")
+    public val memoryRetrievals: Long,
+    @SerialName("memory_extractions")
+    public val memoryExtractions: Long,
+    @SerialName("spawned_agents_count")
+    public val spawnedAgentsCount: Long,
+    @SerialName("guardrail_violations")
+    public val guardrailViolations: Long,
+    @SerialName("llm_calls_count")
+    public val llmCallsCount: Long,
+    @SerialName("steps_count")
+    public val stepsCount: Long,
+    @SerialName("duration_ms")
+    public val durationMs: Double,
+    @SerialName("input_tokens")
+    public val inputTokens: Long,
+    @SerialName("output_tokens")
+    public val outputTokens: Long,
+    @SerialName("total_cost_usd")
+    public val totalCostUsd: Double,
+    public val truncated: Boolean,
+    @SerialName("continuation_used")
+    public val continuationUsed: Boolean,
+)
+
+/**
  * A limit refusal. `code` separates a throttle from a wall: `rate_limit_exceeded` clears in
  * seconds (see `Retry-After`); `quota_exceeded` clears at `quota.resets_at`; `limit_reached`
  * does not clear on a clock and needs a plan change; `run_quota_exceeded` is the run
@@ -30831,6 +32270,15 @@ public data class RevokeAPIKeyResponse(
 )
 
 /**
+ * `RevokeDataProcessingPolicyResponse` model.
+ */
+@Serializable
+public data class RevokeDataProcessingPolicyResponse(
+    public val revoked: Boolean? = null,
+    public val current: JsonObject? = null,
+)
+
+/**
  * `RevokeMeSessionResponse` model.
  */
 @Serializable
@@ -30994,6 +32442,23 @@ public data class RotateAgentIdentityResponse(
  */
 @Serializable
 public data class Run(
+    /**
+     * Sponsored qualification runs only: the requirements the run was admitted under, stored as
+     * accepted.
+     */
+    @SerialName("execution_requirements")
+    public val executionRequirements: QualificationExecutionRequirementsV2? = null,
+    /**
+     * Sponsored qualification runs only: until when the run is recoverable by its client request
+     * id.
+     */
+    @SerialName("recovery_expires_at_unix")
+    public val recoveryExpiresAtUnix: Long? = null,
+    /**
+     * Sponsored qualification runs only: the grant that paid for it.
+     */
+    @SerialName("sponsorship_grant_id")
+    public val sponsorshipGrantId: String? = null,
     /**
      * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
      * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
@@ -31886,6 +33351,16 @@ public data class RunFeedbackSet(
  */
 @Serializable
 public data class RunMetrics(
+    /**
+     * The context window of the model that served the run, in tokens.
+     */
+    @SerialName("context_window_tokens")
+    public val contextWindowTokens: Long? = null,
+    /**
+     * Input tokens of the run's last model call: how full the window was at the end.
+     */
+    @SerialName("last_input_tokens")
+    public val lastInputTokens: Long? = null,
     /**
      * How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
      */

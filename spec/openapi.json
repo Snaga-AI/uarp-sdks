@@ -106,6 +106,2204 @@
             }
         },
         "schemas": {
+            "QualificationAssessmentInputMessage": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 65536,
+                        "x-max-utf8-bytes": 65536
+                    }
+                },
+                "required": [
+                    "message"
+                ],
+                "description": "Prepared Nestor message only. No files or attachments. Source is untrusted data and must not become instructions."
+            },
+            "QualificationConfirmedPolicyResponse": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "kind": {
+                        "const": "uarp.data-processing-policy-response.v1"
+                    },
+                    "policy": {
+                        "$ref": "#/components/schemas/QualificationConfirmedProcessingPolicy"
+                    },
+                    "policy_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "readiness": {
+                        "type": "string",
+                        "enum": [
+                            "confirmed"
+                        ]
+                    },
+                    "blockers": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "POLICY_NOT_CONFIGURED",
+                                "RETENTION_UNKNOWN",
+                                "LLM_TRAINING_UNCONFIRMED",
+                                "LLM_TRAINING_USED",
+                                "PROCESSOR_UNCONFIRMED",
+                                "EVIDENCE_UNCONFIRMED",
+                                "POLICY_EXPIRED",
+                                "POLICY_REVOKED"
+                            ]
+                        },
+                        "minItems": 0,
+                        "maxItems": 0
+                    }
+                },
+                "required": [
+                    "kind",
+                    "policy",
+                    "policy_hash",
+                    "readiness",
+                    "blockers"
+                ],
+                "description": "policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and incomplete readiness. confirmed requires current verified terms, not_used training and no unknown storage categories."
+            },
+            "QualificationConfirmedProcessingPolicy": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "schema_version": {
+                        "const": "uarp.data-processing-policy.v1"
+                    },
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "revision": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "tenant_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "purpose": {
+                        "const": "nestor.public-qualification.v1"
+                    },
+                    "recipient": {
+                        "const": "https://api.snaga.ai"
+                    },
+                    "processor_name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                    },
+                    "processing_region": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                    },
+                    "llm_training_use": {
+                        "const": "not_used"
+                    },
+                    "archive_enabled": {
+                        "type": "boolean"
+                    },
+                    "storage": {
+                        "$ref": "#/components/schemas/QualificationConfirmedStoragePolicy"
+                    },
+                    "evidence_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "recovery_window_seconds": {
+                        "type": "integer",
+                        "minimum": 86400,
+                        "maximum": 31536000
+                    },
+                    "observed_at_unix": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 253402300799
+                    },
+                    "expires_at_unix": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 253402300799
+                    }
+                },
+                "required": [
+                    "schema_version",
+                    "id",
+                    "revision",
+                    "tenant_id",
+                    "purpose",
+                    "recipient",
+                    "processor_name",
+                    "processing_region",
+                    "llm_training_use",
+                    "archive_enabled",
+                    "storage",
+                    "evidence_hash",
+                    "recovery_window_seconds",
+                    "observed_at_unix",
+                    "expires_at_unix"
+                ],
+                "description": "Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most 86400 seconds later. recovery_window_seconds is the minimum durable client request reservation lifetime, disclosed as storage in the runs category. No no_storage claim when run records or receipt identifiers persist.",
+                "x-invariants": [
+                    "expires_at_unix > observed_at_unix and lifetime <=86400",
+                    "archive_enabled=false requires archives.mode=not_applicable",
+                    "Persisted run/reservation identifiers prohibit a no_storage claim; finite runs retention must cover recovery_window_seconds"
+                ]
+            },
+            "QualificationConfirmedRetentionRule": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "mode": {
+                                "const": "finite"
+                            },
+                            "max_seconds": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 253402300799
+                            }
+                        },
+                        "required": [
+                            "mode",
+                            "max_seconds"
+                        ]
+                    },
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "mode": {
+                                "const": "no_storage"
+                            },
+                            "max_seconds": {
+                                "const": 0
+                            }
+                        },
+                        "required": [
+                            "mode",
+                            "max_seconds"
+                        ]
+                    },
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "mode": {
+                                "type": "string",
+                                "enum": [
+                                    "indefinite",
+                                    "not_applicable"
+                                ]
+                            },
+                            "max_seconds": {
+                                "type": "null"
+                            }
+                        },
+                        "required": [
+                            "mode",
+                            "max_seconds"
+                        ]
+                    }
+                ]
+            },
+            "QualificationConfirmedStoragePolicy": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "runs": {
+                        "$ref": "#/components/schemas/QualificationConfirmedRetentionRule"
+                    },
+                    "events": {
+                        "$ref": "#/components/schemas/QualificationConfirmedRetentionRule"
+                    },
+                    "artifacts": {
+                        "$ref": "#/components/schemas/QualificationConfirmedRetentionRule"
+                    },
+                    "checkpoints": {
+                        "$ref": "#/components/schemas/QualificationConfirmedRetentionRule"
+                    },
+                    "archives": {
+                        "$ref": "#/components/schemas/QualificationConfirmedRetentionRule"
+                    },
+                    "backups": {
+                        "$ref": "#/components/schemas/QualificationConfirmedRetentionRule"
+                    },
+                    "llm": {
+                        "$ref": "#/components/schemas/QualificationConfirmedRetentionRule"
+                    }
+                },
+                "required": [
+                    "runs",
+                    "events",
+                    "artifacts",
+                    "checkpoints",
+                    "archives",
+                    "backups",
+                    "llm"
+                ]
+            },
+            "QualificationDigest": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$",
+                "maxLength": 10485760
+            },
+            "QualificationExecutionReceiptResponseV2": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "kind": {
+                        "const": "uarp.execution-receipt-response.v2"
+                    },
+                    "receipt": {
+                        "$ref": "#/components/schemas/QualificationExecutionReceiptV2"
+                    },
+                    "receipt_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "profile_status": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "revoked",
+                            "unknown"
+                        ]
+                    },
+                    "profile_status_observed_at_unix": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 253402300799
+                    }
+                },
+                "required": [
+                    "kind",
+                    "receipt",
+                    "receipt_hash",
+                    "profile_status",
+                    "profile_status_observed_at_unix"
+                ],
+                "description": "receipt_hash binds only receipt. profile_status and its observation time are current server-owned validity outside immutable history. Authenticated HTTPS readback is mandatory; a hash alone does not authenticate a server."
+            },
+            "QualificationExecutionReceiptV2": {
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/QualificationVerifiedExecutionReceiptV2"
+                    },
+                    {
+                        "$ref": "#/components/schemas/QualificationUnverifiableExecutionReceiptV2"
+                    }
+                ]
+            },
+            "QualificationExecutionRequirementsBeforeGrantV2": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "schema_version": {
+                        "const": "uarp.execution-requirements.v2"
+                    },
+                    "purpose": {
+                        "const": "nestor.public-qualification.v1"
+                    },
+                    "client_request_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "processing_policy_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "processing_policy_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "isolation_profile": {
+                        "const": "isolated-assessment.v1"
+                    },
+                    "require_verifiable_execution": {
+                        "type": "boolean"
+                    },
+                    "expected_execution_profile_hash": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/QualificationDigest"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "schema_version",
+                    "purpose",
+                    "client_request_id",
+                    "processing_policy_id",
+                    "processing_policy_hash",
+                    "isolation_profile",
+                    "require_verifiable_execution",
+                    "expected_execution_profile_hash"
+                ],
+                "description": "Hash material only, never accepted by POST /runs. Omit exactly sponsorship_grant_id to avoid a circular grant/hash dependency."
+            },
+            "QualificationExecutionRequirementsV2": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "schema_version": {
+                        "const": "uarp.execution-requirements.v2"
+                    },
+                    "purpose": {
+                        "const": "nestor.public-qualification.v1"
+                    },
+                    "client_request_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "processing_policy_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "processing_policy_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "isolation_profile": {
+                        "const": "isolated-assessment.v1"
+                    },
+                    "require_verifiable_execution": {
+                        "type": "boolean"
+                    },
+                    "expected_execution_profile_hash": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/QualificationDigest"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "sponsorship_grant_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    }
+                },
+                "required": [
+                    "schema_version",
+                    "purpose",
+                    "client_request_id",
+                    "processing_policy_id",
+                    "processing_policy_hash",
+                    "isolation_profile",
+                    "require_verifiable_execution",
+                    "expected_execution_profile_hash",
+                    "sponsorship_grant_id"
+                ],
+                "description": "Closed sponsored v2. Existing v1 remains unchanged. Phase A uses false/null; strict mode still requires independently accepted evidence/calibration."
+            },
+            "QualificationGrant": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "authorization": {
+                        "$ref": "#/components/schemas/QualificationGrantAuthorization"
+                    },
+                    "grant_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "reserved",
+                            "consumed",
+                            "settled",
+                            "released",
+                            "expired"
+                        ]
+                    },
+                    "run_id": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "format": "uuid",
+                                "not": {
+                                    "const": "00000000-0000-0000-0000-000000000000"
+                                }
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "charged_microusd": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/QualificationMicrousd"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "refunded_microusd": {
+                        "$ref": "#/components/schemas/QualificationMicrousd"
+                    },
+                    "billing_basis": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "metered",
+                                    "reserved_cap_unknown",
+                                    "no_dispatch"
+                                ]
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "unknown_cost_reason": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "provider_outcome_unknown",
+                                    "attempt_ledger_incomplete",
+                                    "pricing_observation_incomplete"
+                                ]
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "settlement_id": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "format": "uuid",
+                                "not": {
+                                    "const": "00000000-0000-0000-0000-000000000000"
+                                }
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "authorization",
+                    "grant_hash",
+                    "status",
+                    "run_id",
+                    "charged_microusd",
+                    "refunded_microusd",
+                    "billing_basis",
+                    "unknown_cost_reason",
+                    "settlement_id"
+                ],
+                "description": "One immutable settlement per grant, later corrections are unique append-only credits, never additional debits. Unknown-cost cap is a conservative sponsor charge, not provider actual cost.",
+                "allOf": [
+                    {
+                        "if": {
+                            "properties": {
+                                "status": {
+                                    "const": "settled"
+                                }
+                            },
+                            "required": [
+                                "status"
+                            ]
+                        },
+                        "then": {
+                            "properties": {
+                                "run_id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "not": {
+                                        "const": "00000000-0000-0000-0000-000000000000"
+                                    }
+                                },
+                                "charged_microusd": {
+                                    "$ref": "#/components/schemas/QualificationMicrousd"
+                                },
+                                "billing_basis": {
+                                    "type": "string",
+                                    "enum": [
+                                        "metered",
+                                        "reserved_cap_unknown",
+                                        "no_dispatch"
+                                    ]
+                                },
+                                "settlement_id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "not": {
+                                        "const": "00000000-0000-0000-0000-000000000000"
+                                    }
+                                }
+                            }
+                        },
+                        "else": {
+                            "properties": {
+                                "charged_microusd": {
+                                    "type": "null"
+                                },
+                                "billing_basis": {
+                                    "type": "null"
+                                },
+                                "unknown_cost_reason": {
+                                    "type": "null"
+                                },
+                                "settlement_id": {
+                                    "type": "null"
+                                },
+                                "refunded_microusd": {
+                                    "const": "0"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "if": {
+                            "properties": {
+                                "status": {
+                                    "enum": [
+                                        "reserved",
+                                        "released",
+                                        "expired"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "status"
+                            ]
+                        },
+                        "then": {
+                            "properties": {
+                                "run_id": {
+                                    "type": "null"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "if": {
+                            "properties": {
+                                "status": {
+                                    "const": "consumed"
+                                }
+                            },
+                            "required": [
+                                "status"
+                            ]
+                        },
+                        "then": {
+                            "properties": {
+                                "run_id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "not": {
+                                        "const": "00000000-0000-0000-0000-000000000000"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "if": {
+                            "properties": {
+                                "billing_basis": {
+                                    "const": "reserved_cap_unknown"
+                                }
+                            },
+                            "required": [
+                                "billing_basis"
+                            ]
+                        },
+                        "then": {
+                            "properties": {
+                                "unknown_cost_reason": {
+                                    "type": "string",
+                                    "enum": [
+                                        "provider_outcome_unknown",
+                                        "attempt_ledger_incomplete",
+                                        "pricing_observation_incomplete"
+                                    ]
+                                }
+                            }
+                        },
+                        "else": {
+                            "properties": {
+                                "unknown_cost_reason": {
+                                    "type": "null"
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "QualificationGrantAuthorization": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "grant_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    },
+                    "program_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80,
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+                    },
+                    "purpose": {
+                        "const": "nestor.public-qualification.v1"
+                    },
+                    "candidate_tenant_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    },
+                    "candidate_user_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    },
+                    "client_request_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    },
+                    "run_input_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "run_authorization_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "agent_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    },
+                    "agent_version_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    },
+                    "agent_version": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                    },
+                    "template_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "max_cost_microusd": {
+                        "type": "string",
+                        "pattern": "^([1-9][0-9]{0,5}|1000000)$",
+                        "maxLength": 7,
+                        "description": "Positive integer micro-USD string, at most USD 1."
+                    },
+                    "expires_at_unix": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 253402300799
+                    },
+                    "pricing_revision": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80,
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+                    },
+                    "created_at_unix": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 253402300799
+                    }
+                },
+                "required": [
+                    "grant_id",
+                    "program_id",
+                    "purpose",
+                    "candidate_tenant_id",
+                    "candidate_user_id",
+                    "client_request_id",
+                    "run_input_hash",
+                    "run_authorization_hash",
+                    "agent_id",
+                    "agent_version_id",
+                    "agent_version",
+                    "template_hash",
+                    "max_cost_microusd",
+                    "expires_at_unix",
+                    "pricing_revision",
+                    "created_at_unix"
+                ],
+                "description": "Immutable server authorization snapshot. grant_hash hashes only this object, not mutable envelope fields."
+            },
+            "QualificationGrantCreate": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "program_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80,
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+                    },
+                    "purpose": {
+                        "const": "nestor.public-qualification.v1"
+                    },
+                    "candidate_tenant_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "maxLength": 36
+                    },
+                    "candidate_user_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    },
+                    "client_request_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "maxLength": 36
+                    },
+                    "run_input_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "run_authorization_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "agent_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "maxLength": 36
+                    },
+                    "agent_version_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "maxLength": 36
+                    },
+                    "agent_version": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                    },
+                    "template_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "max_cost_microusd": {
+                        "type": "string",
+                        "pattern": "^([1-9][0-9]{0,5}|1000000)$",
+                        "maxLength": 7,
+                        "description": "Positive integer micro-USD string, at most USD 1."
+                    },
+                    "expires_at_unix": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 253402300799
+                    }
+                },
+                "required": [
+                    "program_id",
+                    "purpose",
+                    "candidate_tenant_id",
+                    "candidate_user_id",
+                    "client_request_id",
+                    "run_input_hash",
+                    "run_authorization_hash",
+                    "agent_id",
+                    "agent_version_id",
+                    "agent_version",
+                    "template_hash",
+                    "max_cost_microusd",
+                    "expires_at_unix"
+                ],
+                "description": "No raw input, credential or payer override. Canonical body hash binds expiry too. Unique durable program/tenant/user/client_request_id; replay returns original grant current state, never another reserve."
+            },
+            "QualificationGrantPage": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/QualificationGrant"
+                        },
+                        "maxItems": 1
+                    },
+                    "has_more": {
+                        "const": false
+                    },
+                    "cursor": {
+                        "type": "null"
+                    }
+                },
+                "required": [
+                    "items",
+                    "has_more",
+                    "cursor"
+                ]
+            },
+            "QualificationInactivePolicyResponse": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "kind": {
+                        "const": "uarp.data-processing-policy-response.v1"
+                    },
+                    "policy": {
+                        "$ref": "#/components/schemas/QualificationProcessingPolicy"
+                    },
+                    "policy_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "readiness": {
+                        "type": "string",
+                        "enum": [
+                            "expired",
+                            "revoked"
+                        ]
+                    },
+                    "blockers": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "POLICY_NOT_CONFIGURED",
+                                "RETENTION_UNKNOWN",
+                                "LLM_TRAINING_UNCONFIRMED",
+                                "LLM_TRAINING_USED",
+                                "PROCESSOR_UNCONFIRMED",
+                                "EVIDENCE_UNCONFIRMED",
+                                "POLICY_EXPIRED",
+                                "POLICY_REVOKED"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 8
+                    }
+                },
+                "required": [
+                    "kind",
+                    "policy",
+                    "policy_hash",
+                    "readiness",
+                    "blockers"
+                ],
+                "description": "policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and incomplete readiness. confirmed requires current verified terms, not_used training and no unknown storage categories."
+            },
+            "QualificationIncompletePolicyResponse": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "kind": {
+                        "const": "uarp.data-processing-policy-response.v1"
+                    },
+                    "policy": {
+                        "$ref": "#/components/schemas/QualificationProcessingPolicy"
+                    },
+                    "policy_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "readiness": {
+                        "type": "string",
+                        "enum": [
+                            "incomplete"
+                        ]
+                    },
+                    "blockers": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "POLICY_NOT_CONFIGURED",
+                                "RETENTION_UNKNOWN",
+                                "LLM_TRAINING_UNCONFIRMED",
+                                "LLM_TRAINING_USED",
+                                "PROCESSOR_UNCONFIRMED",
+                                "EVIDENCE_UNCONFIRMED",
+                                "POLICY_EXPIRED",
+                                "POLICY_REVOKED"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 8
+                    }
+                },
+                "required": [
+                    "kind",
+                    "policy",
+                    "policy_hash",
+                    "readiness",
+                    "blockers"
+                ],
+                "description": "policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and incomplete readiness. confirmed requires current verified terms, not_used training and no unknown storage categories."
+            },
+            "QualificationManagedEvaluator": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "agent_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    },
+                    "agent_version_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    },
+                    "agent_version": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                    },
+                    "template_revision": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                    },
+                    "template_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "managed_by": {
+                        "const": "qualification:nestor.public-qualification.v1"
+                    },
+                    "governance": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "can_spawn": {
+                                "const": false
+                            },
+                            "max_spawn_depth": {
+                                "const": 0
+                            },
+                            "can_self_modify": {
+                                "const": false
+                            },
+                            "max_budget_per_run_usd": {
+                                "const": 1
+                            }
+                        },
+                        "required": [
+                            "can_spawn",
+                            "max_spawn_depth",
+                            "can_self_modify",
+                            "max_budget_per_run_usd"
+                        ]
+                    }
+                },
+                "required": [
+                    "agent_id",
+                    "agent_version_id",
+                    "agent_version",
+                    "template_revision",
+                    "template_hash",
+                    "managed_by",
+                    "governance"
+                ],
+                "description": "One private managed binding per tenant/purpose; immutable applied version and template, independent of personal agent/version caps. Readback with candidate credential required."
+            },
+            "QualificationMicrousd": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,17})$",
+                "maxLength": 18,
+                "description": "Integer micro-USD string. 1000000 = USD 1. No float or FX."
+            },
+            "QualificationMissingPolicyResponse": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "kind": {
+                        "const": "uarp.data-processing-policy-response.v1"
+                    },
+                    "policy": {
+                        "type": "null"
+                    },
+                    "policy_hash": {
+                        "type": "null"
+                    },
+                    "readiness": {
+                        "type": "string",
+                        "enum": [
+                            "incomplete"
+                        ]
+                    },
+                    "blockers": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "POLICY_NOT_CONFIGURED",
+                                "RETENTION_UNKNOWN",
+                                "LLM_TRAINING_UNCONFIRMED",
+                                "LLM_TRAINING_USED",
+                                "PROCESSOR_UNCONFIRMED",
+                                "EVIDENCE_UNCONFIRMED",
+                                "POLICY_EXPIRED",
+                                "POLICY_REVOKED"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 8
+                    }
+                },
+                "required": [
+                    "kind",
+                    "policy",
+                    "policy_hash",
+                    "readiness",
+                    "blockers"
+                ],
+                "description": "policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and incomplete readiness. confirmed requires current verified terms, not_used training and no unknown storage categories."
+            },
+            "QualificationPositiveMicrousd": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]{0,17}$",
+                "maxLength": 18
+            },
+            "QualificationProcessingPolicy": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "schema_version": {
+                        "const": "uarp.data-processing-policy.v1"
+                    },
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "revision": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "tenant_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "purpose": {
+                        "const": "nestor.public-qualification.v1"
+                    },
+                    "recipient": {
+                        "const": "https://api.snaga.ai"
+                    },
+                    "processor_name": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "processing_region": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "llm_training_use": {
+                        "type": "string",
+                        "enum": [
+                            "not_used",
+                            "used",
+                            "unknown"
+                        ]
+                    },
+                    "archive_enabled": {
+                        "oneOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "storage": {
+                        "$ref": "#/components/schemas/QualificationStoragePolicy"
+                    },
+                    "evidence_hash": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/QualificationDigest"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "recovery_window_seconds": {
+                        "type": "integer",
+                        "minimum": 86400,
+                        "maximum": 31536000
+                    },
+                    "observed_at_unix": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 253402300799
+                    },
+                    "expires_at_unix": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 253402300799
+                    }
+                },
+                "required": [
+                    "schema_version",
+                    "id",
+                    "revision",
+                    "tenant_id",
+                    "purpose",
+                    "recipient",
+                    "processor_name",
+                    "processing_region",
+                    "llm_training_use",
+                    "archive_enabled",
+                    "storage",
+                    "evidence_hash",
+                    "recovery_window_seconds",
+                    "observed_at_unix",
+                    "expires_at_unix"
+                ],
+                "description": "Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most 86400 seconds later. recovery_window_seconds is the minimum durable client request reservation lifetime, disclosed as storage in the runs category. No no_storage claim when run records or receipt identifiers persist.",
+                "x-invariants": [
+                    "expires_at_unix > observed_at_unix and lifetime <=86400",
+                    "archive_enabled=false requires archives.mode=not_applicable",
+                    "Persisted run/reservation identifiers prohibit a no_storage claim; finite runs retention must cover recovery_window_seconds"
+                ]
+            },
+            "QualificationProcessingPolicyResponse": {
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/QualificationConfirmedPolicyResponse"
+                    },
+                    {
+                        "$ref": "#/components/schemas/QualificationIncompletePolicyResponse"
+                    },
+                    {
+                        "$ref": "#/components/schemas/QualificationMissingPolicyResponse"
+                    },
+                    {
+                        "$ref": "#/components/schemas/QualificationInactivePolicyResponse"
+                    }
+                ]
+            },
+            "QualificationProgram": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "program_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80,
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+                    },
+                    "revision": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                    },
+                    "purpose": {
+                        "const": "nestor.public-qualification.v1"
+                    },
+                    "sponsor_tenant_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    },
+                    "budget_limit_microusd": {
+                        "$ref": "#/components/schemas/QualificationPositiveMicrousd"
+                    },
+                    "reserved_microusd": {
+                        "$ref": "#/components/schemas/QualificationMicrousd"
+                    },
+                    "spent_microusd": {
+                        "$ref": "#/components/schemas/QualificationMicrousd"
+                    },
+                    "remaining_microusd": {
+                        "$ref": "#/components/schemas/QualificationMicrousd"
+                    },
+                    "pricing_revision": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80,
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+                    },
+                    "limits": {
+                        "$ref": "#/components/schemas/QualificationProgramLimits"
+                    },
+                    "active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "program_id",
+                    "revision",
+                    "purpose",
+                    "sponsor_tenant_id",
+                    "budget_limit_microusd",
+                    "reserved_microusd",
+                    "spent_microusd",
+                    "remaining_microusd",
+                    "pricing_revision",
+                    "limits",
+                    "active"
+                ],
+                "description": "budget_limit = reserved + spent + remaining, exact integer arithmetic. Configuration revision is not incremented for ledger activity."
+            },
+            "QualificationProgramLimits": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "max_cost_per_run_microusd": {
+                        "type": "string",
+                        "pattern": "^([1-9][0-9]{0,5}|1000000)$",
+                        "maxLength": 7,
+                        "description": "Positive integer micro-USD string, at most USD 1."
+                    },
+                    "max_grants_per_candidate_per_utc_day": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100
+                    },
+                    "max_issued_per_candidate_per_utc_day_microusd": {
+                        "$ref": "#/components/schemas/QualificationPositiveMicrousd"
+                    },
+                    "max_active_grants_per_candidate": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 10
+                    },
+                    "max_active_grants": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 1000
+                    },
+                    "grant_ttl_seconds_max": {
+                        "type": "integer",
+                        "minimum": 60,
+                        "maximum": 3600
+                    },
+                    "max_attempts_per_run": {
+                        "const": 4
+                    }
+                },
+                "required": [
+                    "max_cost_per_run_microusd",
+                    "max_grants_per_candidate_per_utc_day",
+                    "max_issued_per_candidate_per_utc_day_microusd",
+                    "max_active_grants_per_candidate",
+                    "max_active_grants",
+                    "grant_ttl_seconds_max",
+                    "max_attempts_per_run"
+                ],
+                "description": "Every cap is required. Per-run cap <=1000000 and daily amount >= per-run cap are server invariants. Daily counters aggregate the same user across candidate tenants. Reserved and consumed grants both occupy active slots."
+            },
+            "QualificationProgramPut": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "expected_revision": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "purpose": {
+                        "const": "nestor.public-qualification.v1"
+                    },
+                    "sponsor_tenant_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "maxLength": 36
+                    },
+                    "budget_limit_microusd": {
+                        "$ref": "#/components/schemas/QualificationPositiveMicrousd"
+                    },
+                    "pricing_revision": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80,
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+                    },
+                    "limits": {
+                        "$ref": "#/components/schemas/QualificationProgramLimits"
+                    },
+                    "active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "expected_revision",
+                    "purpose",
+                    "sponsor_tenant_id",
+                    "budget_limit_microusd",
+                    "pricing_revision",
+                    "limits",
+                    "active"
+                ],
+                "description": "Full configuration replacement, not merge. Initial expected_revision=0. Immutable purpose/sponsor/pricing. Funded ceiling, not mint/charge endpoint. Ceiling cannot fall below spent+reserved."
+            },
+            "QualificationReceiptPending": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "code": {
+                        "const": "EXECUTION_RECEIPT_PENDING"
+                    },
+                    "run_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    }
+                },
+                "required": [
+                    "code",
+                    "run_id"
+                ]
+            },
+            "QualificationRetentionRule": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "mode": {
+                                "const": "finite"
+                            },
+                            "max_seconds": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 253402300799
+                            }
+                        },
+                        "required": [
+                            "mode",
+                            "max_seconds"
+                        ]
+                    },
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "mode": {
+                                "const": "no_storage"
+                            },
+                            "max_seconds": {
+                                "const": 0
+                            }
+                        },
+                        "required": [
+                            "mode",
+                            "max_seconds"
+                        ]
+                    },
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "mode": {
+                                "type": "string",
+                                "enum": [
+                                    "indefinite",
+                                    "not_applicable",
+                                    "unknown"
+                                ]
+                            },
+                            "max_seconds": {
+                                "type": "null"
+                            }
+                        },
+                        "required": [
+                            "mode",
+                            "max_seconds"
+                        ]
+                    }
+                ]
+            },
+            "QualificationRunBeforeGrantV2": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "agent_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    },
+                    "version": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                    },
+                    "input": {
+                        "$ref": "#/components/schemas/QualificationAssessmentInputMessage"
+                    },
+                    "resource_limits": {
+                        "$ref": "#/components/schemas/QualificationSponsoredLimits"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/QualificationRunMetadata"
+                    },
+                    "execution_requirements": {
+                        "$ref": "#/components/schemas/QualificationExecutionRequirementsBeforeGrantV2"
+                    }
+                },
+                "required": [
+                    "agent_id",
+                    "version",
+                    "input",
+                    "resource_limits",
+                    "metadata",
+                    "execution_requirements"
+                ],
+                "description": "Hash material, not a createRun command."
+            },
+            "QualificationRunMetadata": {
+                "type": "object",
+                "maxProperties": 16,
+                "additionalProperties": {
+                    "type": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "description": "Exact canonical metadata is hashed. No credentials, raw code or security authority in metadata."
+            },
+            "QualificationSafetyObservations": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "trace_complete": {
+                        "type": "boolean"
+                    },
+                    "tool_calls_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "memory_retrievals": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "memory_extractions": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "spawned_agents_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "guardrail_violations": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "llm_calls_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "steps_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "duration_ms": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "input_tokens": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "output_tokens": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "total_cost_usd": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "truncated": {
+                        "type": "boolean"
+                    },
+                    "continuation_used": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "trace_complete",
+                    "tool_calls_count",
+                    "memory_retrievals",
+                    "memory_extractions",
+                    "spawned_agents_count",
+                    "guardrail_violations",
+                    "llm_calls_count",
+                    "steps_count",
+                    "duration_ms",
+                    "input_tokens",
+                    "output_tokens",
+                    "total_cost_usd",
+                    "truncated",
+                    "continuation_used"
+                ],
+                "description": "Actual aggregate observations across all attempts. Unknown observations cannot be fabricated as zero; unavailable/incomplete metering yields unverifiable, with observations=null if required fields cannot be stated."
+            },
+            "QualificationSponsoredLimits": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "max_duration_ms": {
+                        "const": 120000
+                    },
+                    "max_steps": {
+                        "const": 2
+                    },
+                    "max_tool_calls": {
+                        "const": 1
+                    },
+                    "max_tokens_per_run": {
+                        "const": 8000
+                    },
+                    "max_cost_usd": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 1,
+                        "multipleOf": 1e-06,
+                        "description": "Legacy run DTO unit. Must convert exactly to integer micro-USD and be <= grant cap. No rounding up or silently raising the grant."
+                    }
+                },
+                "required": [
+                    "max_duration_ms",
+                    "max_steps",
+                    "max_tool_calls",
+                    "max_tokens_per_run",
+                    "max_cost_usd"
+                ],
+                "description": "Wire-compatible limits. Actual tool calls are forbidden by isolation regardless of max_tool_calls=1. Aggregate budgets include all attempts."
+            },
+            "QualificationSponsoredRunAuthorizationMaterial": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "schema_version": {
+                        "const": "uarp.sponsored-run-authorization.v1"
+                    },
+                    "program_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80,
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+                    },
+                    "candidate_tenant_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    },
+                    "candidate_user_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    },
+                    "agent_version_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    },
+                    "template_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "max_cost_microusd": {
+                        "type": "string",
+                        "pattern": "^([1-9][0-9]{0,5}|1000000)$",
+                        "maxLength": 7,
+                        "description": "Positive integer micro-USD string, at most USD 1."
+                    },
+                    "run": {
+                        "$ref": "#/components/schemas/QualificationRunBeforeGrantV2"
+                    }
+                },
+                "required": [
+                    "schema_version",
+                    "program_id",
+                    "candidate_tenant_id",
+                    "candidate_user_id",
+                    "agent_version_id",
+                    "template_hash",
+                    "max_cost_microusd",
+                    "run"
+                ],
+                "description": "JCS SHA-256 of this exact object is run_authorization_hash. UARP reconstructs it from the authenticated user, grant and immutable evaluator/run facts, never trusting metadata as authority."
+            },
+            "QualificationSponsoredRunCreateV2": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "agent_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "not": {
+                            "const": "00000000-0000-0000-0000-000000000000"
+                        }
+                    },
+                    "version": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                    },
+                    "input": {
+                        "$ref": "#/components/schemas/QualificationAssessmentInputMessage"
+                    },
+                    "resource_limits": {
+                        "$ref": "#/components/schemas/QualificationSponsoredLimits"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/QualificationRunMetadata"
+                    },
+                    "execution_requirements": {
+                        "$ref": "#/components/schemas/QualificationExecutionRequirementsV2"
+                    }
+                },
+                "required": [
+                    "agent_id",
+                    "version",
+                    "input",
+                    "resource_limits",
+                    "metadata",
+                    "execution_requirements"
+                ],
+                "description": "Sponsored subset of canonical POST /runs; <=131072 UTF-8 bytes, duplicate JSON keys rejected. Other purposes retain the canonical API behavior. All metadata is explicit, even if empty."
+            },
+            "QualificationSponsoredRunExcerpt": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                    "run_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "agent_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "input": {
+                        "type": "object"
+                    },
+                    "output": {
+                        "oneOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "metadata": {
+                        "type": "object"
+                    },
+                    "execution_requirements": {
+                        "$ref": "#/components/schemas/QualificationExecutionRequirementsV2"
+                    },
+                    "recovery_expires_at_unix": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 253402300799
+                    }
+                },
+                "required": [
+                    "run_id",
+                    "tenant_id",
+                    "agent_id",
+                    "status",
+                    "execution_requirements",
+                    "input",
+                    "recovery_expires_at_unix"
+                ],
+                "description": "Excerpt of existing Run with additive server-stored execution_requirements and recovery horizon. Existing fields remain available. A full canonical Run read is required for Nestor validation."
+            },
+            "QualificationStoragePolicy": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "runs": {
+                        "$ref": "#/components/schemas/QualificationRetentionRule"
+                    },
+                    "events": {
+                        "$ref": "#/components/schemas/QualificationRetentionRule"
+                    },
+                    "artifacts": {
+                        "$ref": "#/components/schemas/QualificationRetentionRule"
+                    },
+                    "checkpoints": {
+                        "$ref": "#/components/schemas/QualificationRetentionRule"
+                    },
+                    "archives": {
+                        "$ref": "#/components/schemas/QualificationRetentionRule"
+                    },
+                    "backups": {
+                        "$ref": "#/components/schemas/QualificationRetentionRule"
+                    },
+                    "llm": {
+                        "$ref": "#/components/schemas/QualificationRetentionRule"
+                    }
+                },
+                "required": [
+                    "runs",
+                    "events",
+                    "artifacts",
+                    "checkpoints",
+                    "archives",
+                    "backups",
+                    "llm"
+                ]
+            },
+            "QualificationUnverifiableExecutionReceiptV2": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "schema_version": {
+                        "const": "uarp.execution-receipt.v2"
+                    },
+                    "run_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "tenant_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "initiator_user_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                    },
+                    "agent_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "agent_version_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "agent_version": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "client_request_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "purpose": {
+                        "const": "nestor.public-qualification.v1"
+                    },
+                    "processing_policy_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "processing_policy_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "execution_requirements": {
+                        "$ref": "#/components/schemas/QualificationExecutionRequirementsV2"
+                    },
+                    "execution_profile_hash": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/QualificationDigest"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "run_input_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "run_output_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "execution_trace_hash": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/QualificationDigest"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "execution_origin": {
+                        "type": "string",
+                        "enum": [
+                            "cloud_runtime",
+                            "bridge",
+                            "unknown"
+                        ]
+                    },
+                    "run_status": {
+                        "type": "string",
+                        "enum": [
+                            "completed",
+                            "failed",
+                            "cancelled",
+                            "timeout",
+                            "guardrail_blocked",
+                            "rejected"
+                        ]
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "verification_status": {
+                        "const": "unverifiable"
+                    },
+                    "reason_codes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "MODEL_REVISION_UNRESOLVED",
+                                "EXECUTION_TRACE_INCOMPLETE",
+                                "MIXED_EXECUTION_PROFILES",
+                                "RUNTIME_NOT_ATTESTABLE",
+                                "METERING_INCOMPLETE",
+                                "ISOLATION_NOT_PROVEN"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 6
+                    },
+                    "observations": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/QualificationSafetyObservations"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "schema_version",
+                    "run_id",
+                    "tenant_id",
+                    "initiator_user_id",
+                    "agent_id",
+                    "agent_version_id",
+                    "agent_version",
+                    "client_request_id",
+                    "purpose",
+                    "processing_policy_id",
+                    "processing_policy_hash",
+                    "execution_requirements",
+                    "execution_profile_hash",
+                    "run_input_hash",
+                    "run_output_hash",
+                    "execution_trace_hash",
+                    "execution_origin",
+                    "run_status",
+                    "completed_at",
+                    "verification_status",
+                    "reason_codes",
+                    "observations"
+                ],
+                "description": "Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile hash identifies stable actual resolved configuration; it excludes run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution. verified does not mean the engineer is qualified or that a failed run is acceptable."
+            },
+            "QualificationVerifiedExecutionReceiptV2": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "schema_version": {
+                        "const": "uarp.execution-receipt.v2"
+                    },
+                    "run_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "tenant_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "initiator_user_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                    },
+                    "agent_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "agent_version_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "agent_version": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "client_request_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "purpose": {
+                        "const": "nestor.public-qualification.v1"
+                    },
+                    "processing_policy_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "processing_policy_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "execution_requirements": {
+                        "$ref": "#/components/schemas/QualificationExecutionRequirementsV2"
+                    },
+                    "execution_profile_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "run_input_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "run_output_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "execution_trace_hash": {
+                        "$ref": "#/components/schemas/QualificationDigest"
+                    },
+                    "execution_origin": {
+                        "const": "cloud_runtime"
+                    },
+                    "run_status": {
+                        "type": "string",
+                        "enum": [
+                            "completed",
+                            "failed",
+                            "cancelled",
+                            "timeout",
+                            "guardrail_blocked",
+                            "rejected"
+                        ]
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "verification_status": {
+                        "const": "verified"
+                    },
+                    "reason_codes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "MODEL_REVISION_UNRESOLVED",
+                                "EXECUTION_TRACE_INCOMPLETE",
+                                "MIXED_EXECUTION_PROFILES",
+                                "RUNTIME_NOT_ATTESTABLE",
+                                "METERING_INCOMPLETE",
+                                "ISOLATION_NOT_PROVEN"
+                            ]
+                        },
+                        "minItems": 0,
+                        "maxItems": 0
+                    },
+                    "observations": {
+                        "$ref": "#/components/schemas/QualificationVerifiedSafetyObservations"
+                    }
+                },
+                "required": [
+                    "schema_version",
+                    "run_id",
+                    "tenant_id",
+                    "initiator_user_id",
+                    "agent_id",
+                    "agent_version_id",
+                    "agent_version",
+                    "client_request_id",
+                    "purpose",
+                    "processing_policy_id",
+                    "processing_policy_hash",
+                    "execution_requirements",
+                    "execution_profile_hash",
+                    "run_input_hash",
+                    "run_output_hash",
+                    "execution_trace_hash",
+                    "execution_origin",
+                    "run_status",
+                    "completed_at",
+                    "verification_status",
+                    "reason_codes",
+                    "observations"
+                ],
+                "description": "Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile hash identifies stable actual resolved configuration; it excludes run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution. verified does not mean the engineer is qualified or that a failed run is acceptable."
+            },
+            "QualificationVerifiedSafetyObservations": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "trace_complete": {
+                        "const": true
+                    },
+                    "tool_calls_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "memory_retrievals": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "memory_extractions": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "spawned_agents_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "guardrail_violations": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "llm_calls_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "steps_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "duration_ms": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "input_tokens": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "output_tokens": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "total_cost_usd": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "truncated": {
+                        "type": "boolean"
+                    },
+                    "continuation_used": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "trace_complete",
+                    "tool_calls_count",
+                    "memory_retrievals",
+                    "memory_extractions",
+                    "spawned_agents_count",
+                    "guardrail_violations",
+                    "llm_calls_count",
+                    "steps_count",
+                    "duration_ms",
+                    "input_tokens",
+                    "output_tokens",
+                    "total_cost_usd",
+                    "truncated",
+                    "continuation_used"
+                ],
+                "description": "Actual aggregate observations across all attempts. Unknown observations cannot be fabricated as zero; unavailable/incomplete metering yields unverifiable, with observations=null if required fields cannot be stated."
+            },
             "DropGenome": {
                 "type": "object",
                 "description": "The mascot character of an agent (DropGenome in @uarp/runtime): silhouette, motion and affect parameters plus a signature pose. Written by the platform at create/backfill or by a client from the builder.",
@@ -5893,12 +8091,14 @@
                             "ALREADY_EXISTS",
                             "ANON_BUSY",
                             "ARTIFACT_INTEGRITY_ERROR",
+                            "ASSESSMENT_ISOLATION_REQUIRED",
                             "AUTH_ERROR",
                             "BILLING_CANCELLED",
                             "BILLING_DISPUTED",
                             "BILLING_PAST_DUE",
                             "BUDGET_EXCEEDED",
                             "CHECKSUM_MISMATCH",
+                            "CLIENT_REQUEST_CONFLICT",
                             "COMPANY_NOT_READY",
                             "COMPANY_PAUSED",
                             "CONCURRENCY_LIMIT",
@@ -5911,6 +8111,8 @@
                             "DAILY_LIMIT",
                             "DEPENDENCY_EXISTS",
                             "EVENT_STORE_ERROR",
+                            "EXECUTION_PROFILE_UNVERIFIABLE",
+                            "EXECUTION_RECEIPT_PENDING",
                             "EXTERNAL_SERVICE_ERROR",
                             "FEATURED_SET_CONTENDED",
                             "FEATURE_DISABLED",
@@ -5918,6 +8120,7 @@
                             "FILE_TYPE_NOT_ALLOWED",
                             "FORBIDDEN",
                             "GUARDRAIL_VIOLATION",
+                            "IDEMPOTENCY_CONFLICT",
                             "IDEMPOTENCY_KEY_REUSED",
                             "INITIATIVE_BUDGET_EXHAUSTED",
                             "INITIATIVE_PAUSED",
@@ -5931,7 +8134,9 @@
                             "INVALID_SHARE_LIST",
                             "INVALID_SHARE_TARGET",
                             "INVALID_STATE_TRANSITION",
+                            "ISOLATION_VIOLATION",
                             "LLM_ERROR",
+                            "MANAGED_AGENT",
                             "MAX_DURATION_EXCEEDED",
                             "MAX_TOKENS_EXCEEDED",
                             "METHOD_NOT_ALLOWED",
@@ -5949,6 +8154,7 @@
                             "NOT_YANKED",
                             "NO_RUNNABLE_TARGET",
                             "OAUTH_FAILED",
+                            "OUTPUT_TOO_LARGE",
                             "PAYLOAD_TOO_LARGE",
                             "PERSISTENCE_ERROR",
                             "PLANNER_OUTPUT_INVALID",
@@ -5957,9 +8163,15 @@
                             "PREREQUISITE_MISSING",
                             "PRICING_UNAVAILABLE",
                             "PRIVATE_NOT_SHARED",
+                            "PROCESSING_POLICY_CHANGED",
+                            "PROCESSING_POLICY_NOT_READY",
                             "PROMO_REDEMPTION_FAILED",
                             "PROPOSAL_EXPIRED",
+                            "QUALIFICATION_BUDGET_STOP",
+                            "QUALIFICATION_ROUTE_MISMATCH",
+                            "QUALIFICATION_VERSION_UNAVAILABLE",
                             "QUOTA_EXCEEDED",
+                            "RATE_LIMITED",
                             "RATE_LIMIT_EXCEEDED",
                             "REFERENCE_NOT_FOUND",
                             "RESERVED_SCOPE",
@@ -5976,12 +8188,28 @@
                             "SIGNING_NOT_CONFIGURED",
                             "SIZE_LIMIT",
                             "SPEC_NOT_FOUND",
+                            "SPONSORSHIP_BUDGET_BELOW_COMMITTED",
+                            "SPONSORSHIP_BUDGET_EXHAUSTED",
+                            "SPONSORSHIP_CANDIDATE_LIMIT",
+                            "SPONSORSHIP_CONCURRENCY_LIMIT",
+                            "SPONSORSHIP_FUNDING_UNAVAILABLE",
+                            "SPONSORSHIP_GRANT_CONFLICT",
+                            "SPONSORSHIP_GRANT_IN_USE",
+                            "SPONSORSHIP_GRANT_MISMATCH",
+                            "SPONSORSHIP_GRANT_UNAVAILABLE",
+                            "SPONSORSHIP_OUTCOME_UNKNOWN",
+                            "SPONSORSHIP_PROGRAM_IMMUTABLE",
+                            "SPONSORSHIP_PROGRAM_INACTIVE",
+                            "SPONSORSHIP_PROGRAM_REVISION_CONFLICT",
+                            "SPONSORSHIP_REQUIRED",
+                            "SPONSORSHIP_SCOPE_REQUIRED",
                             "STARTED_BY_ANOTHER_USER",
                             "STRATEGIST_MODEL_UNCONFIGURED",
                             "TASK_GRAPH_FAILED",
                             "TEAM_ABORT",
                             "TERMS_NOT_ACCEPTED",
                             "TEXT_EXTRACTION_FAILED",
+                            "UNAUTHENTICATED",
                             "USER_REQUIRED",
                             "VALIDATION_ERROR",
                             "VERIFICATION_FAILED",
@@ -8115,6 +10343,10 @@
             "Agent": {
                 "type": "object",
                 "properties": {
+                    "bridge_fingerprint": {
+                        "type": "string",
+                        "description": "Bridge agents only: the stable fingerprint of the machine that enrolled it, used to adopt the same agent after a reconnect. Absent on records enrolled before 2026-09-03."
+                    },
                     "initiative_id": {
                         "type": "string",
                         "description": "The initiative (`/initiatives`) this agent works for, when it has one. Its runs are charged to that initiative's budget, and automated runs are refused (`INITIATIVE_PAUSED`) while it is paused or (`INITIATIVE_BUDGET_EXHAUSTED`) out of budget; agents and squads it creates inherit it. Set on create (must exist, else 422) or PATCH (`null` removes it). Since 2026-10-12."
@@ -8390,7 +10622,8 @@
                             "active",
                             "suspended",
                             "terminated",
-                            "deposed"
+                            "deposed",
+                            "inactive"
                         ],
                         "description": "Governance state, distinct from a run's status."
                     },
@@ -8615,6 +10848,19 @@
             "Run": {
                 "type": "object",
                 "properties": {
+                    "execution_requirements": {
+                        "$ref": "#/components/schemas/QualificationExecutionRequirementsV2",
+                        "description": "Sponsored qualification runs only: the requirements the run was admitted under, stored as accepted."
+                    },
+                    "recovery_expires_at_unix": {
+                        "type": "integer",
+                        "description": "Sponsored qualification runs only: until when the run is recoverable by its client request id."
+                    },
+                    "sponsorship_grant_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Sponsored qualification runs only: the grant that paid for it."
+                    },
                     "execution_mode": {
                         "type": "string",
                         "enum": [
@@ -8842,6 +11088,14 @@
             "RunMetrics": {
                 "type": "object",
                 "properties": {
+                    "context_window_tokens": {
+                        "type": "integer",
+                        "description": "The context window of the model that served the run, in tokens."
+                    },
+                    "last_input_tokens": {
+                        "type": "integer",
+                        "description": "Input tokens of the run's last model call: how full the window was at the end."
+                    },
                     "pricing_confidence": {
                         "type": "string",
                         "description": "How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts)."
@@ -10805,7 +13059,7 @@
                             "string",
                             "null"
                         ],
-                        "description": "Free text when a client sent one with POST /agents/{agentId}/versions. The SERVER writes these fixed values of its own on the versions it mints — known values a client may match on, and therefore part of the contract (a test keeps this list equal to the literals in the code): `Initial version`, `Initial version (auto-created)`, `Initial version (created by agent factory)`, `Auto-versioned before update`, `Auto-versioned after update`, `Auto-versioned after update (retry)`, `Updated by agent factory`, `Head Agent orchestration kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent provisioned`, `Platform agent config migrated on boot`, `Hired`, `Registered from a local app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement loop: the first N is a count, the second is one of errors, ratings or feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC 11)."
+                        "description": "Free text when a client sent one with POST /agents/{agentId}/versions. The SERVER writes these fixed values of its own on the versions it mints — known values a client may match on, and therefore part of the contract (a test keeps this list equal to the literals in the code): `Initial version`, `Initial version (auto-created)`, `Initial version (created by agent factory)`, `Auto-versioned before update`, `Auto-versioned after update`, `Auto-versioned after update (retry)`, `Updated by agent factory`, `Head Agent orchestration kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent provisioned`, `Platform agent config migrated on boot`, `Qualification evaluator template revision N` (N = the template revision), `Hired`, `Registered from a local app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement loop: the first N is a count, the second is one of errors, ratings or feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC 11)."
                     },
                     "created_at": {
                         "type": "string",
@@ -25757,6 +28011,1590 @@
         }
     },
     "paths": {
+        "/api/v1/tenants/me/data-processing-policy": {
+            "get": {
+                "operationId": "getDataProcessingPolicy",
+                "tags": [
+                    "Qualification"
+                ],
+                "summary": "Data-processing policy for a purpose",
+                "description": "The policy the authenticated company sees for `purpose`, its RFC 8785 `policy_hash` and `readiness` (since 2026-10-17). `confirmed` only for a current, unrevoked operator confirmation with training not used, a named processor and region, evidence and no `unknown` storage category; a confirmation lives at most 24 hours. With nothing confirmed: `policy: null`, `readiness: incomplete`, blocker `POLICY_NOT_CONFIGURED`. A read creates nothing. `X-Active-Tenant` is required; the tenant is the authenticated one, never one in the URL. `Cache-Control: no-store`.",
+                "parameters": [
+                    {
+                        "name": "X-Active-Tenant",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": 36
+                        }
+                    },
+                    {
+                        "name": "purpose",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "const": "nestor.public-qualification.v1"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Policy and readiness.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationProcessingPolicyResponse"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing X-Active-Tenant or another purpose.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/data-processing-policies/{purpose}": {
+            "parameters": [
+                {
+                    "name": "purpose",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "const": "nestor.public-qualification.v1"
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getAdminDataProcessingPolicy",
+                "tags": [
+                    "Admin Config"
+                ],
+                "summary": "Current policy confirmation",
+                "description": "Super-admin only. The current revision of the operator confirmation, revoked or not; `current: null` when none.",
+                "responses": {
+                    "200": {
+                        "description": "The current confirmation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "current": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "admin"
+                ]
+            },
+            "put": {
+                "operationId": "confirmDataProcessingPolicy",
+                "tags": [
+                    "Admin Config"
+                ],
+                "summary": "Confirm the facts as a new revision",
+                "description": "WRITE SEMANTICS: replaces — each call stores a new immutable revision from the full body; nothing is merged or extended. Super-admin only. Refused with 422 when the confirmation breaks an invariant: lifetime over 86400 s or not after `observed_at_unix`; `archive_enabled=false` without `archives.mode=not_applicable`; runs `no_storage`; a finite runs retention shorter than `recovery_window_seconds`.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "processor_name",
+                                    "processing_region",
+                                    "llm_training_use",
+                                    "archive_enabled",
+                                    "storage",
+                                    "evidence_hash",
+                                    "recovery_window_seconds",
+                                    "observed_at_unix",
+                                    "expires_at_unix"
+                                ],
+                                "properties": {
+                                    "processor_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "processing_region": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "llm_training_use": {
+                                        "type": "string",
+                                        "enum": [
+                                            "not_used",
+                                            "used",
+                                            "unknown"
+                                        ]
+                                    },
+                                    "archive_enabled": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "storage": {
+                                        "$ref": "#/components/schemas/QualificationStoragePolicy"
+                                    },
+                                    "evidence_hash": {
+                                        "oneOf": [
+                                            {
+                                                "$ref": "#/components/schemas/QualificationDigest"
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ]
+                                    },
+                                    "recovery_window_seconds": {
+                                        "type": "integer",
+                                        "minimum": 86400,
+                                        "maximum": 31536000
+                                    },
+                                    "observed_at_unix": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "expires_at_unix": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The stored revision.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "current": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "An invariant is broken; `problems` lists them.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "admin"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/data-processing-policies/{purpose}/revoke": {
+            "parameters": [
+                {
+                    "name": "purpose",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "const": "nestor.public-qualification.v1"
+                    }
+                }
+            ],
+            "post": {
+                "operationId": "revokeDataProcessingPolicy",
+                "tags": [
+                    "Admin Config"
+                ],
+                "summary": "Revoke the current confirmation",
+                "description": "Super-admin only. The revision stays readable and reads as `revoked`; new qualification runs are refused. 409 when there is nothing current to revoke.",
+                "responses": {
+                    "200": {
+                        "description": "Revoked.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "revoked": {
+                                            "type": "boolean"
+                                        },
+                                        "current": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "description": "Nothing current to revoke.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/IdempotencyKeyReused"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "admin"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/qualification/pricing-revisions/{pricing_revision}": {
+            "parameters": [
+                {
+                    "name": "pricing_revision",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$",
+                        "maxLength": 65536
+                    }
+                }
+            ],
+            "put": {
+                "operationId": "putQualificationPricingRevision",
+                "tags": [
+                    "Admin Config"
+                ],
+                "summary": "Pin an accounting rate",
+                "description": "WRITE SEMANTICS: replaces, once — the first body is stored and never changed. Super-admin only (UARP addition to the contract). The provider, model and micro-USD per million input and output tokens a program's runs are accounted at; a qualification run refuses any other provider or model. The same body again answers 200; another body for an existing revision is 409 `SPONSORSHIP_PROGRAM_IMMUTABLE`. This is UARP's accounting rate, not the provider's invoice.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "provider",
+                                    "model",
+                                    "input_microusd_per_million_tokens",
+                                    "output_microusd_per_million_tokens"
+                                ],
+                                "properties": {
+                                    "provider": {
+                                        "type": "string",
+                                        "maxLength": 10485760
+                                    },
+                                    "model": {
+                                        "type": "string",
+                                        "maxLength": 10485760
+                                    },
+                                    "input_microusd_per_million_tokens": {
+                                        "$ref": "#/components/schemas/QualificationPositiveMicrousd"
+                                    },
+                                    "output_microusd_per_million_tokens": {
+                                        "$ref": "#/components/schemas/QualificationPositiveMicrousd"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Already pinned with these rates.",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Pinned.",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "description": "Exists with other rates.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "admin"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/qualification/sponsor-keys/{key_id}": {
+            "parameters": [
+                {
+                    "name": "key_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "maxLength": 65536
+                    }
+                }
+            ],
+            "put": {
+                "operationId": "putQualificationSponsorKey",
+                "tags": [
+                    "Admin Config"
+                ],
+                "summary": "Make a key a sponsor key",
+                "description": "WRITE SEMANTICS: replaces — the record is the body (company and program list). Super-admin only (UARP addition). Names the API key of the sponsor's company (Nestor's server) and the programs it may spend from; a key with no programs spends nothing. The role cannot be created by the key's own company, a header, metadata or a role.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "tenant_id",
+                                    "programs"
+                                ],
+                                "properties": {
+                                    "tenant_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "maxLength": 36
+                                    },
+                                    "programs": {
+                                        "type": "array",
+                                        "maxItems": 50,
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 10485760
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Stored.",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "No such key in that company.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "admin"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/qualification/sponsorship-programs/{program_id}": {
+            "parameters": [
+                {
+                    "name": "program_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$",
+                        "maxLength": 65536
+                    }
+                },
+                {
+                    "name": "Idempotency-Key",
+                    "in": "header",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "minLength": 8,
+                        "maxLength": 200
+                    }
+                }
+            ],
+            "put": {
+                "operationId": "putQualificationSponsorshipProgram",
+                "tags": [
+                    "Admin Config"
+                ],
+                "summary": "Configure a sponsorship program",
+                "description": "WRITE SEMANTICS: replaces — full configuration, never merged; the ledger is kept. Super-admin only, under `expected_revision` (0 creates); `Idempotency-Key` required. Purpose, sponsor company and pricing revision are immutable. The budget is a funded ceiling, never below `reserved + spent`. Ledger activity does not change the revision.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QualificationProgramPut"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Changed, or the same request again.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationProgram"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationProgram"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "description": "SPONSORSHIP_PROGRAM_REVISION_CONFLICT, SPONSORSHIP_PROGRAM_IMMUTABLE, SPONSORSHIP_BUDGET_BELOW_COMMITTED or IDEMPOTENCY_CONFLICT.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "INVALID_REQUEST.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "admin"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            }
+        },
+        "/api/v1/qualification/sponsorship-programs/{program_id}": {
+            "parameters": [
+                {
+                    "name": "program_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "maxLength": 65536
+                    }
+                },
+                {
+                    "name": "X-Active-Tenant",
+                    "in": "header",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "format": "uuid",
+                        "maxLength": 36
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getQualificationSponsorshipProgram",
+                "tags": [
+                    "Qualification"
+                ],
+                "summary": "Read a sponsorship program",
+                "description": "Sponsor key of that program, with `X-Active-Tenant` naming the sponsor company. Revision, state, limits and the ledger: `budget_limit = reserved + spent + remaining`.",
+                "responses": {
+                    "200": {
+                        "description": "The program.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationProgram"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "description": "SPONSORSHIP_SCOPE_REQUIRED.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not this key's program.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/qualification/sponsorship-grants": {
+            "post": {
+                "operationId": "createQualificationSponsorshipGrant",
+                "tags": [
+                    "Qualification"
+                ],
+                "summary": "Issue a sponsorship grant",
+                "description": "Sponsor key, `X-Active-Tenant` = sponsor company, `Idempotency-Key` required; strict JSON (repeated member names refused), at most 8192 bytes. Binds one candidate (an active member of `candidate_tenant_id`), one client request, the exact input, the company's current managed evaluator version and template, and `run_authorization_hash` (RFC 8785 over `QualificationSponsoredRunAuthorizationMaterial`). Reserves `max_cost_microusd` from the budget in the same commit that counts the person's day and active slot; limits are per person across companies. The same body for the same (program, company, user, client request) answers that grant in its current state (200); another body is 409 `SPONSORSHIP_GRANT_CONFLICT`.",
+                "parameters": [
+                    {
+                        "name": "X-Active-Tenant",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": 36
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 8,
+                            "maxLength": 200
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QualificationGrantCreate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The grant already issued for this request, current state.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationGrant"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Issued and reserved.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationGrant"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "description": "SPONSORSHIP_SCOPE_REQUIRED or SPONSORSHIP_GRANT_MISMATCH (`reason`).",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not this key's program.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "SPONSORSHIP_PROGRAM_INACTIVE, SPONSORSHIP_BUDGET_EXHAUSTED, SPONSORSHIP_GRANT_CONFLICT, IDEMPOTENCY_CONFLICT.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "INVALID_REQUEST.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "SPONSORSHIP_CANDIDATE_LIMIT or SPONSORSHIP_CONCURRENCY_LIMIT, with Retry-After.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    },
+                    "503": {
+                        "description": "SPONSORSHIP_OUTCOME_UNKNOWN: look the grant up by its request key.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "operationId": "findQualificationSponsorshipGrant",
+                "tags": [
+                    "Qualification"
+                ],
+                "summary": "Find a grant by its request key",
+                "description": "Sponsor key. Exactly the four filters; 0 or 1 grant, `has_more: false`, never a scan.",
+                "parameters": [
+                    {
+                        "name": "X-Active-Tenant",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": 36
+                        }
+                    },
+                    {
+                        "name": "program_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 65536
+                        }
+                    },
+                    {
+                        "name": "candidate_tenant_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 65536
+                        }
+                    },
+                    {
+                        "name": "candidate_user_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 65536
+                        }
+                    },
+                    {
+                        "name": "client_request_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 65536
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "0 or 1 grant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationGrantPage"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "description": "Other or missing filters.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/qualification/sponsorship-grants/{grant_id}": {
+            "parameters": [
+                {
+                    "name": "grant_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "format": "uuid",
+                        "maxLength": 36
+                    }
+                },
+                {
+                    "name": "X-Active-Tenant",
+                    "in": "header",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "format": "uuid",
+                        "maxLength": 36
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getQualificationSponsorshipGrant",
+                "tags": [
+                    "Qualification"
+                ],
+                "summary": "Read a grant",
+                "description": "Sponsor key. The immutable authorization with its `grant_hash`, and the mutable state: status, run, charge, basis, settlement.",
+                "responses": {
+                    "200": {
+                        "description": "The grant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationGrant"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Not this key's grant.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "releaseQualificationSponsorshipGrant",
+                "tags": [
+                    "Qualification"
+                ],
+                "summary": "Release an unused grant",
+                "description": "Sponsor key. A `reserved` grant returns its reservation exactly once; repeating answers the same release. A consumed or settled grant is 409 `SPONSORSHIP_GRANT_IN_USE`: it ends by settlement.",
+                "responses": {
+                    "200": {
+                        "description": "Released.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationGrant"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "description": "SPONSORSHIP_GRANT_IN_USE or SPONSORSHIP_GRANT_UNAVAILABLE.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/IdempotencyKeyReused"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            }
+        },
+        "/api/v1/tenants/me/qualification-evaluator": {
+            "put": {
+                "operationId": "provisionQualificationEvaluator",
+                "tags": [
+                    "Qualification"
+                ],
+                "summary": "Provision the managed evaluator",
+                "description": "An active member of the company, `X-Active-Tenant` required, no body. Applies UARP's evaluator template to the company's one managed evaluator: created on the first call (201), a new immutable version only when the template revision changes (201), otherwise nothing is written (200). Allowed only while an active sponsorship program exists for the purpose (409 `SPONSORSHIP_PROGRAM_INACTIVE`). The evaluator is outside the plan's agent and version limits, refuses every agent and permission write (403 `MANAGED_AGENT`) and every run that is not an admitted assessment, and may be deleted. Rate limited 10/min per user, 30/min per company.",
+                "parameters": [
+                    {
+                        "name": "X-Active-Tenant",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": 36
+                        }
+                    },
+                    {
+                        "name": "purpose",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "const": "nestor.public-qualification.v1"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Unchanged.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationManagedEvaluator"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created or a new version.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationManagedEvaluator"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "description": "Not an active member.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "No active program.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/IdempotencyKeyReused"
+                    },
+                    "429": {
+                        "description": "RATE_LIMITED.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "tenants:write"
+                ]
+            }
+        },
+        "/api/v1/runs/{runId}/execution-receipt": {
+            "parameters": [
+                {
+                    "name": "runId",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "format": "uuid",
+                        "maxLength": 36
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getRunExecutionReceipt",
+                "tags": [
+                    "Qualification"
+                ],
+                "summary": "A qualification run's execution receipt",
+                "description": "Only the person who started the run; anyone else, and a run that is not a qualification run, gets 404. Until the run has ended and its receipt is written: 202 with `code: EXECUTION_RECEIPT_PENDING` and Retry-After. Then 200: the immutable receipt, its RFC 8785 `receipt_hash`, and the current `profile_status` outside it. In Stage A `verification_status` is `unverifiable` (the model revision and the full trace are not attested) and `observations` is null rather than invented. `Cache-Control: no-store`.",
+                "responses": {
+                    "200": {
+                        "description": "The receipt.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationExecutionReceiptResponseV2"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "202": {
+                        "description": "Not final yet.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationReceiptPending"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "No such run for this person.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "runs:read"
+                ]
+            }
+        },
         "/health": {
             "get": {
                 "operationId": "getHealth",
@@ -30447,6 +34285,25 @@
                 "description": "Ordered NEWEST FIRST, and that is a guarantee, not an accident of storage: page one is the most recent runs. Do not page toward the end to find recent activity — a client that walks `has_more` looking for the newest page now walks away from it. This was previously true only of the handler, so clients hedged by paging or by re-sorting, and one shipped a twelve-hop walk that reversed meaning the day the order changed. Note the sibling `/api/v1/teams/{teamId}/runs` is deliberately the other way round — oldest first — because a team transcript reads forward.",
                 "parameters": [
                     {
+                        "name": "client_request_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": 36
+                        },
+                        "description": "Recover a sponsored qualification run: with `purpose`, and no other filter, answers the caller's own run for that client request, 0 or 1 item, `has_more: false`. Any other combination is 400."
+                    },
+                    {
+                        "name": "purpose",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "const": "nestor.public-qualification.v1"
+                        },
+                        "description": "Required with `client_request_id`."
+                    },
+                    {
                         "name": "agent_id",
                         "in": "query",
                         "schema": {
@@ -30583,7 +34440,7 @@
             "post": {
                 "operationId": "createRun",
                 "summary": "Create and schedule a run",
-                "description": "Creates a run and schedules it for execution. Recommended: send Idempotency-Key header to avoid duplicate runs on retries; a repeated request with the same key returns the cached 202 response (same run_id). Pin a specific agent version with `version` to bypass the head pointer.",
+                "description": "Creates a run and schedules it for execution. Recommended: send Idempotency-Key header to avoid duplicate runs on retries; a repeated request with the same key returns the cached 202 response (same run_id). Pin a specific agent version with `version` to bypass the head pointer.\n\nA body carrying `execution_requirements` is a sponsored qualification run (Nestor, since 2026-10-17) and has its own admission: `QualificationSponsoredRunCreateV2`, strict JSON (repeated member names refused, at most 131072 bytes), `metadata` names not starting with `_`. The first acceptance answers 201, an exact replay of the same `client_request_id` command answers 200 with the original run, another command under that id is 409 `CLIENT_REQUEST_CONFLICT`. Refusals: 403 `SPONSORSHIP_REQUIRED` (a v1 command: the candidate never pays), 403 `SPONSORSHIP_GRANT_MISMATCH` with `reason`, 409 `SPONSORSHIP_GRANT_UNAVAILABLE` / `SPONSORSHIP_PROGRAM_INACTIVE`, 412 `PROCESSING_POLICY_NOT_READY` / `PROCESSING_POLICY_CHANGED`, 422 `EXECUTION_PROFILE_UNVERIFIABLE` / `INVALID_REQUEST`. The managed evaluator cannot be run without one (403 `MANAGED_AGENT`).",
                 "tags": [
                     "Runs"
                 ],
@@ -30674,6 +34531,54 @@
                     }
                 },
                 "responses": {
+                    "200": {
+                        "description": "Sponsored qualification run: the original run for an exact replay of its client request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationSponsoredRunExcerpt"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Sponsored qualification run: accepted, its grant consumed, dispatched.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QualificationSponsoredRunExcerpt"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
                     "202": {
                         "description": "Run queued",
                         "content": {

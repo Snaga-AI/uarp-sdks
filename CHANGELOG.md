@@ -8,14 +8,15 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
-Build `e0b37b03`, canonical digest `5d36773b0983a32a`. Six platform builds are
-collected here: `ef5b646d` (2026-10-12), `435ca06c` and `199b0863` (2026-10-13),
-`b108e9a9` (2026-10-15), `d926b90e` (2026-10-16), `e0b37b03` (2026-10-17).
-Against 0.10.0: 585 → 631 paths, 789 → 843 operations (+54, −0), 382 → 415
-schemas (+33, −0), 50 → 53 groups, 1845 → 2064 named types (+219, −0 net).
+Build `0837bb4d`, canonical digest `47152b3cf58faed3`. Seven platform builds
+are collected here: `ef5b646d` (2026-10-12), `435ca06c` and `199b0863`
+(2026-10-13), `b108e9a9` (2026-10-15), `d926b90e` (2026-10-16), `e0b37b03` and
+`0837bb4d` (2026-10-17). Against 0.10.0: 585 → 642 paths, 789 → 857 operations
+(+68, −0), 382 → 453 schemas (+71, −0), 50 → 54 groups, 1845 → 2129 named
+types (+284, −0 net).
 
 **One family of exported names leaves.** Measured against the released 0.10.0
-rather than against the intermediate drafts: 264 names are added and four are
+rather than against the intermediate drafts: 343 names are added and four are
 removed: `GetReadyResponse`, `GetReadyResponseChecks`, `GetReadyResponseStatus`
 and `GET_READY_RESPONSE_STATUS_VALUES`. `GET /ready` now answers the shared
 `ReadinessReport`, as `GET /health/ready` already did (below). Every other
@@ -26,8 +27,8 @@ operations warn at compile time rather than break.
 under their own names — `ResourceUsageEntry.limit` becomes nullable,
 `RunEventType` renames seven values, the workspace copy and move requests stop
 requiring their paths, build `b108e9a9` corrects eight of them to the wire,
-`getSession` answers a new type, and build `e0b37b03` corrects five more to
-the wire (all below). Under 1.0 a caret does not
+`getSession` answers a new type, build `e0b37b03` corrects five more to
+the wire, and `AgentStatus` gains `inactive` (all below). Under 1.0 a caret does not
 cross the minor, so `^0.10` keeps building against 0.10.x.
 
 ### Changed — `ResourceUsageEntry.limit` is nullable
@@ -201,6 +202,32 @@ document named them:
   `summary_truncated`; the economics' `month_to_date_llm_usd` and
   `llm_run_rate_basis`; the AI system card's `tool_sources`;
 - ten `ErrorCode` values and the `session.context` run event.
+
+### Added — build `0837bb4d`: qualification sponsorship, data-processing policies, a run's execution receipt
+
+Fourteen operations, none removed, and a 54th group, `qualification`:
+sponsorship programs and grants (`/qualification/sponsorship-programs`,
+`/qualification/sponsorship-grants`), their admin side (sponsor keys, pricing
+revisions, programs), the tenant's qualification evaluator, data-processing
+policies for a tenant and for admins (with revoke), and `GET
+/runs/{runId}/execution-receipt`. `listRuns` takes `client_request_id` and
+`purpose`. `ErrorCode` lists the new codes (`SPONSORSHIP_*`, `QUALIFICATION_*`,
+`PROCESSING_POLICY_*`, `MANAGED_AGENT` and others); `code` stays a string.
+
+`AgentStatus` gains `inactive`, which the wire was already sending (reported
+at build `e0b37b03` as undocumented, and decoded then through the unknown-value
+fallback). A `match`/`when`/`switch` over `AgentStatus` without a default arm
+now needs the case.
+
+`runs.create` is still typed by its `Run`. The document now lists a 200 and a
+201 `QualificationSponsoredRunExcerpt` before the 202 `Run`, but those answer
+only a body that carries `execution_requirements` — the sponsored qualification
+path, which Nestor's server takes under a sponsorship grant and no SDK caller
+does (API lane, from `wantsQualification()`). Typed by the first 2xx, every
+SDK would have demanded `execution_requirements` and the strict decoders would
+have refused every ordinary run. The generator pins `createRun` to its 202 in
+`TYPED_BY_STATUS` (generator/src/parse.ts); the build stops if the document
+ever stops listing it.
 
 ### Changed — build `e0b37b03`: five more types follow the wire
 

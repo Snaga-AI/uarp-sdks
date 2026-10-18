@@ -43,6 +43,7 @@
 --    UARP.API.Projects
 --    UARP.API.Providers
 --    UARP.API.Public
+--    UARP.API.Qualification
 --    UARP.API.Registry
 --    UARP.API.Reports
 --    UARP.API.Runs

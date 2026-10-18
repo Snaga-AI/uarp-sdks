@@ -43,6 +43,7 @@ import { ProgramsResource } from './programs.js';
 import { ProjectsResource } from './projects.js';
 import { ProvidersResource } from './providers.js';
 import { PublicResource } from './public.js';
+import { QualificationResource } from './qualification.js';
 import { RegistryResource } from './registry.js';
 import { ReportsResource } from './reports.js';
 import { RunsResource } from './runs.js';
@@ -97,6 +98,7 @@ export * from './programs.js';
 export * from './projects.js';
 export * from './providers.js';
 export * from './public.js';
+export * from './qualification.js';
 export * from './registry.js';
 export * from './reports.js';
 export * from './runs.js';
@@ -277,6 +279,7 @@ export interface Resources {
    * Unauthenticated public-facing endpoints
    */
   readonly public: PublicResource;
+  readonly qualification: QualificationResource;
   /**
    * Spec registry — publish, search, yank, share spec artifacts
    */
@@ -368,6 +371,7 @@ export function createResources(client: Transport): Resources {
     projects: new ProjectsResource(client),
     providers: new ProvidersResource(client),
     public: new PublicResource(client),
+    qualification: new QualificationResource(client),
     registry: new RegistryResource(client),
     reports: new ReportsResource(client),
     runs: new RunsResource(client),

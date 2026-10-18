@@ -77,6 +77,18 @@ public struct RunsAPI: Sendable {
     /// response (same run_id). Pin a specific agent version with `version` to bypass the head
     /// pointer.
     ///
+    /// A body carrying `execution_requirements` is a sponsored qualification run (Nestor, since
+    /// 2026-10-17) and has its own admission: `QualificationSponsoredRunCreateV2`, strict JSON
+    /// (repeated member names refused, at most 131072 bytes), `metadata` names not starting with
+    /// `_`. The first acceptance answers 201, an exact replay of the same `client_request_id`
+    /// command answers 200 with the original run, another command under that id is 409
+    /// `CLIENT_REQUEST_CONFLICT`. Refusals: 403 `SPONSORSHIP_REQUIRED` (a v1 command: the candidate
+    /// never pays), 403 `SPONSORSHIP_GRANT_MISMATCH` with `reason`, 409
+    /// `SPONSORSHIP_GRANT_UNAVAILABLE` / `SPONSORSHIP_PROGRAM_INACTIVE`, 412
+    /// `PROCESSING_POLICY_NOT_READY` / `PROCESSING_POLICY_CHANGED`, 422
+    /// `EXECUTION_PROFILE_UNVERIFIABLE` / `INVALID_REQUEST`. The managed evaluator cannot be run
+    /// without one (403 `MANAGED_AGENT`).
+    ///
     /// `POST /api/v1/runs`
     ///
     /// Required scopes: `runs:create`.
@@ -358,8 +370,14 @@ public struct RunsAPI: Sendable {
     /// `GET /api/v1/runs`
     ///
     /// Required scopes: `runs:read`.
-    public func list(agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, order: ListRunsOrder? = nil, options: RequestOptions = .init()) async throws -> ListRunsResponse {
+    public func list(clientRequestId: String? = nil, purpose: String? = nil, agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, order: ListRunsOrder? = nil, options: RequestOptions = .init()) async throws -> ListRunsResponse {
         var query: [URLQueryItem] = []
+        if let clientRequestId {
+            query.append(URLQueryItem(name: "client_request_id", value: clientRequestId))
+        }
+        if let purpose {
+            query.append(URLQueryItem(name: "purpose", value: purpose))
+        }
         if let agentId {
             query.append(URLQueryItem(name: "agent_id", value: agentId))
         }
@@ -388,9 +406,9 @@ public struct RunsAPI: Sendable {
 
     /// Stream every item returned by `listRuns`, following the `cursor` cursor until the server
     /// reports no further pages.
-    public func listAll(agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, order: ListRunsOrder? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<Run, Error> {
+    public func listAll(clientRequestId: String? = nil, purpose: String? = nil, agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, order: ListRunsOrder? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<Run, Error> {
         autoPaginate(
-            fetch: { cursor in try await self.list(agentId: agentId, sessionId: sessionId, status: status, limit: limit, cursor: cursor, order: order, options: options) },
+            fetch: { cursor in try await self.list(clientRequestId: clientRequestId, purpose: purpose, agentId: agentId, sessionId: sessionId, status: status, limit: limit, cursor: cursor, order: order, options: options) },
             items: { $0.items },
             cursor: { $0.cursor },
             hasMore: { $0.hasMore }

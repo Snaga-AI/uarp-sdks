@@ -4041,6 +4041,7 @@ package UARP.Models is
    Agent_Status_Suspended,
    Agent_Status_Terminated,
    Agent_Status_Deposed,
+   Agent_Status_Inactive,
    Agent_Status_Unrecognized);
 
    type Agent_Status is record
@@ -4339,6 +4340,10 @@ package UARP.Models is
 
    --  `Agent` model.
    type Agent is record
+      --  Bridge agents only: the stable fingerprint of the machine that enrolled it, used to adopt
+      --  the same agent after a reconnect. Absent on records enrolled before 2026-09-03.
+      Has_Bridge_Fingerprint : Boolean := False;
+      Bridge_Fingerprint : UARP.Types.Text := UARP.Types.Empty_Text;
       --  The initiative (`/initiatives`) this agent works for, when it has one. Its runs are charged
       --  to that initiative's budget, and automated runs are refused (`INITIATIVE_PAUSED`) while it
       --  is paused or (`INITIATIVE_BUDGET_EXHAUSTED`) out of budget; agents and squads it creates
@@ -5895,13 +5900,13 @@ package UARP.Models is
       --  canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
       --  provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
       --  detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-      --  provisioned`, `Platform agent config migrated on boot`, `Hired`, `Registered from a local
-      --  app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`,
-      --  `Token cap removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N =
-      --  the version rolled back to), `Self-improvement: N changes based on N analysis` (the
-      --  self-improvement loop: the first N is a count, the second is one of errors, ratings or
-      --  feedback - words, not a number). A reason code beside the prose is the owner's decision (DEC
-      --  11).
+      --  provisioned`, `Platform agent config migrated on boot`, `Qualification evaluator template
+      --  revision N` (N = the template revision), `Hired`, `Registered from a local app`, `Token cap
+      --  removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap
+      --  removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version
+      --  rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement
+      --  loop: the first N is a count, the second is one of errors, ratings or feedback - words, not
+      --  a number). A reason code beside the prose is the owner's decision (DEC 11).
       Has_Changelog : Boolean := False;
       Changelog : UARP.Types.Text := UARP.Types.Empty_Text;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -10016,6 +10021,121 @@ package UARP.Models is
    function To_JSON (Model : Complete_O_Auth_Login_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Complete_O_Auth_Login_Response;
 
+   --  Values of `QualificationProcessingPolicyLLMTrainingUse`.
+   --  A value the API introduces later decodes as Qualification_Processing_Policy_LLM_Training_Use_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Processing_Policy_LLM_Training_Use_Kind is
+     (Qualification_Processing_Policy_LLM_Training_Use_Not_Used,
+   Qualification_Processing_Policy_LLM_Training_Use_Used,
+   Qualification_Processing_Policy_LLM_Training_Use_Unknown,
+   Qualification_Processing_Policy_LLM_Training_Use_Unrecognized);
+
+   type Qualification_Processing_Policy_LLM_Training_Use is record
+      Kind : Qualification_Processing_Policy_LLM_Training_Use_Kind := Qualification_Processing_Policy_LLM_Training_Use_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Processing_Policy_LLM_Training_Use (Value : String) return Qualification_Processing_Policy_LLM_Training_Use;
+   function To_Qualification_Processing_Policy_LLM_Training_Use (Kind : Qualification_Processing_Policy_LLM_Training_Use_Kind) return Qualification_Processing_Policy_LLM_Training_Use;
+   function Image (Model : Qualification_Processing_Policy_LLM_Training_Use) return String;
+   function To_JSON (Model : Qualification_Processing_Policy_LLM_Training_Use) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Processing_Policy_LLM_Training_Use;
+
+   --  `QualificationRetentionRuleVariant1` model.
+   type Qualification_Retention_Rule_Variant1 is record
+      Mode : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Max_Seconds : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Qualification_Retention_Rule_Variant1) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Retention_Rule_Variant1;
+
+   --  `QualificationRetentionRuleVariant2` model.
+   type Qualification_Retention_Rule_Variant2 is record
+      Mode : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Max_Seconds : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Qualification_Retention_Rule_Variant2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Retention_Rule_Variant2;
+
+   --  Values of `QualificationRetentionRuleVariant3mode`.
+   --  A value the API introduces later decodes as Qualification_Retention_Rule_Variant3mode_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Retention_Rule_Variant3mode_Kind is
+     (Qualification_Retention_Rule_Variant3mode_Indefinite,
+   Qualification_Retention_Rule_Variant3mode_Not_Applicable,
+   Qualification_Retention_Rule_Variant3mode_Unknown,
+   Qualification_Retention_Rule_Variant3mode_Unrecognized);
+
+   type Qualification_Retention_Rule_Variant3mode is record
+      Kind : Qualification_Retention_Rule_Variant3mode_Kind := Qualification_Retention_Rule_Variant3mode_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Retention_Rule_Variant3mode (Value : String) return Qualification_Retention_Rule_Variant3mode;
+   function To_Qualification_Retention_Rule_Variant3mode (Kind : Qualification_Retention_Rule_Variant3mode_Kind) return Qualification_Retention_Rule_Variant3mode;
+   function Image (Model : Qualification_Retention_Rule_Variant3mode) return String;
+   function To_JSON (Model : Qualification_Retention_Rule_Variant3mode) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Retention_Rule_Variant3mode;
+
+   --  `QualificationRetentionRuleVariant3` model.
+   type Qualification_Retention_Rule_Variant3 is record
+      Mode : UARP.Models.Qualification_Retention_Rule_Variant3mode;
+      Has_Max_Seconds : Boolean := False;
+      Max_Seconds : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Qualification_Retention_Rule_Variant3) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Retention_Rule_Variant3;
+
+   subtype Qualification_Retention_Rule is UARP.JSON_Support.JSON_Value;
+
+   --  `QualificationStoragePolicy` model.
+   type Qualification_Storage_Policy is record
+      Runs : UARP.Models.Qualification_Retention_Rule;
+      Events : UARP.Models.Qualification_Retention_Rule;
+      Artifacts : UARP.Models.Qualification_Retention_Rule;
+      Checkpoints : UARP.Models.Qualification_Retention_Rule;
+      Archives : UARP.Models.Qualification_Retention_Rule;
+      Backups : UARP.Models.Qualification_Retention_Rule;
+      LLM : UARP.Models.Qualification_Retention_Rule;
+   end record;
+
+   function To_JSON (Model : Qualification_Storage_Policy) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Storage_Policy;
+
+   subtype Qualification_Digest is UARP.Types.Text;
+
+   --  `ConfirmDataProcessingPolicyRequest` model.
+   type Confirm_Data_Processing_Policy_Request is record
+      Has_Processor_Name : Boolean := False;
+      Processor_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Processing_Region : Boolean := False;
+      Processing_Region : UARP.Types.Text := UARP.Types.Empty_Text;
+      LLM_Training_Use : UARP.Models.Qualification_Processing_Policy_LLM_Training_Use;
+      Has_Archive_Enabled : Boolean := False;
+      Archive_Enabled : Standard.Boolean := False;
+      Storage : UARP.Models.Qualification_Storage_Policy;
+      Has_Evidence_Hash : Boolean := False;
+      Evidence_Hash : UARP.Models.Qualification_Digest;
+      Recovery_Window_Seconds : UARP.Types.Integer_Value := 0;
+      Observed_At_Unix : UARP.Types.Integer_Value := 0;
+      Expires_At_Unix : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Confirm_Data_Processing_Policy_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Confirm_Data_Processing_Policy_Request;
+
+   --  `ConfirmDataProcessingPolicyResponse` model.
+   type Confirm_Data_Processing_Policy_Response is record
+      Has_Current : Boolean := False;
+      Current : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+   end record;
+
+   function To_JSON (Model : Confirm_Data_Processing_Policy_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Confirm_Data_Processing_Policy_Response;
+
    --  `ConfirmSessionTodoRequest` model.
    type Confirm_Session_Todo_Request is record
       Has_Execute : Boolean := False;
@@ -10573,6 +10693,12 @@ package UARP.Models is
    --  On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
    --  publicRunMetrics).
    type Conversation_Entry_Run_Metrics is record
+      --  The context window of the model that served the run, in tokens.
+      Has_Context_Window_Tokens : Boolean := False;
+      Context_Window_Tokens : UARP.Types.Integer_Value := 0;
+      --  Input tokens of the run's last model call: how full the window was at the end.
+      Has_Last_Input_Tokens : Boolean := False;
+      Last_Input_Tokens : UARP.Types.Integer_Value := 0;
       --  How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
       Has_Pricing_Confidence : Boolean := False;
       Pricing_Confidence : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -14355,12 +14481,14 @@ package UARP.Models is
    Error_Code_Already_Exists,
    Error_Code_Anon_Busy,
    Error_Code_Artifact_Integrity_Error,
+   Error_Code_Assessment_Isolation_Required,
    Error_Code_Auth_Error,
    Error_Code_Billing_Cancelled,
    Error_Code_Billing_Disputed,
    Error_Code_Billing_Past_Due,
    Error_Code_Budget_Exceeded,
    Error_Code_Checksum_Mismatch,
+   Error_Code_Client_Request_Conflict,
    Error_Code_Company_Not_Ready,
    Error_Code_Company_Paused,
    Error_Code_Concurrency_Limit,
@@ -14373,6 +14501,8 @@ package UARP.Models is
    Error_Code_Daily_Limit,
    Error_Code_Dependency_Exists,
    Error_Code_Event_Store_Error,
+   Error_Code_Execution_Profile_Unverifiable,
+   Error_Code_Execution_Receipt_Pending,
    Error_Code_External_Service_Error,
    Error_Code_Featured_Set_Contended,
    Error_Code_Feature_Disabled,
@@ -14380,6 +14510,7 @@ package UARP.Models is
    Error_Code_File_Type_Not_Allowed,
    Error_Code_Forbidden,
    Error_Code_Guardrail_Violation,
+   Error_Code_Idempotency_Conflict,
    Error_Code_Idempotency_Key_Reused,
    Error_Code_Initiative_Budget_Exhausted,
    Error_Code_Initiative_Paused,
@@ -14393,7 +14524,9 @@ package UARP.Models is
    Error_Code_Invalid_Share_List,
    Error_Code_Invalid_Share_Target,
    Error_Code_Invalid_State_Transition,
+   Error_Code_Isolation_Violation,
    Error_Code_LLM_Error,
+   Error_Code_Managed_Agent,
    Error_Code_Max_Duration_Exceeded,
    Error_Code_Max_Tokens_Exceeded,
    Error_Code_Method_Not_Allowed,
@@ -14411,6 +14544,7 @@ package UARP.Models is
    Error_Code_Not_Yanked,
    Error_Code_No_Runnable_Target,
    Error_Code_Oauth_Failed,
+   Error_Code_Output_Too_Large,
    Error_Code_Payload_Too_Large,
    Error_Code_Persistence_Error,
    Error_Code_Planner_Output_Invalid,
@@ -14419,9 +14553,15 @@ package UARP.Models is
    Error_Code_Prerequisite_Missing,
    Error_Code_Pricing_Unavailable,
    Error_Code_Private_Not_Shared,
+   Error_Code_Processing_Policy_Changed,
+   Error_Code_Processing_Policy_Not_Ready,
    Error_Code_Promo_Redemption_Failed,
    Error_Code_Proposal_Expired,
+   Error_Code_Qualification_Budget_Stop,
+   Error_Code_Qualification_Route_Mismatch,
+   Error_Code_Qualification_Version_Unavailable,
    Error_Code_Quota_Exceeded,
+   Error_Code_Rate_Limited,
    Error_Code_Rate_Limit_Exceeded,
    Error_Code_Reference_Not_Found,
    Error_Code_Reserved_Scope,
@@ -14438,12 +14578,28 @@ package UARP.Models is
    Error_Code_Signing_Not_Configured,
    Error_Code_Size_Limit,
    Error_Code_Spec_Not_Found,
+   Error_Code_Sponsorship_Budget_Below_Committed,
+   Error_Code_Sponsorship_Budget_Exhausted,
+   Error_Code_Sponsorship_Candidate_Limit,
+   Error_Code_Sponsorship_Concurrency_Limit,
+   Error_Code_Sponsorship_Funding_Unavailable,
+   Error_Code_Sponsorship_Grant_Conflict,
+   Error_Code_Sponsorship_Grant_In_Use,
+   Error_Code_Sponsorship_Grant_Mismatch,
+   Error_Code_Sponsorship_Grant_Unavailable,
+   Error_Code_Sponsorship_Outcome_Unknown,
+   Error_Code_Sponsorship_Program_Immutable,
+   Error_Code_Sponsorship_Program_Inactive,
+   Error_Code_Sponsorship_Program_Revision_Conflict,
+   Error_Code_Sponsorship_Required,
+   Error_Code_Sponsorship_Scope_Required,
    Error_Code_Started_By_Another_User,
    Error_Code_Strategist_Model_Unconfigured,
    Error_Code_Task_Graph_Failed,
    Error_Code_Team_Abort,
    Error_Code_Terms_Not_Accepted,
    Error_Code_Text_Extraction_Failed,
+   Error_Code_Unauthenticated,
    Error_Code_User_Required,
    Error_Code_Validation_Error,
    Error_Code_Verification_Failed,
@@ -14485,7 +14641,7 @@ package UARP.Models is
    Error_Code_Provider_Not_Configured,
    Error_Code_Provider_Rate_Limited,
    Error_Code_Quota_Exceeded_X,
-   Error_Code_Rate_Limited,
+   Error_Code_Rate_Limited_X,
    Error_Code_Resource_Limit_Reached,
    Error_Code_Run_Approval_Expired,
    Error_Code_Run_Input_Timeout,
@@ -15591,6 +15747,15 @@ package UARP.Models is
 
    function To_JSON (Model : Get_Admin_Blog_Config_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Blog_Config_Response;
+
+   --  `GetAdminDataProcessingPolicyResponse` model.
+   type Get_Admin_Data_Processing_Policy_Response is record
+      Has_Current : Boolean := False;
+      Current : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+   end record;
+
+   function To_JSON (Model : Get_Admin_Data_Processing_Policy_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Data_Processing_Policy_Response;
 
    --  `GetAdminDisabledToolsResponse` model.
    type Get_Admin_Disabled_Tools_Response is record
@@ -18016,6 +18181,24 @@ package UARP.Models is
    function To_JSON (Model : Get_Run_Queue_Position_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Run_Queue_Position_Response;
 
+   --  Closed sponsored v2. Existing v1 remains unchanged. Phase A uses false/null; strict mode
+   --  still requires independently accepted evidence/calibration.
+   type Qualification_Execution_Requirements_V2 is record
+      Schema_Version : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Purpose : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Client_Request_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Processing_Policy_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Processing_Policy_Hash : UARP.Models.Qualification_Digest;
+      Isolation_Profile : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Require_Verifiable_Execution : Standard.Boolean := False;
+      Has_Expected_Execution_Profile_Hash : Boolean := False;
+      Expected_Execution_Profile_Hash : UARP.Models.Qualification_Digest;
+      Sponsorship_Grant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Qualification_Execution_Requirements_V2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Execution_Requirements_V2;
+
    --  Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
    --  agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
    --  client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -18108,6 +18291,12 @@ package UARP.Models is
 
    --  `RunMetrics` model.
    type Run_Metrics is record
+      --  The context window of the model that served the run, in tokens.
+      Has_Context_Window_Tokens : Boolean := False;
+      Context_Window_Tokens : UARP.Types.Integer_Value := 0;
+      --  Input tokens of the run's last model call: how full the window was at the end.
+      Has_Last_Input_Tokens : Boolean := False;
+      Last_Input_Tokens : UARP.Types.Integer_Value := 0;
       --  How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
       Has_Pricing_Confidence : Boolean := False;
       Pricing_Confidence : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -18253,6 +18442,17 @@ package UARP.Models is
 
    --  `GetRunResponse` model.
    type Get_Run_Response is record
+      --  Sponsored qualification runs only: the requirements the run was admitted under, stored as
+      --  accepted.
+      Has_Execution_Requirements : Boolean := False;
+      Execution_Requirements : UARP.Models.Qualification_Execution_Requirements_V2;
+      --  Sponsored qualification runs only: until when the run is recoverable by its client request
+      --  id.
+      Has_Recovery_Expires_At_Unix : Boolean := False;
+      Recovery_Expires_At_Unix : UARP.Types.Integer_Value := 0;
+      --  Sponsored qualification runs only: the grant that paid for it.
+      Has_Sponsorship_Grant_Id : Boolean := False;
+      Sponsorship_Grant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       --  Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
       --  agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
       --  client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -23857,6 +24057,17 @@ package UARP.Models is
 
    --  `Run` model.
    type Run is record
+      --  Sponsored qualification runs only: the requirements the run was admitted under, stored as
+      --  accepted.
+      Has_Execution_Requirements : Boolean := False;
+      Execution_Requirements : UARP.Models.Qualification_Execution_Requirements_V2;
+      --  Sponsored qualification runs only: until when the run is recoverable by its client request
+      --  id.
+      Has_Recovery_Expires_At_Unix : Boolean := False;
+      Recovery_Expires_At_Unix : UARP.Types.Integer_Value := 0;
+      --  Sponsored qualification runs only: the grant that paid for it.
+      Has_Sponsorship_Grant_Id : Boolean := False;
+      Sponsorship_Grant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       --  Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
       --  agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
       --  client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -27935,6 +28146,856 @@ package UARP.Models is
    function To_JSON (Model : Put_Careers_Config_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Put_Careers_Config_Response;
 
+   subtype Qualification_Positive_Microusd is UARP.Types.Text;
+
+   --  `PutQualificationPricingRevisionRequest` model.
+   type Put_Qualification_Pricing_Revision_Request is record
+      Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Model : UARP.Types.Text := UARP.Types.Empty_Text;
+      Input_Microusd_Per_Million_Tokens : UARP.Models.Qualification_Positive_Microusd;
+      Output_Microusd_Per_Million_Tokens : UARP.Models.Qualification_Positive_Microusd;
+   end record;
+
+   function To_JSON (Model : Put_Qualification_Pricing_Revision_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Put_Qualification_Pricing_Revision_Request;
+
+   --  `PutQualificationSponsorKeyRequest` model.
+   type Put_Qualification_Sponsor_Key_Request is record
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Programs : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Put_Qualification_Sponsor_Key_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Put_Qualification_Sponsor_Key_Request;
+
+   --  Prepared Nestor message only. No files or attachments. Source is untrusted data and must not
+   --  become instructions.
+   type Qualification_Assessment_Input_Message is record
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Qualification_Assessment_Input_Message) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Assessment_Input_Message;
+
+   --  `QualificationConfirmedRetentionRuleVariant1` model.
+   type Qualification_Confirmed_Retention_Rule_Variant1 is record
+      Mode : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Max_Seconds : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Qualification_Confirmed_Retention_Rule_Variant1) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Confirmed_Retention_Rule_Variant1;
+
+   --  `QualificationConfirmedRetentionRuleVariant2` model.
+   type Qualification_Confirmed_Retention_Rule_Variant2 is record
+      Mode : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Max_Seconds : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Qualification_Confirmed_Retention_Rule_Variant2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Confirmed_Retention_Rule_Variant2;
+
+   --  Values of `QualificationConfirmedRetentionRuleVariant3mode`.
+   --  A value the API introduces later decodes as Qualification_Confirmed_Retention_Rule_Variant3mode_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Confirmed_Retention_Rule_Variant3mode_Kind is
+     (Qualification_Confirmed_Retention_Rule_Variant3mode_Indefinite,
+   Qualification_Confirmed_Retention_Rule_Variant3mode_Not_Applicable,
+   Qualification_Confirmed_Retention_Rule_Variant3mode_Unrecognized);
+
+   type Qualification_Confirmed_Retention_Rule_Variant3mode is record
+      Kind : Qualification_Confirmed_Retention_Rule_Variant3mode_Kind := Qualification_Confirmed_Retention_Rule_Variant3mode_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Confirmed_Retention_Rule_Variant3mode (Value : String) return Qualification_Confirmed_Retention_Rule_Variant3mode;
+   function To_Qualification_Confirmed_Retention_Rule_Variant3mode (Kind : Qualification_Confirmed_Retention_Rule_Variant3mode_Kind) return Qualification_Confirmed_Retention_Rule_Variant3mode;
+   function Image (Model : Qualification_Confirmed_Retention_Rule_Variant3mode) return String;
+   function To_JSON (Model : Qualification_Confirmed_Retention_Rule_Variant3mode) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Confirmed_Retention_Rule_Variant3mode;
+
+   --  `QualificationConfirmedRetentionRuleVariant3` model.
+   type Qualification_Confirmed_Retention_Rule_Variant3 is record
+      Mode : UARP.Models.Qualification_Confirmed_Retention_Rule_Variant3mode;
+      Has_Max_Seconds : Boolean := False;
+      Max_Seconds : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Qualification_Confirmed_Retention_Rule_Variant3) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Confirmed_Retention_Rule_Variant3;
+
+   subtype Qualification_Confirmed_Retention_Rule is UARP.JSON_Support.JSON_Value;
+
+   --  `QualificationConfirmedStoragePolicy` model.
+   type Qualification_Confirmed_Storage_Policy is record
+      Runs : UARP.Models.Qualification_Confirmed_Retention_Rule;
+      Events : UARP.Models.Qualification_Confirmed_Retention_Rule;
+      Artifacts : UARP.Models.Qualification_Confirmed_Retention_Rule;
+      Checkpoints : UARP.Models.Qualification_Confirmed_Retention_Rule;
+      Archives : UARP.Models.Qualification_Confirmed_Retention_Rule;
+      Backups : UARP.Models.Qualification_Confirmed_Retention_Rule;
+      LLM : UARP.Models.Qualification_Confirmed_Retention_Rule;
+   end record;
+
+   function To_JSON (Model : Qualification_Confirmed_Storage_Policy) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Confirmed_Storage_Policy;
+
+   --  Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+   --  86400 seconds later. recovery_window_seconds is the minimum durable client request
+   --  reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+   --  run records or receipt identifiers persist.
+   type Qualification_Confirmed_Processing_Policy is record
+      Schema_Version : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Revision : UARP.Types.Integer_Value := 0;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Purpose : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Recipient : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Processor_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Processing_Region : UARP.Types.Text := UARP.Types.Empty_Text;
+      LLM_Training_Use : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Archive_Enabled : Standard.Boolean := False;
+      Storage : UARP.Models.Qualification_Confirmed_Storage_Policy;
+      Evidence_Hash : UARP.Models.Qualification_Digest;
+      Recovery_Window_Seconds : UARP.Types.Integer_Value := 0;
+      Observed_At_Unix : UARP.Types.Integer_Value := 0;
+      Expires_At_Unix : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Qualification_Confirmed_Processing_Policy) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Confirmed_Processing_Policy;
+
+   --  Values of `QualificationConfirmedPolicyResponseReadiness`.
+   --  A value the API introduces later decodes as Qualification_Confirmed_Policy_Response_Readiness_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Confirmed_Policy_Response_Readiness_Kind is
+     (Qualification_Confirmed_Policy_Response_Readiness_Confirmed,
+   Qualification_Confirmed_Policy_Response_Readiness_Unrecognized);
+
+   type Qualification_Confirmed_Policy_Response_Readiness is record
+      Kind : Qualification_Confirmed_Policy_Response_Readiness_Kind := Qualification_Confirmed_Policy_Response_Readiness_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Confirmed_Policy_Response_Readiness (Value : String) return Qualification_Confirmed_Policy_Response_Readiness;
+   function To_Qualification_Confirmed_Policy_Response_Readiness (Kind : Qualification_Confirmed_Policy_Response_Readiness_Kind) return Qualification_Confirmed_Policy_Response_Readiness;
+   function Image (Model : Qualification_Confirmed_Policy_Response_Readiness) return String;
+   function To_JSON (Model : Qualification_Confirmed_Policy_Response_Readiness) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Confirmed_Policy_Response_Readiness;
+
+   --  Values of `QualificationConfirmedPolicyResponseBlocker`.
+   --  A value the API introduces later decodes as Qualification_Confirmed_Policy_Response_Blocker_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Confirmed_Policy_Response_Blocker_Kind is
+     (Qualification_Confirmed_Policy_Response_Blocker_Policy_Not_Configured,
+   Qualification_Confirmed_Policy_Response_Blocker_Retention_Unknown,
+   Qualification_Confirmed_Policy_Response_Blocker_LLM_Training_Unconfirmed,
+   Qualification_Confirmed_Policy_Response_Blocker_LLM_Training_Used,
+   Qualification_Confirmed_Policy_Response_Blocker_Processor_Unconfirmed,
+   Qualification_Confirmed_Policy_Response_Blocker_Evidence_Unconfirmed,
+   Qualification_Confirmed_Policy_Response_Blocker_Policy_Expired,
+   Qualification_Confirmed_Policy_Response_Blocker_Policy_Revoked,
+   Qualification_Confirmed_Policy_Response_Blocker_Unrecognized);
+
+   type Qualification_Confirmed_Policy_Response_Blocker is record
+      Kind : Qualification_Confirmed_Policy_Response_Blocker_Kind := Qualification_Confirmed_Policy_Response_Blocker_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Confirmed_Policy_Response_Blocker (Value : String) return Qualification_Confirmed_Policy_Response_Blocker;
+   function To_Qualification_Confirmed_Policy_Response_Blocker (Kind : Qualification_Confirmed_Policy_Response_Blocker_Kind) return Qualification_Confirmed_Policy_Response_Blocker;
+   function Image (Model : Qualification_Confirmed_Policy_Response_Blocker) return String;
+   function To_JSON (Model : Qualification_Confirmed_Policy_Response_Blocker) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Confirmed_Policy_Response_Blocker;
+
+   package Qualification_Confirmed_Policy_Response_Blocker_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Qualification_Confirmed_Policy_Response_Blocker);
+
+   --  policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+   --  incomplete readiness. confirmed requires current verified terms, not_used training and no
+   --  unknown storage categories.
+   type Qualification_Confirmed_Policy_Response is record
+      Kind : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Policy : UARP.Models.Qualification_Confirmed_Processing_Policy;
+      Policy_Hash : UARP.Models.Qualification_Digest;
+      Readiness : UARP.Models.Qualification_Confirmed_Policy_Response_Readiness;
+      Blockers : UARP.Models.Qualification_Confirmed_Policy_Response_Blocker_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Qualification_Confirmed_Policy_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Confirmed_Policy_Response;
+
+   --  Values of `QualificationVerifiedExecutionReceiptV2runStatus`.
+   --  A value the API introduces later decodes as Qualification_Verified_Execution_Receipt_V2run_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Verified_Execution_Receipt_V2run_Status_Kind is
+     (Qualification_Verified_Execution_Receipt_V2run_Status_Completed,
+   Qualification_Verified_Execution_Receipt_V2run_Status_Failed,
+   Qualification_Verified_Execution_Receipt_V2run_Status_Cancelled,
+   Qualification_Verified_Execution_Receipt_V2run_Status_Timeout,
+   Qualification_Verified_Execution_Receipt_V2run_Status_Guardrail_Blocked,
+   Qualification_Verified_Execution_Receipt_V2run_Status_Rejected,
+   Qualification_Verified_Execution_Receipt_V2run_Status_Unrecognized);
+
+   type Qualification_Verified_Execution_Receipt_V2run_Status is record
+      Kind : Qualification_Verified_Execution_Receipt_V2run_Status_Kind := Qualification_Verified_Execution_Receipt_V2run_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Verified_Execution_Receipt_V2run_Status (Value : String) return Qualification_Verified_Execution_Receipt_V2run_Status;
+   function To_Qualification_Verified_Execution_Receipt_V2run_Status (Kind : Qualification_Verified_Execution_Receipt_V2run_Status_Kind) return Qualification_Verified_Execution_Receipt_V2run_Status;
+   function Image (Model : Qualification_Verified_Execution_Receipt_V2run_Status) return String;
+   function To_JSON (Model : Qualification_Verified_Execution_Receipt_V2run_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Verified_Execution_Receipt_V2run_Status;
+
+   --  Values of `QualificationVerifiedExecutionReceiptV2reasonCode`.
+   --  A value the API introduces later decodes as Qualification_Verified_Execution_Receipt_V2reason_Code_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Verified_Execution_Receipt_V2reason_Code_Kind is
+     (Qualification_Verified_Execution_Receipt_V2reason_Code_Model_Revision_Unresolved,
+   Qualification_Verified_Execution_Receipt_V2reason_Code_Execution_Trace_Incomplete,
+   Qualification_Verified_Execution_Receipt_V2reason_Code_Mixed_Execution_Profiles,
+   Qualification_Verified_Execution_Receipt_V2reason_Code_Runtime_Not_Attestable,
+   Qualification_Verified_Execution_Receipt_V2reason_Code_Metering_Incomplete,
+   Qualification_Verified_Execution_Receipt_V2reason_Code_Isolation_Not_Proven,
+   Qualification_Verified_Execution_Receipt_V2reason_Code_Unrecognized);
+
+   type Qualification_Verified_Execution_Receipt_V2reason_Code is record
+      Kind : Qualification_Verified_Execution_Receipt_V2reason_Code_Kind := Qualification_Verified_Execution_Receipt_V2reason_Code_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Verified_Execution_Receipt_V2reason_Code (Value : String) return Qualification_Verified_Execution_Receipt_V2reason_Code;
+   function To_Qualification_Verified_Execution_Receipt_V2reason_Code (Kind : Qualification_Verified_Execution_Receipt_V2reason_Code_Kind) return Qualification_Verified_Execution_Receipt_V2reason_Code;
+   function Image (Model : Qualification_Verified_Execution_Receipt_V2reason_Code) return String;
+   function To_JSON (Model : Qualification_Verified_Execution_Receipt_V2reason_Code) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Verified_Execution_Receipt_V2reason_Code;
+
+   package Qualification_Verified_Execution_Receipt_V2reason_Code_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Qualification_Verified_Execution_Receipt_V2reason_Code);
+
+   --  Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+   --  as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+   --  required fields cannot be stated.
+   type Qualification_Verified_Safety_Observations is record
+      Trace_Complete : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Tool_Calls_Count : UARP.Types.Integer_Value := 0;
+      Memory_Retrievals : UARP.Types.Integer_Value := 0;
+      Memory_Extractions : UARP.Types.Integer_Value := 0;
+      Spawned_Agents_Count : UARP.Types.Integer_Value := 0;
+      Guardrail_Violations : UARP.Types.Integer_Value := 0;
+      LLM_Calls_Count : UARP.Types.Integer_Value := 0;
+      Steps_Count : UARP.Types.Integer_Value := 0;
+      Duration_Ms : UARP.Types.Float_Value := 0.0;
+      Input_Tokens : UARP.Types.Integer_Value := 0;
+      Output_Tokens : UARP.Types.Integer_Value := 0;
+      Total_Cost_Usd : UARP.Types.Float_Value := 0.0;
+      Truncated : Standard.Boolean := False;
+      Continuation_Used : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Qualification_Verified_Safety_Observations) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Verified_Safety_Observations;
+
+   --  Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+   --  hash identifies stable actual resolved configuration; it excludes
+   --  run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+   --  verified does not mean the engineer is qualified or that a failed run is acceptable.
+   type Qualification_Verified_Execution_Receipt_V2 is record
+      Schema_Version : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Initiator_User_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Version_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Version : UARP.Types.Integer_Value := 0;
+      Client_Request_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Purpose : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Processing_Policy_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Processing_Policy_Hash : UARP.Models.Qualification_Digest;
+      Execution_Requirements : UARP.Models.Qualification_Execution_Requirements_V2;
+      Execution_Profile_Hash : UARP.Models.Qualification_Digest;
+      Run_Input_Hash : UARP.Models.Qualification_Digest;
+      Run_Output_Hash : UARP.Models.Qualification_Digest;
+      Execution_Trace_Hash : UARP.Models.Qualification_Digest;
+      Execution_Origin : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Run_Status : UARP.Models.Qualification_Verified_Execution_Receipt_V2run_Status;
+      Completed_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Verification_Status : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Reason_Codes : UARP.Models.Qualification_Verified_Execution_Receipt_V2reason_Code_Vectors.Vector;
+      Observations : UARP.Models.Qualification_Verified_Safety_Observations;
+   end record;
+
+   function To_JSON (Model : Qualification_Verified_Execution_Receipt_V2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Verified_Execution_Receipt_V2;
+
+   --  Values of `QualificationUnverifiableExecutionReceiptV2executionOrigin`.
+   --  A value the API introduces later decodes as Qualification_Unverifiable_Execution_Receipt_V2execution_Origin_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Unverifiable_Execution_Receipt_V2execution_Origin_Kind is
+     (Qualification_Unverifiable_Execution_Receipt_V2execution_Origin_Cloud_Runtime,
+   Qualification_Unverifiable_Execution_Receipt_V2execution_Origin_Bridge,
+   Qualification_Unverifiable_Execution_Receipt_V2execution_Origin_Unknown,
+   Qualification_Unverifiable_Execution_Receipt_V2execution_Origin_Unrecognized);
+
+   type Qualification_Unverifiable_Execution_Receipt_V2execution_Origin is record
+      Kind : Qualification_Unverifiable_Execution_Receipt_V2execution_Origin_Kind := Qualification_Unverifiable_Execution_Receipt_V2execution_Origin_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Unverifiable_Execution_Receipt_V2execution_Origin (Value : String) return Qualification_Unverifiable_Execution_Receipt_V2execution_Origin;
+   function To_Qualification_Unverifiable_Execution_Receipt_V2execution_Origin (Kind : Qualification_Unverifiable_Execution_Receipt_V2execution_Origin_Kind) return Qualification_Unverifiable_Execution_Receipt_V2execution_Origin;
+   function Image (Model : Qualification_Unverifiable_Execution_Receipt_V2execution_Origin) return String;
+   function To_JSON (Model : Qualification_Unverifiable_Execution_Receipt_V2execution_Origin) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Unverifiable_Execution_Receipt_V2execution_Origin;
+
+   --  Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+   --  as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+   --  required fields cannot be stated.
+   type Qualification_Safety_Observations is record
+      Trace_Complete : Standard.Boolean := False;
+      Tool_Calls_Count : UARP.Types.Integer_Value := 0;
+      Memory_Retrievals : UARP.Types.Integer_Value := 0;
+      Memory_Extractions : UARP.Types.Integer_Value := 0;
+      Spawned_Agents_Count : UARP.Types.Integer_Value := 0;
+      Guardrail_Violations : UARP.Types.Integer_Value := 0;
+      LLM_Calls_Count : UARP.Types.Integer_Value := 0;
+      Steps_Count : UARP.Types.Integer_Value := 0;
+      Duration_Ms : UARP.Types.Float_Value := 0.0;
+      Input_Tokens : UARP.Types.Integer_Value := 0;
+      Output_Tokens : UARP.Types.Integer_Value := 0;
+      Total_Cost_Usd : UARP.Types.Float_Value := 0.0;
+      Truncated : Standard.Boolean := False;
+      Continuation_Used : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Qualification_Safety_Observations) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Safety_Observations;
+
+   --  Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+   --  hash identifies stable actual resolved configuration; it excludes
+   --  run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+   --  verified does not mean the engineer is qualified or that a failed run is acceptable.
+   type Qualification_Unverifiable_Execution_Receipt_V2 is record
+      Schema_Version : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Initiator_User_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Version_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Version : UARP.Types.Integer_Value := 0;
+      Client_Request_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Purpose : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Processing_Policy_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Processing_Policy_Hash : UARP.Models.Qualification_Digest;
+      Execution_Requirements : UARP.Models.Qualification_Execution_Requirements_V2;
+      Has_Execution_Profile_Hash : Boolean := False;
+      Execution_Profile_Hash : UARP.Models.Qualification_Digest;
+      Run_Input_Hash : UARP.Models.Qualification_Digest;
+      Run_Output_Hash : UARP.Models.Qualification_Digest;
+      Has_Execution_Trace_Hash : Boolean := False;
+      Execution_Trace_Hash : UARP.Models.Qualification_Digest;
+      Execution_Origin : UARP.Models.Qualification_Unverifiable_Execution_Receipt_V2execution_Origin;
+      Run_Status : UARP.Models.Qualification_Verified_Execution_Receipt_V2run_Status;
+      Completed_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Verification_Status : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Reason_Codes : UARP.Models.Qualification_Verified_Execution_Receipt_V2reason_Code_Vectors.Vector;
+      Has_Observations : Boolean := False;
+      Observations : UARP.Models.Qualification_Safety_Observations;
+   end record;
+
+   function To_JSON (Model : Qualification_Unverifiable_Execution_Receipt_V2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Unverifiable_Execution_Receipt_V2;
+
+   subtype Qualification_Execution_Receipt_V2 is UARP.JSON_Support.JSON_Value;
+
+   --  Values of `QualificationExecutionReceiptResponseV2profileStatus`.
+   --  A value the API introduces later decodes as Qualification_Execution_Receipt_Response_V2profile_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Execution_Receipt_Response_V2profile_Status_Kind is
+     (Qualification_Execution_Receipt_Response_V2profile_Status_Active,
+   Qualification_Execution_Receipt_Response_V2profile_Status_Revoked,
+   Qualification_Execution_Receipt_Response_V2profile_Status_Unknown,
+   Qualification_Execution_Receipt_Response_V2profile_Status_Unrecognized);
+
+   type Qualification_Execution_Receipt_Response_V2profile_Status is record
+      Kind : Qualification_Execution_Receipt_Response_V2profile_Status_Kind := Qualification_Execution_Receipt_Response_V2profile_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Execution_Receipt_Response_V2profile_Status (Value : String) return Qualification_Execution_Receipt_Response_V2profile_Status;
+   function To_Qualification_Execution_Receipt_Response_V2profile_Status (Kind : Qualification_Execution_Receipt_Response_V2profile_Status_Kind) return Qualification_Execution_Receipt_Response_V2profile_Status;
+   function Image (Model : Qualification_Execution_Receipt_Response_V2profile_Status) return String;
+   function To_JSON (Model : Qualification_Execution_Receipt_Response_V2profile_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Execution_Receipt_Response_V2profile_Status;
+
+   --  receipt_hash binds only receipt. profile_status and its observation time are current
+   --  server-owned validity outside immutable history. Authenticated HTTPS readback is mandatory;
+   --  a hash alone does not authenticate a server.
+   type Qualification_Execution_Receipt_Response_V2 is record
+      Kind : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Receipt : UARP.Models.Qualification_Execution_Receipt_V2;
+      Receipt_Hash : UARP.Models.Qualification_Digest;
+      Profile_Status : UARP.Models.Qualification_Execution_Receipt_Response_V2profile_Status;
+      Profile_Status_Observed_At_Unix : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Qualification_Execution_Receipt_Response_V2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Execution_Receipt_Response_V2;
+
+   --  Hash material only, never accepted by POST /runs. Omit exactly sponsorship_grant_id to avoid
+   --  a circular grant/hash dependency.
+   type Qualification_Execution_Requirements_Before_Grant_V2 is record
+      Schema_Version : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Purpose : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Client_Request_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Processing_Policy_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Processing_Policy_Hash : UARP.Models.Qualification_Digest;
+      Isolation_Profile : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Require_Verifiable_Execution : Standard.Boolean := False;
+      Has_Expected_Execution_Profile_Hash : Boolean := False;
+      Expected_Execution_Profile_Hash : UARP.Models.Qualification_Digest;
+   end record;
+
+   function To_JSON (Model : Qualification_Execution_Requirements_Before_Grant_V2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Execution_Requirements_Before_Grant_V2;
+
+   --  Immutable server authorization snapshot. grant_hash hashes only this object, not mutable
+   --  envelope fields.
+   type Qualification_Grant_Authorization is record
+      Grant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Program_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Purpose : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Candidate_Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Candidate_User_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Client_Request_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Input_Hash : UARP.Models.Qualification_Digest;
+      Run_Authorization_Hash : UARP.Models.Qualification_Digest;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Version_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Version : UARP.Types.Integer_Value := 0;
+      Template_Hash : UARP.Models.Qualification_Digest;
+      --  Positive integer micro-USD string, at most USD 1.
+      Max_Cost_Microusd : UARP.Types.Text := UARP.Types.Empty_Text;
+      Expires_At_Unix : UARP.Types.Integer_Value := 0;
+      Pricing_Revision : UARP.Types.Text := UARP.Types.Empty_Text;
+      Created_At_Unix : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Qualification_Grant_Authorization) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Grant_Authorization;
+
+   --  Values of `QualificationGrantStatus`.
+   --  A value the API introduces later decodes as Qualification_Grant_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Grant_Status_Kind is
+     (Qualification_Grant_Status_Reserved,
+   Qualification_Grant_Status_Consumed,
+   Qualification_Grant_Status_Settled,
+   Qualification_Grant_Status_Released,
+   Qualification_Grant_Status_Expired,
+   Qualification_Grant_Status_Unrecognized);
+
+   type Qualification_Grant_Status is record
+      Kind : Qualification_Grant_Status_Kind := Qualification_Grant_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Grant_Status (Value : String) return Qualification_Grant_Status;
+   function To_Qualification_Grant_Status (Kind : Qualification_Grant_Status_Kind) return Qualification_Grant_Status;
+   function Image (Model : Qualification_Grant_Status) return String;
+   function To_JSON (Model : Qualification_Grant_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Grant_Status;
+
+   --  Integer micro-USD string. 1000000 = USD 1. No float or FX.
+   subtype Qualification_Microusd is UARP.Types.Text;
+
+   --  Values of `QualificationGrantBillingBasisVariant1`.
+   --  A value the API introduces later decodes as Qualification_Grant_Billing_Basis_Variant1_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Grant_Billing_Basis_Variant1_Kind is
+     (Qualification_Grant_Billing_Basis_Variant1_Metered,
+   Qualification_Grant_Billing_Basis_Variant1_Reserved_Cap_Unknown,
+   Qualification_Grant_Billing_Basis_Variant1_No_Dispatch,
+   Qualification_Grant_Billing_Basis_Variant1_Unrecognized);
+
+   type Qualification_Grant_Billing_Basis_Variant1 is record
+      Kind : Qualification_Grant_Billing_Basis_Variant1_Kind := Qualification_Grant_Billing_Basis_Variant1_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Grant_Billing_Basis_Variant1 (Value : String) return Qualification_Grant_Billing_Basis_Variant1;
+   function To_Qualification_Grant_Billing_Basis_Variant1 (Kind : Qualification_Grant_Billing_Basis_Variant1_Kind) return Qualification_Grant_Billing_Basis_Variant1;
+   function Image (Model : Qualification_Grant_Billing_Basis_Variant1) return String;
+   function To_JSON (Model : Qualification_Grant_Billing_Basis_Variant1) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Grant_Billing_Basis_Variant1;
+
+   --  Values of `QualificationGrantUnknownCostReasonVariant1`.
+   --  A value the API introduces later decodes as Qualification_Grant_Unknown_Cost_Reason_Variant1_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Grant_Unknown_Cost_Reason_Variant1_Kind is
+     (Qualification_Grant_Unknown_Cost_Reason_Variant1_Provider_Outcome_Unknown,
+   Qualification_Grant_Unknown_Cost_Reason_Variant1_Attempt_Ledger_Incomplete,
+   Qualification_Grant_Unknown_Cost_Reason_Variant1_Pricing_Observation_Incomplete,
+   Qualification_Grant_Unknown_Cost_Reason_Variant1_Unrecognized);
+
+   type Qualification_Grant_Unknown_Cost_Reason_Variant1 is record
+      Kind : Qualification_Grant_Unknown_Cost_Reason_Variant1_Kind := Qualification_Grant_Unknown_Cost_Reason_Variant1_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Grant_Unknown_Cost_Reason_Variant1 (Value : String) return Qualification_Grant_Unknown_Cost_Reason_Variant1;
+   function To_Qualification_Grant_Unknown_Cost_Reason_Variant1 (Kind : Qualification_Grant_Unknown_Cost_Reason_Variant1_Kind) return Qualification_Grant_Unknown_Cost_Reason_Variant1;
+   function Image (Model : Qualification_Grant_Unknown_Cost_Reason_Variant1) return String;
+   function To_JSON (Model : Qualification_Grant_Unknown_Cost_Reason_Variant1) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Grant_Unknown_Cost_Reason_Variant1;
+
+   --  One immutable settlement per grant, later corrections are unique append-only credits, never
+   --  additional debits. Unknown-cost cap is a conservative sponsor charge, not provider actual
+   --  cost.
+   type Qualification_Grant is record
+      Authorization : UARP.Models.Qualification_Grant_Authorization;
+      Grant_Hash : UARP.Models.Qualification_Digest;
+      Status : UARP.Models.Qualification_Grant_Status;
+      Has_Run_Id : Boolean := False;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Charged_Microusd : Boolean := False;
+      Charged_Microusd : UARP.Models.Qualification_Microusd;
+      Refunded_Microusd : UARP.Models.Qualification_Microusd;
+      Has_Billing_Basis : Boolean := False;
+      Billing_Basis : UARP.Models.Qualification_Grant_Billing_Basis_Variant1;
+      Has_Unknown_Cost_Reason : Boolean := False;
+      Unknown_Cost_Reason : UARP.Models.Qualification_Grant_Unknown_Cost_Reason_Variant1;
+      Has_Settlement_Id : Boolean := False;
+      Settlement_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Qualification_Grant) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Grant;
+
+   package Qualification_Grant_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Qualification_Grant);
+
+   --  No raw input, credential or payer override. Canonical body hash binds expiry too. Unique
+   --  durable program/tenant/user/client_request_id; replay returns original grant current state,
+   --  never another reserve.
+   type Qualification_Grant_Create is record
+      Program_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Purpose : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Candidate_Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Candidate_User_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Client_Request_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Input_Hash : UARP.Models.Qualification_Digest;
+      Run_Authorization_Hash : UARP.Models.Qualification_Digest;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Version_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Version : UARP.Types.Integer_Value := 0;
+      Template_Hash : UARP.Models.Qualification_Digest;
+      --  Positive integer micro-USD string, at most USD 1.
+      Max_Cost_Microusd : UARP.Types.Text := UARP.Types.Empty_Text;
+      Expires_At_Unix : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Qualification_Grant_Create) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Grant_Create;
+
+   --  `QualificationGrantPage` model.
+   type Qualification_Grant_Page is record
+      Items : UARP.Models.Qualification_Grant_Vectors.Vector;
+      Has_More : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Qualification_Grant_Page) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Grant_Page;
+
+   --  Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+   --  86400 seconds later. recovery_window_seconds is the minimum durable client request
+   --  reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+   --  run records or receipt identifiers persist.
+   type Qualification_Processing_Policy is record
+      Schema_Version : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Revision : UARP.Types.Integer_Value := 0;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Purpose : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Recipient : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Has_Processor_Name : Boolean := False;
+      Processor_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Processing_Region : Boolean := False;
+      Processing_Region : UARP.Types.Text := UARP.Types.Empty_Text;
+      LLM_Training_Use : UARP.Models.Qualification_Processing_Policy_LLM_Training_Use;
+      Has_Archive_Enabled : Boolean := False;
+      Archive_Enabled : Standard.Boolean := False;
+      Storage : UARP.Models.Qualification_Storage_Policy;
+      Has_Evidence_Hash : Boolean := False;
+      Evidence_Hash : UARP.Models.Qualification_Digest;
+      Recovery_Window_Seconds : UARP.Types.Integer_Value := 0;
+      Observed_At_Unix : UARP.Types.Integer_Value := 0;
+      Expires_At_Unix : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Qualification_Processing_Policy) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Processing_Policy;
+
+   --  Values of `QualificationInactivePolicyResponseReadiness`.
+   --  A value the API introduces later decodes as Qualification_Inactive_Policy_Response_Readiness_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Inactive_Policy_Response_Readiness_Kind is
+     (Qualification_Inactive_Policy_Response_Readiness_Expired,
+   Qualification_Inactive_Policy_Response_Readiness_Revoked,
+   Qualification_Inactive_Policy_Response_Readiness_Unrecognized);
+
+   type Qualification_Inactive_Policy_Response_Readiness is record
+      Kind : Qualification_Inactive_Policy_Response_Readiness_Kind := Qualification_Inactive_Policy_Response_Readiness_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Inactive_Policy_Response_Readiness (Value : String) return Qualification_Inactive_Policy_Response_Readiness;
+   function To_Qualification_Inactive_Policy_Response_Readiness (Kind : Qualification_Inactive_Policy_Response_Readiness_Kind) return Qualification_Inactive_Policy_Response_Readiness;
+   function Image (Model : Qualification_Inactive_Policy_Response_Readiness) return String;
+   function To_JSON (Model : Qualification_Inactive_Policy_Response_Readiness) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Inactive_Policy_Response_Readiness;
+
+   --  policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+   --  incomplete readiness. confirmed requires current verified terms, not_used training and no
+   --  unknown storage categories.
+   type Qualification_Inactive_Policy_Response is record
+      Kind : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Policy : UARP.Models.Qualification_Processing_Policy;
+      Policy_Hash : UARP.Models.Qualification_Digest;
+      Readiness : UARP.Models.Qualification_Inactive_Policy_Response_Readiness;
+      Blockers : UARP.Models.Qualification_Confirmed_Policy_Response_Blocker_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Qualification_Inactive_Policy_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Inactive_Policy_Response;
+
+   --  Values of `QualificationIncompletePolicyResponseReadiness`.
+   --  A value the API introduces later decodes as Qualification_Incomplete_Policy_Response_Readiness_Unrecognized
+   --  with the original text kept in Raw.
+   type Qualification_Incomplete_Policy_Response_Readiness_Kind is
+     (Qualification_Incomplete_Policy_Response_Readiness_Incomplete,
+   Qualification_Incomplete_Policy_Response_Readiness_Unrecognized);
+
+   type Qualification_Incomplete_Policy_Response_Readiness is record
+      Kind : Qualification_Incomplete_Policy_Response_Readiness_Kind := Qualification_Incomplete_Policy_Response_Readiness_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Qualification_Incomplete_Policy_Response_Readiness (Value : String) return Qualification_Incomplete_Policy_Response_Readiness;
+   function To_Qualification_Incomplete_Policy_Response_Readiness (Kind : Qualification_Incomplete_Policy_Response_Readiness_Kind) return Qualification_Incomplete_Policy_Response_Readiness;
+   function Image (Model : Qualification_Incomplete_Policy_Response_Readiness) return String;
+   function To_JSON (Model : Qualification_Incomplete_Policy_Response_Readiness) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Incomplete_Policy_Response_Readiness;
+
+   --  policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+   --  incomplete readiness. confirmed requires current verified terms, not_used training and no
+   --  unknown storage categories.
+   type Qualification_Incomplete_Policy_Response is record
+      Kind : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Policy : UARP.Models.Qualification_Processing_Policy;
+      Policy_Hash : UARP.Models.Qualification_Digest;
+      Readiness : UARP.Models.Qualification_Incomplete_Policy_Response_Readiness;
+      Blockers : UARP.Models.Qualification_Confirmed_Policy_Response_Blocker_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Qualification_Incomplete_Policy_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Incomplete_Policy_Response;
+
+   --  `QualificationManagedEvaluatorGovernance` model.
+   type Qualification_Managed_Evaluator_Governance is record
+      Can_Spawn : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Max_Spawn_Depth : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Can_Self_Modify : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Max_Budget_Per_Run_Usd : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Qualification_Managed_Evaluator_Governance) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Managed_Evaluator_Governance;
+
+   --  One private managed binding per tenant/purpose; immutable applied version and template,
+   --  independent of personal agent/version caps. Readback with candidate credential required.
+   type Qualification_Managed_Evaluator is record
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Version_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Version : UARP.Types.Integer_Value := 0;
+      Template_Revision : UARP.Types.Integer_Value := 0;
+      Template_Hash : UARP.Models.Qualification_Digest;
+      Managed_By : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Governance : UARP.Models.Qualification_Managed_Evaluator_Governance;
+   end record;
+
+   function To_JSON (Model : Qualification_Managed_Evaluator) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Managed_Evaluator;
+
+   --  policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+   --  incomplete readiness. confirmed requires current verified terms, not_used training and no
+   --  unknown storage categories.
+   type Qualification_Missing_Policy_Response is record
+      Kind : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Has_Policy : Boolean := False;
+      Policy : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Has_Policy_Hash : Boolean := False;
+      Policy_Hash : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Readiness : UARP.Models.Qualification_Incomplete_Policy_Response_Readiness;
+      Blockers : UARP.Models.Qualification_Confirmed_Policy_Response_Blocker_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Qualification_Missing_Policy_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Missing_Policy_Response;
+
+   subtype Qualification_Processing_Policy_Response is UARP.JSON_Support.JSON_Value;
+
+   --  Every cap is required. Per-run cap <=1000000 and daily amount >= per-run cap are server
+   --  invariants. Daily counters aggregate the same user across candidate tenants. Reserved and
+   --  consumed grants both occupy active slots.
+   type Qualification_Program_Limits is record
+      --  Positive integer micro-USD string, at most USD 1.
+      Max_Cost_Per_Run_Microusd : UARP.Types.Text := UARP.Types.Empty_Text;
+      Max_Grants_Per_Candidate_Per_Utc_Day : UARP.Types.Integer_Value := 0;
+      Max_Issued_Per_Candidate_Per_Utc_Day_Microusd : UARP.Models.Qualification_Positive_Microusd;
+      Max_Active_Grants_Per_Candidate : UARP.Types.Integer_Value := 0;
+      Max_Active_Grants : UARP.Types.Integer_Value := 0;
+      Grant_Ttl_Seconds_Max : UARP.Types.Integer_Value := 0;
+      Max_Attempts_Per_Run : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Qualification_Program_Limits) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Program_Limits;
+
+   --  budget_limit = reserved + spent + remaining, exact integer arithmetic. Configuration
+   --  revision is not incremented for ledger activity.
+   type Qualification_Program is record
+      Program_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Revision : UARP.Types.Integer_Value := 0;
+      Purpose : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Sponsor_Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Budget_Limit_Microusd : UARP.Models.Qualification_Positive_Microusd;
+      Reserved_Microusd : UARP.Models.Qualification_Microusd;
+      Spent_Microusd : UARP.Models.Qualification_Microusd;
+      Remaining_Microusd : UARP.Models.Qualification_Microusd;
+      Pricing_Revision : UARP.Types.Text := UARP.Types.Empty_Text;
+      Limits : UARP.Models.Qualification_Program_Limits;
+      Active : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Qualification_Program) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Program;
+
+   --  Full configuration replacement, not merge. Initial expected_revision=0. Immutable
+   --  purpose/sponsor/pricing. Funded ceiling, not mint/charge endpoint. Ceiling cannot fall below
+   --  spent+reserved.
+   type Qualification_Program_Put is record
+      Expected_Revision : UARP.Types.Integer_Value := 0;
+      Purpose : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Sponsor_Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Budget_Limit_Microusd : UARP.Models.Qualification_Positive_Microusd;
+      Pricing_Revision : UARP.Types.Text := UARP.Types.Empty_Text;
+      Limits : UARP.Models.Qualification_Program_Limits;
+      Active : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Qualification_Program_Put) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Program_Put;
+
+   --  `QualificationReceiptPending` model.
+   type Qualification_Receipt_Pending is record
+      Code : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Qualification_Receipt_Pending) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Receipt_Pending;
+
+   --  Wire-compatible limits. Actual tool calls are forbidden by isolation regardless of
+   --  max_tool_calls=1. Aggregate budgets include all attempts.
+   type Qualification_Sponsored_Limits is record
+      Max_Duration_Ms : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Max_Steps : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Max_Tool_Calls : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Max_Tokens_Per_Run : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      --  Legacy run DTO unit. Must convert exactly to integer micro-USD and be <= grant cap. No
+      --  rounding up or silently raising the grant.
+      Max_Cost_Usd : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Qualification_Sponsored_Limits) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Sponsored_Limits;
+
+   --  Exact canonical metadata is hashed. No credentials, raw code or security authority in
+   --  metadata.
+   subtype Qualification_Run_Metadata is UARP.JSON_Support.JSON_Value;
+
+   --  Hash material, not a createRun command.
+   type Qualification_Run_Before_Grant_V2 is record
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Version : UARP.Types.Integer_Value := 0;
+      Input : UARP.Models.Qualification_Assessment_Input_Message;
+      Resource_Limits : UARP.Models.Qualification_Sponsored_Limits;
+      Metadata : UARP.Models.Qualification_Run_Metadata;
+      Execution_Requirements : UARP.Models.Qualification_Execution_Requirements_Before_Grant_V2;
+   end record;
+
+   function To_JSON (Model : Qualification_Run_Before_Grant_V2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Run_Before_Grant_V2;
+
+   --  JCS SHA-256 of this exact object is run_authorization_hash. UARP reconstructs it from the
+   --  authenticated user, grant and immutable evaluator/run facts, never trusting metadata as
+   --  authority.
+   type Qualification_Sponsored_Run_Authorization_Material is record
+      Schema_Version : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Program_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Candidate_Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Candidate_User_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Version_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Template_Hash : UARP.Models.Qualification_Digest;
+      --  Positive integer micro-USD string, at most USD 1.
+      Max_Cost_Microusd : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run : UARP.Models.Qualification_Run_Before_Grant_V2;
+   end record;
+
+   function To_JSON (Model : Qualification_Sponsored_Run_Authorization_Material) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Sponsored_Run_Authorization_Material;
+
+   --  Sponsored subset of canonical POST /runs; <=131072 UTF-8 bytes, duplicate JSON keys
+   --  rejected. Other purposes retain the canonical API behavior. All metadata is explicit, even
+   --  if empty.
+   type Qualification_Sponsored_Run_Create_V2 is record
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Version : UARP.Types.Integer_Value := 0;
+      Input : UARP.Models.Qualification_Assessment_Input_Message;
+      Resource_Limits : UARP.Models.Qualification_Sponsored_Limits;
+      Metadata : UARP.Models.Qualification_Run_Metadata;
+      Execution_Requirements : UARP.Models.Qualification_Execution_Requirements_V2;
+   end record;
+
+   function To_JSON (Model : Qualification_Sponsored_Run_Create_V2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Sponsored_Run_Create_V2;
+
+   --  Excerpt of existing Run with additive server-stored execution_requirements and recovery
+   --  horizon. Existing fields remain available. A full canonical Run read is required for Nestor
+   --  validation.
+   type Qualification_Sponsored_Run_Excerpt is record
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Input : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Output : Boolean := False;
+      Output : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Metadata : Boolean := False;
+      Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Execution_Requirements : UARP.Models.Qualification_Execution_Requirements_V2;
+      Recovery_Expires_At_Unix : UARP.Types.Integer_Value := 0;
+      --  Properties the server returned that this SDK does not model.
+      Extra : JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Qualification_Sponsored_Run_Excerpt) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Qualification_Sponsored_Run_Excerpt;
+
    --  Values of `QuotaProblemCode`.
    --  A value the API introduces later decodes as Quota_Problem_Code_Unrecognized
    --  with the original text kept in Raw.
@@ -29304,6 +30365,17 @@ package UARP.Models is
 
    function To_JSON (Model : Revoke_API_Key_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Revoke_API_Key_Response;
+
+   --  `RevokeDataProcessingPolicyResponse` model.
+   type Revoke_Data_Processing_Policy_Response is record
+      Has_Revoked : Boolean := False;
+      Revoked : Standard.Boolean := False;
+      Has_Current : Boolean := False;
+      Current : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+   end record;
+
+   function To_JSON (Model : Revoke_Data_Processing_Policy_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Revoke_Data_Processing_Policy_Response;
 
    --  `RevokeMeSessionResponse` model.
    type Revoke_Me_Session_Response is record

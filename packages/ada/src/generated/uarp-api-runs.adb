@@ -366,6 +366,12 @@ package body UARP.API.Runs is
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Client_Request_Id then
+         UARP.Types.Add (Query, "client_request_id", Params.Client_Request_Id);
+      end if;
+      if Params.Has_Purpose then
+         UARP.Types.Add (Query, "purpose", Params.Purpose);
+      end if;
       if Params.Has_Agent_Id then
          UARP.Types.Add (Query, "agent_id", Params.Agent_Id);
       end if;

@@ -105,6 +105,18 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      * response (same run_id). Pin a specific agent version with `version` to bypass the head
      * pointer.
      *
+     * A body carrying `execution_requirements` is a sponsored qualification run (Nestor, since
+     * 2026-10-17) and has its own admission: `QualificationSponsoredRunCreateV2`, strict JSON
+     * (repeated member names refused, at most 131072 bytes), `metadata` names not starting with
+     * `_`. The first acceptance answers 201, an exact replay of the same `client_request_id`
+     * command answers 200 with the original run, another command under that id is 409
+     * `CLIENT_REQUEST_CONFLICT`. Refusals: 403 `SPONSORSHIP_REQUIRED` (a v1 command: the candidate
+     * never pays), 403 `SPONSORSHIP_GRANT_MISMATCH` with `reason`, 409
+     * `SPONSORSHIP_GRANT_UNAVAILABLE` / `SPONSORSHIP_PROGRAM_INACTIVE`, 412
+     * `PROCESSING_POLICY_NOT_READY` / `PROCESSING_POLICY_CHANGED`, 422
+     * `EXECUTION_PROFILE_UNVERIFIABLE` / `INVALID_REQUEST`. The managed evaluator cannot be run
+     * without one (403 `MANAGED_AGENT`).
+     *
      * `POST /api/v1/runs`
      *
      * Required scopes: `runs:create`.
@@ -424,8 +436,10 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:read`.
      */
-    public suspend fun list(agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, order: ListRunsOrder? = null, options: RequestOptions = RequestOptions()): ListRunsResponse {
+    public suspend fun list(clientRequestId: String? = null, purpose: String? = null, agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, order: ListRunsOrder? = null, options: RequestOptions = RequestOptions()): ListRunsResponse {
         val query = buildList {
+            if (clientRequestId != null) add("client_request_id" to clientRequestId)
+            if (purpose != null) add("purpose" to purpose)
             if (agentId != null) add("agent_id" to agentId)
             if (sessionId != null) add("session_id" to sessionId)
             if (status != null) add("status" to status)
@@ -447,8 +461,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      * Stream every item returned by `listRuns`, following the `cursor` cursor until the server
      * reports no further pages.
      */
-    public fun listAll(agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, order: ListRunsOrder? = null, options: RequestOptions = RequestOptions()): Flow<Run> = autoPaginate(
-        fetch = { pageCursor -> list(agentId = agentId, sessionId = sessionId, status = status, limit = limit, cursor = pageCursor, order = order, options = options) },
+    public fun listAll(clientRequestId: String? = null, purpose: String? = null, agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, order: ListRunsOrder? = null, options: RequestOptions = RequestOptions()): Flow<Run> = autoPaginate(
+        fetch = { pageCursor -> list(clientRequestId = clientRequestId, purpose = purpose, agentId = agentId, sessionId = sessionId, status = status, limit = limit, cursor = pageCursor, order = order, options = options) },
         items = { it.items },
         cursor = { it.cursor },
         hasMore = { it.hasMore },

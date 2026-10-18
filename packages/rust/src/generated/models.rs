@@ -3012,6 +3012,10 @@ pub struct AdminVoicePresets {
 /// `Agent` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Agent {
+    /// Bridge agents only: the stable fingerprint of the machine that enrolled it, used to adopt
+    /// the same agent after a reconnect. Absent on records enrolled before 2026-09-03.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bridge_fingerprint: Option<String>,
     /// The initiative (`/initiatives`) this agent works for, when it has one. Its runs are charged
     /// to that initiative's budget, and automated runs are refused (`INITIATIVE_PAUSED`) while it
     /// is paused or (`INITIATIVE_BUDGET_EXHAUSTED`) out of budget; agents and squads it creates
@@ -4133,6 +4137,8 @@ pub enum AgentStatus {
     Terminated,
     #[serde(rename = "deposed")]
     Deposed,
+    #[serde(rename = "inactive")]
+    Inactive,
     /// A value the API introduced after this SDK was generated.
     #[serde(untagged)]
     Other(String),
@@ -4146,6 +4152,7 @@ impl AgentStatus {
             Self::Suspended => "suspended",
             Self::Terminated => "terminated",
             Self::Deposed => "deposed",
+            Self::Inactive => "inactive",
             Self::Other(value) => value.as_str(),
         }
     }
@@ -4164,6 +4171,7 @@ impl From<&str> for AgentStatus {
             "suspended" => Self::Suspended,
             "terminated" => Self::Terminated,
             "deposed" => Self::Deposed,
+            "inactive" => Self::Inactive,
             other => Self::Other(other.to_string()),
         }
     }
@@ -5352,13 +5360,13 @@ pub struct AgentVersion {
     /// canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
     /// provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
     /// detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-    /// provisioned`, `Platform agent config migrated on boot`, `Hired`, `Registered from a local
-    /// app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`,
-    /// `Token cap removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N =
-    /// the version rolled back to), `Self-improvement: N changes based on N analysis` (the
-    /// self-improvement loop: the first N is a count, the second is one of errors, ratings or
-    /// feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC
-    /// 11).
+    /// provisioned`, `Platform agent config migrated on boot`, `Qualification evaluator template
+    /// revision N` (N = the template revision), `Hired`, `Registered from a local app`, `Token cap
+    /// removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap
+    /// removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version
+    /// rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement
+    /// loop: the first N is a count, the second is one of errors, ratings or feedback — words, not
+    /// a number). A reason code beside the prose is the owner's decision (DEC 11).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub changelog: Option<String>,
     pub created_at: String,
@@ -8914,6 +8922,31 @@ pub struct CompleteOAuthLoginResponse {
     pub email: String,
 }
 
+/// `ConfirmDataProcessingPolicyRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConfirmDataProcessingPolicyRequest {
+    #[serde(default)]
+    pub processor_name: Option<String>,
+    #[serde(default)]
+    pub processing_region: Option<String>,
+    pub llm_training_use: QualificationProcessingPolicyLLMTrainingUse,
+    #[serde(default)]
+    pub archive_enabled: Option<bool>,
+    pub storage: QualificationStoragePolicy,
+    #[serde(default)]
+    pub evidence_hash: Option<QualificationDigest>,
+    pub recovery_window_seconds: i64,
+    pub observed_at_unix: i64,
+    pub expires_at_unix: i64,
+}
+
+/// `ConfirmDataProcessingPolicyResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConfirmDataProcessingPolicyResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
 /// `ConfirmSessionTodoRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ConfirmSessionTodoRequest {
@@ -9710,6 +9743,12 @@ impl From<&str> for ConversationEntryImportance {
 /// publicRunMetrics).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ConversationEntryRunMetrics {
+    /// The context window of the model that served the run, in tokens.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_window_tokens: Option<i64>,
+    /// Input tokens of the run's last model call: how full the window was at the end.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_input_tokens: Option<i64>,
     /// How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pricing_confidence: Option<String>,
@@ -13385,6 +13424,8 @@ pub enum ErrorCode {
     AnonBusy,
     #[serde(rename = "ARTIFACT_INTEGRITY_ERROR")]
     ArtifactIntegrityError,
+    #[serde(rename = "ASSESSMENT_ISOLATION_REQUIRED")]
+    AssessmentIsolationRequired,
     #[serde(rename = "AUTH_ERROR")]
     AuthError,
     #[serde(rename = "BILLING_CANCELLED")]
@@ -13397,6 +13438,8 @@ pub enum ErrorCode {
     BudgetExceeded,
     #[serde(rename = "CHECKSUM_MISMATCH")]
     ChecksumMismatch,
+    #[serde(rename = "CLIENT_REQUEST_CONFLICT")]
+    ClientRequestConflict,
     #[serde(rename = "COMPANY_NOT_READY")]
     CompanyNotReady,
     #[serde(rename = "COMPANY_PAUSED")]
@@ -13421,6 +13464,10 @@ pub enum ErrorCode {
     DependencyExists,
     #[serde(rename = "EVENT_STORE_ERROR")]
     EventStoreError,
+    #[serde(rename = "EXECUTION_PROFILE_UNVERIFIABLE")]
+    ExecutionProfileUnverifiable,
+    #[serde(rename = "EXECUTION_RECEIPT_PENDING")]
+    ExecutionReceiptPending,
     #[serde(rename = "EXTERNAL_SERVICE_ERROR")]
     ExternalServiceError,
     #[serde(rename = "FEATURED_SET_CONTENDED")]
@@ -13435,6 +13482,8 @@ pub enum ErrorCode {
     Forbidden,
     #[serde(rename = "GUARDRAIL_VIOLATION")]
     GuardrailViolation,
+    #[serde(rename = "IDEMPOTENCY_CONFLICT")]
+    IdempotencyConflict,
     #[serde(rename = "IDEMPOTENCY_KEY_REUSED")]
     IdempotencyKeyReused,
     #[serde(rename = "INITIATIVE_BUDGET_EXHAUSTED")]
@@ -13461,8 +13510,12 @@ pub enum ErrorCode {
     InvalidShareTarget,
     #[serde(rename = "INVALID_STATE_TRANSITION")]
     InvalidStateTransition,
+    #[serde(rename = "ISOLATION_VIOLATION")]
+    IsolationViolation,
     #[serde(rename = "LLM_ERROR")]
     LLMError,
+    #[serde(rename = "MANAGED_AGENT")]
+    ManagedAgent,
     #[serde(rename = "MAX_DURATION_EXCEEDED")]
     MaxDurationExceeded,
     #[serde(rename = "MAX_TOKENS_EXCEEDED")]
@@ -13497,6 +13550,8 @@ pub enum ErrorCode {
     NoRunnableTarget,
     #[serde(rename = "OAUTH_FAILED")]
     OauthFailed,
+    #[serde(rename = "OUTPUT_TOO_LARGE")]
+    OutputTooLarge,
     #[serde(rename = "PAYLOAD_TOO_LARGE")]
     PayloadTooLarge,
     #[serde(rename = "PERSISTENCE_ERROR")]
@@ -13513,12 +13568,24 @@ pub enum ErrorCode {
     PricingUnavailable,
     #[serde(rename = "PRIVATE_NOT_SHARED")]
     PrivateNotShared,
+    #[serde(rename = "PROCESSING_POLICY_CHANGED")]
+    ProcessingPolicyChanged,
+    #[serde(rename = "PROCESSING_POLICY_NOT_READY")]
+    ProcessingPolicyNotReady,
     #[serde(rename = "PROMO_REDEMPTION_FAILED")]
     PromoRedemptionFailed,
     #[serde(rename = "PROPOSAL_EXPIRED")]
     ProposalExpired,
+    #[serde(rename = "QUALIFICATION_BUDGET_STOP")]
+    QualificationBudgetStop,
+    #[serde(rename = "QUALIFICATION_ROUTE_MISMATCH")]
+    QualificationRouteMismatch,
+    #[serde(rename = "QUALIFICATION_VERSION_UNAVAILABLE")]
+    QualificationVersionUnavailable,
     #[serde(rename = "QUOTA_EXCEEDED")]
     QuotaExceeded,
+    #[serde(rename = "RATE_LIMITED")]
+    RateLimited,
     #[serde(rename = "RATE_LIMIT_EXCEEDED")]
     RateLimitExceeded,
     #[serde(rename = "REFERENCE_NOT_FOUND")]
@@ -13551,6 +13618,36 @@ pub enum ErrorCode {
     SizeLimit,
     #[serde(rename = "SPEC_NOT_FOUND")]
     SpecNotFound,
+    #[serde(rename = "SPONSORSHIP_BUDGET_BELOW_COMMITTED")]
+    SponsorshipBudgetBelowCommitted,
+    #[serde(rename = "SPONSORSHIP_BUDGET_EXHAUSTED")]
+    SponsorshipBudgetExhausted,
+    #[serde(rename = "SPONSORSHIP_CANDIDATE_LIMIT")]
+    SponsorshipCandidateLimit,
+    #[serde(rename = "SPONSORSHIP_CONCURRENCY_LIMIT")]
+    SponsorshipConcurrencyLimit,
+    #[serde(rename = "SPONSORSHIP_FUNDING_UNAVAILABLE")]
+    SponsorshipFundingUnavailable,
+    #[serde(rename = "SPONSORSHIP_GRANT_CONFLICT")]
+    SponsorshipGrantConflict,
+    #[serde(rename = "SPONSORSHIP_GRANT_IN_USE")]
+    SponsorshipGrantInUse,
+    #[serde(rename = "SPONSORSHIP_GRANT_MISMATCH")]
+    SponsorshipGrantMismatch,
+    #[serde(rename = "SPONSORSHIP_GRANT_UNAVAILABLE")]
+    SponsorshipGrantUnavailable,
+    #[serde(rename = "SPONSORSHIP_OUTCOME_UNKNOWN")]
+    SponsorshipOutcomeUnknown,
+    #[serde(rename = "SPONSORSHIP_PROGRAM_IMMUTABLE")]
+    SponsorshipProgramImmutable,
+    #[serde(rename = "SPONSORSHIP_PROGRAM_INACTIVE")]
+    SponsorshipProgramInactive,
+    #[serde(rename = "SPONSORSHIP_PROGRAM_REVISION_CONFLICT")]
+    SponsorshipProgramRevisionConflict,
+    #[serde(rename = "SPONSORSHIP_REQUIRED")]
+    SponsorshipRequired,
+    #[serde(rename = "SPONSORSHIP_SCOPE_REQUIRED")]
+    SponsorshipScopeRequired,
     #[serde(rename = "STARTED_BY_ANOTHER_USER")]
     StartedByAnotherUser,
     #[serde(rename = "STRATEGIST_MODEL_UNCONFIGURED")]
@@ -13563,6 +13660,8 @@ pub enum ErrorCode {
     TermsNotAccepted,
     #[serde(rename = "TEXT_EXTRACTION_FAILED")]
     TextExtractionFailed,
+    #[serde(rename = "UNAUTHENTICATED")]
+    Unauthenticated,
     #[serde(rename = "USER_REQUIRED")]
     UserRequired,
     #[serde(rename = "VALIDATION_ERROR")]
@@ -13646,7 +13745,7 @@ pub enum ErrorCode {
     #[serde(rename = "quota_exceeded")]
     QuotaExceeded2,
     #[serde(rename = "rate_limited")]
-    RateLimited,
+    RateLimited2,
     #[serde(rename = "resource_limit_reached")]
     ResourceLimitReached,
     #[serde(rename = "run_approval_expired")]
@@ -13689,12 +13788,14 @@ impl ErrorCode {
             Self::AlreadyExists => "ALREADY_EXISTS",
             Self::AnonBusy => "ANON_BUSY",
             Self::ArtifactIntegrityError => "ARTIFACT_INTEGRITY_ERROR",
+            Self::AssessmentIsolationRequired => "ASSESSMENT_ISOLATION_REQUIRED",
             Self::AuthError => "AUTH_ERROR",
             Self::BillingCancelled => "BILLING_CANCELLED",
             Self::BillingDisputed => "BILLING_DISPUTED",
             Self::BillingPastDue => "BILLING_PAST_DUE",
             Self::BudgetExceeded => "BUDGET_EXCEEDED",
             Self::ChecksumMismatch => "CHECKSUM_MISMATCH",
+            Self::ClientRequestConflict => "CLIENT_REQUEST_CONFLICT",
             Self::CompanyNotReady => "COMPANY_NOT_READY",
             Self::CompanyPaused => "COMPANY_PAUSED",
             Self::ConcurrencyLimit => "CONCURRENCY_LIMIT",
@@ -13707,6 +13808,8 @@ impl ErrorCode {
             Self::DailyLimit => "DAILY_LIMIT",
             Self::DependencyExists => "DEPENDENCY_EXISTS",
             Self::EventStoreError => "EVENT_STORE_ERROR",
+            Self::ExecutionProfileUnverifiable => "EXECUTION_PROFILE_UNVERIFIABLE",
+            Self::ExecutionReceiptPending => "EXECUTION_RECEIPT_PENDING",
             Self::ExternalServiceError => "EXTERNAL_SERVICE_ERROR",
             Self::FeaturedSetContended => "FEATURED_SET_CONTENDED",
             Self::FeatureDisabled => "FEATURE_DISABLED",
@@ -13714,6 +13817,7 @@ impl ErrorCode {
             Self::FileTypeNotAllowed => "FILE_TYPE_NOT_ALLOWED",
             Self::Forbidden => "FORBIDDEN",
             Self::GuardrailViolation => "GUARDRAIL_VIOLATION",
+            Self::IdempotencyConflict => "IDEMPOTENCY_CONFLICT",
             Self::IdempotencyKeyReused => "IDEMPOTENCY_KEY_REUSED",
             Self::InitiativeBudgetExhausted => "INITIATIVE_BUDGET_EXHAUSTED",
             Self::InitiativePaused => "INITIATIVE_PAUSED",
@@ -13727,7 +13831,9 @@ impl ErrorCode {
             Self::InvalidShareList => "INVALID_SHARE_LIST",
             Self::InvalidShareTarget => "INVALID_SHARE_TARGET",
             Self::InvalidStateTransition => "INVALID_STATE_TRANSITION",
+            Self::IsolationViolation => "ISOLATION_VIOLATION",
             Self::LLMError => "LLM_ERROR",
+            Self::ManagedAgent => "MANAGED_AGENT",
             Self::MaxDurationExceeded => "MAX_DURATION_EXCEEDED",
             Self::MaxTokensExceeded => "MAX_TOKENS_EXCEEDED",
             Self::MethodNotAllowed => "METHOD_NOT_ALLOWED",
@@ -13745,6 +13851,7 @@ impl ErrorCode {
             Self::NotYanked => "NOT_YANKED",
             Self::NoRunnableTarget => "NO_RUNNABLE_TARGET",
             Self::OauthFailed => "OAUTH_FAILED",
+            Self::OutputTooLarge => "OUTPUT_TOO_LARGE",
             Self::PayloadTooLarge => "PAYLOAD_TOO_LARGE",
             Self::PersistenceError => "PERSISTENCE_ERROR",
             Self::PlannerOutputInvalid => "PLANNER_OUTPUT_INVALID",
@@ -13753,9 +13860,15 @@ impl ErrorCode {
             Self::PrerequisiteMissing => "PREREQUISITE_MISSING",
             Self::PricingUnavailable => "PRICING_UNAVAILABLE",
             Self::PrivateNotShared => "PRIVATE_NOT_SHARED",
+            Self::ProcessingPolicyChanged => "PROCESSING_POLICY_CHANGED",
+            Self::ProcessingPolicyNotReady => "PROCESSING_POLICY_NOT_READY",
             Self::PromoRedemptionFailed => "PROMO_REDEMPTION_FAILED",
             Self::ProposalExpired => "PROPOSAL_EXPIRED",
+            Self::QualificationBudgetStop => "QUALIFICATION_BUDGET_STOP",
+            Self::QualificationRouteMismatch => "QUALIFICATION_ROUTE_MISMATCH",
+            Self::QualificationVersionUnavailable => "QUALIFICATION_VERSION_UNAVAILABLE",
             Self::QuotaExceeded => "QUOTA_EXCEEDED",
+            Self::RateLimited => "RATE_LIMITED",
             Self::RateLimitExceeded => "RATE_LIMIT_EXCEEDED",
             Self::ReferenceNotFound => "REFERENCE_NOT_FOUND",
             Self::ReservedScope => "RESERVED_SCOPE",
@@ -13772,12 +13885,28 @@ impl ErrorCode {
             Self::SigningNotConfigured => "SIGNING_NOT_CONFIGURED",
             Self::SizeLimit => "SIZE_LIMIT",
             Self::SpecNotFound => "SPEC_NOT_FOUND",
+            Self::SponsorshipBudgetBelowCommitted => "SPONSORSHIP_BUDGET_BELOW_COMMITTED",
+            Self::SponsorshipBudgetExhausted => "SPONSORSHIP_BUDGET_EXHAUSTED",
+            Self::SponsorshipCandidateLimit => "SPONSORSHIP_CANDIDATE_LIMIT",
+            Self::SponsorshipConcurrencyLimit => "SPONSORSHIP_CONCURRENCY_LIMIT",
+            Self::SponsorshipFundingUnavailable => "SPONSORSHIP_FUNDING_UNAVAILABLE",
+            Self::SponsorshipGrantConflict => "SPONSORSHIP_GRANT_CONFLICT",
+            Self::SponsorshipGrantInUse => "SPONSORSHIP_GRANT_IN_USE",
+            Self::SponsorshipGrantMismatch => "SPONSORSHIP_GRANT_MISMATCH",
+            Self::SponsorshipGrantUnavailable => "SPONSORSHIP_GRANT_UNAVAILABLE",
+            Self::SponsorshipOutcomeUnknown => "SPONSORSHIP_OUTCOME_UNKNOWN",
+            Self::SponsorshipProgramImmutable => "SPONSORSHIP_PROGRAM_IMMUTABLE",
+            Self::SponsorshipProgramInactive => "SPONSORSHIP_PROGRAM_INACTIVE",
+            Self::SponsorshipProgramRevisionConflict => "SPONSORSHIP_PROGRAM_REVISION_CONFLICT",
+            Self::SponsorshipRequired => "SPONSORSHIP_REQUIRED",
+            Self::SponsorshipScopeRequired => "SPONSORSHIP_SCOPE_REQUIRED",
             Self::StartedByAnotherUser => "STARTED_BY_ANOTHER_USER",
             Self::StrategistModelUnconfigured => "STRATEGIST_MODEL_UNCONFIGURED",
             Self::TaskGraphFailed => "TASK_GRAPH_FAILED",
             Self::TeamAbort => "TEAM_ABORT",
             Self::TermsNotAccepted => "TERMS_NOT_ACCEPTED",
             Self::TextExtractionFailed => "TEXT_EXTRACTION_FAILED",
+            Self::Unauthenticated => "UNAUTHENTICATED",
             Self::UserRequired => "USER_REQUIRED",
             Self::ValidationError => "VALIDATION_ERROR",
             Self::VerificationFailed => "VERIFICATION_FAILED",
@@ -13819,7 +13948,7 @@ impl ErrorCode {
             Self::ProviderNotConfigured => "provider_not_configured",
             Self::ProviderRateLimited => "provider_rate_limited",
             Self::QuotaExceeded2 => "quota_exceeded",
-            Self::RateLimited => "rate_limited",
+            Self::RateLimited2 => "rate_limited",
             Self::ResourceLimitReached => "resource_limit_reached",
             Self::RunApprovalExpired => "run_approval_expired",
             Self::RunInputTimeout => "run_input_timeout",
@@ -13853,12 +13982,14 @@ impl From<&str> for ErrorCode {
             "ALREADY_EXISTS" => Self::AlreadyExists,
             "ANON_BUSY" => Self::AnonBusy,
             "ARTIFACT_INTEGRITY_ERROR" => Self::ArtifactIntegrityError,
+            "ASSESSMENT_ISOLATION_REQUIRED" => Self::AssessmentIsolationRequired,
             "AUTH_ERROR" => Self::AuthError,
             "BILLING_CANCELLED" => Self::BillingCancelled,
             "BILLING_DISPUTED" => Self::BillingDisputed,
             "BILLING_PAST_DUE" => Self::BillingPastDue,
             "BUDGET_EXCEEDED" => Self::BudgetExceeded,
             "CHECKSUM_MISMATCH" => Self::ChecksumMismatch,
+            "CLIENT_REQUEST_CONFLICT" => Self::ClientRequestConflict,
             "COMPANY_NOT_READY" => Self::CompanyNotReady,
             "COMPANY_PAUSED" => Self::CompanyPaused,
             "CONCURRENCY_LIMIT" => Self::ConcurrencyLimit,
@@ -13871,6 +14002,8 @@ impl From<&str> for ErrorCode {
             "DAILY_LIMIT" => Self::DailyLimit,
             "DEPENDENCY_EXISTS" => Self::DependencyExists,
             "EVENT_STORE_ERROR" => Self::EventStoreError,
+            "EXECUTION_PROFILE_UNVERIFIABLE" => Self::ExecutionProfileUnverifiable,
+            "EXECUTION_RECEIPT_PENDING" => Self::ExecutionReceiptPending,
             "EXTERNAL_SERVICE_ERROR" => Self::ExternalServiceError,
             "FEATURED_SET_CONTENDED" => Self::FeaturedSetContended,
             "FEATURE_DISABLED" => Self::FeatureDisabled,
@@ -13878,6 +14011,7 @@ impl From<&str> for ErrorCode {
             "FILE_TYPE_NOT_ALLOWED" => Self::FileTypeNotAllowed,
             "FORBIDDEN" => Self::Forbidden,
             "GUARDRAIL_VIOLATION" => Self::GuardrailViolation,
+            "IDEMPOTENCY_CONFLICT" => Self::IdempotencyConflict,
             "IDEMPOTENCY_KEY_REUSED" => Self::IdempotencyKeyReused,
             "INITIATIVE_BUDGET_EXHAUSTED" => Self::InitiativeBudgetExhausted,
             "INITIATIVE_PAUSED" => Self::InitiativePaused,
@@ -13891,7 +14025,9 @@ impl From<&str> for ErrorCode {
             "INVALID_SHARE_LIST" => Self::InvalidShareList,
             "INVALID_SHARE_TARGET" => Self::InvalidShareTarget,
             "INVALID_STATE_TRANSITION" => Self::InvalidStateTransition,
+            "ISOLATION_VIOLATION" => Self::IsolationViolation,
             "LLM_ERROR" => Self::LLMError,
+            "MANAGED_AGENT" => Self::ManagedAgent,
             "MAX_DURATION_EXCEEDED" => Self::MaxDurationExceeded,
             "MAX_TOKENS_EXCEEDED" => Self::MaxTokensExceeded,
             "METHOD_NOT_ALLOWED" => Self::MethodNotAllowed,
@@ -13909,6 +14045,7 @@ impl From<&str> for ErrorCode {
             "NOT_YANKED" => Self::NotYanked,
             "NO_RUNNABLE_TARGET" => Self::NoRunnableTarget,
             "OAUTH_FAILED" => Self::OauthFailed,
+            "OUTPUT_TOO_LARGE" => Self::OutputTooLarge,
             "PAYLOAD_TOO_LARGE" => Self::PayloadTooLarge,
             "PERSISTENCE_ERROR" => Self::PersistenceError,
             "PLANNER_OUTPUT_INVALID" => Self::PlannerOutputInvalid,
@@ -13917,9 +14054,15 @@ impl From<&str> for ErrorCode {
             "PREREQUISITE_MISSING" => Self::PrerequisiteMissing,
             "PRICING_UNAVAILABLE" => Self::PricingUnavailable,
             "PRIVATE_NOT_SHARED" => Self::PrivateNotShared,
+            "PROCESSING_POLICY_CHANGED" => Self::ProcessingPolicyChanged,
+            "PROCESSING_POLICY_NOT_READY" => Self::ProcessingPolicyNotReady,
             "PROMO_REDEMPTION_FAILED" => Self::PromoRedemptionFailed,
             "PROPOSAL_EXPIRED" => Self::ProposalExpired,
+            "QUALIFICATION_BUDGET_STOP" => Self::QualificationBudgetStop,
+            "QUALIFICATION_ROUTE_MISMATCH" => Self::QualificationRouteMismatch,
+            "QUALIFICATION_VERSION_UNAVAILABLE" => Self::QualificationVersionUnavailable,
             "QUOTA_EXCEEDED" => Self::QuotaExceeded,
+            "RATE_LIMITED" => Self::RateLimited,
             "RATE_LIMIT_EXCEEDED" => Self::RateLimitExceeded,
             "REFERENCE_NOT_FOUND" => Self::ReferenceNotFound,
             "RESERVED_SCOPE" => Self::ReservedScope,
@@ -13936,12 +14079,28 @@ impl From<&str> for ErrorCode {
             "SIGNING_NOT_CONFIGURED" => Self::SigningNotConfigured,
             "SIZE_LIMIT" => Self::SizeLimit,
             "SPEC_NOT_FOUND" => Self::SpecNotFound,
+            "SPONSORSHIP_BUDGET_BELOW_COMMITTED" => Self::SponsorshipBudgetBelowCommitted,
+            "SPONSORSHIP_BUDGET_EXHAUSTED" => Self::SponsorshipBudgetExhausted,
+            "SPONSORSHIP_CANDIDATE_LIMIT" => Self::SponsorshipCandidateLimit,
+            "SPONSORSHIP_CONCURRENCY_LIMIT" => Self::SponsorshipConcurrencyLimit,
+            "SPONSORSHIP_FUNDING_UNAVAILABLE" => Self::SponsorshipFundingUnavailable,
+            "SPONSORSHIP_GRANT_CONFLICT" => Self::SponsorshipGrantConflict,
+            "SPONSORSHIP_GRANT_IN_USE" => Self::SponsorshipGrantInUse,
+            "SPONSORSHIP_GRANT_MISMATCH" => Self::SponsorshipGrantMismatch,
+            "SPONSORSHIP_GRANT_UNAVAILABLE" => Self::SponsorshipGrantUnavailable,
+            "SPONSORSHIP_OUTCOME_UNKNOWN" => Self::SponsorshipOutcomeUnknown,
+            "SPONSORSHIP_PROGRAM_IMMUTABLE" => Self::SponsorshipProgramImmutable,
+            "SPONSORSHIP_PROGRAM_INACTIVE" => Self::SponsorshipProgramInactive,
+            "SPONSORSHIP_PROGRAM_REVISION_CONFLICT" => Self::SponsorshipProgramRevisionConflict,
+            "SPONSORSHIP_REQUIRED" => Self::SponsorshipRequired,
+            "SPONSORSHIP_SCOPE_REQUIRED" => Self::SponsorshipScopeRequired,
             "STARTED_BY_ANOTHER_USER" => Self::StartedByAnotherUser,
             "STRATEGIST_MODEL_UNCONFIGURED" => Self::StrategistModelUnconfigured,
             "TASK_GRAPH_FAILED" => Self::TaskGraphFailed,
             "TEAM_ABORT" => Self::TeamAbort,
             "TERMS_NOT_ACCEPTED" => Self::TermsNotAccepted,
             "TEXT_EXTRACTION_FAILED" => Self::TextExtractionFailed,
+            "UNAUTHENTICATED" => Self::Unauthenticated,
             "USER_REQUIRED" => Self::UserRequired,
             "VALIDATION_ERROR" => Self::ValidationError,
             "VERIFICATION_FAILED" => Self::VerificationFailed,
@@ -13983,7 +14142,7 @@ impl From<&str> for ErrorCode {
             "provider_not_configured" => Self::ProviderNotConfigured,
             "provider_rate_limited" => Self::ProviderRateLimited,
             "quota_exceeded" => Self::QuotaExceeded2,
-            "rate_limited" => Self::RateLimited,
+            "rate_limited" => Self::RateLimited2,
             "resource_limit_reached" => Self::ResourceLimitReached,
             "run_approval_expired" => Self::RunApprovalExpired,
             "run_input_timeout" => Self::RunInputTimeout,
@@ -15267,6 +15426,13 @@ pub struct GetActivityFeedResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetAdminBlogConfigResponse {
     pub config: BlogConfig,
+}
+
+/// `GetAdminDataProcessingPolicyResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetAdminDataProcessingPolicyResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `GetAdminDisabledToolsResponse` model.
@@ -17055,6 +17221,17 @@ pub struct GetRunQueuePositionResponse {
 /// `GetRunResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetRunResponse {
+    /// Sponsored qualification runs only: the requirements the run was admitted under, stored as
+    /// accepted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_requirements: Option<QualificationExecutionRequirementsV2>,
+    /// Sponsored qualification runs only: until when the run is recoverable by its client request
+    /// id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recovery_expires_at_unix: Option<i64>,
+    /// Sponsored qualification runs only: the grant that paid for it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sponsorship_grant_id: Option<String>,
     /// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
     /// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
     /// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -29082,6 +29259,1267 @@ pub struct PutCareersConfigResponse {
     pub config: CareersConfig,
 }
 
+/// `PutQualificationPricingRevisionRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PutQualificationPricingRevisionRequest {
+    pub provider: String,
+    pub model: String,
+    pub input_microusd_per_million_tokens: QualificationPositiveMicrousd,
+    pub output_microusd_per_million_tokens: QualificationPositiveMicrousd,
+}
+
+/// `PutQualificationSponsorKeyRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PutQualificationSponsorKeyRequest {
+    pub tenant_id: String,
+    pub programs: Vec<String>,
+}
+
+/// Prepared Nestor message only. No files or attachments. Source is untrusted data and must not
+/// become instructions.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationAssessmentInputMessage {
+    pub message: String,
+}
+
+/// policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+/// incomplete readiness. confirmed requires current verified terms, not_used training and no
+/// unknown storage categories.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationConfirmedPolicyResponse {
+    /// Always `uarp.data-processing-policy-response.v1`.
+    pub kind: serde_json::Value,
+    pub policy: QualificationConfirmedProcessingPolicy,
+    pub policy_hash: QualificationDigest,
+    pub readiness: QualificationConfirmedPolicyResponseReadiness,
+    pub blockers: Vec<QualificationConfirmedPolicyResponseBlocker>,
+}
+
+/// `QualificationConfirmedPolicyResponseBlocker` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationConfirmedPolicyResponseBlocker {
+    #[default]
+    #[serde(rename = "POLICY_NOT_CONFIGURED")]
+    PolicyNotConfigured,
+    #[serde(rename = "RETENTION_UNKNOWN")]
+    RetentionUnknown,
+    #[serde(rename = "LLM_TRAINING_UNCONFIRMED")]
+    LLMTrainingUnconfirmed,
+    #[serde(rename = "LLM_TRAINING_USED")]
+    LLMTrainingUsed,
+    #[serde(rename = "PROCESSOR_UNCONFIRMED")]
+    ProcessorUnconfirmed,
+    #[serde(rename = "EVIDENCE_UNCONFIRMED")]
+    EvidenceUnconfirmed,
+    #[serde(rename = "POLICY_EXPIRED")]
+    PolicyExpired,
+    #[serde(rename = "POLICY_REVOKED")]
+    PolicyRevoked,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationConfirmedPolicyResponseBlocker {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::PolicyNotConfigured => "POLICY_NOT_CONFIGURED",
+            Self::RetentionUnknown => "RETENTION_UNKNOWN",
+            Self::LLMTrainingUnconfirmed => "LLM_TRAINING_UNCONFIRMED",
+            Self::LLMTrainingUsed => "LLM_TRAINING_USED",
+            Self::ProcessorUnconfirmed => "PROCESSOR_UNCONFIRMED",
+            Self::EvidenceUnconfirmed => "EVIDENCE_UNCONFIRMED",
+            Self::PolicyExpired => "POLICY_EXPIRED",
+            Self::PolicyRevoked => "POLICY_REVOKED",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationConfirmedPolicyResponseBlocker {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationConfirmedPolicyResponseBlocker {
+    fn from(value: &str) -> Self {
+        match value {
+            "POLICY_NOT_CONFIGURED" => Self::PolicyNotConfigured,
+            "RETENTION_UNKNOWN" => Self::RetentionUnknown,
+            "LLM_TRAINING_UNCONFIRMED" => Self::LLMTrainingUnconfirmed,
+            "LLM_TRAINING_USED" => Self::LLMTrainingUsed,
+            "PROCESSOR_UNCONFIRMED" => Self::ProcessorUnconfirmed,
+            "EVIDENCE_UNCONFIRMED" => Self::EvidenceUnconfirmed,
+            "POLICY_EXPIRED" => Self::PolicyExpired,
+            "POLICY_REVOKED" => Self::PolicyRevoked,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `QualificationConfirmedPolicyResponseReadiness` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationConfirmedPolicyResponseReadiness {
+    #[default]
+    #[serde(rename = "confirmed")]
+    Confirmed,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationConfirmedPolicyResponseReadiness {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Confirmed => "confirmed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationConfirmedPolicyResponseReadiness {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationConfirmedPolicyResponseReadiness {
+    fn from(value: &str) -> Self {
+        match value {
+            "confirmed" => Self::Confirmed,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+/// 86400 seconds later. recovery_window_seconds is the minimum durable client request
+/// reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+/// run records or receipt identifiers persist.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationConfirmedProcessingPolicy {
+    /// Always `uarp.data-processing-policy.v1`.
+    pub schema_version: serde_json::Value,
+    pub id: String,
+    pub revision: i64,
+    pub tenant_id: String,
+    /// Always `nestor.public-qualification.v1`.
+    pub purpose: serde_json::Value,
+    /// Always `<https://api.snaga.ai`>.
+    pub recipient: serde_json::Value,
+    pub processor_name: String,
+    pub processing_region: String,
+    /// Always `not_used`.
+    pub llm_training_use: serde_json::Value,
+    pub archive_enabled: bool,
+    pub storage: QualificationConfirmedStoragePolicy,
+    pub evidence_hash: QualificationDigest,
+    pub recovery_window_seconds: i64,
+    pub observed_at_unix: i64,
+    pub expires_at_unix: i64,
+}
+
+pub type QualificationConfirmedRetentionRule = serde_json::Value;
+
+/// `QualificationConfirmedRetentionRuleVariant1` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationConfirmedRetentionRuleVariant1 {
+    /// Always `finite`.
+    pub mode: serde_json::Value,
+    pub max_seconds: i64,
+}
+
+/// `QualificationConfirmedRetentionRuleVariant2` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationConfirmedRetentionRuleVariant2 {
+    /// Always `no_storage`.
+    pub mode: serde_json::Value,
+    pub max_seconds: serde_json::Value,
+}
+
+/// `QualificationConfirmedRetentionRuleVariant3` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationConfirmedRetentionRuleVariant3 {
+    pub mode: QualificationConfirmedRetentionRuleVariant3mode,
+    #[serde(default)]
+    pub max_seconds: Option<serde_json::Value>,
+}
+
+/// `QualificationConfirmedRetentionRuleVariant3mode` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationConfirmedRetentionRuleVariant3mode {
+    #[default]
+    #[serde(rename = "indefinite")]
+    Indefinite,
+    #[serde(rename = "not_applicable")]
+    NotApplicable,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationConfirmedRetentionRuleVariant3mode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Indefinite => "indefinite",
+            Self::NotApplicable => "not_applicable",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationConfirmedRetentionRuleVariant3mode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationConfirmedRetentionRuleVariant3mode {
+    fn from(value: &str) -> Self {
+        match value {
+            "indefinite" => Self::Indefinite,
+            "not_applicable" => Self::NotApplicable,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `QualificationConfirmedStoragePolicy` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationConfirmedStoragePolicy {
+    pub runs: QualificationConfirmedRetentionRule,
+    pub events: QualificationConfirmedRetentionRule,
+    pub artifacts: QualificationConfirmedRetentionRule,
+    pub checkpoints: QualificationConfirmedRetentionRule,
+    pub archives: QualificationConfirmedRetentionRule,
+    pub backups: QualificationConfirmedRetentionRule,
+    pub llm: QualificationConfirmedRetentionRule,
+}
+
+pub type QualificationDigest = String;
+
+/// receipt_hash binds only receipt. profile_status and its observation time are current
+/// server-owned validity outside immutable history. Authenticated HTTPS readback is mandatory;
+/// a hash alone does not authenticate a server.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationExecutionReceiptResponseV2 {
+    /// Always `uarp.execution-receipt-response.v2`.
+    pub kind: serde_json::Value,
+    pub receipt: QualificationExecutionReceiptV2,
+    pub receipt_hash: QualificationDigest,
+    pub profile_status: QualificationExecutionReceiptResponseV2profileStatus,
+    pub profile_status_observed_at_unix: i64,
+}
+
+/// `QualificationExecutionReceiptResponseV2profileStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationExecutionReceiptResponseV2profileStatus {
+    #[default]
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "revoked")]
+    Revoked,
+    #[serde(rename = "unknown")]
+    Unknown,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationExecutionReceiptResponseV2profileStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Active => "active",
+            Self::Revoked => "revoked",
+            Self::Unknown => "unknown",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationExecutionReceiptResponseV2profileStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationExecutionReceiptResponseV2profileStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "active" => Self::Active,
+            "revoked" => Self::Revoked,
+            "unknown" => Self::Unknown,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+pub type QualificationExecutionReceiptV2 = serde_json::Value;
+
+/// Hash material only, never accepted by POST /runs. Omit exactly sponsorship_grant_id to avoid
+/// a circular grant/hash dependency.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationExecutionRequirementsBeforeGrantV2 {
+    /// Always `uarp.execution-requirements.v2`.
+    pub schema_version: serde_json::Value,
+    /// Always `nestor.public-qualification.v1`.
+    pub purpose: serde_json::Value,
+    pub client_request_id: String,
+    pub processing_policy_id: String,
+    pub processing_policy_hash: QualificationDigest,
+    /// Always `isolated-assessment.v1`.
+    pub isolation_profile: serde_json::Value,
+    pub require_verifiable_execution: bool,
+    #[serde(default)]
+    pub expected_execution_profile_hash: Option<QualificationDigest>,
+}
+
+/// Closed sponsored v2. Existing v1 remains unchanged. Phase A uses false/null; strict mode
+/// still requires independently accepted evidence/calibration.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationExecutionRequirementsV2 {
+    /// Always `uarp.execution-requirements.v2`.
+    pub schema_version: serde_json::Value,
+    /// Always `nestor.public-qualification.v1`.
+    pub purpose: serde_json::Value,
+    pub client_request_id: String,
+    pub processing_policy_id: String,
+    pub processing_policy_hash: QualificationDigest,
+    /// Always `isolated-assessment.v1`.
+    pub isolation_profile: serde_json::Value,
+    pub require_verifiable_execution: bool,
+    #[serde(default)]
+    pub expected_execution_profile_hash: Option<QualificationDigest>,
+    pub sponsorship_grant_id: String,
+}
+
+/// One immutable settlement per grant, later corrections are unique append-only credits, never
+/// additional debits. Unknown-cost cap is a conservative sponsor charge, not provider actual
+/// cost.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationGrant {
+    pub authorization: QualificationGrantAuthorization,
+    pub grant_hash: QualificationDigest,
+    pub status: QualificationGrantStatus,
+    #[serde(default)]
+    pub run_id: Option<String>,
+    #[serde(default)]
+    pub charged_microusd: Option<QualificationMicrousd>,
+    pub refunded_microusd: QualificationMicrousd,
+    #[serde(default)]
+    pub billing_basis: Option<QualificationGrantBillingBasisVariant1>,
+    #[serde(default)]
+    pub unknown_cost_reason: Option<QualificationGrantUnknownCostReasonVariant1>,
+    #[serde(default)]
+    pub settlement_id: Option<String>,
+}
+
+/// Immutable server authorization snapshot. grant_hash hashes only this object, not mutable
+/// envelope fields.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationGrantAuthorization {
+    pub grant_id: String,
+    pub program_id: String,
+    /// Always `nestor.public-qualification.v1`.
+    pub purpose: serde_json::Value,
+    pub candidate_tenant_id: String,
+    pub candidate_user_id: String,
+    pub client_request_id: String,
+    pub run_input_hash: QualificationDigest,
+    pub run_authorization_hash: QualificationDigest,
+    pub agent_id: String,
+    pub agent_version_id: String,
+    pub agent_version: i64,
+    pub template_hash: QualificationDigest,
+    /// Positive integer micro-USD string, at most USD 1.
+    pub max_cost_microusd: String,
+    pub expires_at_unix: i64,
+    pub pricing_revision: String,
+    pub created_at_unix: i64,
+}
+
+/// `QualificationGrantBillingBasisVariant1` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationGrantBillingBasisVariant1 {
+    #[default]
+    #[serde(rename = "metered")]
+    Metered,
+    #[serde(rename = "reserved_cap_unknown")]
+    ReservedCapUnknown,
+    #[serde(rename = "no_dispatch")]
+    NoDispatch,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationGrantBillingBasisVariant1 {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Metered => "metered",
+            Self::ReservedCapUnknown => "reserved_cap_unknown",
+            Self::NoDispatch => "no_dispatch",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationGrantBillingBasisVariant1 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationGrantBillingBasisVariant1 {
+    fn from(value: &str) -> Self {
+        match value {
+            "metered" => Self::Metered,
+            "reserved_cap_unknown" => Self::ReservedCapUnknown,
+            "no_dispatch" => Self::NoDispatch,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// No raw input, credential or payer override. Canonical body hash binds expiry too. Unique
+/// durable program/tenant/user/client_request_id; replay returns original grant current state,
+/// never another reserve.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationGrantCreate {
+    pub program_id: String,
+    /// Always `nestor.public-qualification.v1`.
+    pub purpose: serde_json::Value,
+    pub candidate_tenant_id: String,
+    pub candidate_user_id: String,
+    pub client_request_id: String,
+    pub run_input_hash: QualificationDigest,
+    pub run_authorization_hash: QualificationDigest,
+    pub agent_id: String,
+    pub agent_version_id: String,
+    pub agent_version: i64,
+    pub template_hash: QualificationDigest,
+    /// Positive integer micro-USD string, at most USD 1.
+    pub max_cost_microusd: String,
+    pub expires_at_unix: i64,
+}
+
+/// `QualificationGrantPage` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationGrantPage {
+    pub items: Vec<QualificationGrant>,
+    pub has_more: serde_json::Value,
+    #[serde(default)]
+    pub cursor: Option<serde_json::Value>,
+}
+
+/// `QualificationGrantStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationGrantStatus {
+    #[default]
+    #[serde(rename = "reserved")]
+    Reserved,
+    #[serde(rename = "consumed")]
+    Consumed,
+    #[serde(rename = "settled")]
+    Settled,
+    #[serde(rename = "released")]
+    Released,
+    #[serde(rename = "expired")]
+    Expired,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationGrantStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Reserved => "reserved",
+            Self::Consumed => "consumed",
+            Self::Settled => "settled",
+            Self::Released => "released",
+            Self::Expired => "expired",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationGrantStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationGrantStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "reserved" => Self::Reserved,
+            "consumed" => Self::Consumed,
+            "settled" => Self::Settled,
+            "released" => Self::Released,
+            "expired" => Self::Expired,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `QualificationGrantUnknownCostReasonVariant1` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationGrantUnknownCostReasonVariant1 {
+    #[default]
+    #[serde(rename = "provider_outcome_unknown")]
+    ProviderOutcomeUnknown,
+    #[serde(rename = "attempt_ledger_incomplete")]
+    AttemptLedgerIncomplete,
+    #[serde(rename = "pricing_observation_incomplete")]
+    PricingObservationIncomplete,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationGrantUnknownCostReasonVariant1 {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::ProviderOutcomeUnknown => "provider_outcome_unknown",
+            Self::AttemptLedgerIncomplete => "attempt_ledger_incomplete",
+            Self::PricingObservationIncomplete => "pricing_observation_incomplete",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationGrantUnknownCostReasonVariant1 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationGrantUnknownCostReasonVariant1 {
+    fn from(value: &str) -> Self {
+        match value {
+            "provider_outcome_unknown" => Self::ProviderOutcomeUnknown,
+            "attempt_ledger_incomplete" => Self::AttemptLedgerIncomplete,
+            "pricing_observation_incomplete" => Self::PricingObservationIncomplete,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+/// incomplete readiness. confirmed requires current verified terms, not_used training and no
+/// unknown storage categories.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationInactivePolicyResponse {
+    /// Always `uarp.data-processing-policy-response.v1`.
+    pub kind: serde_json::Value,
+    pub policy: QualificationProcessingPolicy,
+    pub policy_hash: QualificationDigest,
+    pub readiness: QualificationInactivePolicyResponseReadiness,
+    pub blockers: Vec<QualificationConfirmedPolicyResponseBlocker>,
+}
+
+/// `QualificationInactivePolicyResponseReadiness` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationInactivePolicyResponseReadiness {
+    #[default]
+    #[serde(rename = "expired")]
+    Expired,
+    #[serde(rename = "revoked")]
+    Revoked,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationInactivePolicyResponseReadiness {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Expired => "expired",
+            Self::Revoked => "revoked",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationInactivePolicyResponseReadiness {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationInactivePolicyResponseReadiness {
+    fn from(value: &str) -> Self {
+        match value {
+            "expired" => Self::Expired,
+            "revoked" => Self::Revoked,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+/// incomplete readiness. confirmed requires current verified terms, not_used training and no
+/// unknown storage categories.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationIncompletePolicyResponse {
+    /// Always `uarp.data-processing-policy-response.v1`.
+    pub kind: serde_json::Value,
+    pub policy: QualificationProcessingPolicy,
+    pub policy_hash: QualificationDigest,
+    pub readiness: QualificationIncompletePolicyResponseReadiness,
+    pub blockers: Vec<QualificationConfirmedPolicyResponseBlocker>,
+}
+
+/// `QualificationIncompletePolicyResponseReadiness` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationIncompletePolicyResponseReadiness {
+    #[default]
+    #[serde(rename = "incomplete")]
+    Incomplete,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationIncompletePolicyResponseReadiness {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Incomplete => "incomplete",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationIncompletePolicyResponseReadiness {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationIncompletePolicyResponseReadiness {
+    fn from(value: &str) -> Self {
+        match value {
+            "incomplete" => Self::Incomplete,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// One private managed binding per tenant/purpose; immutable applied version and template,
+/// independent of personal agent/version caps. Readback with candidate credential required.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationManagedEvaluator {
+    pub agent_id: String,
+    pub agent_version_id: String,
+    pub agent_version: i64,
+    pub template_revision: i64,
+    pub template_hash: QualificationDigest,
+    /// Always `qualification:nestor.public-qualification.v1`.
+    pub managed_by: serde_json::Value,
+    pub governance: QualificationManagedEvaluatorGovernance,
+}
+
+/// `QualificationManagedEvaluatorGovernance` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationManagedEvaluatorGovernance {
+    pub can_spawn: serde_json::Value,
+    pub max_spawn_depth: serde_json::Value,
+    pub can_self_modify: serde_json::Value,
+    pub max_budget_per_run_usd: serde_json::Value,
+}
+
+/// Integer micro-USD string. 1000000 = USD 1. No float or FX.
+pub type QualificationMicrousd = String;
+
+/// policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+/// incomplete readiness. confirmed requires current verified terms, not_used training and no
+/// unknown storage categories.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationMissingPolicyResponse {
+    /// Always `uarp.data-processing-policy-response.v1`.
+    pub kind: serde_json::Value,
+    #[serde(default)]
+    pub policy: Option<serde_json::Value>,
+    #[serde(default)]
+    pub policy_hash: Option<serde_json::Value>,
+    pub readiness: QualificationIncompletePolicyResponseReadiness,
+    pub blockers: Vec<QualificationConfirmedPolicyResponseBlocker>,
+}
+
+pub type QualificationPositiveMicrousd = String;
+
+/// Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+/// 86400 seconds later. recovery_window_seconds is the minimum durable client request
+/// reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+/// run records or receipt identifiers persist.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationProcessingPolicy {
+    /// Always `uarp.data-processing-policy.v1`.
+    pub schema_version: serde_json::Value,
+    pub id: String,
+    pub revision: i64,
+    pub tenant_id: String,
+    /// Always `nestor.public-qualification.v1`.
+    pub purpose: serde_json::Value,
+    /// Always `<https://api.snaga.ai`>.
+    pub recipient: serde_json::Value,
+    #[serde(default)]
+    pub processor_name: Option<String>,
+    #[serde(default)]
+    pub processing_region: Option<String>,
+    pub llm_training_use: QualificationProcessingPolicyLLMTrainingUse,
+    #[serde(default)]
+    pub archive_enabled: Option<bool>,
+    pub storage: QualificationStoragePolicy,
+    #[serde(default)]
+    pub evidence_hash: Option<QualificationDigest>,
+    pub recovery_window_seconds: i64,
+    pub observed_at_unix: i64,
+    pub expires_at_unix: i64,
+}
+
+/// `QualificationProcessingPolicyLLMTrainingUse` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationProcessingPolicyLLMTrainingUse {
+    #[default]
+    #[serde(rename = "not_used")]
+    NotUsed,
+    #[serde(rename = "used")]
+    Used,
+    #[serde(rename = "unknown")]
+    Unknown,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationProcessingPolicyLLMTrainingUse {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::NotUsed => "not_used",
+            Self::Used => "used",
+            Self::Unknown => "unknown",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationProcessingPolicyLLMTrainingUse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationProcessingPolicyLLMTrainingUse {
+    fn from(value: &str) -> Self {
+        match value {
+            "not_used" => Self::NotUsed,
+            "used" => Self::Used,
+            "unknown" => Self::Unknown,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+pub type QualificationProcessingPolicyResponse = serde_json::Value;
+
+/// budget_limit = reserved + spent + remaining, exact integer arithmetic. Configuration
+/// revision is not incremented for ledger activity.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationProgram {
+    pub program_id: String,
+    pub revision: i64,
+    /// Always `nestor.public-qualification.v1`.
+    pub purpose: serde_json::Value,
+    pub sponsor_tenant_id: String,
+    pub budget_limit_microusd: QualificationPositiveMicrousd,
+    pub reserved_microusd: QualificationMicrousd,
+    pub spent_microusd: QualificationMicrousd,
+    pub remaining_microusd: QualificationMicrousd,
+    pub pricing_revision: String,
+    pub limits: QualificationProgramLimits,
+    pub active: bool,
+}
+
+/// Every cap is required. Per-run cap \<=1000000 and daily amount \>= per-run cap are server
+/// invariants. Daily counters aggregate the same user across candidate tenants. Reserved and
+/// consumed grants both occupy active slots.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationProgramLimits {
+    /// Positive integer micro-USD string, at most USD 1.
+    pub max_cost_per_run_microusd: String,
+    pub max_grants_per_candidate_per_utc_day: i64,
+    pub max_issued_per_candidate_per_utc_day_microusd: QualificationPositiveMicrousd,
+    pub max_active_grants_per_candidate: i64,
+    pub max_active_grants: i64,
+    pub grant_ttl_seconds_max: i64,
+    pub max_attempts_per_run: serde_json::Value,
+}
+
+/// Full configuration replacement, not merge. Initial expected_revision=0. Immutable
+/// purpose/sponsor/pricing. Funded ceiling, not mint/charge endpoint. Ceiling cannot fall below
+/// spent+reserved.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationProgramPut {
+    pub expected_revision: i64,
+    /// Always `nestor.public-qualification.v1`.
+    pub purpose: serde_json::Value,
+    pub sponsor_tenant_id: String,
+    pub budget_limit_microusd: QualificationPositiveMicrousd,
+    pub pricing_revision: String,
+    pub limits: QualificationProgramLimits,
+    pub active: bool,
+}
+
+/// `QualificationReceiptPending` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationReceiptPending {
+    /// Always `EXECUTION_RECEIPT_PENDING`.
+    pub code: serde_json::Value,
+    pub run_id: String,
+}
+
+pub type QualificationRetentionRule = serde_json::Value;
+
+/// `QualificationRetentionRuleVariant1` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationRetentionRuleVariant1 {
+    /// Always `finite`.
+    pub mode: serde_json::Value,
+    pub max_seconds: i64,
+}
+
+/// `QualificationRetentionRuleVariant2` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationRetentionRuleVariant2 {
+    /// Always `no_storage`.
+    pub mode: serde_json::Value,
+    pub max_seconds: serde_json::Value,
+}
+
+/// `QualificationRetentionRuleVariant3` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationRetentionRuleVariant3 {
+    pub mode: QualificationRetentionRuleVariant3mode,
+    #[serde(default)]
+    pub max_seconds: Option<serde_json::Value>,
+}
+
+/// `QualificationRetentionRuleVariant3mode` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationRetentionRuleVariant3mode {
+    #[default]
+    #[serde(rename = "indefinite")]
+    Indefinite,
+    #[serde(rename = "not_applicable")]
+    NotApplicable,
+    #[serde(rename = "unknown")]
+    Unknown,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationRetentionRuleVariant3mode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Indefinite => "indefinite",
+            Self::NotApplicable => "not_applicable",
+            Self::Unknown => "unknown",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationRetentionRuleVariant3mode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationRetentionRuleVariant3mode {
+    fn from(value: &str) -> Self {
+        match value {
+            "indefinite" => Self::Indefinite,
+            "not_applicable" => Self::NotApplicable,
+            "unknown" => Self::Unknown,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Hash material, not a createRun command.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationRunBeforeGrantV2 {
+    pub agent_id: String,
+    pub version: i64,
+    pub input: QualificationAssessmentInputMessage,
+    pub resource_limits: QualificationSponsoredLimits,
+    pub metadata: QualificationRunMetadata,
+    pub execution_requirements: QualificationExecutionRequirementsBeforeGrantV2,
+}
+
+/// Exact canonical metadata is hashed. No credentials, raw code or security authority in
+/// metadata.
+pub type QualificationRunMetadata = HashMap<String, serde_json::Value>;
+
+/// Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+/// as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+/// required fields cannot be stated.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationSafetyObservations {
+    pub trace_complete: bool,
+    pub tool_calls_count: i64,
+    pub memory_retrievals: i64,
+    pub memory_extractions: i64,
+    pub spawned_agents_count: i64,
+    pub guardrail_violations: i64,
+    pub llm_calls_count: i64,
+    pub steps_count: i64,
+    pub duration_ms: f64,
+    pub input_tokens: i64,
+    pub output_tokens: i64,
+    pub total_cost_usd: f64,
+    pub truncated: bool,
+    pub continuation_used: bool,
+}
+
+/// Wire-compatible limits. Actual tool calls are forbidden by isolation regardless of
+/// max_tool_calls=1. Aggregate budgets include all attempts.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationSponsoredLimits {
+    pub max_duration_ms: serde_json::Value,
+    pub max_steps: serde_json::Value,
+    pub max_tool_calls: serde_json::Value,
+    pub max_tokens_per_run: serde_json::Value,
+    /// Legacy run DTO unit. Must convert exactly to integer micro-USD and be \<= grant cap. No
+    /// rounding up or silently raising the grant.
+    pub max_cost_usd: f64,
+}
+
+/// JCS SHA-256 of this exact object is run_authorization_hash. UARP reconstructs it from the
+/// authenticated user, grant and immutable evaluator/run facts, never trusting metadata as
+/// authority.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationSponsoredRunAuthorizationMaterial {
+    /// Always `uarp.sponsored-run-authorization.v1`.
+    pub schema_version: serde_json::Value,
+    pub program_id: String,
+    pub candidate_tenant_id: String,
+    pub candidate_user_id: String,
+    pub agent_version_id: String,
+    pub template_hash: QualificationDigest,
+    /// Positive integer micro-USD string, at most USD 1.
+    pub max_cost_microusd: String,
+    pub run: QualificationRunBeforeGrantV2,
+}
+
+/// Sponsored subset of canonical POST /runs; \<=131072 UTF-8 bytes, duplicate JSON keys
+/// rejected. Other purposes retain the canonical API behavior. All metadata is explicit, even
+/// if empty.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationSponsoredRunCreateV2 {
+    pub agent_id: String,
+    pub version: i64,
+    pub input: QualificationAssessmentInputMessage,
+    pub resource_limits: QualificationSponsoredLimits,
+    pub metadata: QualificationRunMetadata,
+    pub execution_requirements: QualificationExecutionRequirementsV2,
+}
+
+/// Excerpt of existing Run with additive server-stored execution_requirements and recovery
+/// horizon. Existing fields remain available. A full canonical Run read is required for Nestor
+/// validation.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationSponsoredRunExcerpt {
+    pub run_id: String,
+    pub tenant_id: String,
+    pub agent_id: String,
+    pub status: String,
+    pub input: serde_json::Map<String, serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
+    pub execution_requirements: QualificationExecutionRequirementsV2,
+    pub recovery_expires_at_unix: i64,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
+/// `QualificationStoragePolicy` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationStoragePolicy {
+    pub runs: QualificationRetentionRule,
+    pub events: QualificationRetentionRule,
+    pub artifacts: QualificationRetentionRule,
+    pub checkpoints: QualificationRetentionRule,
+    pub archives: QualificationRetentionRule,
+    pub backups: QualificationRetentionRule,
+    pub llm: QualificationRetentionRule,
+}
+
+/// Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+/// hash identifies stable actual resolved configuration; it excludes
+/// run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+/// verified does not mean the engineer is qualified or that a failed run is acceptable.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationUnverifiableExecutionReceiptV2 {
+    /// Always `uarp.execution-receipt.v2`.
+    pub schema_version: serde_json::Value,
+    pub run_id: String,
+    pub tenant_id: String,
+    pub initiator_user_id: String,
+    pub agent_id: String,
+    pub agent_version_id: String,
+    pub agent_version: i64,
+    pub client_request_id: String,
+    /// Always `nestor.public-qualification.v1`.
+    pub purpose: serde_json::Value,
+    pub processing_policy_id: String,
+    pub processing_policy_hash: QualificationDigest,
+    pub execution_requirements: QualificationExecutionRequirementsV2,
+    #[serde(default)]
+    pub execution_profile_hash: Option<QualificationDigest>,
+    pub run_input_hash: QualificationDigest,
+    pub run_output_hash: QualificationDigest,
+    #[serde(default)]
+    pub execution_trace_hash: Option<QualificationDigest>,
+    pub execution_origin: QualificationUnverifiableExecutionReceiptV2executionOrigin,
+    pub run_status: QualificationVerifiedExecutionReceiptV2runStatus,
+    pub completed_at: String,
+    /// Always `unverifiable`.
+    pub verification_status: serde_json::Value,
+    pub reason_codes: Vec<QualificationVerifiedExecutionReceiptV2reasonCode>,
+    #[serde(default)]
+    pub observations: Option<QualificationSafetyObservations>,
+}
+
+/// `QualificationUnverifiableExecutionReceiptV2executionOrigin` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationUnverifiableExecutionReceiptV2executionOrigin {
+    #[default]
+    #[serde(rename = "cloud_runtime")]
+    CloudRuntime,
+    #[serde(rename = "bridge")]
+    Bridge,
+    #[serde(rename = "unknown")]
+    Unknown,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationUnverifiableExecutionReceiptV2executionOrigin {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::CloudRuntime => "cloud_runtime",
+            Self::Bridge => "bridge",
+            Self::Unknown => "unknown",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationUnverifiableExecutionReceiptV2executionOrigin {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationUnverifiableExecutionReceiptV2executionOrigin {
+    fn from(value: &str) -> Self {
+        match value {
+            "cloud_runtime" => Self::CloudRuntime,
+            "bridge" => Self::Bridge,
+            "unknown" => Self::Unknown,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+/// hash identifies stable actual resolved configuration; it excludes
+/// run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+/// verified does not mean the engineer is qualified or that a failed run is acceptable.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationVerifiedExecutionReceiptV2 {
+    /// Always `uarp.execution-receipt.v2`.
+    pub schema_version: serde_json::Value,
+    pub run_id: String,
+    pub tenant_id: String,
+    pub initiator_user_id: String,
+    pub agent_id: String,
+    pub agent_version_id: String,
+    pub agent_version: i64,
+    pub client_request_id: String,
+    /// Always `nestor.public-qualification.v1`.
+    pub purpose: serde_json::Value,
+    pub processing_policy_id: String,
+    pub processing_policy_hash: QualificationDigest,
+    pub execution_requirements: QualificationExecutionRequirementsV2,
+    pub execution_profile_hash: QualificationDigest,
+    pub run_input_hash: QualificationDigest,
+    pub run_output_hash: QualificationDigest,
+    pub execution_trace_hash: QualificationDigest,
+    /// Always `cloud_runtime`.
+    pub execution_origin: serde_json::Value,
+    pub run_status: QualificationVerifiedExecutionReceiptV2runStatus,
+    pub completed_at: String,
+    /// Always `verified`.
+    pub verification_status: serde_json::Value,
+    pub reason_codes: Vec<QualificationVerifiedExecutionReceiptV2reasonCode>,
+    pub observations: QualificationVerifiedSafetyObservations,
+}
+
+/// `QualificationVerifiedExecutionReceiptV2reasonCode` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationVerifiedExecutionReceiptV2reasonCode {
+    #[default]
+    #[serde(rename = "MODEL_REVISION_UNRESOLVED")]
+    ModelRevisionUnresolved,
+    #[serde(rename = "EXECUTION_TRACE_INCOMPLETE")]
+    ExecutionTraceIncomplete,
+    #[serde(rename = "MIXED_EXECUTION_PROFILES")]
+    MixedExecutionProfiles,
+    #[serde(rename = "RUNTIME_NOT_ATTESTABLE")]
+    RuntimeNotAttestable,
+    #[serde(rename = "METERING_INCOMPLETE")]
+    MeteringIncomplete,
+    #[serde(rename = "ISOLATION_NOT_PROVEN")]
+    IsolationNotProven,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationVerifiedExecutionReceiptV2reasonCode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::ModelRevisionUnresolved => "MODEL_REVISION_UNRESOLVED",
+            Self::ExecutionTraceIncomplete => "EXECUTION_TRACE_INCOMPLETE",
+            Self::MixedExecutionProfiles => "MIXED_EXECUTION_PROFILES",
+            Self::RuntimeNotAttestable => "RUNTIME_NOT_ATTESTABLE",
+            Self::MeteringIncomplete => "METERING_INCOMPLETE",
+            Self::IsolationNotProven => "ISOLATION_NOT_PROVEN",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationVerifiedExecutionReceiptV2reasonCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationVerifiedExecutionReceiptV2reasonCode {
+    fn from(value: &str) -> Self {
+        match value {
+            "MODEL_REVISION_UNRESOLVED" => Self::ModelRevisionUnresolved,
+            "EXECUTION_TRACE_INCOMPLETE" => Self::ExecutionTraceIncomplete,
+            "MIXED_EXECUTION_PROFILES" => Self::MixedExecutionProfiles,
+            "RUNTIME_NOT_ATTESTABLE" => Self::RuntimeNotAttestable,
+            "METERING_INCOMPLETE" => Self::MeteringIncomplete,
+            "ISOLATION_NOT_PROVEN" => Self::IsolationNotProven,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `QualificationVerifiedExecutionReceiptV2runStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum QualificationVerifiedExecutionReceiptV2runStatus {
+    #[default]
+    #[serde(rename = "completed")]
+    Completed,
+    #[serde(rename = "failed")]
+    Failed,
+    #[serde(rename = "cancelled")]
+    Cancelled,
+    #[serde(rename = "timeout")]
+    Timeout,
+    #[serde(rename = "guardrail_blocked")]
+    GuardrailBlocked,
+    #[serde(rename = "rejected")]
+    Rejected,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl QualificationVerifiedExecutionReceiptV2runStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+            Self::Cancelled => "cancelled",
+            Self::Timeout => "timeout",
+            Self::GuardrailBlocked => "guardrail_blocked",
+            Self::Rejected => "rejected",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for QualificationVerifiedExecutionReceiptV2runStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for QualificationVerifiedExecutionReceiptV2runStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "completed" => Self::Completed,
+            "failed" => Self::Failed,
+            "cancelled" => Self::Cancelled,
+            "timeout" => Self::Timeout,
+            "guardrail_blocked" => Self::GuardrailBlocked,
+            "rejected" => Self::Rejected,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+/// as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+/// required fields cannot be stated.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct QualificationVerifiedSafetyObservations {
+    pub trace_complete: serde_json::Value,
+    pub tool_calls_count: i64,
+    pub memory_retrievals: i64,
+    pub memory_extractions: i64,
+    pub spawned_agents_count: i64,
+    pub guardrail_violations: i64,
+    pub llm_calls_count: i64,
+    pub steps_count: i64,
+    pub duration_ms: f64,
+    pub input_tokens: i64,
+    pub output_tokens: i64,
+    pub total_cost_usd: f64,
+    pub truncated: bool,
+    pub continuation_used: bool,
+}
+
 /// A limit refusal. `code` separates a throttle from a wall: `rate_limit_exceeded` clears in
 /// seconds (see `Retry-After`); `quota_exceeded` clears at `quota.resets_at`; `limit_reached`
 /// does not clear on a clock and needs a plan change; `run_quota_exceeded` is the run
@@ -30586,6 +32024,15 @@ pub struct RevokeAPIKeyResponse {
     pub key_id: String,
 }
 
+/// `RevokeDataProcessingPolicyResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RevokeDataProcessingPolicyResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revoked: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
 /// `RevokeMeSessionResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RevokeMeSessionResponse {
@@ -30765,6 +32212,17 @@ pub struct RotateAgentIdentityResponse {
 /// `Run` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Run {
+    /// Sponsored qualification runs only: the requirements the run was admitted under, stored as
+    /// accepted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_requirements: Option<QualificationExecutionRequirementsV2>,
+    /// Sponsored qualification runs only: until when the run is recoverable by its client request
+    /// id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recovery_expires_at_unix: Option<i64>,
+    /// Sponsored qualification runs only: the grant that paid for it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sponsorship_grant_id: Option<String>,
     /// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
     /// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
     /// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -32185,6 +33643,12 @@ pub struct RunFeedbackSet {
 /// `RunMetrics` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RunMetrics {
+    /// The context window of the model that served the run, in tokens.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_window_tokens: Option<i64>,
+    /// Input tokens of the run's last model call: how full the window was at the end.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_input_tokens: Option<i64>,
     /// How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pricing_confidence: Option<String>,
