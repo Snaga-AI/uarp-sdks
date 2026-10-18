@@ -8,6 +8,36 @@ public struct AnalyticsAPI: Sendable {
 
     init(client: UARPClient) { self.client = client }
 
+    /// How well the work goes — acceptance, revisions, cost, time
+    ///
+    /// Over missions created in the last `days` (default 30, 1–365): missions and objectives by
+    /// status, failed objectives by reason, and the review record of objectives with
+    /// `review_required` — `accepted_first_pass`, `accepted_after_revision`, `rejected`,
+    /// `first_pass_rate` (first-pass / reviewed) and `avg_revisions`. `quality` reports what the
+    /// platform can see about the work itself: how many reviewed results cite a link no tool
+    /// produced (`with_unsourced_links`, `unsourced_link_rate` — null, not zero, when nothing
+    /// carried provenance) and how many edits an accepted result took (`revisions_per_accepted`).
+    /// `actions_rejected` counts objectives ended because a person refused an action mid-run.
+    /// `cost_per_completed_usd` and `avg_minutes_to_complete` are over completed objectives.
+    /// `by_agent` repeats the figures per assignee (`team:<id>` for a squad). Requires the
+    /// `analytics:read` scope. Since 2026-10-12.
+    ///
+    /// `GET /api/v1/analytics/missions`
+    ///
+    /// Required scopes: `analytics:read`.
+    public func getMissionPerformance(days: Int? = nil, options: RequestOptions = .init()) async throws -> GetMissionPerformanceResponse {
+        var query: [URLQueryItem] = []
+        if let days {
+            query.append(URLQueryItem(name: "days", value: String(days)))
+        }
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/analytics/missions",
+            query: query,
+            options: options
+        ))
+    }
+
     /// Public chat funnel
     ///
     /// Visits, engagement and messages on the tenant's public chat surfaces, with
@@ -35,7 +65,8 @@ public struct AnalyticsAPI: Sendable {
     /// Runs waiting on a human
     ///
     /// Approvals, input requests, paused and failed runs, each with a one-line summary of what is
-    /// being asked — tool names, the question, or the error.
+    /// being asked — and, in `reviews`, mission results waiting for a person's verdict — tool
+    /// names, the question, or the error.
     ///
     /// `counts` is computed over the whole scan while `items` honours `limit`, so a truncated list
     /// still reports the true backlog.

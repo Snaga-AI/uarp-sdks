@@ -8,15 +8,14 @@ package body UARP.API.Scheduler is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Schedule
+      return UARP.JSON_Support.JSON_Value
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "GET",
-             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/schedule",
-             Options => Options));
+      return UARP.Client.Call
+         (Self,
+          "GET",
+          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/schedule",
+          Options => Options);
    end Get_Schedule;
 
    function List_Schedules

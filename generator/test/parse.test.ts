@@ -51,6 +51,31 @@ test('required, optional and nullable are three different things', () => {
   assert.equal(property(spec, 'Thing', 'legacy_nullable').nullable, true);
 });
 
+test('a $ref to a component that admits null is nullable where it is referenced', () => {
+  const spec = fixture('nullability');
+
+  // The control: a reference to an ordinary component stays non-null.
+  assert.equal(property(spec, 'Thing', 'owner').nullable, false);
+
+  // `type: ["object", "null"]` on the component — what `CompanyTestRun` declares,
+  // and what made `readiness.test_run: null` throw in Rust, Swift and Kotlin.
+  const rehearsal = property(spec, 'Thing', 'rehearsal');
+  assert.equal(rehearsal.required, true);
+  assert.equal(rehearsal.nullable, true);
+  assert.deepEqual(rehearsal.type, { kind: 'named', name: 'Rehearsal' });
+
+  // The same, spelled as a `oneOf` member on the component (`ScheduleShape`).
+  assert.equal(property(spec, 'Thing', 'shape').nullable, true);
+});
+
+test('a response body that may be null is nullable, and one that may not is not', () => {
+  const spec = fixture('nullability');
+  const schedule = operation(spec, 'getThingSchedule').response;
+  assert.deepEqual(schedule.type, { kind: 'named', name: 'Owner' });
+  assert.equal(schedule.nullable, true);
+  assert.equal(operation(spec, 'getThing').response.nullable, undefined);
+});
+
 test('maps scalar formats onto distinct primitives', () => {
   const spec = fixture('nullability');
   assert.deepEqual(property(spec, 'Thing', 'id').type, { kind: 'prim', prim: 'uuid' });
@@ -173,6 +198,19 @@ test('turns oneOf into a union', () => {
     { kind: 'prim', prim: 'string' },
     { kind: 'array', items: { kind: 'prim', prim: 'string' } },
   ]);
+});
+
+test('an anyOf of required-only members constrains the object instead of typing it', () => {
+  const spec = fixture('composition');
+  const body = operation(spec, 'copyFile').body!.type;
+  assert.equal(body.kind, 'named');
+  const copy = object(spec, (body as { name: string }).name);
+  assert.deepEqual(
+    copy.properties.map((p) => p.wire).sort(),
+    ['dest_path', 'from_path', 'source_path', 'to_path'],
+  );
+  // Either pair satisfies the rule, so neither can be required by the type.
+  assert.ok(copy.properties.every((p) => !p.required));
 });
 
 // -------------------------------------------------------------------- bodies
@@ -401,14 +439,42 @@ test('parses the production document into the expected shape', () => {
   // 766 -> 789 on 2026-10-10 (build 15987a5f): twenty-three and none removed —
   // the MCP one-click connect and its OAuth round trip (six, uarp #552), a
   // careers surface (twelve admin, three public), and two registry singles.
-  assert.equal(ops.length, 789);
+  // 789 -> 823 on 2026-10-12 (build ef5b646d): thirty-four and none removed —
+  // the Company Builder (sixteen under /tenants/me: company, blueprint,
+  // proposals, readiness, test run, launch, overview), eleven /initiatives
+  // twins of /companies (which are now all deprecated), mission schedules
+  // (three) and analytics, and a run's sources and revise.
+  // 823 -> 832 on 2026-10-13 (build 435ca06c): nine and none removed — the
+  // second half of the Company Builder. The template catalogue
+  // (`GET /company-templates`, `GET /company-templates/{templateId}` and the
+  // `POST /company-templates/{templateId}/fit` beside it), the application of
+  // one (`POST /tenants/me/company/apply-template`), and the tenant's own
+  // export, import and version history (`/tenants/me/company/export`,
+  // `/import`, `/restore`, `/versions`) with the plan fit at
+  // `GET /tenants/me/fit`.
+  // 832 -> 839 on 2026-10-17 (build d926b90e): seven and none removed — hiring
+  // an outside agent (`POST /hire`, its catalogue and icons, the MCP endpoint
+  // a hired agent speaks, and its command and disconnect under
+  // `/agents/{agentId}/hire`) and one admin repair, `repairAgentRecords`.
+  // 839 -> 843 on 2026-10-17 (build e0b37b03): four and none removed — the
+  // reader's email preferences (`GET`/`PUT /me/email-preferences`) and the
+  // one-click unsubscribe page behind a letter (`GET`/`POST
+  // /public/email/unsubscribe`, which answer HTML).
+  // 843 -> 857 on 2026-10-17 (build 0837bb4d): fourteen and none removed —
+  // qualification sponsorship (programs, grants, sponsor keys, pricing
+  // revisions, the tenant's evaluator), data-processing policies (tenant and
+  // admin, with revoke) and a run's execution receipt.
+  assert.equal(ops.length, 857);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
   // 50 -> 48 on 2026-09-10 (0.5.18): Training and Creativity gone too.
   // 48 -> 49 on 2026-09-14 (uarp #472): Drawings.
   // 49 -> 50 on 2026-10-05 (0.8.0): Anthropic Compat, for `/v1/messages`.
-  assert.equal(spec.groups.length, 50);
+  // 50 -> 52 on 2026-10-12 (build ef5b646d): Company and Initiatives.
+  // 52 -> 53 on 2026-10-17 (build d926b90e): Hire.
+  // 53 -> 54 on 2026-10-17 (build 0837bb4d): Qualification.
+  assert.equal(spec.groups.length, 54);
   // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
   // `auto_approve_tools`, `command_relationships`, `access_control` and
   // `metadata`, each nested object becoming its own named type. The server had
@@ -632,7 +698,58 @@ test('parses the production document into the expected shape', () => {
   // taken `Value6` and pushed the published Value6/Value7 along by one; map
   // value types are named after their map from here on (Value..Value7 ->
   // e.g. UpdateAdminLLMAdaptersConfigRequestProviderRateLimitsValue).
-  assert.equal(spec.types.length, 1845);
+  // 1845 -> 1934 on 2026-10-12 (build ef5b646d): +89, none removed — the
+  // Company Builder shapes (company profile, changes, proposals and their
+  // steps, readiness, test run, overview), the /initiatives twins, mission
+  // schedules and analytics, run sources and revise.
+  // 1934 -> 2008 on 2026-10-13 (build 435ca06c): +76, −2. The two that leave
+  // are the break in this refresh, and neither is a document rename — the
+  // document never named them. `CompanyProposal.operations` held an INLINE
+  // object whose only property was `op`, hoisted as `CompanyProposalOperation`
+  // with `CompanyProposalOperationOp` beside it; it now `$ref`s
+  // `ProposalOperation`, a oneOf of eleven `ProposalOp*` variants
+  // discriminated by `op` — the first discriminated union this document
+  // declares. A `$ref` hoists neither name, so both go, and the element type
+  // of the array changes with them. Everything else is the template catalogue
+  // and the export/import shapes, the plan-fit answer and the mission
+  // performance report.
+  // 2008 -> 2014 on 2026-10-13 (build 199b0863): +6, none removed. The plan-fit
+  // body moved into its own component, `TenantPlanFit`, so `GET /tenants/me/fit`
+  // and the template fit now share it — and the template fit's eleven keys,
+  // which the document had left to `additionalProperties`, are typed instead of
+  // `unknown`. The names it hoists change with it (`GetTenantPlanFitResponse*`
+  // -> `TenantPlanFit*`), which is a rename inside an unreleased batch: no
+  // consumer of 0.10.0 ever saw those names.
+  // 2014 -> 2024 on 2026-10-15 (build b108e9a9): +10, none removed. Five are the
+  // document's: the overview's `next_step` and its kind, the chat state and the
+  // proposal type as enums, and `TeamRunDetailRun`. Five are the parser's: an
+  // `anyOf` whose members only list `required` keys no longer reads as a union,
+  // so `createTask` and memory search get typed bodies (with three nested enums
+  // and objects) where 0.10.0 took `JsonValue`. The copy and move bodies would
+  // have gone the other way — the document added the same kind of rule to them,
+  // and without the fix they fell back to `JsonValue` and lost both names.
+  // 2024 -> 2053 on 2026-10-17 (build d926b90e): +29, none removed. Twelve are
+  // hiring an outside agent (`AgentHire`, `HireConnect`, the catalogue item and
+  // its steps, the requests and answers), nine the admin `repairAgentRecords`
+  // report, and the rest the document's: `getSession` now names its body
+  // (`GetSessionResponse`, with `SessionContext` and a model override), the
+  // overview's problem missions, the agent's bridge status and the AI system
+  // card's tool sources.
+  // 2053 -> 2064 on 2026-10-17 (build e0b37b03): +16, −5. Four are the email
+  // preferences and the unsubscribe page, four the admin SMTP notify and
+  // profile, three the documented `getMyHeadAgentTemplate` tiers, and one each
+  // the team graph's envelope, the strict `resource_limits` on `createRun`,
+  // the lesson cancellations in `repairAgentRecords`, the sign-in letter's
+  // `locale` and the ambassador request's type on create. `getReady` now
+  // answers the shared `ReadinessReport`, so its three hoisted names leave.
+  // The other two leaving are the parser's first-use names only:
+  // `AmbassadorRequestType` (the read side is plain text now) and
+  // `GetHireCatalogLocale` (the sign-in letter uses the enum first); the pins
+  // keep both names in the SDKs.
+  // 2064 -> 2129 on 2026-10-17 (build 0837bb4d): +65, none removed — the
+  // qualification sponsorship and execution-receipt schemas, data-processing
+  // policies, and fourteen new operations' hoisted bodies.
+  assert.equal(spec.types.length, 2129);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);
@@ -650,7 +767,9 @@ test('parses the production document into the expected shape', () => {
   // 14 -> 15 on 2026-09-16: `GET /companies/{companyId}/events`. Also
   // unrecorded at the time — the third of five numbers the same two unpushed
   // commits left behind.
-  assert.equal(ops.filter((o) => o.sse).length, 15);
+  // 15 -> 16 on 2026-10-12 (build ef5b646d): its twin,
+  // `GET /initiatives/{initiativeId}/events`.
+  assert.equal(ops.filter((o) => o.sse).length, 16);
   // 14 -> 15: `GET /training-jobs`.
   // 15 -> 16 on 2026-08-28: `listTeamRuns`. The handler has read `limit`
   // (default 50, ceiling 100) and `cursor` all along and neither was
@@ -674,7 +793,8 @@ test('parses the production document into the expected shape', () => {
   // evaluations, users and invites, webhook deliveries, squad and team chat
   // and runs, KB documents, governance violations, company activity and the
   // admin audit trail. Each now gets its paging helper.
-  assert.equal(ops.filter((o) => o.pagination).length, 35);
+  // 35 -> 36 on 2026-10-12 (build ef5b646d): `GET /initiatives`.
+  assert.equal(ops.filter((o) => o.pagination).length, 36);
   // 2 -> 3:  joins the two that were already
   // multipart. It is the reason for the type count above — a route that
   // takes a file and said so nowhere.
@@ -857,4 +977,13 @@ test('a response media type decodes to text only when every declared type is tex
     if (!byId.has(id)) continue;
     assert.equal(byId.get(id), prim, `${id} should decode as ${prim}`);
   }
+});
+
+test('createRun is typed by its 202 Run, not by the sponsored 200/201 excerpt', () => {
+  //  Build 0837bb4d lists 200 and 201 with a QualificationSponsoredRunExcerpt
+  //  first; only a body carrying `execution_requirements` gets them, and no
+  //  SDK caller sends one (API lane, 2026-10-17).
+  const op = productionSpec().groups.flatMap((g) => g.operations).find((o) => o.id === 'createRun')!;
+  assert.equal(op.response.status, 202);
+  assert.deepEqual(op.response.type, { kind: 'named', name: 'Run' });
 });

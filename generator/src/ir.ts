@@ -108,6 +108,12 @@ export interface ResponseInfo {
    * then returns an object from a method declared to return a string.
    */
   encoding?: 'json' | 'text' | 'binary';
+  /**
+   * The JSON body may be `null`, as a successful answer: `GET
+   * /agents/{id}/schedule` answers `null` for an agent with no schedule. Read
+   * as non-null, that 200 failed to decode in every typed SDK.
+   */
+  nullable?: boolean;
   description?: string;
 }
 

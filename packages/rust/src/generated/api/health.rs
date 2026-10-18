@@ -86,7 +86,7 @@ impl HealthApi {
     /// process answers 503 outright. Unauthenticated.
     ///
     /// `GET /ready`
-    pub async fn get_ready(&self) -> Result<models::GetReadyResponse> {
+    pub async fn get_ready(&self) -> Result<models::ReadinessReport> {
         self.client
             .request_json(Request {
                 method: Method::GET,

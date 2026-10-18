@@ -77,17 +77,29 @@ pub struct Problem {
     pub status: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
+    /// What a client should do about the failure, as a stable value to match on
+    /// (`SESSION_NOT_ACTIVE`, `QUOTA_EXCEEDED`, `resource_limit_reached`, …).
+    /// `detail` is the sentence for a person and can change; this cannot. A
+    /// string rather than `ErrorCode`, so that a code added after this SDK was
+    /// built still reaches the caller instead of failing the decode.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
     /// Request identifier to quote when reporting an incident.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub correlation_id: Option<String>,
+    /// The deprecated `correlationId` spelling of the same value, sent during a
+    /// compatibility window. Prefer [`ApiError::correlation_id`], which reads both.
     #[serde(
         rename = "correlationId",
         default,
         skip_serializing_if = "Option::is_none"
     )]
-    pub correlation_id: Option<String>,
+    pub correlation_id_legacy: Option<String>,
     /// Field-level validation failures, present on 422 responses.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<FieldError>,
-    /// Anything else the server included.
+    /// Every other member the server included (`session_status`, `reason`,
+    /// `retry_after`, …), as sent.
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>,
 }
@@ -145,11 +157,26 @@ impl ApiError {
         }
     }
 
-    /// Request identifier for support tickets.
+    /// The stable code to match on, e.g. `SESSION_NOT_ACTIVE`.
+    pub fn code(&self) -> Option<&str> {
+        self.problem.code.as_deref()
+    }
+
+    /// Why, when the code alone does not say: a refused `X-Active-Tenant`
+    /// answers 403 `FORBIDDEN` with `not_a_member` or `membership_suspended`.
+    /// The problem's `reason` member, when it is a string.
+    pub fn reason(&self) -> Option<&str> {
+        self.problem.extra.get("reason").and_then(serde_json::Value::as_str)
+    }
+
+    /// Request identifier for support tickets: `correlation_id`, its deprecated
+    /// spelling, or the `X-Request-Id` header the server sends.
     pub fn correlation_id(&self) -> Option<&str> {
         self.problem
             .correlation_id
             .as_deref()
+            .or(self.problem.correlation_id_legacy.as_deref())
+            .or_else(|| self.headers.get("x-request-id").map(String::as_str))
             .or_else(|| self.headers.get("x-correlation-id").map(String::as_str))
     }
 

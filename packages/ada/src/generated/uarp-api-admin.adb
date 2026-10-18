@@ -1554,6 +1554,25 @@ package body UARP.API.Admin is
              Options => Options));
    end Reactivate_Tenant;
 
+   function Repair_Agent_Records
+     (Self : Client_Type;
+      Payload : UARP.Models.Repair_Agent_Records_Request;
+      Include_Payload : Boolean := True;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Repair_Agent_Records_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/maintenance/agent-records",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
+   end Repair_Agent_Records;
+
    function Set_Admin_Integration_O_Auth_Provider
      (Self : Client_Type;
       Provider : String;

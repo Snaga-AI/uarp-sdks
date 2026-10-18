@@ -105,6 +105,18 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      * response (same run_id). Pin a specific agent version with `version` to bypass the head
      * pointer.
      *
+     * A body carrying `execution_requirements` is a sponsored qualification run (Nestor, since
+     * 2026-10-17) and has its own admission: `QualificationSponsoredRunCreateV2`, strict JSON
+     * (repeated member names refused, at most 131072 bytes), `metadata` names not starting with
+     * `_`. The first acceptance answers 201, an exact replay of the same `client_request_id`
+     * command answers 200 with the original run, another command under that id is 409
+     * `CLIENT_REQUEST_CONFLICT`. Refusals: 403 `SPONSORSHIP_REQUIRED` (a v1 command: the candidate
+     * never pays), 403 `SPONSORSHIP_GRANT_MISMATCH` with `reason`, 409
+     * `SPONSORSHIP_GRANT_UNAVAILABLE` / `SPONSORSHIP_PROGRAM_INACTIVE`, 412
+     * `PROCESSING_POLICY_NOT_READY` / `PROCESSING_POLICY_CHANGED`, 422
+     * `EXECUTION_PROFILE_UNVERIFIABLE` / `INVALID_REQUEST`. The managed evaluator cannot be run
+     * without one (403 `MANAGED_AGENT`).
+     *
      * `POST /api/v1/runs`
      *
      * Required scopes: `runs:create`.
@@ -344,6 +356,33 @@ public class RunsApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Where a run's facts came from
+     *
+     * Derived from the run's own tool events and its answer — nothing is stored, so every run has
+     * one. Each source is a URL with `kind` `read` (the agent opened it: the `url` of a fetch /
+     * browse / read_feed call) or `found` (it appeared in a tool's result, e.g. a search hit,
+     * without being opened), the `tool`, and `cited` (the answer links to it); cited first, then
+     * read. `unsourced_links` are links IN the answer that no tool call or result contained — the
+     * ones to check first, since nothing the agent read holds them. URLs are compared without
+     * trailing punctuation, trailing slash or fragment. At most 300 sources (`truncated`). Tool
+     * results are recorded truncated, so a link deep in a very long result may be missed. `404`
+     * when the run does not exist. Since 2026-10-12.
+     *
+     * `GET /api/v1/runs/{runId}/sources`
+     *
+     * Required scopes: `runs:read`.
+     */
+    public suspend fun getRunSources(runId: String, options: RequestOptions = RequestOptions()): GetRunSourcesResponse {
+        return client.request<GetRunSourcesResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/runs/${encodePathSegment(runId)}/sources",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * List steps for a run
      *
      * Returns the ordered list of steps executed during a run, with per-step metrics including
@@ -397,8 +436,10 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:read`.
      */
-    public suspend fun list(agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, order: ListRunsOrder? = null, options: RequestOptions = RequestOptions()): ListRunsResponse {
+    public suspend fun list(clientRequestId: String? = null, purpose: String? = null, agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, order: ListRunsOrder? = null, options: RequestOptions = RequestOptions()): ListRunsResponse {
         val query = buildList {
+            if (clientRequestId != null) add("client_request_id" to clientRequestId)
+            if (purpose != null) add("purpose" to purpose)
             if (agentId != null) add("agent_id" to agentId)
             if (sessionId != null) add("session_id" to sessionId)
             if (status != null) add("status" to status)
@@ -420,8 +461,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      * Stream every item returned by `listRuns`, following the `cursor` cursor until the server
      * reports no further pages.
      */
-    public fun listAll(agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, order: ListRunsOrder? = null, options: RequestOptions = RequestOptions()): Flow<Run> = autoPaginate(
-        fetch = { pageCursor -> list(agentId = agentId, sessionId = sessionId, status = status, limit = limit, cursor = pageCursor, order = order, options = options) },
+    public fun listAll(clientRequestId: String? = null, purpose: String? = null, agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, order: ListRunsOrder? = null, options: RequestOptions = RequestOptions()): Flow<Run> = autoPaginate(
+        fetch = { pageCursor -> list(clientRequestId = clientRequestId, purpose = purpose, agentId = agentId, sessionId = sessionId, status = status, limit = limit, cursor = pageCursor, order = order, options = options) },
         items = { it.items },
         cursor = { it.cursor },
         hasMore = { it.hasMore },
@@ -605,6 +646,35 @@ public class RunsApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Decline the pending action with feedback, and let the run go on
+     *
+     * The third answer to a run waiting on approval, beside approve and reject: the person
+     * declines the action AND says what to change, and the run continues. Every tool call the run
+     * was waiting on is answered with a result saying it was NOT carried out, carrying `feedback`;
+     * the model reads that as the outcome of what it tried and revises its work. Recorded on the
+     * run's `approvals` as `decision: revised` with the feedback as `reason`. Requires the
+     * `runs.approve` permission. `404` when the run does not exist; `409` unless its status is
+     * `awaiting_approval`, for a run on a local bridge (decided on that machine — approve or
+     * reject it), and when a concurrent write wins. `422` without `feedback`. Since 2026-10-12;
+     * before, the only refusal (`reject`) failed the run.
+     *
+     * `POST /api/v1/runs/{runId}/revise`
+     *
+     * Required scopes: `runs:create`.
+     */
+    public suspend fun reviseRun(runId: String, body: ReviseRunRequest, options: RequestOptions = RequestOptions()): ReviseRunResponse {
+        return client.request<ReviseRunResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/runs/${encodePathSegment(runId)}/revise",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Save user feedback/reaction for a run
      *
      * One reaction per (message, caller); a second PUT for the same `message_id` replaces the
@@ -649,7 +719,10 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      * reconnection. Stream closes when run reaches terminal status. Each event payload includes
      * `stream_type`: lifecycle (run.*), assistant (llm.chunk), tool (tool.*), or other — use it to
      * filter client-side. Browsers using EventSource (which cannot set Authorization headers)
-     * should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`.
+     * should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`. A
+     * session run also emits `session.context` (payload: SessionContext plus `session_id`) after
+     * the run's last model call and before `run.completed` — the context bar's live update, since
+     * 2026-10-15.
      *
      * `GET /api/v1/runs/{runId}/events`
      *

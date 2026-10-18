@@ -394,7 +394,12 @@ package body UARP.Client is
          Result.Title := JS.Get_Text (Document, "title");
          Result.Status := Natural (Integer_Value'Max (0, JS.Get_Integer (Document, "status")));
          Result.Detail := JS.Get_Text (Document, "detail");
-         Result.Correlation_Id := JS.Get_Text (Document, "correlationId");
+         Result.Code := JS.Get_Text (Document, "code");
+         Result.Reason := JS.Get_Text (Document, "reason");
+         Result.Correlation_Id := JS.Get_Text (Document, "correlation_id");
+         if SU.Length (Result.Correlation_Id) = 0 then
+            Result.Correlation_Id := JS.Get_Text (Document, "correlationId");
+         end if;
          for Index in 1 .. JS.JSON.Length (Failures) loop
             declare
                Item : constant JS.JSON_Value := JS.JSON.Get (Failures, Index);

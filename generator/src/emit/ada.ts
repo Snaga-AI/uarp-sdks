@@ -168,7 +168,16 @@ function emitModelsSpec(spec: Spec, ordered: NamedType[], arrayElements: Set<str
       //  incomplete declaration; emitting it again here would redeclare it.
       if (arrayElements.has(type.name) && !accessVectors.has(type.name)) {
         w.line(`package ${vectorName(type.name)} is new Ada.Containers.Vectors`);
-        w.line(`  (Index_Type => Positive, Element_Type => ${typeName(type.name)});`);
+        //  An alias of raw JSON is a subtype of GNATCOLL's JSON_Value, whose
+        //  "=" is not visible here, and the instantiation needs one. The first
+        //  array of such an alias, `ProposalOperation` at build 0837bb4d, broke
+        //  the build on every platform until the operator was named.
+        if (type.kind === 'alias' && adaType(resolveAlias(type.target)) === 'UARP.JSON_Support.JSON_Value') {
+          w.line(`  (Index_Type => Positive, Element_Type => ${typeName(type.name)},`);
+          w.line('   "=" => UARP.JSON_Support.JSON."=");');
+        } else {
+          w.line(`  (Index_Type => Positive, Element_Type => ${typeName(type.name)});`);
+        }
         w.line();
       }
     }
@@ -526,6 +535,16 @@ function resolveAlias(ref: TypeRef): TypeRef {
   return current;
 }
 
+/**
+ * Whether `ref` names a type with a `From_JSON` of its own. An alias of raw
+ * JSON is a subtype of JSON_Value and has none: the answer is the JSON. The
+ * first operation answering one, `getTenantDataProcessingPolicy` at build
+ * 0837bb4d, called a `From_JSON` that does not exist.
+ */
+function hasFromJson(ref: TypeRef): boolean {
+  return ref.kind === 'named' && resolveAlias(ref).kind === 'named';
+}
+
 /** Wrap an Ada value of `ref` into a JSON_Value. */
 function toJsonExpr(ref: TypeRef, expr: string): string {
   const resolved = resolveAlias(ref);
@@ -785,6 +804,10 @@ function returnType(op: Operation): string | undefined {
   if (op.sse) return undefined;
   if (!op.response.type) return undefined;
   if (op.response.type.kind === 'prim' && op.response.type.prim === 'binary') return 'UARP.Types.Text';
+  // Ada has no optional record, and From_JSON over a JSON null would hand back
+  // an all-empty record that reads like a real one. A body that may be null is
+  // returned as the JSON value: test it with Is_Null, then call From_JSON.
+  if (op.response.nullable && op.response.type.kind === 'named') return 'UARP.JSON_Support.JSON_Value';
   return adaType(op.response.type);
 }
 
@@ -1101,7 +1124,7 @@ function emitRawBodyCall(w: Writer, op: Operation, rawArgs: string[]): void {
       w.line('null;');
     } else if (result === 'UARP.Types.Text') {
       w.line('return Raw_Body;');
-    } else if (op.response.type!.kind === 'named') {
+    } else if (hasFromJson(op.response.type!) && !op.response.nullable) {
       w.line('return UARP.Models.From_JSON (JS.Parse (UARP.Types.SU.To_String (Raw_Body)));');
     } else {
       w.line('return JS.Parse (UARP.Types.SU.To_String (Raw_Body));');
@@ -1184,7 +1207,7 @@ function emitCall(w: Writer, op: Operation, isFunction: boolean): void {
       w.line('for Index in 1 .. JS.JSON.Length (Payload_Items) loop');
       w.indent(() => {
         //  Qualify the element type: `From_JSON` is overloaded on its result.
-        const element = items.kind === 'named'
+        const element = hasFromJson(items)
           ? `${adaType(items)}'(UARP.Models.From_JSON (JS.JSON.Get (Payload_Items, Index)))`
           : fromJsonExpr(items, 'JS.JSON.Get (Payload_Items, Index)');
         w.line(`Collected.Append (${element});`);
@@ -1196,7 +1219,7 @@ function emitCall(w: Writer, op: Operation, isFunction: boolean): void {
     return;
   }
 
-  const wraps = op.response.type!.kind === 'named';
+  const wraps = hasFromJson(op.response.type!) && !op.response.nullable;
   if (wraps) {
     w.line('return UARP.Models.From_JSON');
     w.indent(() => emitArgs(w, '(UARP.Client.Call', args, '));'));

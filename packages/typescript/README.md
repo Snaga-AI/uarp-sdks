@@ -146,8 +146,10 @@ try {
     console.error(error.validationErrors);      // [{ field, message }]
   } else if (error instanceof RateLimitError) {
     console.error(error.retryAfterSeconds, error.remaining, error.reset);
+  } else if (error instanceof APIError && error.code === 'SESSION_NOT_ACTIVE') {
+    console.error('the session ended:', error.problem.session_status);
   } else if (error instanceof APIError) {
-    console.error(error.status, error.correlationId, error.problem.detail);
+    console.error(error.status, error.code, error.correlationId, error.problem.detail);
   }
 }
 ```

@@ -5,6 +5,7 @@ import ai.snaga.uarp.api.auth
 import ai.snaga.uarp.api.files
 import ai.snaga.uarp.api.registry
 import ai.snaga.uarp.api.runs
+import ai.snaga.uarp.api.scheduler
 import ai.snaga.uarp.models.GetMeResponseAuthMethod
 import ai.snaga.uarp.models.CreateAgentRequest
 import ai.snaga.uarp.models.CompleteOAuthLoginFormPostProvider
@@ -91,6 +92,13 @@ class TransportTest {
         assertEquals("Bearer uarp_test1234_secret", recorded.getHeader("Authorization"))
         assertEquals("application/json", recorded.getHeader("Accept"))
         assertTrue(recorded.getHeader("User-Agent")!!.startsWith("uarp-sdk-kotlin/"))
+    }
+
+    /** Real bytes: the 4-byte body `null` that GET /agents/{id}/schedule answered the canon tenant on 2026-10-15 (build b108e9a9) for an agent with no schedule. */
+    @Test
+    fun `a schedule that is not set is null`() = runTest {
+        server.enqueue(json("null"))
+        assertNull(client().scheduler.getSchedule("a1"))
     }
 
     @Test
@@ -1051,5 +1059,62 @@ class ProblemDecodingTest {
     fun `a non-JSON body is not thrown away`() {
         val p = parseProblem("<html><body>502 Bad Gateway</body></html>")
         assertTrue(p.detail!!.contains("Bad Gateway"))
+    }
+    /**
+     * Real bytes: the 401 production answered on 2026-10-15 with no key and our
+     * own `X-Request-Id`; the 501 `GET /registry/keys` gave the canon tenant the
+     * day before. The 501's code is not in the `ErrorCode` enum and it carries
+     * only the deprecated `correlationId`.
+     */
+    private val live401 = """{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Missing Authorization header, token query parameter, or uarp_session cookie","correlationId":"sdk-probe-0001","correlation_id":"sdk-probe-0001","code":"AUTH_ERROR"}"""
+    private val canon501 = """{"type": "about:blank", "title": "Not Implemented", "status": 501, "detail": "Artifact signing is disabled (spec_registry.signing_mode = \"off\").", "code": "SIGNING_NOT_CONFIGURED", "correlationId": "01a13c8d-1f16-732c-8884-727d6fb7bcdb"}"""
+
+    @Test
+    fun `a problem keeps its code and request id`() {
+        val error = ApiException(401, parseProblem(live401), emptyMap(), live401)
+        assertEquals("AUTH_ERROR", error.code)
+        assertEquals("sdk-probe-0001", error.problem.correlationId)
+        assertEquals("sdk-probe-0001", error.correlationId)
+        assertEquals(emptyMap(), error.problem.extensions)
+    }
+
+    @Test
+    fun `a code the enum does not list still reaches the caller`() {
+        val error = ApiException(501, parseProblem(canon501), emptyMap(), canon501)
+        assertEquals("SIGNING_NOT_CONFIGURED", error.code)
+        assertEquals("01a13c8d-1f16-732c-8884-727d6fb7bcdb", error.correlationId)
+    }
+
+    /** Real bytes: the 422 the session route answers for a closed session, captured by the API lane from handleRequest on the code deployed as b108e9a9 (2026-10-15). */
+    private val sessionNotActive422 = """{"type":"about:blank","title":"Validation Error","status":422,"detail":"Session is not active","correlationId":"01a13f4a-fb5a-7d99-9d94-910550f34d83","correlation_id":"01a13f4a-fb5a-7d99-9d94-910550f34d83","code":"SESSION_NOT_ACTIVE","session_status":"closed"}"""
+
+    @Test
+    fun `an extension member reaches the caller beside the code`() {
+        val error = ApiException(422, parseProblem(sessionNotActive422), emptyMap(), sessionNotActive422)
+        assertEquals("SESSION_NOT_ACTIVE", error.code)
+        assertEquals(mapOf("session_status" to kotlinx.serialization.json.JsonPrimitive("closed")), error.problem.extensions)
+    }
+
+    /** Real bytes: the 403 a refused X-Active-Tenant answers on production, build e0b37b03 (2026-10-17). membership_suspended is the API lane's capture from handleRequest at d6b1c66e5, the same code: producing it on the wire would mean suspending a membership on canon. */
+    private val notAMember403 = """{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14b59-dd54-7a2f-aa6b-e4338e105419","correlation_id":"01a14b59-dd54-7a2f-aa6b-e4338e105419","code":"FORBIDDEN","reason":"not_a_member"}"""
+    private val membershipSuspended403 = """{"type":"about:blank","title":"Forbidden","status":403,"detail":"Your membership in the active tenant requested by X-Active-Tenant is suspended","correlationId":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","correlation_id":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","code":"FORBIDDEN","reason":"membership_suspended"}"""
+    /** Real bytes: the same refusal on production, build d926b90e (2026-10-17), before batch19: no code and no reason. */
+    private val notAMember403D926 = """{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-337b-7324-9a2a-9354a8fc02c6","correlation_id":"01a14a66-337b-7324-9a2a-9354a8fc02c6"}"""
+
+    @Test
+    fun `the reason a tenant refused the caller reaches it, typed`() {
+        fun error(body: String) = ApiException(403, parseProblem(body), emptyMap(), body)
+        assertEquals("FORBIDDEN", error(notAMember403).code)
+        assertEquals("not_a_member", error(notAMember403).reason)
+        assertEquals("membership_suspended", error(membershipSuspended403).reason)
+        assertEquals(null, error(notAMember403D926).reason)
+        assertEquals(null, error(notAMember403D926).code)
+    }
+
+    @Test
+    fun `the request id header is the fallback`() {
+        val body = """{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}"""
+        val error = ApiException(404, parseProblem(body), mapOf("x-request-id" to "req-42"), body)
+        assertEquals("req-42", error.correlationId)
     }
 }

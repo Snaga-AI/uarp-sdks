@@ -35,8 +35,8 @@ public class SchedulerApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun getSchedule(agentId: String, options: RequestOptions = RequestOptions()): Schedule {
-        return client.request<Schedule>(
+    public suspend fun getSchedule(agentId: String, options: RequestOptions = RequestOptions()): Schedule? {
+        return client.request<Schedule?>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/schedule",

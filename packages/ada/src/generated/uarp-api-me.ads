@@ -55,6 +55,20 @@ package UARP.API.Me is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Account_Export;
 
+   --  Read email preferences
+   --
+   --  The language of every letter Snaga sends this person, and the two kinds of mail they may
+   --  turn off (since 2026-10-17). Keyed by the email address, so the same answer in every company
+   --  the person belongs to. Mail about the account itself (sign-in codes, invites, approvals,
+   --  billing, security) is always sent. Requires a credential bound to a person; a key without a
+   --  user identity is refused with 403.
+   --
+   --  GET /api/v1/me/email-preferences
+   function Get_My_Email_Preferences
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_My_Email_Preferences_Response;
+
    --  Read personal instructions
    --
    --  Requires a credential bound to a person: an API key that carries no user identity is refused
@@ -82,7 +96,7 @@ package UARP.API.Me is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Patch_Me_Response;
 
-   --  Switch the active workspace
+   --  Switch the active company (tenant)
    --
    --  Requires a **user session (JWT)**. An API key is refused with 403, because a key is bound to
    --  the tenant it was created in - create a key inside the target tenant instead. This endpoint
@@ -98,6 +112,18 @@ package UARP.API.Me is
       Payload : UARP.Models.Switch_Tenant_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Switch_Tenant_Response;
+
+   --  Update email preferences
+   --
+   --  WRITE SEMANTICS: merges. A field the body omits keeps its value. Setting `locale` here fixes
+   --  it: a browser's Accept-Language no longer changes it. An unknown locale is 422.
+   --
+   --  PUT /api/v1/me/email-preferences
+   function Update_My_Email_Preferences
+     (Self : Client_Type;
+      Payload : UARP.Models.Update_My_Email_Preferences_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Update_My_Email_Preferences_Response;
 
    --  Write personal instructions
    --

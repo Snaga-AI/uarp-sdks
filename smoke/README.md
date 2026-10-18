@@ -27,6 +27,13 @@ Useful flags: `--base-url` to aim elsewhere (default `https://api.snaga.ai`),
 `--delay <ms>` to be gentler, `--allow <operationId>` to release one quarantined
 call, `--include-quarantined` to release all of them.
 
+`--read-only` sends GET and nothing else — the mode for a tenant whose writes
+cannot be undone, such as `e2e-canon` on production. Writes are filtered out of
+the plan and refused again at the point of sending; item reads take their ids
+from the first row of the collection read before them instead of from a create,
+and those ids are never listed as created. GETs that write anyway (OAuth
+start and callbacks, email verification) stay in `quarantine.json`.
+
 The key is read from `UARP_API_KEY` and never written anywhere: the results file
 is scanned for it before it is saved, and the write is refused if it is present.
 `smoke/out/` is not tracked.

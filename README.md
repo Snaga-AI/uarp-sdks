@@ -33,8 +33,9 @@ cursor-paginated endpoints — plus the platform's auth, idempotency and retry s
   `Retry-After` and the `X-Should-Retry: false` opt-out. Reads always retry;
   writes only when they carry an idempotency key.
 - **Typed errors.** RFC 9457 problem documents are parsed into a structured
-  error carrying the status, title, detail, `correlationId` and any field-level
-  validation failures.
+  error carrying the status, title, detail, the stable `code` to switch on
+  (`SESSION_NOT_ACTIVE`, `QUOTA_EXCEEDED`, …), the request id, any field-level
+  validation failures, and every other member the server sent.
 - **Streaming.** The 11 SSE endpoints return a native async stream — an
   `AsyncIterable`, a `futures::Stream`, an `AsyncSequence`, a `Flow`, or a
   dispatching sink in Ada — that reopens with `Last-Event-ID` when the

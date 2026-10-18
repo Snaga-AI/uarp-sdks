@@ -18,6 +18,7 @@ import type {
   GetRunChangedFiles,
   GetRunQueuePositionResponse,
   GetRunResponse,
+  GetRunSourcesResponse,
   GetRunStepsResponse,
   ListRunArtifactsResponse,
   ListRunCheckpointsResponse,
@@ -31,6 +32,8 @@ import type {
   RespondToRunResponse,
   ResumeRunRequest,
   ResumeRunResponse,
+  ReviseRunRequest,
+  ReviseRunResponse,
   Run,
   RunApproveRequest,
   RunCostEstimate,
@@ -107,6 +110,16 @@ export interface GetRunStepsParams {
  * Query and header parameters for `listRuns`.
  */
 export interface ListRunsParams {
+  /**
+   * Recover a sponsored qualification run: with `purpose`, and no other filter, answers the
+   * caller's own run for that client request, 0 or 1 item, `has_more: false`. Any other
+   * combination is 400.
+   */
+  client_request_id?: string;
+  /**
+   * Required with `client_request_id`.
+   */
+  purpose?: string;
   agent_id?: string;
   session_id?: string;
   status?: string;
@@ -226,6 +239,18 @@ export class RunsResource extends APIResource {
    * avoid duplicate runs on retries; a repeated request with the same key returns the cached 202
    * response (same run_id). Pin a specific agent version with `version` to bypass the head
    * pointer.
+   *
+   * A body carrying `execution_requirements` is a sponsored qualification run (Nestor, since
+   * 2026-10-17) and has its own admission: `QualificationSponsoredRunCreateV2`, strict JSON
+   * (repeated member names refused, at most 131072 bytes), `metadata` names not starting with
+   * `_`. The first acceptance answers 201, an exact replay of the same `client_request_id`
+   * command answers 200 with the original run, another command under that id is 409
+   * `CLIENT_REQUEST_CONFLICT`. Refusals: 403 `SPONSORSHIP_REQUIRED` (a v1 command: the candidate
+   * never pays), 403 `SPONSORSHIP_GRANT_MISMATCH` with `reason`, 409
+   * `SPONSORSHIP_GRANT_UNAVAILABLE` / `SPONSORSHIP_PROGRAM_INACTIVE`, 412
+   * `PROCESSING_POLICY_NOT_READY` / `PROCESSING_POLICY_CHANGED`, 422
+   * `EXECUTION_PROFILE_UNVERIFIABLE` / `INVALID_REQUEST`. The managed evaluator cannot be run
+   * without one (403 `MANAGED_AGENT`).
    *
    * `POST /api/v1/runs`
    *
@@ -439,6 +464,31 @@ export class RunsResource extends APIResource {
   }
 
   /**
+   * Where a run's facts came from
+   *
+   * Derived from the run's own tool events and its answer — nothing is stored, so every run has
+   * one. Each source is a URL with `kind` `read` (the agent opened it: the `url` of a fetch /
+   * browse / read_feed call) or `found` (it appeared in a tool's result, e.g. a search hit,
+   * without being opened), the `tool`, and `cited` (the answer links to it); cited first, then
+   * read. `unsourced_links` are links IN the answer that no tool call or result contained — the
+   * ones to check first, since nothing the agent read holds them. URLs are compared without
+   * trailing punctuation, trailing slash or fragment. At most 300 sources (`truncated`). Tool
+   * results are recorded truncated, so a link deep in a very long result may be missed. `404`
+   * when the run does not exist. Since 2026-10-12.
+   *
+   * `GET /api/v1/runs/{runId}/sources`
+   *
+   * Required scopes: `runs:read`.
+   */
+  getRunSources(runId: string, options?: RequestOptions): Promise<GetRunSourcesResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/runs/${encodeURIComponent(String(runId))}/sources`,
+      options,
+    });
+  }
+
+  /**
    * List steps for a run
    *
    * Returns the ordered list of steps executed during a run, with per-step metrics including
@@ -492,7 +542,7 @@ export class RunsResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/runs',
-      query: pick(params, ['agent_id', 'session_id', 'status', 'limit', 'cursor', 'order']),
+      query: pick(params, ['client_request_id', 'purpose', 'agent_id', 'session_id', 'status', 'limit', 'cursor', 'order']),
       options,
     });
   }
@@ -674,6 +724,33 @@ export class RunsResource extends APIResource {
   }
 
   /**
+   * Decline the pending action with feedback, and let the run go on
+   *
+   * The third answer to a run waiting on approval, beside approve and reject: the person
+   * declines the action AND says what to change, and the run continues. Every tool call the run
+   * was waiting on is answered with a result saying it was NOT carried out, carrying `feedback`;
+   * the model reads that as the outcome of what it tried and revises its work. Recorded on the
+   * run's `approvals` as `decision: revised` with the feedback as `reason`. Requires the
+   * `runs.approve` permission. `404` when the run does not exist; `409` unless its status is
+   * `awaiting_approval`, for a run on a local bridge (decided on that machine — approve or
+   * reject it), and when a concurrent write wins. `422` without `feedback`. Since 2026-10-12;
+   * before, the only refusal (`reject`) failed the run.
+   *
+   * `POST /api/v1/runs/{runId}/revise`
+   *
+   * Required scopes: `runs:create`.
+   */
+  reviseRun(runId: string, body: ReviseRunRequest, options?: RequestOptions): Promise<ReviseRunResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/runs/${encodeURIComponent(String(runId))}/revise`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Save user feedback/reaction for a run
    *
    * One reaction per (message, caller); a second PUT for the same `message_id` replaces the
@@ -715,7 +792,10 @@ export class RunsResource extends APIResource {
    * reconnection. Stream closes when run reaches terminal status. Each event payload includes
    * `stream_type`: lifecycle (run.*), assistant (llm.chunk), tool (tool.*), or other — use it to
    * filter client-side. Browsers using EventSource (which cannot set Authorization headers)
-   * should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`.
+   * should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`. A
+   * session run also emits `session.context` (payload: SessionContext plus `session_id`) after
+   * the run's last model call and before `run.completed` — the context bar's live update, since
+   * 2026-10-15.
    *
    * `GET /api/v1/runs/{runId}/events`
    *

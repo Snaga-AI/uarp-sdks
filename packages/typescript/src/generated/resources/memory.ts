@@ -11,10 +11,10 @@ import type {
   ImportAgentMemoryResponse,
   IngestMemoryRequest,
   IngestMemoryResponse,
-  JsonValue,
   ListCoreMemoryBlocksResponse,
   ListMemoriesResponse,
   MemoryEntry,
+  SearchMemoryRequest,
   SearchMemoryResponse,
   UpdateAgentMemoryEntryRequest,
   UpdateCoreMemoryBlockRequest,
@@ -235,7 +235,7 @@ export class MemoryResource extends APIResource {
    *
    * Required scopes: `memory:write`.
    */
-  search(agentId: string, body: JsonValue, options?: RequestOptions): Promise<SearchMemoryResponse> {
+  search(agentId: string, body: SearchMemoryRequest, options?: RequestOptions): Promise<SearchMemoryResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/memory/search`,

@@ -199,8 +199,8 @@ export interface AarRootCause {
   objective_id: string;
   /**
    * Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
-   * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed` and `verifier_error`
-   * → `external_error`. Branch on `code` for the precise reason.
+   * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed`, `not_dispatchable`
+   * and `verifier_error` → `external_error`. Branch on `code` for the precise reason.
    */
   category: AarRootCauseCategory;
   details: string;
@@ -213,8 +213,8 @@ export interface AarRootCause {
 
 /**
  * Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
- * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed` and `verifier_error`
- * → `external_error`. Branch on `code` for the precise reason.
+ * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed`, `not_dispatchable`
+ * and `verifier_error` → `external_error`. Branch on `code` for the precise reason.
  */
 export type AarRootCauseCategory = 'llm_timeout' | 'llm_idle' | 'llm_loop' | 'tool_error' | 'tool_truncation' | 'verification_failed' | 'authorization_denied' | 'external_error' | 'max_duration_exceeded' | 'unknown';
 
@@ -229,10 +229,12 @@ export interface AbortMissionRequest {
 
 export interface AcceptInviteFromPickerRequest {
   /**
-   * The invite secret, echoed to the picker by `GET /api/v1/me/tenants`. Compared in constant
-   * time. Defence in depth rather than the primary gate — the email match is that — and it
-   * catches the class where the listing ever shows an invite not addressed to the caller.
-   * Invites created before secrets exist accept without one.
+   * Required in practice: `pending_invites[].secret` from `GET /api/v1/me/tenants`, the same
+   * listing the picker shows — the email link carries the same value. Compared in constant time.
+   * Defence in depth rather than the primary gate — the email match is that — and it catches the
+   * class where the listing ever shows an invite not addressed to the caller. Missing or wrong
+   * is 403; an invite stored before secrets existed (2026-09-02) is refused too, and an admin
+   * resend mints one.
    */
   token?: string;
   /**
@@ -1757,6 +1759,26 @@ export interface AdminSmtpConfigEnv {
    * Whether a credential is stored. The password itself is never returned by any read.
    */
   has_password?: boolean;
+  /**
+   * The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+   * Empty `user` means none, and that mail goes from the primary sender.
+   */
+  notify?: AdminSmtpConfigEnvNotify;
+  /**
+   * Reply-To on notify mail. Empty means none.
+   */
+  reply_to?: string;
+}
+
+/**
+ * The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+ * Empty `user` means none, and that mail goes from the primary sender.
+ */
+export interface AdminSmtpConfigEnvNotify {
+  user?: string;
+  from?: string;
+  from_name?: string;
+  has_password?: boolean;
 }
 
 /**
@@ -1771,6 +1793,26 @@ export interface AdminSmtpConfigKv {
   /**
    * Whether a credential is stored. The password itself is never returned by any read.
    */
+  has_password?: boolean;
+  /**
+   * The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+   * Empty `user` means none, and that mail goes from the primary sender.
+   */
+  notify?: AdminSmtpConfigKvNotify;
+  /**
+   * Reply-To on notify mail. Empty means none.
+   */
+  reply_to?: string;
+}
+
+/**
+ * The second sender, for everything but sign-in codes (invites, approvals, billing, digests).
+ * Empty `user` means none, and that mail goes from the primary sender.
+ */
+export interface AdminSmtpConfigKvNotify {
+  user?: string;
+  from?: string;
+  from_name?: string;
   has_password?: boolean;
 }
 
@@ -1831,6 +1873,19 @@ export interface AdminVoicePresets {
 }
 
 export interface Agent {
+  /**
+   * Bridge agents only: the stable fingerprint of the machine that enrolled it, used to adopt
+   * the same agent after a reconnect. Absent on records enrolled before 2026-09-03.
+   */
+  bridge_fingerprint?: string;
+  /**
+   * The initiative (`/initiatives`) this agent works for, when it has one. Its runs are charged
+   * to that initiative's budget, and automated runs are refused (`INITIATIVE_PAUSED`) while it
+   * is paused or (`INITIATIVE_BUDGET_EXHAUSTED`) out of budget; agents and squads it creates
+   * inherit it. Set on create (must exist, else 422) or PATCH (`null` removes it). Since
+   * 2026-10-12.
+   */
+  initiative_id?: string;
   /**
    * SPECs installed on this agent, with version pin and granted permissions.
    */
@@ -1979,6 +2034,13 @@ export interface Agent {
    * filed under this one. Added 2026-09-25.
    */
   children_count?: number;
+  /**
+   * Bridge agents only, on GET /agents rows and GET /agents/{agentId}: `online` when an executor
+   * connection heartbeated in the last two minutes, else `offline`. Read any other value as
+   * `offline`. On GET /agents/{agentId} since 2026-10-15.
+   */
+  bridge_status?: AgentBridgeStatus;
+  hire?: AgentHire;
   worker_reuse?: boolean;
   /**
    * Cron schedule configuration
@@ -2134,6 +2196,15 @@ export interface AgentBridgeState {
 }
 
 /**
+ * Bridge agents only, on GET /agents rows and GET /agents/{agentId}: `online` when an executor
+ * connection heartbeated in the last two minutes, else `offline`. Read any other value as
+ * `offline`. On GET /agents/{agentId} since 2026-10-15.
+ */
+export type AgentBridgeStatus = 'online' | 'offline';
+
+export const AGENT_BRIDGE_STATUS_VALUES = ['online', 'offline'] as const;
+
+/**
  * What GET /agents/{agentId}/capabilities serves. Measured 2026-09-10 on the e2e-canon tenant;
  * `tools[]` and `kb_ids[]` were empty there, so their element shape is not asserted.
  */
@@ -2197,6 +2268,46 @@ export interface AgentCoreMemoryBlock {
 export type AgentExecutionMode = 'async' | 'worker' | 'bridge';
 
 export const AGENT_EXECUTION_MODE_VALUES = ['async', 'worker', 'bridge'] as const;
+
+/**
+ * Hired agents only (POST /hire): an agent the person runs on their own computer with their
+ * own account. A hired agent is listed by GET /agents whatever its connection. Since
+ * 2026-10-15.
+ */
+export interface AgentHire {
+  /**
+   * The GET /hire/catalog entry it was hired from.
+   */
+  catalog_id: string;
+  /**
+   * That entry's name, for labels ("Hired · Claude Code").
+   */
+  catalog_name: string;
+  /**
+   * Absolute PNG icon, public.
+   */
+  icon_url: string;
+  /**
+   * `pending`: a command was issued and nothing has connected with it; `connected`: the agent
+   * connected with its current command; `disconnected`: the person disconnected it — POST
+   * /agents/{agentId}/hire/command brings it back.
+   */
+  status: AgentHireStatus;
+  connected_at?: string;
+  /**
+   * Pending only: when the current command stops working if still unused.
+   */
+  expires_at?: string;
+}
+
+/**
+ * `pending`: a command was issued and nothing has connected with it; `connected`: the agent
+ * connected with its current command; `disconnected`: the person disconnected it — POST
+ * /agents/{agentId}/hire/command brings it back.
+ */
+export type AgentHireStatus = 'pending' | 'connected' | 'disconnected';
+
+export const AGENT_HIRE_STATUS_VALUES = ['pending', 'connected', 'disconnected'] as const;
 
 /**
  * Agent-scoped integration (connection) instance
@@ -2433,9 +2544,9 @@ export const AGENT_SPEC_PERMISSIONS_GRANTED_ITEM_GRANTED_BY_VALUES = ['wizard', 
 /**
  * Governance state, distinct from a run's status.
  */
-export type AgentStatus = 'active' | 'suspended' | 'terminated' | 'deposed';
+export type AgentStatus = 'active' | 'suspended' | 'terminated' | 'deposed' | 'inactive';
 
-export const AGENT_STATUS_VALUES = ['active', 'suspended', 'terminated', 'deposed'] as const;
+export const AGENT_STATUS_VALUES = ['active', 'suspended', 'terminated', 'deposed', 'inactive'] as const;
 
 /**
  * Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
@@ -2490,6 +2601,11 @@ export interface AgentToolOverrideUpdate {
  */
 export interface AgentUpdate {
   name?: string;
+  /**
+   * Move the agent into an initiative (must exist, else 422), or `null` to take it out. Since
+   * 2026-10-12.
+   */
+  initiative_id?: string | null;
   description?: string;
   /**
    * `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
@@ -2553,9 +2669,11 @@ export interface AgentUpdate {
   context_window_size?: number;
   /**
    * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
-   * their stored values.
+   * their stored values. `null` clears the whole block and a key set to `null` is removed, so
+   * the agent falls back to the platform's limits (since 2026-10-17; before, `null` was 422 and
+   * `{}` changed nothing).
    */
-  resource_limits?: AgentUpdateResourceLimits;
+  resource_limits?: AgentUpdateResourceLimits | null;
   /**
    * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
    * their stored values.
@@ -2877,18 +2995,20 @@ export interface AgentUpdatePublicConfig {
 
 /**
  * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
- * their stored values.
+ * their stored values. `null` clears the whole block and a key set to `null` is removed, so
+ * the agent falls back to the platform's limits (since 2026-10-17; before, `null` was 422 and
+ * `{}` changed nothing).
  */
 export interface AgentUpdateResourceLimits {
-  max_duration_ms?: number;
-  max_steps?: number;
-  max_tool_calls?: number;
-  max_tokens_per_run?: number;
+  max_duration_ms?: number | null;
+  max_steps?: number | null;
+  max_tool_calls?: number | null;
+  max_tokens_per_run?: number | null;
   /**
    * In-run cost ceiling in USD; 0 or absent means no cap from this field (QA B4, 2026-09-23).
    * Negative or non-numeric is 422.
    */
-  max_cost_usd?: number;
+  max_cost_usd?: number | null;
 }
 
 export interface AgentUpdateRiskClassification {
@@ -2913,6 +3033,13 @@ export interface AgentUpdateSchedule {
   cron: string;
   timezone?: string;
   input?: JsonObject;
+  /**
+   * How many runs this schedule may have EXECUTING (queued or running) at once; a fire that
+   * would exceed it is skipped and the schedule moves to its next instant. A run waiting on a
+   * person (awaiting_input / awaiting_approval) does not count, so an unanswered question never
+   * stops the schedule. 0 means no limit. Enforced since 2026-10-12 — before, it was stored and
+   * runs overlapped regardless.
+   */
   max_concurrent_scheduled?: number;
   on_failure?: AgentScheduleConfigOnFailure;
   autonomous_mode?: boolean;
@@ -2993,11 +3120,13 @@ export interface AgentVersion {
    * canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
    * provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
    * detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-   * provisioned`, `Platform agent config migrated on boot`, `Rollback to version N` (N = the
-   * version rolled back to), `Self-improvement: N changes based on N analysis` (the
-   * self-improvement loop: the first N is a count, the second is one of errors, ratings or
-   * feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC
-   * 11).
+   * provisioned`, `Platform agent config migrated on boot`, `Qualification evaluator template
+   * revision N` (N = the template revision), `Hired`, `Registered from a local app`, `Token cap
+   * removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap
+   * removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version
+   * rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement
+   * loop: the first N is a count, the second is one of errors, ratings or feedback — words, not
+   * a number). A reason code beside the prose is the owner's decision (DEC 11).
    */
   changelog?: string | null;
   created_at: string;
@@ -3029,8 +3158,23 @@ export interface AiSystemCardTechnicalSpecifications {
   model_ref?: string;
   max_context_tokens?: number;
   built_in_tools?: string[];
+  /**
+   * Where the agent's tools come from, as counts: built-in tools, installed SPECs and MCP
+   * servers. Since 2026-10-16.
+   */
+  tool_sources?: AiSystemCardTechnicalSpecificationsToolSources;
   guardrails_enabled?: boolean;
   guardrail_ids?: string[];
+}
+
+/**
+ * Where the agent's tools come from, as counts: built-in tools, installed SPECs and MCP
+ * servers. Since 2026-10-16.
+ */
+export interface AiSystemCardTechnicalSpecificationsToolSources {
+  built_in?: number;
+  specs?: number;
+  mcp_servers?: number;
 }
 
 /**
@@ -3055,7 +3199,12 @@ export interface AmbassadorRequest {
   request_id: string;
   tenant_id: string;
   from_agent_id: string;
-  type: AmbassadorRequestType;
+  /**
+   * One of `clarification`, `approval`, `escalation`, `report` for every request written since
+   * 2026-10-17. Not an enum on read: rows stored before then were not validated and can carry
+   * other text (production holds `question` and probe strings).
+   */
+  type: string;
   subject: string;
   body: string;
   status: AmbassadorRequestStatus;
@@ -3416,6 +3565,11 @@ export interface ApplyProgramResponse {
   todos: Todo[];
 }
 
+export interface ApplyTenantCompanyTemplateRequest {
+  template_id: string;
+  inputs: JsonObject;
+}
+
 export interface ApplyToJobRequest {
   name: string;
   email: string;
@@ -3467,9 +3621,9 @@ export interface ApproveRunResponse {
 export interface ArbiterCase {
   case_id: string;
   tenant_id: string;
-  filed_by: string;
-  against_agent_id: string;
-  rule_ids: string[];
+  filed_by?: string;
+  against_agent_id?: string;
+  rule_ids?: string[];
   description: string;
   evidence: JsonObject;
   status: ArbiterCaseStatus;
@@ -3526,7 +3680,7 @@ export interface AuditLogEntry {
 }
 
 export interface AuthProvider {
-  email: string;
+  email?: string;
   id: string;
   linked: boolean;
   linked_at?: string;
@@ -4284,9 +4438,20 @@ export interface CloseSessionResponse {
 }
 
 /**
- * Autonomous agent company — strategist + teams pursuing strategic goals.
+ * An **initiative** (`/initiatives`; until 2026-10-12 called a company): a long-running goal
+ * inside a company (tenant), pursued by a strategist agent that reviews it on a cycle. Not the
+ * founder's company — that is the tenant.
  */
 export interface Company {
+  /**
+   * The initiative's id. Read this one.
+   */
+  initiative_id?: string;
+  /**
+   * The same id under the resource's former name; kept for a compatibility window.
+   *
+   * @deprecated
+   */
   company_id: string;
   tenant_id: string;
   name: string;
@@ -4325,6 +4490,31 @@ export interface CompanyActivityEntry {
 }
 
 /**
+ * One accepted change. Render `summary` — it is the sentence, and for a proposal-sourced row
+ * it names the proposal applied. `fields` names what a DIRECT edit touched and is absent on a
+ * proposal, a pause and a launch; preferring `fields` everywhere turns "Applied proposal: Pin
+ * the objective" into "Changed what it is for" and loses the fact a person decided it (Android
+ * lane, measured on a device, 2026-10-12).
+ */
+export interface CompanyChange {
+  version: number;
+  at: string;
+  /**
+   * Who made the change: the person's `user_id` when the credential names one (a session, or a
+   * key minted for a user), otherwise the key's `key_id`. Match it against `GET /users` before
+   * showing it as a name; an id that is no member is a key.
+   */
+  actor: string;
+  source: CompanyChangeSource;
+  summary: string;
+  fields?: string[];
+}
+
+export type CompanyChangeSource = 'api' | 'proposal' | 'template' | 'pause' | 'launch';
+
+export const COMPANY_CHANGE_SOURCE_VALUES = ['api', 'proposal', 'template', 'pause', 'launch'] as const;
+
+/**
  * Body for `POST /api/v1/companies` (`CreateCompanySchema`).
  */
 export interface CompanyCreate {
@@ -4357,6 +4547,464 @@ export interface CompanyCreateBudget {
 }
 
 /**
+ * The company as structure. Secrets are not projected and every omission is listed in
+ * `excluded`.
+ */
+export interface CompanyExport {
+  /**
+   * The manifest's own version; a clone refuses one it does not know.
+   */
+  schema_version: string;
+  exported_at: string;
+  company: CompanyExportCompany;
+  chief_of_staff_agent_id?: string | null;
+  agents: CompanyExportAgent[];
+  departments: CompanyExportDepartment[];
+  schedules: CompanyExportSchedule[];
+  mission_schedules: CompanyExportMissionSchedule[];
+  budget: CompanyExportBudget | null;
+  governance: CompanyExportGovernance;
+  /**
+   * Named, never configured.
+   */
+  integrations: CompanyExportIntegration[];
+  knowledge_sources: CompanyExportKnowledgeSource[];
+  excluded: ExportExcludedNote[];
+}
+
+export interface CompanyExportAgent {
+  agent_id: string;
+  name: string;
+  description?: string;
+  role?: string;
+  version?: string;
+  execution_mode?: string;
+  /**
+   * System and developer prompts (the Agent schema's `prompts`).
+   */
+  prompts?: JsonObject;
+  /**
+   * Installed SPECs as stored (spec_id, version).
+   */
+  specs?: JsonObject[];
+  built_in_tools?: string[];
+  approval_required_tools?: string[];
+  auto_approve_tools?: string[];
+  autonomy?: JsonObject;
+  schedule?: AgentScheduleConfig;
+  /**
+   * Provider and model only — never the key reference or an endpoint.
+   */
+  model?: CompanyExportAgentModel;
+  mcp?: CompanyExportAgentMCP;
+  is_chief_of_staff: boolean;
+}
+
+export interface CompanyExportAgentMCP {
+  server_ids?: string[];
+  allowed_tools?: string[];
+  allowed_resources?: string[];
+}
+
+/**
+ * Provider and model only — never the key reference or an endpoint.
+ */
+export interface CompanyExportAgentModel {
+  provider?: string;
+  model_ref?: string;
+}
+
+export interface CompanyExportBudget {
+  limit_usd?: number;
+  period?: string;
+  soft_threshold?: number;
+  hard_threshold?: number;
+}
+
+export interface CompanyExportCompany {
+  name?: string;
+  business_type?: string;
+  objective?: string;
+  description?: string;
+  target_customer?: string;
+  timezone?: string;
+  status?: CompanyProfileStatus;
+  version?: number;
+  template?: JsonObject;
+  launched_at?: string;
+  plan?: string | null;
+}
+
+export interface CompanyExportDepartment {
+  squad_id: string;
+  name: string;
+  topology?: string;
+  delegation_strategy?: string;
+  merge_strategy?: string;
+  lead_agent_id?: string;
+  members?: CompanyExportDepartmentMember[];
+}
+
+export interface CompanyExportDepartmentMember {
+  agent_id?: string;
+  role?: string;
+  permissions?: TeamWorkerPermissions;
+}
+
+export interface CompanyExportGovernance {
+  approval_required_tools?: string[];
+}
+
+export interface CompanyExportIntegration {
+  kind?: GetTenantBlueprintResponseIntegrationKind;
+  connector_id?: string | null;
+  name?: string;
+  status?: string;
+}
+
+export interface CompanyExportKnowledgeSource {
+  name?: string;
+  documents?: number;
+  status?: string;
+}
+
+export interface CompanyExportMissionSchedule {
+  schedule_id?: string;
+  name?: string;
+  cron?: string;
+  shape?: ScheduleShape | null;
+  timezone?: string | null;
+  plan?: JsonObject;
+}
+
+export interface CompanyExportSchedule {
+  agent_id?: string;
+  agent_name?: string | null;
+  cron?: string;
+  shape?: ScheduleShape | null;
+  timezone?: string | null;
+  enabled?: boolean;
+  message?: string | null;
+}
+
+/**
+ * The body of `POST /tenants/me/company/import`. Same shape as an export, but a REQUEST:
+ * unknown keys are ignored, and nothing here is a promise about what the import will apply —
+ * the stored proposal's diff is.
+ */
+export interface CompanyImportRequest {
+  /**
+   * The manifest version this build understands; anything else is 422.
+   */
+  schema_version: ExportDataExplorerIncludeSensitive;
+  /**
+   * Profile fields to take over (`business_type`, `objective`, `description`, `target_customer`,
+   * `timezone`). The company's name is not imported — a manifest cannot rename the tenant.
+   */
+  company?: JsonObject;
+  agents?: JsonObject[];
+  departments?: JsonObject[];
+  schedules?: JsonObject[];
+  mission_schedules?: JsonObject[];
+  /**
+   * A spend cap to set (`limit_usd`, `period`).
+   */
+  budget?: JsonObject | null;
+  /**
+   * Named only — never imported, since a manifest carries no credentials. The proposal's
+   * `rationale` lists what to connect. The `maxItems` on this field is the 10 MiB body cap, not
+   * an item count: this build enforces no limit on how many integrations a manifest names.
+   */
+  integrations?: JsonObject[];
+}
+
+/**
+ * The founder's company — which IS the tenant. Identity (`name`) comes from the tenant record;
+ * the rest is what the Company Builder adds. A tenant that never wrote a profile reads as an
+ * operating company: `status: active`, `version: 0`. `status` here is the founder's lifecycle
+ * and is NOT `tenant.status` (account/billing state).
+ */
+export interface CompanyProfile {
+  /**
+   * The tenant id.
+   */
+  company_id: string;
+  name: string;
+  /**
+   * The tenant's Head Agent.
+   */
+  chief_of_staff_agent_id: string | null;
+  business_type?: string;
+  objective?: string;
+  description?: string;
+  target_customer?: string;
+  /**
+   * IANA time zone.
+   */
+  timezone?: string;
+  /**
+   * `draft` — being set up, no automated run starts (except the launch test run); `active` —
+   * operating; `paused` — every automated run stopped, a person's chat still answers.
+   */
+  status: CompanyProfileStatus;
+  /**
+   * Bumped on every accepted change; send it back as `expected_version`.
+   */
+  version: number;
+  template?: CompanyProfileTemplate;
+  launched_at?: string;
+  paused_at?: string;
+  pause_reason?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export type CompanyProfileStatus = 'draft' | 'active' | 'paused';
+
+export const COMPANY_PROFILE_STATUS_VALUES = ['draft', 'active', 'paused'] as const;
+
+export interface CompanyProfileTemplate {
+  id?: string;
+  version?: string;
+}
+
+/**
+ * A change to the company waiting for — or decided by — a person.
+ */
+export interface CompanyProposal {
+  proposal_id: string;
+  status: CompanyProposalStatus;
+  summary: string;
+  rationale?: string;
+  operations: ProposalOperation[];
+  /**
+   * The company version it was proposed against.
+   */
+  base_version: number;
+  diff: CompanyProposalDiffItem[];
+  required_role: CompanyProposalRequiredRole;
+  proposed_by: CompanyProposalProposedBy;
+  /**
+   * Set when the proposal builds a company template; recorded on the company at apply.
+   */
+  template?: CompanyProposalTemplate;
+  /**
+   * Not estimated yet (null) — arrives with plan fit.
+   */
+  estimated_monthly_cost_usd?: number | null;
+  created_at: string;
+  expires_at: string;
+  decided_at?: string;
+  decided_by?: string;
+  reject_reason?: string;
+  applied?: CompanyProposalStep[];
+  rolled_back?: CompanyProposalStep[];
+  failure?: CompanyProposalFailure;
+  /**
+   * The company version after a successful apply.
+   */
+  version?: number;
+}
+
+export interface CompanyProposalDiffItem {
+  index: number;
+  op: string;
+  target: string;
+  /**
+   * English fallback; render from `op` and `target`.
+   */
+  summary: string;
+  before?: JsonObject;
+  /**
+   * What the operation NAMES, not the whole record: the rest of the target keeps its stored
+   * value (a schedule keeps its zone, message, concurrency and failure policy; the budget keeps
+   * its period and thresholds). A client that renders `after` as the whole new state will invent
+   * changes the apply does not make (measured 2026-10-12).
+   */
+  after?: JsonObject;
+  /**
+   * Removals: cannot be rolled back, applied last.
+   */
+  irreversible?: boolean;
+  /**
+   * `target` as a person reads it — `$ref:` and ids resolved to names.
+   */
+  target_name?: string;
+  /**
+   * Every agent / squad / schedule id or `$ref:` this operation mentions (agent_id,
+   * supervisor_agent_id, workers[].agent_id, …) → its name.
+   */
+  names?: JsonObject;
+  schedule_shape?: ScheduleShape | null;
+}
+
+export interface CompanyProposalFailure {
+  index?: number;
+  op?: string;
+  http_status?: number;
+  /**
+   * The failing route's own code (e.g. `resource_limit_reached` for a full plan,
+   * `VALIDATION_ERROR`), else one named for the status: VALIDATION_ERROR, FORBIDDEN, NOT_FOUND,
+   * CONFLICT, RATE_LIMITED, INTERNAL_ERROR. Localize from this; `message` is English fallback.
+   */
+  code?: string;
+  message?: string;
+  /**
+   * The failing route's own details — for `resource_limit_reached`: {resource, current_plan,
+   * used, limit}.
+   */
+  details?: JsonObject;
+}
+
+export interface CompanyProposalProposedBy {
+  kind: CompanyProposalProposedByKind;
+  id: string;
+  /**
+   * For an agent: the run it proposed from.
+   */
+  run_id?: string;
+  /**
+   * For an agent: the conversation it proposed in — show the card there.
+   */
+  session_id?: string;
+}
+
+export type CompanyProposalProposedByKind = 'agent' | 'person';
+
+export const COMPANY_PROPOSAL_PROPOSED_BY_KIND_VALUES = ['agent', 'person'] as const;
+
+export type CompanyProposalRequiredRole = 'admin';
+
+export const COMPANY_PROPOSAL_REQUIRED_ROLE_VALUES = ['admin'] as const;
+
+export type CompanyProposalStatus = 'pending' | 'applying' | 'applied' | 'failed' | 'rejected' | 'expired';
+
+export const COMPANY_PROPOSAL_STATUS_VALUES = ['pending', 'applying', 'applied', 'failed', 'rejected', 'expired'] as const;
+
+export interface CompanyProposalStep {
+  index: number;
+  op: string;
+  id?: string;
+  ref?: string;
+}
+
+/**
+ * Set when the proposal builds a company template; recorded on the company at apply.
+ */
+export interface CompanyProposalTemplate {
+  id?: string;
+  version?: string;
+}
+
+export interface CompanyReadinessItem {
+  code: string;
+  /**
+   * English fallback.
+   */
+  message: string;
+  /**
+   * The API call that resolves it — a developer hint, not for display.
+   */
+  fix: string;
+}
+
+export interface CompanyTemplate {
+  template_id: string;
+  version: string;
+  name: string;
+  summary: string;
+  business_type: string;
+  agents: number;
+  department_names: string[];
+  /**
+   * Platform features the template needs, e.g. `missions`.
+   */
+  requires: string[];
+  /**
+   * JSON Schema of the template's inputs, for rendering the form.
+   */
+  inputs_schema?: JsonObject;
+  roles?: CompanyTemplateRole[];
+  departments?: CompanyTemplateDepartment[];
+  pipeline?: string[];
+  /**
+   * Integrations the founder connects; never configured by the template.
+   */
+  connectors?: CompanyTemplateConnector[];
+  defaults?: CompanyTemplateDefaults;
+}
+
+export interface CompanyTemplateCard {
+  template_id: string;
+  version: string;
+  name: string;
+  summary: string;
+  business_type: string;
+  agents: number;
+  department_names: string[];
+  /**
+   * Platform features the template needs, e.g. `missions`.
+   */
+  requires: string[];
+}
+
+export interface CompanyTemplateConnector {
+  id?: string;
+  purpose?: string;
+  required?: boolean;
+}
+
+export interface CompanyTemplateDefaults {
+  cron?: string;
+  timezone?: string;
+  budget_usd?: number;
+}
+
+export interface CompanyTemplateDepartment {
+  name?: string;
+  lead?: CompanyTemplateDepartmentLead;
+  /**
+   * Role refs.
+   */
+  members?: string[];
+}
+
+export type CompanyTemplateDepartmentLead = 'chief_of_staff';
+
+export const COMPANY_TEMPLATE_DEPARTMENT_LEAD_VALUES = ['chief_of_staff'] as const;
+
+export interface CompanyTemplateRole {
+  ref?: string;
+  name?: string;
+  department?: string;
+  does?: string;
+  tools?: string[];
+  approval_required_tools?: string[];
+}
+
+export interface CompanyTestRun {
+  run_id?: string;
+  agent_id?: string;
+  /**
+   * The company version it rehearsed.
+   */
+  version?: number;
+  started_at?: string;
+  finished_at?: string;
+  /**
+   * The run's status (queued, running, completed, failed, …).
+   */
+  status?: string;
+  passed?: boolean;
+  finished?: boolean;
+  error?: string;
+  /**
+   * Tools switched off for the rehearsal because they reach the outside world.
+   */
+  withheld_tools?: string[];
+}
+
+/**
  * Body for `PUT /api/v1/companies/{companyId}`. Every field optional — send only what changes.
  */
 export interface CompanyUpdate {
@@ -4366,6 +5014,24 @@ export interface CompanyUpdate {
   description?: string;
   strategic_goals?: string[];
   config?: JsonObject;
+}
+
+export interface CompanyVersionRow {
+  version: number;
+  at: string;
+  /**
+   * Who made the change: the person's `user_id` when the credential names one (a session, or a
+   * key minted for a user), otherwise the key's `key_id`. Match it against `GET /users` before
+   * showing it as a name; an id that is no member is a key.
+   */
+  actor: string;
+  source: CompanyChangeSource;
+  summary: string;
+  fields?: string[];
+  /**
+   * True when this version's structure can be restored.
+   */
+  has_snapshot: boolean;
 }
 
 export interface CompleteMcpoAuthRequest {
@@ -4396,6 +5062,22 @@ export interface CompleteOAuthLoginFormPostResponse {
 export interface CompleteOAuthLoginResponse {
   api_key: string;
   email: string;
+}
+
+export interface ConfirmDataProcessingPolicyRequest {
+  processor_name: string | null;
+  processing_region: string | null;
+  llm_training_use: QualificationProcessingPolicyLLMTrainingUse;
+  archive_enabled: boolean | null;
+  storage: QualificationStoragePolicy;
+  evidence_hash: QualificationDigest | null;
+  recovery_window_seconds: number;
+  observed_at_unix: number;
+  expires_at_unix: number;
+}
+
+export interface ConfirmDataProcessingPolicyResponse {
+  current?: JsonObject;
 }
 
 export interface ConfirmSessionTodoRequest {
@@ -4679,13 +5361,34 @@ export interface ConversationEntry {
    */
   cost_usd?: number;
   /**
-   * The reply came from a run a Todo triggered.
+   * The reply came from a run a Todo triggered. Stored on the entry since 2026-10-16 (with
+   * `author_agent_id` / `author_name`), so it survives the run's deletion; derived from the run
+   * for older entries.
    */
   from_todo?: boolean;
   /**
    * The model ran out of output tokens — see RunOutput.output_truncated.
    */
   output_truncated?: boolean;
+  /**
+   * With `from_todo`: the agent that did the work, stored on the entry when the reply was
+   * written (since 2026-10-16), so it outlives the run and the agent.
+   */
+  author_agent_id?: string;
+  /**
+   * With `from_todo`: that agent's name when the reply was written.
+   */
+  author_name?: string;
+  /**
+   * On an assistant entry whose run failed — today a run stopped by the token cap, whose partial
+   * answer is this entry's `content`. The run's own `error_code`. Since 2026-10-16.
+   */
+  error_code?: string;
+  /**
+   * With `error_code`: the run's `error_details` without `partial_response` (that is `content`),
+   * e.g. `limit_tokens` and `used_tokens`.
+   */
+  error_details?: JsonObject;
 }
 
 export interface ConversationEntryAttachment {
@@ -4717,6 +5420,14 @@ export const CONVERSATION_ENTRY_IMPORTANCE_VALUES = ['high', 'normal'] as const;
  */
 export interface ConversationEntryRunMetrics {
   /**
+   * The context window of the model that served the run, in tokens.
+   */
+  context_window_tokens?: number;
+  /**
+   * Input tokens of the run's last model call: how full the window was at the end.
+   */
+  last_input_tokens?: number;
+  /**
    * How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
    */
   pricing_confidence?: string;
@@ -4731,6 +5442,11 @@ export interface ConversationEntryRunMetrics {
   input_tokens?: number;
   output_tokens?: number;
   thinking_tokens?: number;
+  /**
+   * Prompt tokens served from the provider's prefix cache — a subset of `input_tokens`. Present
+   * only when the provider reports it.
+   */
+  cached_tokens?: number;
   tool_calls_count?: number;
   llm_calls_count?: number;
   guardrail_checks?: number;
@@ -4757,9 +5473,21 @@ export type ConversationEntryToolCallStatus = 'done' | 'error';
 
 export const CONVERSATION_ENTRY_TOOL_CALL_STATUS_VALUES = ['done', 'error'] as const;
 
+/**
+ * `source_path` and `dest_path`; the move route's spelling `from_path` / `to_path` is accepted
+ * too (since 2026-10-12). One of each pair is required — 422 otherwise.
+ */
 export interface CopyWorkspaceFileRequest {
-  source_path: string;
-  dest_path: string;
+  source_path?: string;
+  dest_path?: string;
+  /**
+   * Alias of `source_path`.
+   */
+  from_path?: string;
+  /**
+   * Alias of `dest_path`.
+   */
+  to_path?: string;
 }
 
 export interface CoreMemoryBlock {
@@ -5043,7 +5771,7 @@ export interface CreateAgentVersionRequest {
 
 export interface CreateAmbassadorRequestRequest {
   from_agent_id: string;
-  type: string;
+  type: AmbassadorRequestType;
   subject: string;
   body: string;
 }
@@ -5257,9 +5985,37 @@ export interface CreateMCPServerRequest {
   egress_allowlist?: string[];
 }
 
+export interface CreateMissionScheduleRequest {
+  cron: string;
+  timezone?: string;
+  plan: PlannedMission;
+  session_id?: string;
+  name?: string;
+}
+
+export interface CreateMissionScheduleResponse {
+  schedule_id?: string;
+  cron?: string;
+  timezone?: string;
+  next_fire_at?: string;
+  status?: string;
+}
+
 export interface CreateMyTenantRequest {
   name: string;
   slug?: string;
+  /**
+   * Create the company from a template (`GET /company-templates`), e.g. `research-publishing` or
+   * `research-publishing@1`. The company starts as a `draft` with its profile filled in, and its
+   * structure is stored as a pending proposal (`proposal_id`) for the founder to review and
+   * apply — nothing else is created. Since 2026-10-12.
+   */
+  template_id?: string;
+  /**
+   * The template's inputs (its `inputs_schema`). Checked before the company is created: a bad
+   * input is 422 and nothing exists afterwards.
+   */
+  inputs?: JsonObject;
 }
 
 export interface CreateMyTenantResponse {
@@ -5269,6 +6025,12 @@ export interface CreateMyTenantResponse {
   slug: string;
   role: string;
   user_id: string;
+  company?: CompanyProfile;
+  /**
+   * With `template_id`: the pending proposal that builds the company.
+   */
+  proposal_id?: string;
+  proposal_error?: string[];
 }
 
 export interface CreatePlanStripePriceRequest {
@@ -5501,7 +6263,12 @@ export interface CreateRunRequest {
    * agent.
    */
   version?: number;
-  resource_limits?: JsonObject;
+  /**
+   * This run's limits, laid over the agent's. A key not listed here is refused with 422 naming
+   * the accepted keys (since 2026-10-17; before, it was dropped and the run ran without the cap
+   * the caller meant).
+   */
+  resource_limits?: CreateRunRequestResourceLimits;
   metadata?: JsonObject;
 }
 
@@ -5515,6 +6282,19 @@ export interface CreateRunRequest {
 export interface CreateRunRequestInput {
   message?: string;
   file_ids?: string[];
+}
+
+/**
+ * This run's limits, laid over the agent's. A key not listed here is refused with 422 naming
+ * the accepted keys (since 2026-10-17; before, it was dropped and the run ran without the cap
+ * the caller meant).
+ */
+export interface CreateRunRequestResourceLimits {
+  max_duration_ms?: number;
+  max_steps?: number;
+  max_tool_calls?: number;
+  max_tokens_per_run?: number;
+  max_cost_usd?: number;
 }
 
 export interface CreateSessionAnnotationRequest {
@@ -5620,6 +6400,35 @@ export interface CreateSpecPackageCheckoutSessionResponse {
   retry_after_seconds: number;
 }
 
+export interface CreateTaskRequest {
+  title: string;
+  instructions?: string;
+  due_at?: string | null;
+  recurrence?: CreateTaskRequestRecurrence;
+  require_confirmation?: boolean;
+  delivery?: CreateTaskRequestDelivery;
+  agent_id?: string;
+  agent_ids?: string[];
+  team_id?: string;
+}
+
+export interface CreateTaskRequestDelivery {
+  channels?: TodoDeliveryChannel[];
+  target?: string;
+}
+
+export interface CreateTaskRequestRecurrence {
+  cron?: string;
+  timezone?: string;
+}
+
+export interface CreateTenantProposalRequest {
+  summary: string;
+  rationale?: string;
+  operations: JsonObject[];
+  expected_version?: number;
+}
+
 export interface CreateTenantRequest {
   name: string;
   email?: string;
@@ -5706,11 +6515,26 @@ export type CreateTenantRequestStatus = 'active' | 'suspended' | 'trial' | 'dele
 
 export const CREATE_TENANT_REQUEST_STATUS_VALUES = ['active', 'suspended', 'trial', 'deleted'] as const;
 
+/**
+ * The field is `type`. This document said `proposal_type` until 2026-10-14; the server refused
+ * it 422 from 2026-08-31 and, since 2026-10-14, reads it as the old name of `type` (`type`
+ * wins when both are sent), so a client built from the old document works.
+ */
 export interface CreateVotingProposalRequest {
+  type?: CreateVotingProposalRequestType;
+  /**
+   * Old name of `type`, read when `type` is absent.
+   *
+   * @deprecated
+   */
+  proposal_type?: string;
   title: string;
   description: string;
-  proposal_type: string;
 }
+
+export type CreateVotingProposalRequestType = 'new_goal' | 'policy_change' | 'agent_termination' | 'constitution_amendment' | 'agent_design' | 'arbiter_appointment';
+
+export const CREATE_VOTING_PROPOSAL_REQUEST_TYPE_VALUES = ['new_goal', 'policy_change', 'agent_termination', 'constitution_amendment', 'agent_design', 'arbiter_appointment'] as const;
 
 export interface CreateWebhookRequest {
   url: string;
@@ -6103,6 +6927,11 @@ export interface DeleteSquadGraphNodeResponse {
 
 export interface DeleteSquadResponse {
   deleted?: boolean;
+  team_id?: string;
+  /**
+   * Agents of this squad that lost their OWN cron schedule with it (see DELETE /teams/{teamId}).
+   */
+  schedules_removed?: string[];
 }
 
 export interface DeleteTeamGraphEdgeResponse {
@@ -6118,6 +6947,12 @@ export interface DeleteTeamGraphNodeResponse {
 export interface DeleteTeamResponse {
   deleted: boolean;
   team_id: string;
+  /**
+   * Agents of this squad that lost their OWN cron schedule with it — the supervisor and any
+   * worker that had one. Disbanding a department stops those agents' scheduled runs while the
+   * agents themselves stay; the field exists so that is not silent (since 2026-10-12).
+   */
+  schedules_removed?: string[];
 }
 
 export interface DeleteUserResponse {
@@ -6234,6 +7069,10 @@ export const DESIGN_REQUEST_STATUS_VALUES = ['pending', 'voting', 'approved', 'r
 
 export interface DisableMfaResponse {
   disabled: boolean;
+}
+
+export interface DisconnectHiredAgentResponse {
+  agent: Agent;
 }
 
 export interface DomainCertLifecycle {
@@ -6836,9 +7675,9 @@ export interface Error {
  * code only when its call site names one. Other statuses: absent when there is no
  * machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURE_DISABLED' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'STARTED_BY_ANOTHER_USER' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'ASSESSMENT_ISOLATION_REQUIRED' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CLIENT_REQUEST_CONFLICT' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXECUTION_PROFILE_UNVERIFIABLE' | 'EXECUTION_RECEIPT_PENDING' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURED_SET_CONTENDED' | 'FEATURE_DISABLED' | 'FILE_NOT_FOUND' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_CONFLICT' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INTERNAL_ERROR' | 'INVALID_ARCHIVE' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_MANIFEST' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'ISOLATION_VIOLATION' | 'LLM_ERROR' | 'MANAGED_AGENT' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSING_SCOPE' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'OUTPUT_TOO_LARGE' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROCESSING_POLICY_CHANGED' | 'PROCESSING_POLICY_NOT_READY' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUALIFICATION_BUDGET_STOP' | 'QUALIFICATION_ROUTE_MISMATCH' | 'QUALIFICATION_VERSION_UNAVAILABLE' | 'QUOTA_EXCEEDED' | 'RATE_LIMITED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SECURITY_SCAN_FAILED' | 'SESSION_NOT_ACTIVE' | 'SHARE_LIST_CONFLICT' | 'SIGNING_NOT_CONFIGURED' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'SPONSORSHIP_BUDGET_BELOW_COMMITTED' | 'SPONSORSHIP_BUDGET_EXHAUSTED' | 'SPONSORSHIP_CANDIDATE_LIMIT' | 'SPONSORSHIP_CONCURRENCY_LIMIT' | 'SPONSORSHIP_FUNDING_UNAVAILABLE' | 'SPONSORSHIP_GRANT_CONFLICT' | 'SPONSORSHIP_GRANT_IN_USE' | 'SPONSORSHIP_GRANT_MISMATCH' | 'SPONSORSHIP_GRANT_UNAVAILABLE' | 'SPONSORSHIP_OUTCOME_UNKNOWN' | 'SPONSORSHIP_PROGRAM_IMMUTABLE' | 'SPONSORSHIP_PROGRAM_INACTIVE' | 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT' | 'SPONSORSHIP_REQUIRED' | 'SPONSORSHIP_SCOPE_REQUIRED' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'UNAUTHENTICATED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'hire_catalog_unknown' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'not_hired' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURE_DISABLED', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'STARTED_BY_ANOTHER_USER', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'ASSESSMENT_ISOLATION_REQUIRED', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CLIENT_REQUEST_CONFLICT', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXECUTION_PROFILE_UNVERIFIABLE', 'EXECUTION_RECEIPT_PENDING', 'EXTERNAL_SERVICE_ERROR', 'FEATURED_SET_CONTENDED', 'FEATURE_DISABLED', 'FILE_NOT_FOUND', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INTERNAL_ERROR', 'INVALID_ARCHIVE', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_MANIFEST', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'ISOLATION_VIOLATION', 'LLM_ERROR', 'MANAGED_AGENT', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSING_SCOPE', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'OUTPUT_TOO_LARGE', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROCESSING_POLICY_CHANGED', 'PROCESSING_POLICY_NOT_READY', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUALIFICATION_BUDGET_STOP', 'QUALIFICATION_ROUTE_MISMATCH', 'QUALIFICATION_VERSION_UNAVAILABLE', 'QUOTA_EXCEEDED', 'RATE_LIMITED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SECURITY_SCAN_FAILED', 'SESSION_NOT_ACTIVE', 'SHARE_LIST_CONFLICT', 'SIGNING_NOT_CONFIGURED', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'SPONSORSHIP_BUDGET_BELOW_COMMITTED', 'SPONSORSHIP_BUDGET_EXHAUSTED', 'SPONSORSHIP_CANDIDATE_LIMIT', 'SPONSORSHIP_CONCURRENCY_LIMIT', 'SPONSORSHIP_FUNDING_UNAVAILABLE', 'SPONSORSHIP_GRANT_CONFLICT', 'SPONSORSHIP_GRANT_IN_USE', 'SPONSORSHIP_GRANT_MISMATCH', 'SPONSORSHIP_GRANT_UNAVAILABLE', 'SPONSORSHIP_OUTCOME_UNKNOWN', 'SPONSORSHIP_PROGRAM_IMMUTABLE', 'SPONSORSHIP_PROGRAM_INACTIVE', 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT', 'SPONSORSHIP_REQUIRED', 'SPONSORSHIP_SCOPE_REQUIRED', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'UNAUTHENTICATED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'hire_catalog_unknown', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'not_hired', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -7018,9 +7857,18 @@ export interface ExportAdminConfigResponse {
   sections: JsonObject;
 }
 
+/**
+ * The manifest version this build understands; anything else is 422.
+ */
 export type ExportDataExplorerIncludeSensitive = '1';
 
 export const EXPORT_DATA_EXPLORER_INCLUDE_SENSITIVE_VALUES = ['1'] as const;
+
+export interface ExportExcludedNote {
+  code: string;
+  what: string;
+  why: string;
+}
 
 export type ExportMyAccountFormat = 'zip' | 'json';
 
@@ -7063,9 +7911,9 @@ export interface FeedEntry {
   error?: string;
 }
 
-export type FeedEntryEventType = 'run.started' | 'run.completed' | 'run.failed' | 'run.timeout' | 'run.cancelled' | 'session.created' | 'company.tick_start' | 'company.tick_end' | 'company.paused' | 'company.resumed' | 'company.escalation' | 'team.round_start' | 'team.round_end' | 'objective.created' | 'objective.completed' | 'agent.created';
+export type FeedEntryEventType = 'run.started' | 'run.completed' | 'run.failed' | 'run.timeout' | 'run.cancelled' | 'session.created' | 'initiative.tick_start' | 'initiative.tick_end' | 'initiative.paused' | 'initiative.resumed' | 'initiative.escalation' | 'company.tick_start' | 'company.tick_end' | 'company.paused' | 'company.resumed' | 'company.escalation' | 'team.round_start' | 'team.round_end' | 'objective.created' | 'objective.completed' | 'agent.created';
 
-export const FEED_ENTRY_EVENT_TYPE_VALUES = ['run.started', 'run.completed', 'run.failed', 'run.timeout', 'run.cancelled', 'session.created', 'company.tick_start', 'company.tick_end', 'company.paused', 'company.resumed', 'company.escalation', 'team.round_start', 'team.round_end', 'objective.created', 'objective.completed', 'agent.created'] as const;
+export const FEED_ENTRY_EVENT_TYPE_VALUES = ['run.started', 'run.completed', 'run.failed', 'run.timeout', 'run.cancelled', 'session.created', 'initiative.tick_start', 'initiative.tick_end', 'initiative.paused', 'initiative.resumed', 'initiative.escalation', 'company.tick_start', 'company.tick_end', 'company.paused', 'company.resumed', 'company.escalation', 'team.round_start', 'team.round_end', 'objective.created', 'objective.completed', 'agent.created'] as const;
 
 export interface FeedEntryMetrics {
   duration_ms?: number;
@@ -7138,6 +7986,91 @@ export interface FileRecord {
   size_bytes: number;
   sha256: string;
   created_at: string;
+}
+
+export interface FitCompanyTemplateRequest {
+  inputs: JsonObject;
+  /**
+   * @default "new"
+   */
+  target?: FitCompanyTemplateRequestTarget;
+}
+
+export type FitCompanyTemplateRequestTarget = 'new' | 'current';
+
+export const FIT_COMPANY_TEMPLATE_REQUEST_TARGET_VALUES = ['new', 'current'] as const;
+
+export interface FitCompanyTemplateResponse {
+  plan: string;
+  fits: boolean;
+  window_days: number;
+  run_profile: FitCompanyTemplateResponseRunProfile;
+  needs: FitCompanyTemplateResponseNeeds;
+  schedules: FitCompanyTemplateResponseSchedule[];
+  checks: FitCompanyTemplateResponseCheck[];
+  monthly_cost_usd: FitRange;
+  /**
+   * The spend cap per month, or null when none is set.
+   */
+  budget_limit_usd: number | null;
+  assumptions: FitCompanyTemplateResponseAssumption[];
+  suggestions: FitCompanyTemplateResponseSuggestion[];
+  target: FitCompanyTemplateRequestTarget;
+  template: FitCompanyTemplateResponseTemplate;
+}
+
+export interface FitCompanyTemplateResponseAssumption {
+  code?: string;
+  text?: string;
+}
+
+export interface FitCompanyTemplateResponseCheck {
+  code: GetTenantPlanFitResponseCheckCode;
+  needed: number;
+  limit: number | null;
+  status: GetTenantPlanFitResponseCheckStatus;
+}
+
+export interface FitCompanyTemplateResponseNeeds {
+  agents?: number;
+  squads?: number;
+  runs_per_month?: FitRange;
+  tokens_per_month?: FitRange;
+  tool_calls_per_month?: FitRange;
+}
+
+export interface FitCompanyTemplateResponseRunProfile {
+  tokens?: FitRange;
+  cost_usd?: FitRange;
+  tool_calls?: FitRange;
+  sample_runs?: number;
+  source?: GetTenantPlanFitResponseRunProfileSource;
+}
+
+export interface FitCompanyTemplateResponseSchedule {
+  kind?: GetTenantBlueprintResponseScheduleKind;
+  name?: string;
+  cron?: string;
+  timezone?: string | null;
+  runs_per_fire?: number;
+  fires_per_month?: number | null;
+}
+
+export interface FitCompanyTemplateResponseSuggestion {
+  code?: string;
+  message?: string;
+  plan?: string;
+}
+
+export interface FitCompanyTemplateResponseTemplate {
+  id: string;
+  version: string;
+}
+
+export interface FitRange {
+  low: number;
+  mid: number;
+  high: number;
 }
 
 /**
@@ -7308,6 +8241,10 @@ export interface GetActivityFeedResponse {
 
 export interface GetAdminBlogConfigResponse {
   config: BlogConfig;
+}
+
+export interface GetAdminDataProcessingPolicyResponse {
+  current?: JsonObject | null;
 }
 
 export interface GetAdminDisabledToolsResponse {
@@ -7861,6 +8798,33 @@ export interface GetHealthResponse {
    */
   pending_resumes?: number;
   /**
+   * What this build can do, by name — gate a feature on it instead of on a 404. Names are added
+   * when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
+   * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
+   * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
+   * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+   * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+   * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+   * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+   * `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+   * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+   * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+   * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+   * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+   * `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+   * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+   * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+   * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+   * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+   * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+   * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+   * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+   * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+   * /company/versions` AND `POST /company/restore` — there is deliberately no separate
+   * `company_restore`, since a snapshot and the rollback to it ship together.
+   */
+  capabilities?: string[];
+  /**
    * Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
    * falls as they are picked up — but it is a queue depth, not a count of recoveries.
    */
@@ -7871,9 +8835,39 @@ export type GetHealthResponseStatus = 'healthy' | 'degraded' | 'unhealthy';
 
 export const GET_HEALTH_RESPONSE_STATUS_VALUES = ['healthy', 'degraded', 'unhealthy'] as const;
 
+/**
+ * Language of the letter (since 2026-10-17). Without it: the language the person chose before,
+ * else Accept-Language, else English. The browser's language is remembered for later letters
+ * until the person sets one in GET/PUT /api/v1/me/email-preferences.
+ */
+export type GetHireCatalogLocale = 'uk' | 'en';
+
+export const GET_HIRE_CATALOG_LOCALE_VALUES = ['uk', 'en'] as const;
+
+export interface GetHireCatalogResponse {
+  items: HireCatalogItem[];
+}
+
 export interface GetImmutableAuditResponse {
   events: ImmutableAuditEvent[];
   total: number;
+}
+
+export interface GetInitiativeActivityResponse {
+  entries?: CompanyActivityEntry[];
+}
+
+export interface GetInitiativeBudgetResponse {
+  total_usd?: number;
+  spent_usd?: number;
+  daily_limit_usd?: number;
+  alert_threshold_pct?: number;
+  remaining_usd?: number;
+}
+
+export interface GetInitiativeObjectivesResponse {
+  trees?: ObjectiveTree[];
+  objectives?: Objective[];
 }
 
 export interface GetJobApplicationResponse {
@@ -7927,7 +8921,8 @@ export interface GetMediaUsageResponseVideos {
 }
 
 export interface GetMemoriesByEntityResponse {
-  items?: MemoryEntry[];
+  entries: MemoryEntry[];
+  total: number;
 }
 
 export interface GetMeResponse {
@@ -7953,6 +8948,9 @@ export interface GetMeResponseTenant {
   name: string;
   slug: string;
   plan: string;
+  head_agent_id?: string | null;
+  logo_url?: string | null;
+  shared_workspace_id?: string | null;
 }
 
 export interface GetMeResponseUser {
@@ -7971,6 +8969,123 @@ export interface GetMfaStatusResponse {
   recovery_remaining: number;
 }
 
+export interface GetMissionPerformanceResponse {
+  window_days: number;
+  missions: GetMissionPerformanceResponseMissions;
+  objectives: GetMissionPerformanceResponseObjectives;
+  /**
+   * The review record of objectives with `review_required` that settled.
+   */
+  reviews: GetMissionPerformanceResponseReviews;
+  /**
+   * How good the reviewed work was, on what the platform can see. `with_unsourced_links` counts
+   * results citing a link no tool produced — the honest proxy for a factual error, since a model
+   * cannot be asked whether it is right. Since 2026-10-12.
+   */
+  quality: GetMissionPerformanceResponseQuality;
+  /**
+   * Objectives ended because a person refused an action mid-run.
+   */
+  actions_rejected: number;
+  cost_usd: number;
+  cost_per_completed_usd: number | null;
+  avg_minutes_to_complete: number | null;
+  /**
+   * Objectives waiting for a person right now.
+   */
+  awaiting_review: number;
+  /**
+   * The same figures per assignee (`team:<id>` for a squad).
+   */
+  by_agent: GetMissionPerformanceResponseByAgentItem[];
+}
+
+export interface GetMissionPerformanceResponseByAgentItem {
+  agent_id: string;
+  objectives: number;
+  completed: number;
+  failed: number;
+  cost_usd: number;
+  reviewed?: number;
+  accepted_first_pass?: number;
+  accepted_after_revision?: number;
+  rejected?: number;
+  first_pass_rate?: number | null;
+  avg_revisions?: number | null;
+}
+
+export interface GetMissionPerformanceResponseMissions {
+  total: number;
+  by_status: JsonObject;
+  /**
+   * Missions not yet ended with a draft at `awaiting_review`, waiting on a person. Their status
+   * stays `executing` (the run is not over), so they are also counted there: show `executing -
+   * waiting_on_review` as running. Absent from servers before 2026-10-15; read as 0.
+   */
+  waiting_on_review?: number;
+}
+
+export interface GetMissionPerformanceResponseObjectives {
+  total: number;
+  by_status: JsonObject;
+  /**
+   * Keyed by `abort_reason`, e.g. budget_exhausted, not_dispatchable, rejected_by_person.
+   */
+  failed_by_reason: JsonObject;
+}
+
+/**
+ * How good the reviewed work was, on what the platform can see. `with_unsourced_links` counts
+ * results citing a link no tool produced — the honest proxy for a factual error, since a model
+ * cannot be asked whether it is right. Since 2026-10-12.
+ */
+export interface GetMissionPerformanceResponseQuality {
+  /**
+   * Reviewed results carrying a provenance record (`sources`).
+   */
+  with_sources: number;
+  with_unsourced_links: number;
+  /**
+   * with_unsourced_links / with_sources; null when nothing carried provenance — absent is not
+   * zero.
+   */
+  unsourced_link_rate: number | null;
+  links_cited: number;
+  unsourced_links: number;
+  revisions_per_accepted: number | null;
+}
+
+/**
+ * The review record of objectives with `review_required` that settled.
+ */
+export interface GetMissionPerformanceResponseReviews {
+  reviewed: number;
+  accepted_first_pass: number;
+  accepted_after_revision: number;
+  rejected: number;
+  /**
+   * accepted_first_pass / reviewed; null when nothing was reviewed.
+   */
+  first_pass_rate: number | null;
+  avg_revisions: number | null;
+}
+
+export interface GetMyEmailPreferencesResponse {
+  /**
+   * Language of every letter; null until the person or a browser sets it (English then).
+   */
+  locale: string | null;
+  /**
+   * The Monday summary for owners and admins.
+   */
+  weekly_digest: boolean;
+  /**
+   * The day-1 and day-3 letters to a company that has not started.
+   */
+  product_tips: boolean;
+  updated_at?: string;
+}
+
 export interface GetMyHeadAgentTemplateResponse {
   plan: string;
   recommended: GetMyHeadAgentTemplateResponseRecommended;
@@ -7983,6 +9098,12 @@ export const GET_MY_HEAD_AGENT_TEMPLATE_RESPONSE_RECOMMENDED_VALUES = ['basic', 
 
 export interface GetMyHeadAgentTemplateResponseTier {
   tier?: GetMyHeadAgentTemplateResponseTierTier;
+  resource_limits?: GetMyHeadAgentTemplateResponseTierResourceLimits;
+  initial_budget_usd?: number;
+  /**
+   * The tools the tier's Head Agent gets. Empty for a locked tier.
+   */
+  built_in_tools?: string[];
   available?: boolean;
   install_specs?: GetMyHeadAgentTemplateResponseTierInstallSpec[];
   auto_approve_tools?: string[];
@@ -7991,6 +9112,14 @@ export interface GetMyHeadAgentTemplateResponseTier {
 
 export interface GetMyHeadAgentTemplateResponseTierInstallSpec {
   spec_id: string;
+  tool_allowlist?: string[];
+}
+
+export interface GetMyHeadAgentTemplateResponseTierResourceLimits {
+  max_duration_ms?: number;
+  max_steps?: number;
+  max_tokens_per_run?: number;
+  thinking_budget_tokens?: number;
 }
 
 export interface GetMyHeadAgentTemplateResponseTierTier {
@@ -7999,11 +9128,31 @@ export interface GetMyHeadAgentTemplateResponseTierTier {
   description?: string;
   required_plan?: GetMyHeadAgentTemplateResponseTierTierRequiredPlan;
   spec_ids?: string[];
+  /**
+   * Per-SPEC tool names this tier advertises; a SPEC absent here advertises all its tools.
+   */
+  tool_allowlists?: Record<string, string[]>;
+  resource_limits?: GetMyHeadAgentTemplateResponseTierTierResourceLimits;
+  initial_budget_usd?: number;
+  auto_inject_overrides?: GetMyHeadAgentTemplateResponseTierTierAutoInjectOverrides;
+}
+
+export interface GetMyHeadAgentTemplateResponseTierTierAutoInjectOverrides {
+  kb_tools?: boolean;
+  memory_tools?: boolean;
+  core_memory_tools?: boolean;
 }
 
 export type GetMyHeadAgentTemplateResponseTierTierRequiredPlan = 'free' | 'starter' | 'pro';
 
 export const GET_MY_HEAD_AGENT_TEMPLATE_RESPONSE_TIER_TIER_REQUIRED_PLAN_VALUES = ['free', 'starter', 'pro'] as const;
+
+export interface GetMyHeadAgentTemplateResponseTierTierResourceLimits {
+  max_duration_ms?: number;
+  max_steps?: number;
+  max_tokens_per_run?: number;
+  thinking_budget_tokens?: number;
+}
 
 export interface GetPromoStateResponse {
   applied_code: GetPromoStateResponseAppliedCode | null;
@@ -8084,20 +9233,6 @@ export interface GetPublicStateResponse {
    */
   agents: PublicStateAgent[];
 }
-
-export interface GetReadyResponse {
-  status?: GetReadyResponseStatus;
-  timestamp?: string;
-  checks?: GetReadyResponseChecks;
-}
-
-export interface GetReadyResponseChecks {
-  kv?: string;
-}
-
-export type GetReadyResponseStatus = 'ready' | 'not_ready';
-
-export const GET_READY_RESPONSE_STATUS_VALUES = ['ready', 'not_ready'] as const;
 
 export interface GetReconciliationResponse {
   reconciliation: CostReconciliationResult | null;
@@ -8184,6 +9319,20 @@ export interface GetRunQueuePositionResponse {
 
 export interface GetRunResponse {
   /**
+   * Sponsored qualification runs only: the requirements the run was admitted under, stored as
+   * accepted.
+   */
+  execution_requirements?: QualificationExecutionRequirementsV2;
+  /**
+   * Sponsored qualification runs only: until when the run is recoverable by its client request
+   * id.
+   */
+  recovery_expires_at_unix?: number;
+  /**
+   * Sponsored qualification runs only: the grant that paid for it.
+   */
+  sponsorship_grant_id?: string;
+  /**
    * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
    * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
    * client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -8225,8 +9374,10 @@ export interface GetRunResponse {
    * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`,
    * `limit_usd` and `spent_usd` with `BUDGET_EXCEEDED` (beside the older `max_cost_usd`,
    * `accumulated_cost_usd` and `cap_source`), `limit_ms` and `elapsed_ms` with
-   * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). Never a provider id — this reaches a
-   * screen, and the product does not name the model it picked.
+   * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). `limit_tokens`, `used_tokens` and, when the
+   * model had written anything, `partial_response` (its text so far, at most 8000 characters)
+   * with `MAX_TOKENS_EXCEEDED` (since 2026-10-16). Never a provider id — this reaches a screen,
+   * and the product does not name the model it picked.
    */
   error_details?: JsonObject;
   /**
@@ -8287,6 +9438,10 @@ export interface GetRunResponse {
 }
 
 export interface GetRunResponseApproval {
+  /**
+   * `revised` — the person declined the action and sent the run on with feedback (`POST
+   * /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback.
+   */
   decision: RunApprovalDecision;
   /**
    * Tools the run was waiting on when the decision was made.
@@ -8333,6 +9488,24 @@ export interface GetRunResponseResourceLimits {
    */
   max_cost_usd?: number;
 }
+
+export interface GetRunSourcesResponse {
+  run_id: string;
+  sources: GetRunSourcesResponseSource[];
+  unsourced_links: string[];
+  truncated: boolean;
+}
+
+export interface GetRunSourcesResponseSource {
+  url: string;
+  kind: GetRunSourcesResponseSourceKind;
+  tool: string;
+  cited: boolean;
+}
+
+export type GetRunSourcesResponseSourceKind = 'read' | 'found';
+
+export const GET_RUN_SOURCES_RESPONSE_SOURCE_KIND_VALUES = ['read', 'found'] as const;
 
 export interface GetRunStepsResponse {
   run_id: string;
@@ -8421,6 +9594,76 @@ export interface GetSessionMessagesResponse {
   cursor?: string;
 }
 
+export interface GetSessionResponse {
+  /**
+   * Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+   * `metadata.archived: true` read as archived here and in the list filters; writing the flag
+   * removes those metadata keys.
+   */
+  archived?: boolean;
+  archived_at?: string;
+  /**
+   * Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+   * `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+   * the flag removes the metadata key.
+   */
+  pinned?: boolean;
+  /**
+   * When it was pinned; order the pinned group by it.
+   */
+  pinned_at?: string;
+  created_by?: string;
+  session_id: string;
+  tenant_id: string;
+  agent_id: string;
+  status: PublicSessionViewStatus;
+  conversation_history?: ConversationEntry[];
+  metadata?: JsonObject;
+  runs?: string[];
+  created_at?: string;
+  /**
+   * Last activity: a message, a run, or a metadata change. Pinning, archiving, creating or
+   * switching a branch, and metadata writes that only set `title`, `project_id` or the legacy
+   * `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+   * by it.
+   */
+  updated_at?: string;
+  expires_at?: string | null;
+  /**
+   * Team ID if session belongs to a team
+   */
+  team_id?: string | null;
+  /**
+   * Session branches for conversation forking
+   */
+  branches?: SessionBranch[];
+  /**
+   * Currently active branch ID
+   */
+  active_branch?: string;
+  /**
+   * How to handle concurrent runs in this session
+   */
+  queue_mode?: SessionQueueMode;
+  /**
+   * Per-conversation model override (in-chat model switcher). When set, runs in this session
+   * resolve their LLM from this config instead of the agent's default. Absent → agent default.
+   */
+  model_override?: GetSessionResponseModelOverride | null;
+  context: SessionContext;
+}
+
+/**
+ * Per-conversation model override (in-chat model switcher). When set, runs in this session
+ * resolve their LLM from this config instead of the agent's default. Absent → agent default.
+ */
+export interface GetSessionResponseModelOverride {
+  provider: string;
+  model_ref: string;
+  endpoint_url?: string;
+  capabilities?: JsonObject;
+}
+
 export interface GetSessionShareResponse {
   share_url?: string | null;
   role?: string | null;
@@ -8431,7 +9674,12 @@ export interface GetSquadChatHistoryResponse {
   team_id?: string;
   conversation_history?: TeamChatTurn[];
   total?: number;
-  chat_state?: JsonObject;
+  /**
+   * Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+   * string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+   * found "DONE".
+   */
+  chat_state?: GetTeamChatHistoryResponseChatState;
   /**
    * Present only when `limit` was sent: whether another page follows.
    */
@@ -8461,7 +9709,12 @@ export interface GetTeamChatHistoryResponse {
   team_id?: string;
   conversation_history?: TeamChatTurn[];
   total?: number;
-  chat_state?: JsonObject;
+  /**
+   * Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+   * string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+   * found "DONE".
+   */
+  chat_state?: GetTeamChatHistoryResponseChatState;
   /**
    * Present only when `limit` was sent: whether another page follows.
    */
@@ -8474,9 +9727,36 @@ export interface GetTeamChatHistoryResponse {
   cursor?: string;
 }
 
+/**
+ * Where the squad's chat stands (packages/types ChatState); IDLE when it has never run. A
+ * string — this said `object` until 2026-10-14, and the SDK's live decode of the canon tenant
+ * found "DONE".
+ */
+export type GetTeamChatHistoryResponseChatState = 'IDLE' | 'ADDRESSING' | 'RUNNING' | 'MERGING' | 'AWAITING_USER' | 'DONE';
+
+export const GET_TEAM_CHAT_HISTORY_RESPONSE_CHAT_STATE_VALUES = ['IDLE', 'ADDRESSING', 'RUNNING', 'MERGING', 'AWAITING_USER', 'DONE'] as const;
+
 export interface GetTeamGraphResponse {
+  /**
+   * The graph envelope: ids of its nodes and edges and the CAS `version` every mutation
+   * increments.
+   */
+  graph?: GetTeamGraphResponseGraph;
   nodes?: TeamGraphNode[];
   edges?: TeamGraphEdge[];
+}
+
+/**
+ * The graph envelope: ids of its nodes and edges and the CAS `version` every mutation
+ * increments.
+ */
+export interface GetTeamGraphResponseGraph {
+  team_id: string;
+  node_ids: string[];
+  edge_ids: string[];
+  version: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface GetTeamRunMessagesResponse {
@@ -8485,6 +9765,352 @@ export interface GetTeamRunMessagesResponse {
   messages: TeamRunChatTurn[];
   protocol_messages: TeamMessage[];
   total: number;
+}
+
+export interface GetTenantBlueprintResponse {
+  company: CompanyProfile;
+  version: number;
+  chief_of_staff: GetTenantBlueprintResponseChiefOfStaffVariant1 | null;
+  departments: GetTenantBlueprintResponseDepartment[];
+  agents: GetTenantBlueprintResponseAgent[];
+  missions: GetTenantBlueprintResponseMissions;
+  schedules: GetTenantBlueprintResponseSchedule[];
+  knowledge_sources: GetTenantBlueprintResponseKnowledgeSource[];
+  integrations: GetTenantBlueprintResponseIntegration[];
+  governance: GetTenantBlueprintResponseGovernance;
+  entitlements: GetTenantBlueprintResponseEntitlements;
+  budget: GetTenantBlueprintResponseBudget | null;
+  missing_setup: GetTenantBlueprintResponseMissingSetupItem[];
+  deployment_state: GetTenantBlueprintResponseDeploymentState;
+}
+
+export interface GetTenantBlueprintResponseAgent {
+  agent_id?: string;
+  name?: string;
+  role?: string | null;
+  description?: string | null;
+  status?: string;
+  execution_mode?: string;
+  initiative_id?: string | null;
+  approval_required_tools?: string[];
+  autonomy?: string | null;
+  scheduled?: boolean;
+  is_chief_of_staff?: boolean;
+}
+
+export interface GetTenantBlueprintResponseBudget {
+  limit_usd?: number;
+  spent_usd?: number;
+  remaining_usd?: number;
+  period?: string;
+  hard_limit_reached?: boolean;
+}
+
+export interface GetTenantBlueprintResponseChiefOfStaffVariant1 {
+  agent_id?: string;
+  name?: string;
+  role?: string | null;
+  description?: string | null;
+  status?: string;
+  execution_mode?: string;
+  initiative_id?: string | null;
+  approval_required_tools?: string[];
+  autonomy?: string | null;
+  scheduled?: boolean;
+  is_chief_of_staff?: boolean;
+}
+
+export interface GetTenantBlueprintResponseDepartment {
+  squad_id?: string;
+  name?: string;
+  description?: string | null;
+  lead_agent_id?: string;
+  members?: GetTenantBlueprintResponseDepartmentMember[];
+}
+
+export interface GetTenantBlueprintResponseDepartmentMember {
+  agent_id?: string;
+  name?: string | null;
+  role?: string;
+}
+
+export interface GetTenantBlueprintResponseDeploymentState {
+  status?: CompanyProfileStatus;
+  launched_at?: string | null;
+  paused_at?: string | null;
+}
+
+export interface GetTenantBlueprintResponseEntitlements {
+  plan?: string;
+  quotas?: JsonObject;
+  usage?: JsonObject | null;
+  resources?: JsonObject | null;
+}
+
+export interface GetTenantBlueprintResponseGovernance {
+  approval_required_tools?: string[];
+  /**
+   * Localize from this; `external_action_policy` is English fallback.
+   */
+  external_action_code?: GetTenantBlueprintResponseGovernanceExternalActionCode;
+  /**
+   * Agents whose autonomy is full_auto.
+   */
+  agents_acting_alone?: string[];
+  external_action_policy?: string;
+}
+
+/**
+ * Localize from this; `external_action_policy` is English fallback.
+ */
+export type GetTenantBlueprintResponseGovernanceExternalActionCode = 'approval_required' | 'per_agent_autonomy';
+
+export const GET_TENANT_BLUEPRINT_RESPONSE_GOVERNANCE_EXTERNAL_ACTION_CODE_VALUES = ['approval_required', 'per_agent_autonomy'] as const;
+
+export interface GetTenantBlueprintResponseIntegration {
+  kind?: GetTenantBlueprintResponseIntegrationKind;
+  id?: string;
+  connector_id?: string | null;
+  name?: string;
+  status?: string;
+}
+
+export type GetTenantBlueprintResponseIntegrationKind = 'connector' | 'mcp_server';
+
+export const GET_TENANT_BLUEPRINT_RESPONSE_INTEGRATION_KIND_VALUES = ['connector', 'mcp_server'] as const;
+
+export interface GetTenantBlueprintResponseKnowledgeSource {
+  knowledge_base_id?: string;
+  name?: string;
+  documents?: number;
+  status?: string;
+}
+
+export interface GetTenantBlueprintResponseMissingSetupItem {
+  code: GetTenantBlueprintResponseMissingSetupItemCode;
+  message: string;
+  fix: string;
+}
+
+export type GetTenantBlueprintResponseMissingSetupItemCode = 'NO_OBJECTIVE' | 'NO_TIMEZONE' | 'NO_CHIEF_OF_STAFF' | 'NO_AGENTS' | 'NO_BUDGET' | 'NO_SCHEDULE';
+
+export const GET_TENANT_BLUEPRINT_RESPONSE_MISSING_SETUP_ITEM_CODE_VALUES = ['NO_OBJECTIVE', 'NO_TIMEZONE', 'NO_CHIEF_OF_STAFF', 'NO_AGENTS', 'NO_BUDGET', 'NO_SCHEDULE'] as const;
+
+export interface GetTenantBlueprintResponseMissions {
+  active?: number;
+  total?: number;
+  recent?: GetTenantBlueprintResponseMissionsRecentItem[];
+}
+
+export interface GetTenantBlueprintResponseMissionsRecentItem {
+  mission_id?: string;
+  goal?: string;
+  status?: string;
+  created_at?: string;
+}
+
+export interface GetTenantBlueprintResponseSchedule {
+  kind?: GetTenantBlueprintResponseScheduleKind;
+  agent_id?: string;
+  agent_name?: string | null;
+  schedule_id?: string;
+  name?: string;
+  cron?: string | null;
+  shape?: ScheduleShape | null;
+  timezone?: string | null;
+  status?: string;
+  next_fire_at?: string | null;
+}
+
+export type GetTenantBlueprintResponseScheduleKind = 'agent' | 'mission';
+
+export const GET_TENANT_BLUEPRINT_RESPONSE_SCHEDULE_KIND_VALUES = ['agent', 'mission'] as const;
+
+export interface GetTenantCompanyOverviewResponse {
+  /**
+   * The ONE thing to do next, chosen by the server so every client shows the same step in the
+   * same order (shared UX structure, 2026-10-14). Present on every answer of a server from this
+   * release on; optional in this document because an older server does not send it — read it as
+   * `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
+   * method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
+   * setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
+   * then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
+   * with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
+   * `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
+   * as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
+   * else applies.
+   */
+  next_step?: GetTenantCompanyOverviewResponseNextStep;
+  generated_at: string;
+  window_days: number;
+  company: GetTenantCompanyOverviewResponseCompany;
+  /**
+   * Null when no cap is set.
+   */
+  spend: GetTenantCompanyOverviewResponseSpend | null;
+  decisions: GetTenantCompanyOverviewResponseDecisions;
+  /**
+   * The `GET /analytics/missions?days=` body for the same window.
+   */
+  work: JsonObject;
+  /**
+   * Up to 5 results delivered in the window, newest first: completed objectives that no other
+   * objective depends on. The steps feeding a deliverable (collect, analyze) are work, not
+   * results, and are left out since 2026-10-15.
+   */
+  results: GetTenantCompanyOverviewResponseResult[];
+  problems: GetTenantCompanyOverviewResponseProblems;
+  activity: GetTenantCompanyOverviewResponseActivity;
+  /**
+   * Up to 5 next scheduled runs, soonest first.
+   */
+  next: GetTenantCompanyOverviewResponseNextItem[];
+}
+
+export interface GetTenantCompanyOverviewResponseActivity {
+  runs?: number;
+  /**
+   * Every UTC day of the window, oldest first.
+   */
+  by_day?: GetTenantCompanyOverviewResponseActivityByDayItem[];
+}
+
+export interface GetTenantCompanyOverviewResponseActivityByDayItem {
+  date?: string;
+  runs?: number;
+  failed?: number;
+}
+
+export interface GetTenantCompanyOverviewResponseCompany {
+  company_id?: string;
+  name?: string;
+  /**
+   * What the company is for; null until one is written.
+   */
+  objective?: string | null;
+  status?: CompanyProfileStatus;
+  version?: number;
+  launched_at?: string | null;
+  paused_at?: string | null;
+  chief_of_staff_agent_id?: string | null;
+}
+
+export interface GetTenantCompanyOverviewResponseDecisions {
+  total?: number;
+  approvals?: number;
+  inputs?: number;
+  reviews?: number;
+  proposals?: number;
+}
+
+export interface GetTenantCompanyOverviewResponseNextItem {
+  kind?: GetTenantBlueprintResponseScheduleKind;
+  id?: string;
+  name?: string;
+  next_fire_at?: string;
+  cron?: string | null;
+  shape?: ScheduleShape | null;
+}
+
+/**
+ * The ONE thing to do next, chosen by the server so every client shows the same step in the
+ * same order (shared UX structure, 2026-10-14). Present on every answer of a server from this
+ * release on; optional in this document because an older server does not send it — read it as
+ * `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
+ * method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
+ * setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
+ * then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
+ * with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
+ * `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
+ * as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
+ * else applies.
+ */
+export interface GetTenantCompanyOverviewResponseNextStep {
+  kind: GetTenantCompanyOverviewResponseNextStepKind;
+  code: string;
+  fix?: string;
+  count?: number;
+  run_id?: string;
+  mission_id?: string;
+  agent_id?: string;
+  agent_name?: string | null;
+  error_code?: string | null;
+  name?: string;
+  next_fire_at?: string;
+}
+
+export type GetTenantCompanyOverviewResponseNextStepKind = 'setup' | 'resume' | 'decide' | 'problem' | 'wait';
+
+export const GET_TENANT_COMPANY_OVERVIEW_RESPONSE_NEXT_STEP_KIND_VALUES = ['setup', 'resume', 'decide', 'problem', 'wait'] as const;
+
+export interface GetTenantCompanyOverviewResponseProblems {
+  failed_runs?: number;
+  recent?: GetTenantCompanyOverviewResponseProblemsRecentItem[];
+  /**
+   * Missions in the window the PLATFORM stopped (`aborted` or `failed`, not
+   * `aborted_by_operator`) — the watchdog, a failed plan, failed objectives. Since 2026-10-15.
+   */
+  stopped_missions?: number;
+  /**
+   * The newest 5 of them.
+   */
+  missions?: GetTenantCompanyOverviewResponseProblemsMission[];
+}
+
+export interface GetTenantCompanyOverviewResponseProblemsMission {
+  mission_id?: string;
+  goal?: string;
+  status?: GetTenantCompanyOverviewResponseProblemsMissionStatus;
+  /**
+   * As on the mission (`watchdog_stuck`, `planning_failed`, `objectives_failed` …).
+   */
+  result_code?: string | null;
+  result_summary?: string | null;
+  at?: string;
+}
+
+export type GetTenantCompanyOverviewResponseProblemsMissionStatus = 'aborted' | 'failed';
+
+export const GET_TENANT_COMPANY_OVERVIEW_RESPONSE_PROBLEMS_MISSION_STATUS_VALUES = ['aborted', 'failed'] as const;
+
+export interface GetTenantCompanyOverviewResponseProblemsRecentItem {
+  run_id?: string;
+  agent_id?: string;
+  agent_name?: string | null;
+  error_code?: string | null;
+  error?: string | null;
+  at?: string;
+}
+
+export interface GetTenantCompanyOverviewResponseResult {
+  objective_id?: string;
+  /**
+   * The objective's own name — for a mission step, the step (`Deliver`).
+   */
+  title?: string;
+  /**
+   * The result's first line without markdown markers, at most 120 characters — what to head the
+   * card with. Null when the result has no text.
+   */
+  headline?: string | null;
+  /**
+   * Cut at a line or word boundary, with `…` when cut.
+   */
+  summary?: string;
+  completed_at?: string;
+}
+
+/**
+ * Null when no cap is set.
+ */
+export interface GetTenantCompanyOverviewResponseSpend {
+  limit_usd?: number;
+  spent_usd?: number;
+  remaining_usd?: number;
+  utilization?: number;
+  period?: string;
+  soft_alert?: boolean;
+  hard_limit_reached?: boolean;
 }
 
 export interface GetTenantDomainHealthResponse {
@@ -8496,6 +10122,30 @@ export interface GetTenantDomainHealthResponse {
   updated_at?: string;
   dns?: DomainDnsLifecycle;
   cert?: DomainCertLifecycle;
+}
+
+export type GetTenantPlanFitResponseCheckCode = 'AGENTS' | 'SQUADS' | 'MONTHLY_RUNS' | 'MONTHLY_TOKENS' | 'MONTHLY_TOOL_CALLS' | 'BUDGET';
+
+export const GET_TENANT_PLAN_FIT_RESPONSE_CHECK_CODE_VALUES = ['AGENTS', 'SQUADS', 'MONTHLY_RUNS', 'MONTHLY_TOKENS', 'MONTHLY_TOOL_CALLS', 'BUDGET'] as const;
+
+export type GetTenantPlanFitResponseCheckStatus = 'ok' | 'tight' | 'over';
+
+export const GET_TENANT_PLAN_FIT_RESPONSE_CHECK_STATUS_VALUES = ['ok', 'tight', 'over'] as const;
+
+export type GetTenantPlanFitResponseRunProfileSource = 'history' | 'default';
+
+export const GET_TENANT_PLAN_FIT_RESPONSE_RUN_PROFILE_SOURCE_VALUES = ['history', 'default'] as const;
+
+export interface GetTenantReadinessResponse {
+  ready: boolean;
+  status: CompanyProfileStatus;
+  /**
+   * Send it back as `reviewed_version` to launch.
+   */
+  version: number;
+  blockers: CompanyReadinessItem[];
+  warnings: CompanyReadinessItem[];
+  test_run: CompanyTestRun | null;
 }
 
 export interface GetTenantUsageResponse {
@@ -8538,7 +10188,7 @@ export interface GetUsageTimeseriesResponseDataItem {
 export interface Goal {
   goal_id: string;
   tenant_id: string;
-  agent_id: string;
+  agent_id?: string;
   title?: string;
   description?: string;
   rationale?: string;
@@ -8548,7 +10198,15 @@ export interface Goal {
   alignment_justification?: string;
   expected_impact?: string;
   resource_estimate_usd?: number;
+  /**
+   * `abandoned` is a status no current code writes; goals stored before 2026-08-31 can carry it,
+   * and GET returns records as stored (SDK decode of the canon tenant, 2026-10-15).
+   */
   status: GoalStatus;
+  /**
+   * On goals stored before 2026-08-31 only; the current propose route does not take it.
+   */
+  priority?: number;
   /**
    * Set once the goal reaches a vote. Absent before that.
    */
@@ -8558,9 +10216,13 @@ export interface Goal {
   updated_at?: string;
 }
 
-export type GoalStatus = 'proposed' | 'checking' | 'voting' | 'approved' | 'rejected' | 'active' | 'completed';
+/**
+ * `abandoned` is a status no current code writes; goals stored before 2026-08-31 can carry it,
+ * and GET returns records as stored (SDK decode of the canon tenant, 2026-10-15).
+ */
+export type GoalStatus = 'proposed' | 'checking' | 'voting' | 'approved' | 'rejected' | 'active' | 'completed' | 'abandoned';
 
-export const GOAL_STATUS_VALUES = ['proposed', 'checking', 'voting', 'approved', 'rejected', 'active', 'completed'] as const;
+export const GOAL_STATUS_VALUES = ['proposed', 'checking', 'voting', 'approved', 'rejected', 'active', 'completed', 'abandoned'] as const;
 
 export interface GoogleOneTapAuthRequest {
   /**
@@ -8630,6 +10292,10 @@ export interface Guardrail {
   phase: GuardrailConfigItemPhase;
   action?: GuardrailAction;
   timeout_ms?: number;
+  /**
+   * Whether a signing secret is set. The secret itself is never answered.
+   */
+  has_secret?: boolean;
   created_at?: string;
 }
 
@@ -8685,6 +10351,33 @@ export interface HealthCheckV1aliasResponse {
   build_time?: string;
   pending_resumes?: number;
   runs_queued?: number;
+  /**
+   * What this build can do, by name — gate a feature on it instead of on a 404. Names are added
+   * when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
+   * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
+   * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
+   * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+   * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+   * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+   * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+   * `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+   * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+   * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+   * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+   * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+   * `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+   * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+   * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+   * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+   * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+   * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+   * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+   * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+   * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+   * /company/versions` AND `POST /company/restore` — there is deliberately no separate
+   * `company_restore`, since a snapshot and the rollback to it ship together.
+   */
+  capabilities?: string[];
 }
 
 export interface HealthLiveResponse {
@@ -8692,7 +10385,125 @@ export interface HealthLiveResponse {
 }
 
 export interface HealthzAliasResponse {
-  status?: string;
+  status?: GetHealthResponseStatus;
+  timestamp?: string;
+  kv_connected?: boolean;
+  uptime_seconds?: number;
+  /**
+   * The API contract version, a DATE STAMP — `2026-09-10` — bumped only on a breaking change,
+   * and the same value the `X-API-Version` RESPONSE header carries. The server does not read a
+   * request header of that name: pinning a date negotiates nothing. Not a release number and not
+   * semver: it cannot be ordered against a semver string, so a client that compares it to one is
+   * wrong in a way that appears to work for as long as both happen to sort the same. Compare it
+   * for equality, or read it as a date. It says nothing about which BUILD is running — for that,
+   * read `build_sha`.
+   */
+  version?: string;
+  /**
+   * The commit this running build was made from, baked in at image build time. This is the only
+   * value on the wire that identifies the deployed code: `version` is the contract stamp and is
+   * constant across deploys, and a restart proves a restart rather than an identity. `"unknown"`
+   * means the image was built without the build argument (a local build, or a deploy predating
+   * this field) and must be read as UNKNOWN, never as a match. Documentation that pins a claim
+   * about platform behaviour can cite it.
+   */
+  build_sha?: string;
+  /**
+   * When the running image was built, ISO-8601 UTC, baked in at image build time next to
+   * `build_sha`. `"unknown"` when the build argument was absent or did not parse as a date. Like
+   * `build_sha` it identifies the BUILD; `version` is the API contract stamp (the
+   * `X-API-Version` header) and does not change between deploys.
+   */
+  build_time?: string;
+  /**
+   * Always 0. Kept for compatibility — there is no resume-parking state: `RunStatus` has no
+   * `waiting_for_resume`, and startup reconciliation FAILS an interrupted run rather than
+   * holding it for resume. It previously reported the queue depth under this name, which reads
+   * as recovery progress on the one endpoint an operator watches during a deploy. Use
+   * `runs_queued` for the queue, and run status for recovery.
+   */
+  pending_resumes?: number;
+  /**
+   * What this build can do, by name — gate a feature on it instead of on a 404. Names are added
+   * when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
+   * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
+   * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
+   * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
+   * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
+   * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
+   * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
+   * `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
+   * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
+   * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
+   * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
+   * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
+   * `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
+   * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
+   * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
+   * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
+   * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
+   * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
+   * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
+   * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
+   * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
+   * /company/versions` AND `POST /company/restore` — there is deliberately no separate
+   * `company_restore`, since a snapshot and the rollback to it ship together.
+   */
+  capabilities?: string[];
+  /**
+   * Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
+   * falls as they are picked up — but it is a queue depth, not a count of recoveries.
+   */
+  runs_queued?: number;
+}
+
+export interface HireAgentRequest {
+  catalog_id: string;
+}
+
+export interface HireAgentResponse {
+  agent: Agent;
+  connect: HireConnect;
+}
+
+export interface HireCatalogItem {
+  id: string;
+  name: string;
+  vendor: string;
+  /**
+   * Absolute PNG, 256×256, public.
+   */
+  icon_url: string;
+  summary: string;
+  requirements: string;
+  platforms: HireCatalogItemPlatform[];
+  steps: HireCatalogItemStep[];
+  docs_url: string;
+}
+
+export type HireCatalogItemPlatform = 'macos' | 'linux' | 'windows';
+
+export const HIRE_CATALOG_ITEM_PLATFORM_VALUES = ['macos', 'linux', 'windows'] as const;
+
+export interface HireCatalogItemStep {
+  title: string;
+  /**
+   * A command to copy, or null.
+   */
+  command: string | null;
+}
+
+/**
+ * The one terminal command that connects a hired agent. Contains its secret: returned once, by
+ * the call that minted it, and never again.
+ */
+export interface HireConnect {
+  command: string;
+  expires_at: string;
+  /**
+   * How long an unused command works (900).
+   */
+  ttl_seconds: number;
 }
 
 export interface HostDroplet {
@@ -8883,6 +10694,14 @@ export interface InboxItem {
   session_id: string | null;
   status: string;
   created_at: string | null;
+  /**
+   * What the run was asked to do — the first line of its request (`title` when the platform gave
+   * the run one — an event-started reaction run says "Looking into a failed run of <agent>"
+   * rather than its event envelope — else message, prompt, text or instruction), at most 140
+   * characters. Absent when the run carries no text. Since 2026-10-16: a failed row used to
+   * carry only its error, so clients titled the task with it.
+   */
+  goal?: string;
   /**
    * One line: the tool being requested, the question, or the error.
    */
@@ -9120,6 +10939,10 @@ export interface Invite {
   role?: string;
   status?: string;
   tenant_id?: string;
+  /**
+   * When the invite was last re-sent. Absent until the first resend.
+   */
+  last_sent_at?: string;
 }
 
 export interface InviteUserRequest {
@@ -9140,6 +10963,10 @@ export interface InviteUserResponse {
   role?: string;
   status?: string;
   tenant_id?: string;
+  /**
+   * When the invite was last re-sent. Absent until the first resend.
+   */
+  last_sent_at?: string;
   email_sent: boolean;
 }
 
@@ -9616,6 +11443,10 @@ export interface LandingStats {
   total_tokens?: number;
 }
 
+export interface LaunchTenantCompanyRequest {
+  reviewed_version: number;
+}
+
 export interface LeaveTenantResponse {
   left: boolean;
   tenant_id: string;
@@ -9759,6 +11590,7 @@ export interface ListAgentMCPServersResponse {
 
 export interface ListAgentScorersResponse {
   scorers?: AgentScorer[];
+  total?: number;
 }
 
 export interface ListAgentsResponse {
@@ -9911,6 +11743,11 @@ export interface ListCompaniesResponse {
   has_more: boolean;
 }
 
+export interface ListCompanyTemplatesResponse {
+  items: CompanyTemplateCard[];
+  total: number;
+}
+
 export interface ListContentReportsResponse {
   items: ContentReport[];
   cursor: string | null;
@@ -10017,6 +11854,15 @@ export interface ListGoalsResponse {
 export interface ListGuardrailsResponse {
   guardrails: Guardrail[];
   total?: number;
+}
+
+export interface ListInitiativesResponse {
+  items: Company[];
+  /**
+   * Opaque cursor for the next page; null on the last page.
+   */
+  cursor: string | null;
+  has_more: boolean;
 }
 
 export interface ListIntegrationsCatalogResponse {
@@ -10171,6 +12017,17 @@ export interface ListModelsResponseDataItem {
   object: 'model';
   created?: number;
   owned_by?: string;
+  permission?: JsonValue[];
+  root?: string;
+  parent?: string | null;
+  /**
+   * The agent's or team's name. Absent when it has none.
+   */
+  display_name?: string;
+  /**
+   * Context window: the agent model's `max_context_tokens`, else 128000.
+   */
+  max_tokens?: number;
 }
 
 export interface ListMyTenantsResponse {
@@ -10654,6 +12511,36 @@ export interface ListTeamsResponse {
   total?: number;
 }
 
+export interface ListTenantCompanyChangesResponse {
+  items: CompanyChange[];
+  /**
+   * Every row in the log, not the page — `items` honours `limit` while this counts them all, so
+   * a client can say "N of M".
+   */
+  total: number;
+  /**
+   * The scan hit its cap (5000 rows), so `total` is a floor rather than a count.
+   */
+  truncated?: boolean;
+}
+
+export interface ListTenantCompanyVersionsResponse {
+  items: CompanyVersionRow[];
+  /**
+   * Every version in the log, not just the rows returned.
+   */
+  total: number;
+  /**
+   * The scan hit its cap (5000 rows), so `total` is a floor rather than a count.
+   */
+  truncated?: boolean;
+}
+
+export interface ListTenantProposalsResponse {
+  items: CompanyProposal[];
+  total: number;
+}
+
 export interface ListTenantsResponse {
   tenants?: Tenant[];
   total?: number;
@@ -10710,6 +12597,10 @@ export interface ListWebhookDeliveriesResponse {
   webhook_id: string;
   deliveries: WebhookDeliveryAttempt[];
   total: number;
+  /**
+   * True when the scan hit its bound, so older deliveries exist that this list does not count.
+   */
+  truncated?: boolean;
   /**
    * Present only when `limit` was sent: whether another page follows.
    */
@@ -10844,9 +12735,9 @@ export interface LLMSynthesizeSpeechRequest {
   voice?: string;
   /**
    * The spoken language as a tag (`uk`, `en`, `pt-BR`; the first two letters are sent). Absent:
-   * read from `input` — Ukrainian by its own letters (і ї є ґ), other Cyrillic as Russian — else
-   * left to the voice. Sent to the provider as `language`; a provider that refuses the parameter
-   * (400/422) is asked once more without it.
+   * read from `input` — Ukrainian by its own letters (і ї є ґ), Russian by its own (ы э ъ ё),
+   * any other Cyrillic as Ukrainian — else left to the voice. Sent to the provider as
+   * `language`; a provider that refuses the parameter (400/422) is asked once more without it.
    */
   language?: string;
   /**
@@ -11710,9 +13601,25 @@ export interface ModelInfo {
   voices?: string[];
 }
 
+/**
+ * `from_path` and `to_path`; the copy route's spelling `source_path` / `dest_path` is accepted
+ * too (since 2026-10-12). One of each pair is required — 422 otherwise.
+ */
 export interface MoveWorkspaceFileRequest {
-  from_path: string;
-  to_path: string;
+  from_path?: string;
+  to_path?: string;
+  /**
+   * Alias of `from_path`.
+   */
+  source_path?: string;
+  /**
+   * Alias of `to_path`.
+   */
+  dest_path?: string;
+}
+
+export interface NewHireCommandResponse {
+  connect: HireConnect;
 }
 
 export interface Notification {
@@ -12033,7 +13940,10 @@ export interface OAuthIdentityConfig {
   apple_team_id: string;
   apple_bundle_id: string;
   /**
-   * Lower-cased hostnames. Empty means nothing is allowlisted.
+   * Each entry is a lower-cased bare host, which admits that host's `/auth/callback` path
+   * family, or an exact https URL (origin + path, path case kept), which admits that one path —
+   * how a separate app names its own callback. Empty means nothing beyond the built-in
+   * `snaga.ai` and `www.snaga.ai` is allowlisted.
    */
   oauth_return_to_hosts: string[];
 }
@@ -12170,7 +14080,9 @@ export interface Objective {
    */
   success_criteria: string[];
   /**
-   * Lifecycle, owned by the executor — PATCH cannot set it.
+   * Lifecycle, owned by the executor — PATCH cannot set it. `awaiting_review`: done and
+   * verified, waiting for a person (`review_required`). `skipped`: a decision point took another
+   * branch; settled, not failed.
    */
   status: ObjectiveStatus;
   priority: ObjectivePriority;
@@ -12199,9 +14111,12 @@ export interface Objective {
   deadline?: string;
   /**
    * Why the executor stopped on this objective: `exhausted_strikes_<n>`, `budget_exhausted`,
-   * `dependency_failed`, or `verifier_error` — the verifier could not reach a verdict (its judge
-   * errored or kept answering in an unparseable shape), which is the platform failing, not the
-   * agent's work; no strike is charged for it and the agent is not re-run.
+   * `dependency_failed`, `rejected_by_person` (a person refused its action or its result),
+   * `revision_limit_10`, `not_dispatchable` (it could not be run at all — no agent assigned, or
+   * one this tenant may not run; stopped at the first refusal, since 2026-10-12), or
+   * `verifier_error` — the verifier could not reach a verdict (its judge errored or kept
+   * answering in an unparseable shape), which is the platform failing, not the agent's work; no
+   * strike is charged for it and the agent is not re-run.
    */
   abort_reason?: string;
   /**
@@ -12209,6 +14124,28 @@ export interface Objective {
    * objectives that never ran under a mission and on those settled before 2026-09-22.
    */
   strikes_used?: number;
+  /**
+   * When true, a verified result waits at `awaiting_review` for a person: `POST
+   * /missions/{missionId}/objectives/{objectiveId}/review` accepts it, sends it back with
+   * feedback (the agent redoes it with its previous version and the feedback; not a strike; at
+   * most 10 times), or rejects it (`abort_reason: rejected_by_person`). A
+   * `mission.review_requested` notification is raised when it starts waiting. Since 2026-10-12.
+   */
+  review_required?: boolean;
+  /**
+   * A person's verdict not yet read by the mission; cleared once acted on.
+   */
+  review?: ObjectiveReview;
+  /**
+   * Times a person sent the result back for revision.
+   */
+  revisions?: number;
+  /**
+   * Provenance of the result held for review (single-agent objectives), condensed from `GET
+   * /runs/{runId}/sources`: links it cites, pages the agent read, and `unsourced_links` — links
+   * in the result that no tool call or result contained, which a reviewer checks first.
+   */
+  sources?: ObjectiveSources;
 }
 
 /**
@@ -12225,8 +14162,13 @@ export interface ObjectiveBudget {
 }
 
 /**
- * A branch in the plan: when `condition` holds, execution continues at the matching branch's
- * objective instead of the next one in order.
+ * A branch in the plan, resolved when this objective's result is accepted: the first branch
+ * whose `when` matches the result is taken — `when` is a case-insensitive substring, or
+ * `/regex/flags` — else `fallback_objective_id`. Every other target is `skipped` and does not
+ * run, nor does a step whose dependencies are all skipped; a step that also depends on a taken
+ * one runs (branches meet). In a submitted plan a target may be written `#<index>` into
+ * `plan.objectives`, resolved to the id when the mission is created. `condition` is the label
+ * the decision is logged under. Enforced since 2026-10-12 — before, every branch ran.
  */
 export interface ObjectiveDecisionPoint {
   condition: string;
@@ -12247,8 +14189,26 @@ export type ObjectivePriority = 'low' | 'medium' | 'high' | 'critical';
 export const OBJECTIVE_PRIORITY_VALUES = ['low', 'medium', 'high', 'critical'] as const;
 
 /**
+ * A person's verdict not yet read by the mission; cleared once acted on.
+ */
+export interface ObjectiveReview {
+  decision?: ObjectiveReviewDecision;
+  feedback?: string;
+  decided_by?: string;
+  decided_at?: string;
+}
+
+export type ObjectiveReviewDecision = 'accept' | 'revise' | 'reject';
+
+export const OBJECTIVE_REVIEW_DECISION_VALUES = ['accept', 'revise', 'reject'] as const;
+
+/**
  * Rules of engagement: what the objective may do alone, what needs a human, and what it must
- * never do.
+ * never do. Enforced since 2026-10-12 (stored and read by nothing before): an entry in
+ * `requires_approval` that names a tool gates that tool for a person on every run of the
+ * objective, an entry in `prohibited` that names a tool withholds it — neither offered to the
+ * model nor executable — and every entry, tool name or prose, is written into the agent's
+ * instruction along with `commanders_intent` and the deadline.
  */
 export interface ObjectiveRoE {
   autonomous_actions: string[];
@@ -12257,11 +14217,25 @@ export interface ObjectiveRoE {
 }
 
 /**
- * Lifecycle, owned by the executor — PATCH cannot set it.
+ * Provenance of the result held for review (single-agent objectives), condensed from `GET
+ * /runs/{runId}/sources`: links it cites, pages the agent read, and `unsourced_links` — links
+ * in the result that no tool call or result contained, which a reviewer checks first.
  */
-export type ObjectiveStatus = 'pending' | 'in_progress' | 'blocked' | 'completed' | 'failed';
+export interface ObjectiveSources {
+  run_id?: string;
+  cited?: string[];
+  read?: string[];
+  unsourced_links?: string[];
+}
 
-export const OBJECTIVE_STATUS_VALUES = ['pending', 'in_progress', 'blocked', 'completed', 'failed'] as const;
+/**
+ * Lifecycle, owned by the executor — PATCH cannot set it. `awaiting_review`: done and
+ * verified, waiting for a person (`review_required`). `skipped`: a decision point took another
+ * branch; settled, not failed.
+ */
+export type ObjectiveStatus = 'pending' | 'in_progress' | 'blocked' | 'awaiting_review' | 'completed' | 'failed' | 'skipped';
+
+export const OBJECTIVE_STATUS_VALUES = ['pending', 'in_progress', 'blocked', 'awaiting_review', 'completed', 'failed', 'skipped'] as const;
 
 /**
  * agent-teams/objective-tracker.ts ObjectiveTree — recursive.
@@ -12505,6 +14479,58 @@ export interface PatchTenantRequestMarketplaceListing {
 
 export interface PauseCompanyResponse {
   status?: string;
+  /**
+   * What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+   * sentences; the counts and run ids are exact.
+   */
+  pause_scope?: PauseCompanyResponsePauseScope;
+}
+
+/**
+ * What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+ * sentences; the counts and run ids are exact.
+ */
+export interface PauseCompanyResponsePauseScope {
+  stopped?: string[];
+  not_stopped?: string[];
+  /**
+   * Agents of the initiative, its strategist included.
+   */
+  agents?: number;
+  squads?: number;
+  schedules_held?: number;
+  /**
+   * Run ids.
+   */
+  runs_cancelled?: string[];
+}
+
+export interface PauseInitiativeResponse {
+  status?: string;
+  /**
+   * What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+   * sentences; the counts and run ids are exact.
+   */
+  pause_scope?: PauseInitiativeResponsePauseScope;
+}
+
+/**
+ * What the pause stopped (since 2026-10-12). `stopped` / `not_stopped` are English display
+ * sentences; the counts and run ids are exact.
+ */
+export interface PauseInitiativeResponsePauseScope {
+  stopped?: string[];
+  not_stopped?: string[];
+  /**
+   * Agents of the initiative, its strategist included.
+   */
+  agents?: number;
+  squads?: number;
+  schedules_held?: number;
+  /**
+   * Run ids.
+   */
+  runs_cancelled?: string[];
 }
 
 export interface PauseMissionResponse {
@@ -12515,6 +14541,83 @@ export interface PauseMissionResponse {
 export interface PauseRunResponse {
   paused: boolean;
   run_id: string;
+}
+
+export interface PauseTenantCompanyRequest {
+  reason?: string;
+}
+
+export interface PauseTenantCompanyResponse {
+  /**
+   * The tenant id.
+   */
+  company_id: string;
+  name: string;
+  /**
+   * The tenant's Head Agent.
+   */
+  chief_of_staff_agent_id: string | null;
+  business_type?: string;
+  objective?: string;
+  description?: string;
+  target_customer?: string;
+  /**
+   * IANA time zone.
+   */
+  timezone?: string;
+  /**
+   * `draft` — being set up, no automated run starts (except the launch test run); `active` —
+   * operating; `paused` — every automated run stopped, a person's chat still answers.
+   */
+  status: CompanyProfileStatus;
+  /**
+   * Bumped on every accepted change; send it back as `expected_version`.
+   */
+  version: number;
+  template?: PauseTenantCompanyResponseTemplate;
+  launched_at?: string;
+  paused_at?: string;
+  pause_reason?: string;
+  updated_at?: string;
+  updated_by?: string;
+  pause_scope: PauseTenantCompanyResponsePauseScope;
+}
+
+export interface PauseTenantCompanyResponsePauseScope {
+  /**
+   * What the pause reaches, as stable codes — localize from `code`; `text` is English fallback.
+   * Codes are added, never renamed.
+   */
+  items: PauseTenantCompanyResponsePauseScopeItem[];
+  /**
+   * Plain sentences for display; not codes.
+   */
+  stopped: string[];
+  /**
+   * Plain sentences for display; not codes.
+   */
+  not_stopped: string[];
+  schedules_held: number;
+  mission_schedules_held: number;
+  /**
+   * Run ids.
+   */
+  runs_cancelled: string[];
+}
+
+export interface PauseTenantCompanyResponsePauseScopeItem {
+  code: PreviewTenantCompanyPauseResponsePauseScopeItemCode;
+  effect: PreviewTenantCompanyPauseResponsePauseScopeItemEffect;
+  /**
+   * Present for agent_schedules, mission_schedules and in_flight_runs.
+   */
+  count?: number;
+  text: string;
+}
+
+export interface PauseTenantCompanyResponseTemplate {
+  id?: string;
+  version?: string;
 }
 
 /**
@@ -12572,7 +14675,12 @@ export interface PermissionSet {
 export interface PermissionSetUpdate {
   /**
    * Sending this field REPLACES the stored list (the handler stores the array as sent, it does
-   * not merge).
+   * not merge). A NON-EMPTY list limits the agent's own runs to exactly these tool names (since
+   * 2026-10-12): every other tool is neither offered to the model nor executed when called. An
+   * EMPTY list puts no limit on the agent's own runs (the same rule as `mcp.allowed_tools` on
+   * the agent) — but for spawning it still means no child tool is permitted, since a child's
+   * tools must be a subset of this list. Before 2026-10-12 the list was read only by the spawn
+   * gate and did not limit the agent itself.
    */
   allowed_tools?: string[];
   /**
@@ -12642,7 +14750,15 @@ export interface PlannedObjective {
    * Indices into `objectives`; must form a DAG or the plan is rejected.
    */
   depends_on_indices: number[];
+  /**
+   * The agent that runs this objective. One of `assigned_agent_id` / `assigned_team_id` is
+   * required in a plan you send — nothing assigns one later, so `POST /missions` and
+   * `/missions/schedules` refuse the plan with 422 (since 2026-10-12).
+   */
   assigned_agent_id?: string;
+  /**
+   * The squad that runs this objective, instead of an agent.
+   */
   assigned_team_id?: string;
   /**
    * Ceilings only — the spent_* counters are created by the server.
@@ -12652,6 +14768,14 @@ export interface PlannedObjective {
   roe?: ObjectiveRoE;
   deadline?: string;
   decision_points?: ObjectiveDecisionPoint[];
+  /**
+   * When true, a verified result waits at `awaiting_review` for a person: `POST
+   * /missions/{missionId}/objectives/{objectiveId}/review` accepts it, sends it back with
+   * feedback (the agent redoes it with its previous version and the feedback; not a strike; at
+   * most 10 times), or rejects it (`abort_reason: rejected_by_person`). A
+   * `mission.review_requested` notification is raised when it starts waiting. Since 2026-10-12.
+   */
+  review_required?: boolean;
 }
 
 /**
@@ -12733,6 +14857,17 @@ export interface PlatformEconomicsEconomics {
    */
   margin_percent: number | null;
   month_to_date_infra_usd: number | null;
+  /**
+   * How `monthly_llm_usd` was reached. The margin is `monthly_revenue_usd − monthly_infra_usd −
+   * monthly_llm_usd`, exactly; show those three beside it, not the month-to-date figures. Since
+   * 2026-10-16.
+   */
+  llm_run_rate_basis?: PlatformEconomicsLLMRunRateBasis;
+  /**
+   * LLM provider spend so far this month — the month-to-date counterpart of `monthly_llm_usd`,
+   * as `month_to_date_infra_usd` is of `monthly_infra_usd`. Since 2026-10-16.
+   */
+  month_to_date_llm_usd?: number;
   markup_percent: number | null;
   pricing_tiers: JsonObject | null;
 }
@@ -12893,6 +15028,51 @@ export interface PlaygroundTemplate {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
 }
+
+export interface PreviewTenantCompanyPauseResponse {
+  status: CompanyProfileStatus;
+  pause_scope: PreviewTenantCompanyPauseResponsePauseScope;
+}
+
+export interface PreviewTenantCompanyPauseResponsePauseScope {
+  /**
+   * What the pause reaches, as stable codes — localize from `code`; `text` is English fallback.
+   * Codes are added, never renamed.
+   */
+  items: PreviewTenantCompanyPauseResponsePauseScopeItem[];
+  /**
+   * Plain sentences for display; not codes.
+   */
+  stopped: string[];
+  /**
+   * Plain sentences for display; not codes.
+   */
+  not_stopped: string[];
+  schedules_held: number;
+  mission_schedules_held: number;
+  /**
+   * Run ids.
+   */
+  runs_cancelled: string[];
+}
+
+export interface PreviewTenantCompanyPauseResponsePauseScopeItem {
+  code: PreviewTenantCompanyPauseResponsePauseScopeItemCode;
+  effect: PreviewTenantCompanyPauseResponsePauseScopeItemEffect;
+  /**
+   * Present for agent_schedules, mission_schedules and in_flight_runs.
+   */
+  count?: number;
+  text: string;
+}
+
+export type PreviewTenantCompanyPauseResponsePauseScopeItemCode = 'agent_schedules' | 'mission_schedules' | 'automated_runs' | 'in_flight_runs' | 'person_chat' | 'editing';
+
+export const PREVIEW_TENANT_COMPANY_PAUSE_RESPONSE_PAUSE_SCOPE_ITEM_CODE_VALUES = ['agent_schedules', 'mission_schedules', 'automated_runs', 'in_flight_runs', 'person_chat', 'editing'] as const;
+
+export type PreviewTenantCompanyPauseResponsePauseScopeItemEffect = 'stopped' | 'not_stopped';
+
+export const PREVIEW_TENANT_COMPANY_PAUSE_RESPONSE_PAUSE_SCOPE_ITEM_EFFECT_VALUES = ['stopped', 'not_stopped'] as const;
 
 /**
  * An ordered curriculum an agent delivers.
@@ -13100,6 +15280,176 @@ export interface PromoCodeInput {
    */
   active?: boolean;
 }
+
+export interface ProposalOpAddAgent {
+  op: ProposalOpAddAgentOp;
+  /**
+   * A name later operations use as `$ref:<name>` for the id this one creates.
+   */
+  ref?: string;
+  /**
+   * The body of `POST /agents`.
+   */
+  agent: JsonObject;
+}
+
+export type ProposalOpAddAgentOp = 'add_agent';
+
+export const PROPOSAL_OP_ADD_AGENT_OP_VALUES = ['add_agent'] as const;
+
+export interface ProposalOpAddMissionSchedule {
+  op: ProposalOpAddMissionScheduleOp;
+  /**
+   * A name later operations use as `$ref:<name>` for the id this one creates.
+   */
+  ref?: string;
+  /**
+   * The body of `POST /missions/schedules`.
+   */
+  schedule: JsonObject;
+}
+
+export type ProposalOpAddMissionScheduleOp = 'add_mission_schedule';
+
+export const PROPOSAL_OP_ADD_MISSION_SCHEDULE_OP_VALUES = ['add_mission_schedule'] as const;
+
+export interface ProposalOpAddSquad {
+  op: ProposalOpAddSquadOp;
+  /**
+   * A name later operations use as `$ref:<name>` for the id this one creates.
+   */
+  ref?: string;
+  /**
+   * The body of `POST /squads`.
+   */
+  squad: JsonObject;
+}
+
+export type ProposalOpAddSquadOp = 'add_squad';
+
+export const PROPOSAL_OP_ADD_SQUAD_OP_VALUES = ['add_squad'] as const;
+
+/**
+ * One change a proposal makes, discriminated by `op`.
+ */
+export type ProposalOperation = ProposalOpAddAgent | ProposalOpUpdateAgent | ProposalOpRemoveAgent | ProposalOpSetAgentSchedule | ProposalOpSetApprovalPolicy | ProposalOpAddSquad | ProposalOpSetSquadMembers | ProposalOpUpdateCompany | ProposalOpSetBudget | ProposalOpAddMissionSchedule | ProposalOpRemoveMissionSchedule;
+
+export interface ProposalOpRemoveAgent {
+  op: ProposalOpRemoveAgentOp;
+  /**
+   * An id, or `$ref:<name>` of an earlier operation.
+   */
+  agent_id: string;
+}
+
+export type ProposalOpRemoveAgentOp = 'remove_agent';
+
+export const PROPOSAL_OP_REMOVE_AGENT_OP_VALUES = ['remove_agent'] as const;
+
+export interface ProposalOpRemoveMissionSchedule {
+  op: ProposalOpRemoveMissionScheduleOp;
+  /**
+   * An id, or `$ref:<name>` of an earlier operation.
+   */
+  schedule_id: string;
+}
+
+export type ProposalOpRemoveMissionScheduleOp = 'remove_mission_schedule';
+
+export const PROPOSAL_OP_REMOVE_MISSION_SCHEDULE_OP_VALUES = ['remove_mission_schedule'] as const;
+
+export interface ProposalOpSetAgentSchedule {
+  op: ProposalOpSetAgentScheduleOp;
+  /**
+   * An id, or `$ref:<name>` of an earlier operation.
+   */
+  agent_id: string;
+  cron: string;
+  timezone?: string;
+  enabled?: boolean;
+  message?: string;
+}
+
+export type ProposalOpSetAgentScheduleOp = 'set_agent_schedule';
+
+export const PROPOSAL_OP_SET_AGENT_SCHEDULE_OP_VALUES = ['set_agent_schedule'] as const;
+
+export interface ProposalOpSetApprovalPolicy {
+  op: ProposalOpSetApprovalPolicyOp;
+  /**
+   * An id, or `$ref:<name>` of an earlier operation.
+   */
+  agent_id: string;
+  approval_required_tools?: string[];
+  auto_approve_tools?: string[];
+  autonomy?: ProposalOpSetApprovalPolicyAutonomy;
+}
+
+export interface ProposalOpSetApprovalPolicyAutonomy {
+  level?: AgentAutonomyLevel;
+}
+
+export type ProposalOpSetApprovalPolicyOp = 'set_approval_policy';
+
+export const PROPOSAL_OP_SET_APPROVAL_POLICY_OP_VALUES = ['set_approval_policy'] as const;
+
+export interface ProposalOpSetBudget {
+  op: ProposalOpSetBudgetOp;
+  limit_usd: number;
+  period?: GetBillingBudgetResponseBudgetPeriod;
+  soft_threshold?: number;
+  hard_threshold?: number;
+}
+
+export type ProposalOpSetBudgetOp = 'set_budget';
+
+export const PROPOSAL_OP_SET_BUDGET_OP_VALUES = ['set_budget'] as const;
+
+export interface ProposalOpSetSquadMembers {
+  op: ProposalOpSetSquadMembersOp;
+  /**
+   * An id, or `$ref:<name>` of an earlier operation.
+   */
+  squad_id: string;
+  workers: JsonObject[];
+}
+
+export type ProposalOpSetSquadMembersOp = 'set_squad_members';
+
+export const PROPOSAL_OP_SET_SQUAD_MEMBERS_OP_VALUES = ['set_squad_members'] as const;
+
+export interface ProposalOpUpdateAgent {
+  op: ProposalOpUpdateAgentOp;
+  /**
+   * An id, or `$ref:<name>` of an earlier operation.
+   */
+  agent_id: string;
+  /**
+   * The body of `PATCH /agents/{agentId}`.
+   */
+  changes: JsonObject;
+}
+
+export type ProposalOpUpdateAgentOp = 'update_agent';
+
+export const PROPOSAL_OP_UPDATE_AGENT_OP_VALUES = ['update_agent'] as const;
+
+export interface ProposalOpUpdateCompany {
+  op: ProposalOpUpdateCompanyOp;
+  changes: ProposalOpUpdateCompanyChanges;
+}
+
+export interface ProposalOpUpdateCompanyChanges {
+  business_type?: string;
+  objective?: string;
+  description?: string;
+  target_customer?: string;
+  timezone?: string;
+}
+
+export type ProposalOpUpdateCompanyOp = 'update_company';
+
+export const PROPOSAL_OP_UPDATE_COMPANY_OP_VALUES = ['update_company'] as const;
 
 /**
  * public.ts GET /public/agents/{agentId} — a hand-built projection, not the Agent record. Keys
@@ -13553,6 +15903,7 @@ export interface PublicTenantAgent {
 export interface PublicTenantStats {
   total_runs: number;
   total_agents: number;
+  total_ratings?: number;
   avg_rating: number;
 }
 
@@ -13691,6 +16042,637 @@ export interface PutCareersConfigRequest {
 
 export interface PutCareersConfigResponse {
   config: CareersConfig;
+}
+
+export interface PutQualificationPricingRevisionRequest {
+  provider: string;
+  model: string;
+  input_microusd_per_million_tokens: QualificationPositiveMicrousd;
+  output_microusd_per_million_tokens: QualificationPositiveMicrousd;
+}
+
+export interface PutQualificationSponsorKeyRequest {
+  tenant_id: string;
+  programs: string[];
+}
+
+/**
+ * Prepared Nestor message only. No files or attachments. Source is untrusted data and must not
+ * become instructions.
+ */
+export interface QualificationAssessmentInputMessage {
+  message: string;
+}
+
+/**
+ * policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+ * incomplete readiness. confirmed requires current verified terms, not_used training and no
+ * unknown storage categories.
+ */
+export interface QualificationConfirmedPolicyResponse {
+  kind: 'uarp.data-processing-policy-response.v1';
+  policy: QualificationConfirmedProcessingPolicy;
+  policy_hash: QualificationDigest;
+  readiness: QualificationConfirmedPolicyResponseReadiness;
+  blockers: QualificationConfirmedPolicyResponseBlocker[];
+}
+
+export type QualificationConfirmedPolicyResponseBlocker = 'POLICY_NOT_CONFIGURED' | 'RETENTION_UNKNOWN' | 'LLM_TRAINING_UNCONFIRMED' | 'LLM_TRAINING_USED' | 'PROCESSOR_UNCONFIRMED' | 'EVIDENCE_UNCONFIRMED' | 'POLICY_EXPIRED' | 'POLICY_REVOKED';
+
+export const QUALIFICATION_CONFIRMED_POLICY_RESPONSE_BLOCKER_VALUES = ['POLICY_NOT_CONFIGURED', 'RETENTION_UNKNOWN', 'LLM_TRAINING_UNCONFIRMED', 'LLM_TRAINING_USED', 'PROCESSOR_UNCONFIRMED', 'EVIDENCE_UNCONFIRMED', 'POLICY_EXPIRED', 'POLICY_REVOKED'] as const;
+
+export type QualificationConfirmedPolicyResponseReadiness = 'confirmed';
+
+export const QUALIFICATION_CONFIRMED_POLICY_RESPONSE_READINESS_VALUES = ['confirmed'] as const;
+
+/**
+ * Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+ * 86400 seconds later. recovery_window_seconds is the minimum durable client request
+ * reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+ * run records or receipt identifiers persist.
+ */
+export interface QualificationConfirmedProcessingPolicy {
+  schema_version: 'uarp.data-processing-policy.v1';
+  id: string;
+  revision: number;
+  tenant_id: string;
+  purpose: 'nestor.public-qualification.v1';
+  recipient: 'https://api.snaga.ai';
+  processor_name: string;
+  processing_region: string;
+  llm_training_use: 'not_used';
+  archive_enabled: boolean;
+  storage: QualificationConfirmedStoragePolicy;
+  evidence_hash: QualificationDigest;
+  recovery_window_seconds: number;
+  observed_at_unix: number;
+  expires_at_unix: number;
+}
+
+export type QualificationConfirmedRetentionRule = QualificationConfirmedRetentionRuleVariant1 | QualificationConfirmedRetentionRuleVariant2 | QualificationConfirmedRetentionRuleVariant3;
+
+export interface QualificationConfirmedRetentionRuleVariant1 {
+  mode: 'finite';
+  max_seconds: number;
+}
+
+export interface QualificationConfirmedRetentionRuleVariant2 {
+  mode: 'no_storage';
+  max_seconds: JsonValue;
+}
+
+export interface QualificationConfirmedRetentionRuleVariant3 {
+  mode: QualificationConfirmedRetentionRuleVariant3mode;
+  max_seconds: JsonValue | null;
+}
+
+export type QualificationConfirmedRetentionRuleVariant3mode = 'indefinite' | 'not_applicable';
+
+export const QUALIFICATION_CONFIRMED_RETENTION_RULE_VARIANT3MODE_VALUES = ['indefinite', 'not_applicable'] as const;
+
+export interface QualificationConfirmedStoragePolicy {
+  runs: QualificationConfirmedRetentionRule;
+  events: QualificationConfirmedRetentionRule;
+  artifacts: QualificationConfirmedRetentionRule;
+  checkpoints: QualificationConfirmedRetentionRule;
+  archives: QualificationConfirmedRetentionRule;
+  backups: QualificationConfirmedRetentionRule;
+  llm: QualificationConfirmedRetentionRule;
+}
+
+export type QualificationDigest = string;
+
+/**
+ * receipt_hash binds only receipt. profile_status and its observation time are current
+ * server-owned validity outside immutable history. Authenticated HTTPS readback is mandatory;
+ * a hash alone does not authenticate a server.
+ */
+export interface QualificationExecutionReceiptResponseV2 {
+  kind: 'uarp.execution-receipt-response.v2';
+  receipt: QualificationExecutionReceiptV2;
+  receipt_hash: QualificationDigest;
+  profile_status: QualificationExecutionReceiptResponseV2profileStatus;
+  profile_status_observed_at_unix: number;
+}
+
+export type QualificationExecutionReceiptResponseV2profileStatus = 'active' | 'revoked' | 'unknown';
+
+export const QUALIFICATION_EXECUTION_RECEIPT_RESPONSE_V2PROFILE_STATUS_VALUES = ['active', 'revoked', 'unknown'] as const;
+
+export type QualificationExecutionReceiptV2 = QualificationVerifiedExecutionReceiptV2 | QualificationUnverifiableExecutionReceiptV2;
+
+/**
+ * Hash material only, never accepted by POST /runs. Omit exactly sponsorship_grant_id to avoid
+ * a circular grant/hash dependency.
+ */
+export interface QualificationExecutionRequirementsBeforeGrantV2 {
+  schema_version: 'uarp.execution-requirements.v2';
+  purpose: 'nestor.public-qualification.v1';
+  client_request_id: string;
+  processing_policy_id: string;
+  processing_policy_hash: QualificationDigest;
+  isolation_profile: 'isolated-assessment.v1';
+  require_verifiable_execution: boolean;
+  expected_execution_profile_hash: QualificationDigest | null;
+}
+
+/**
+ * Closed sponsored v2. Existing v1 remains unchanged. Phase A uses false/null; strict mode
+ * still requires independently accepted evidence/calibration.
+ */
+export interface QualificationExecutionRequirementsV2 {
+  schema_version: 'uarp.execution-requirements.v2';
+  purpose: 'nestor.public-qualification.v1';
+  client_request_id: string;
+  processing_policy_id: string;
+  processing_policy_hash: QualificationDigest;
+  isolation_profile: 'isolated-assessment.v1';
+  require_verifiable_execution: boolean;
+  expected_execution_profile_hash: QualificationDigest | null;
+  sponsorship_grant_id: string;
+}
+
+/**
+ * One immutable settlement per grant, later corrections are unique append-only credits, never
+ * additional debits. Unknown-cost cap is a conservative sponsor charge, not provider actual
+ * cost.
+ */
+export interface QualificationGrant {
+  authorization: QualificationGrantAuthorization;
+  grant_hash: QualificationDigest;
+  status: QualificationGrantStatus;
+  run_id: string | null;
+  charged_microusd: QualificationMicrousd | null;
+  refunded_microusd: QualificationMicrousd;
+  billing_basis: QualificationGrantBillingBasisVariant1 | null;
+  unknown_cost_reason: QualificationGrantUnknownCostReasonVariant1 | null;
+  settlement_id: string | null;
+}
+
+/**
+ * Immutable server authorization snapshot. grant_hash hashes only this object, not mutable
+ * envelope fields.
+ */
+export interface QualificationGrantAuthorization {
+  grant_id: string;
+  program_id: string;
+  purpose: 'nestor.public-qualification.v1';
+  candidate_tenant_id: string;
+  candidate_user_id: string;
+  client_request_id: string;
+  run_input_hash: QualificationDigest;
+  run_authorization_hash: QualificationDigest;
+  agent_id: string;
+  agent_version_id: string;
+  agent_version: number;
+  template_hash: QualificationDigest;
+  /**
+   * Positive integer micro-USD string, at most USD 1.
+   */
+  max_cost_microusd: string;
+  expires_at_unix: number;
+  pricing_revision: string;
+  created_at_unix: number;
+}
+
+export type QualificationGrantBillingBasisVariant1 = 'metered' | 'reserved_cap_unknown' | 'no_dispatch';
+
+export const QUALIFICATION_GRANT_BILLING_BASIS_VARIANT1_VALUES = ['metered', 'reserved_cap_unknown', 'no_dispatch'] as const;
+
+/**
+ * No raw input, credential or payer override. Canonical body hash binds expiry too. Unique
+ * durable program/tenant/user/client_request_id; replay returns original grant current state,
+ * never another reserve.
+ */
+export interface QualificationGrantCreate {
+  program_id: string;
+  purpose: 'nestor.public-qualification.v1';
+  candidate_tenant_id: string;
+  candidate_user_id: string;
+  client_request_id: string;
+  run_input_hash: QualificationDigest;
+  run_authorization_hash: QualificationDigest;
+  agent_id: string;
+  agent_version_id: string;
+  agent_version: number;
+  template_hash: QualificationDigest;
+  /**
+   * Positive integer micro-USD string, at most USD 1.
+   */
+  max_cost_microusd: string;
+  expires_at_unix: number;
+}
+
+export interface QualificationGrantPage {
+  items: QualificationGrant[];
+  has_more: JsonValue;
+  cursor: JsonValue | null;
+}
+
+export type QualificationGrantStatus = 'reserved' | 'consumed' | 'settled' | 'released' | 'expired';
+
+export const QUALIFICATION_GRANT_STATUS_VALUES = ['reserved', 'consumed', 'settled', 'released', 'expired'] as const;
+
+export type QualificationGrantUnknownCostReasonVariant1 = 'provider_outcome_unknown' | 'attempt_ledger_incomplete' | 'pricing_observation_incomplete';
+
+export const QUALIFICATION_GRANT_UNKNOWN_COST_REASON_VARIANT1_VALUES = ['provider_outcome_unknown', 'attempt_ledger_incomplete', 'pricing_observation_incomplete'] as const;
+
+/**
+ * policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+ * incomplete readiness. confirmed requires current verified terms, not_used training and no
+ * unknown storage categories.
+ */
+export interface QualificationInactivePolicyResponse {
+  kind: 'uarp.data-processing-policy-response.v1';
+  policy: QualificationProcessingPolicy;
+  policy_hash: QualificationDigest;
+  readiness: QualificationInactivePolicyResponseReadiness;
+  blockers: QualificationConfirmedPolicyResponseBlocker[];
+}
+
+export type QualificationInactivePolicyResponseReadiness = 'expired' | 'revoked';
+
+export const QUALIFICATION_INACTIVE_POLICY_RESPONSE_READINESS_VALUES = ['expired', 'revoked'] as const;
+
+/**
+ * policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+ * incomplete readiness. confirmed requires current verified terms, not_used training and no
+ * unknown storage categories.
+ */
+export interface QualificationIncompletePolicyResponse {
+  kind: 'uarp.data-processing-policy-response.v1';
+  policy: QualificationProcessingPolicy;
+  policy_hash: QualificationDigest;
+  readiness: QualificationIncompletePolicyResponseReadiness;
+  blockers: QualificationConfirmedPolicyResponseBlocker[];
+}
+
+export type QualificationIncompletePolicyResponseReadiness = 'incomplete';
+
+export const QUALIFICATION_INCOMPLETE_POLICY_RESPONSE_READINESS_VALUES = ['incomplete'] as const;
+
+/**
+ * One private managed binding per tenant/purpose; immutable applied version and template,
+ * independent of personal agent/version caps. Readback with candidate credential required.
+ */
+export interface QualificationManagedEvaluator {
+  agent_id: string;
+  agent_version_id: string;
+  agent_version: number;
+  template_revision: number;
+  template_hash: QualificationDigest;
+  managed_by: 'qualification:nestor.public-qualification.v1';
+  governance: QualificationManagedEvaluatorGovernance;
+}
+
+export interface QualificationManagedEvaluatorGovernance {
+  can_spawn: JsonValue;
+  max_spawn_depth: JsonValue;
+  can_self_modify: JsonValue;
+  max_budget_per_run_usd: JsonValue;
+}
+
+/**
+ * Integer micro-USD string. 1000000 = USD 1. No float or FX.
+ */
+export type QualificationMicrousd = string;
+
+/**
+ * policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+ * incomplete readiness. confirmed requires current verified terms, not_used training and no
+ * unknown storage categories.
+ */
+export interface QualificationMissingPolicyResponse {
+  kind: 'uarp.data-processing-policy-response.v1';
+  policy: JsonValue | null;
+  policy_hash: JsonValue | null;
+  readiness: QualificationIncompletePolicyResponseReadiness;
+  blockers: QualificationConfirmedPolicyResponseBlocker[];
+}
+
+export type QualificationPositiveMicrousd = string;
+
+/**
+ * Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+ * 86400 seconds later. recovery_window_seconds is the minimum durable client request
+ * reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+ * run records or receipt identifiers persist.
+ */
+export interface QualificationProcessingPolicy {
+  schema_version: 'uarp.data-processing-policy.v1';
+  id: string;
+  revision: number;
+  tenant_id: string;
+  purpose: 'nestor.public-qualification.v1';
+  recipient: 'https://api.snaga.ai';
+  processor_name: string | null;
+  processing_region: string | null;
+  llm_training_use: QualificationProcessingPolicyLLMTrainingUse;
+  archive_enabled: boolean | null;
+  storage: QualificationStoragePolicy;
+  evidence_hash: QualificationDigest | null;
+  recovery_window_seconds: number;
+  observed_at_unix: number;
+  expires_at_unix: number;
+}
+
+export type QualificationProcessingPolicyLLMTrainingUse = 'not_used' | 'used' | 'unknown';
+
+export const QUALIFICATION_PROCESSING_POLICY_LLMTRAINING_USE_VALUES = ['not_used', 'used', 'unknown'] as const;
+
+export type QualificationProcessingPolicyResponse = QualificationConfirmedPolicyResponse | QualificationIncompletePolicyResponse | QualificationMissingPolicyResponse | QualificationInactivePolicyResponse;
+
+/**
+ * budget_limit = reserved + spent + remaining, exact integer arithmetic. Configuration
+ * revision is not incremented for ledger activity.
+ */
+export interface QualificationProgram {
+  program_id: string;
+  revision: number;
+  purpose: 'nestor.public-qualification.v1';
+  sponsor_tenant_id: string;
+  budget_limit_microusd: QualificationPositiveMicrousd;
+  reserved_microusd: QualificationMicrousd;
+  spent_microusd: QualificationMicrousd;
+  remaining_microusd: QualificationMicrousd;
+  pricing_revision: string;
+  limits: QualificationProgramLimits;
+  active: boolean;
+}
+
+/**
+ * Every cap is required. Per-run cap <=1000000 and daily amount >= per-run cap are server
+ * invariants. Daily counters aggregate the same user across candidate tenants. Reserved and
+ * consumed grants both occupy active slots.
+ */
+export interface QualificationProgramLimits {
+  /**
+   * Positive integer micro-USD string, at most USD 1.
+   */
+  max_cost_per_run_microusd: string;
+  max_grants_per_candidate_per_utc_day: number;
+  max_issued_per_candidate_per_utc_day_microusd: QualificationPositiveMicrousd;
+  max_active_grants_per_candidate: number;
+  max_active_grants: number;
+  grant_ttl_seconds_max: number;
+  max_attempts_per_run: JsonValue;
+}
+
+/**
+ * Full configuration replacement, not merge. Initial expected_revision=0. Immutable
+ * purpose/sponsor/pricing. Funded ceiling, not mint/charge endpoint. Ceiling cannot fall below
+ * spent+reserved.
+ */
+export interface QualificationProgramPut {
+  expected_revision: number;
+  purpose: 'nestor.public-qualification.v1';
+  sponsor_tenant_id: string;
+  budget_limit_microusd: QualificationPositiveMicrousd;
+  pricing_revision: string;
+  limits: QualificationProgramLimits;
+  active: boolean;
+}
+
+export interface QualificationReceiptPending {
+  code: 'EXECUTION_RECEIPT_PENDING';
+  run_id: string;
+}
+
+export type QualificationRetentionRule = QualificationRetentionRuleVariant1 | QualificationRetentionRuleVariant2 | QualificationRetentionRuleVariant3;
+
+export interface QualificationRetentionRuleVariant1 {
+  mode: 'finite';
+  max_seconds: number;
+}
+
+export interface QualificationRetentionRuleVariant2 {
+  mode: 'no_storage';
+  max_seconds: JsonValue;
+}
+
+export interface QualificationRetentionRuleVariant3 {
+  mode: QualificationRetentionRuleVariant3mode;
+  max_seconds: JsonValue | null;
+}
+
+export type QualificationRetentionRuleVariant3mode = 'indefinite' | 'not_applicable' | 'unknown';
+
+export const QUALIFICATION_RETENTION_RULE_VARIANT3MODE_VALUES = ['indefinite', 'not_applicable', 'unknown'] as const;
+
+/**
+ * Hash material, not a createRun command.
+ */
+export interface QualificationRunBeforeGrantV2 {
+  agent_id: string;
+  version: number;
+  input: QualificationAssessmentInputMessage;
+  resource_limits: QualificationSponsoredLimits;
+  metadata: QualificationRunMetadata;
+  execution_requirements: QualificationExecutionRequirementsBeforeGrantV2;
+}
+
+/**
+ * Exact canonical metadata is hashed. No credentials, raw code or security authority in
+ * metadata.
+ */
+export type QualificationRunMetadata = Record<string, string | number | boolean>;
+
+/**
+ * Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+ * as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+ * required fields cannot be stated.
+ */
+export interface QualificationSafetyObservations {
+  trace_complete: boolean;
+  tool_calls_count: number;
+  memory_retrievals: number;
+  memory_extractions: number;
+  spawned_agents_count: number;
+  guardrail_violations: number;
+  llm_calls_count: number;
+  steps_count: number;
+  duration_ms: number;
+  input_tokens: number;
+  output_tokens: number;
+  total_cost_usd: number;
+  truncated: boolean;
+  continuation_used: boolean;
+}
+
+/**
+ * Wire-compatible limits. Actual tool calls are forbidden by isolation regardless of
+ * max_tool_calls=1. Aggregate budgets include all attempts.
+ */
+export interface QualificationSponsoredLimits {
+  max_duration_ms: JsonValue;
+  max_steps: JsonValue;
+  max_tool_calls: JsonValue;
+  max_tokens_per_run: JsonValue;
+  /**
+   * Legacy run DTO unit. Must convert exactly to integer micro-USD and be <= grant cap. No
+   * rounding up or silently raising the grant.
+   */
+  max_cost_usd: number;
+}
+
+/**
+ * JCS SHA-256 of this exact object is run_authorization_hash. UARP reconstructs it from the
+ * authenticated user, grant and immutable evaluator/run facts, never trusting metadata as
+ * authority.
+ */
+export interface QualificationSponsoredRunAuthorizationMaterial {
+  schema_version: 'uarp.sponsored-run-authorization.v1';
+  program_id: string;
+  candidate_tenant_id: string;
+  candidate_user_id: string;
+  agent_version_id: string;
+  template_hash: QualificationDigest;
+  /**
+   * Positive integer micro-USD string, at most USD 1.
+   */
+  max_cost_microusd: string;
+  run: QualificationRunBeforeGrantV2;
+}
+
+/**
+ * Sponsored subset of canonical POST /runs; <=131072 UTF-8 bytes, duplicate JSON keys
+ * rejected. Other purposes retain the canonical API behavior. All metadata is explicit, even
+ * if empty.
+ */
+export interface QualificationSponsoredRunCreateV2 {
+  agent_id: string;
+  version: number;
+  input: QualificationAssessmentInputMessage;
+  resource_limits: QualificationSponsoredLimits;
+  metadata: QualificationRunMetadata;
+  execution_requirements: QualificationExecutionRequirementsV2;
+}
+
+/**
+ * Excerpt of existing Run with additive server-stored execution_requirements and recovery
+ * horizon. Existing fields remain available. A full canonical Run read is required for Nestor
+ * validation.
+ */
+export interface QualificationSponsoredRunExcerpt {
+  run_id: string;
+  tenant_id: string;
+  agent_id: string;
+  status: string;
+  input: JsonObject;
+  output?: JsonObject | null;
+  metadata?: JsonObject;
+  execution_requirements: QualificationExecutionRequirementsV2;
+  recovery_expires_at_unix: number;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
+export interface QualificationStoragePolicy {
+  runs: QualificationRetentionRule;
+  events: QualificationRetentionRule;
+  artifacts: QualificationRetentionRule;
+  checkpoints: QualificationRetentionRule;
+  archives: QualificationRetentionRule;
+  backups: QualificationRetentionRule;
+  llm: QualificationRetentionRule;
+}
+
+/**
+ * Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+ * hash identifies stable actual resolved configuration; it excludes
+ * run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+ * verified does not mean the engineer is qualified or that a failed run is acceptable.
+ */
+export interface QualificationUnverifiableExecutionReceiptV2 {
+  schema_version: 'uarp.execution-receipt.v2';
+  run_id: string;
+  tenant_id: string;
+  initiator_user_id: string;
+  agent_id: string;
+  agent_version_id: string;
+  agent_version: number;
+  client_request_id: string;
+  purpose: 'nestor.public-qualification.v1';
+  processing_policy_id: string;
+  processing_policy_hash: QualificationDigest;
+  execution_requirements: QualificationExecutionRequirementsV2;
+  execution_profile_hash: QualificationDigest | null;
+  run_input_hash: QualificationDigest;
+  run_output_hash: QualificationDigest;
+  execution_trace_hash: QualificationDigest | null;
+  execution_origin: QualificationUnverifiableExecutionReceiptV2executionOrigin;
+  run_status: QualificationVerifiedExecutionReceiptV2runStatus;
+  completed_at: string;
+  verification_status: 'unverifiable';
+  reason_codes: QualificationVerifiedExecutionReceiptV2reasonCode[];
+  observations: QualificationSafetyObservations | null;
+}
+
+export type QualificationUnverifiableExecutionReceiptV2executionOrigin = 'cloud_runtime' | 'bridge' | 'unknown';
+
+export const QUALIFICATION_UNVERIFIABLE_EXECUTION_RECEIPT_V2EXECUTION_ORIGIN_VALUES = ['cloud_runtime', 'bridge', 'unknown'] as const;
+
+/**
+ * Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+ * hash identifies stable actual resolved configuration; it excludes
+ * run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+ * verified does not mean the engineer is qualified or that a failed run is acceptable.
+ */
+export interface QualificationVerifiedExecutionReceiptV2 {
+  schema_version: 'uarp.execution-receipt.v2';
+  run_id: string;
+  tenant_id: string;
+  initiator_user_id: string;
+  agent_id: string;
+  agent_version_id: string;
+  agent_version: number;
+  client_request_id: string;
+  purpose: 'nestor.public-qualification.v1';
+  processing_policy_id: string;
+  processing_policy_hash: QualificationDigest;
+  execution_requirements: QualificationExecutionRequirementsV2;
+  execution_profile_hash: QualificationDigest;
+  run_input_hash: QualificationDigest;
+  run_output_hash: QualificationDigest;
+  execution_trace_hash: QualificationDigest;
+  execution_origin: 'cloud_runtime';
+  run_status: QualificationVerifiedExecutionReceiptV2runStatus;
+  completed_at: string;
+  verification_status: 'verified';
+  reason_codes: QualificationVerifiedExecutionReceiptV2reasonCode[];
+  observations: QualificationVerifiedSafetyObservations;
+}
+
+export type QualificationVerifiedExecutionReceiptV2reasonCode = 'MODEL_REVISION_UNRESOLVED' | 'EXECUTION_TRACE_INCOMPLETE' | 'MIXED_EXECUTION_PROFILES' | 'RUNTIME_NOT_ATTESTABLE' | 'METERING_INCOMPLETE' | 'ISOLATION_NOT_PROVEN';
+
+export const QUALIFICATION_VERIFIED_EXECUTION_RECEIPT_V2REASON_CODE_VALUES = ['MODEL_REVISION_UNRESOLVED', 'EXECUTION_TRACE_INCOMPLETE', 'MIXED_EXECUTION_PROFILES', 'RUNTIME_NOT_ATTESTABLE', 'METERING_INCOMPLETE', 'ISOLATION_NOT_PROVEN'] as const;
+
+export type QualificationVerifiedExecutionReceiptV2runStatus = 'completed' | 'failed' | 'cancelled' | 'timeout' | 'guardrail_blocked' | 'rejected';
+
+export const QUALIFICATION_VERIFIED_EXECUTION_RECEIPT_V2RUN_STATUS_VALUES = ['completed', 'failed', 'cancelled', 'timeout', 'guardrail_blocked', 'rejected'] as const;
+
+/**
+ * Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+ * as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+ * required fields cannot be stated.
+ */
+export interface QualificationVerifiedSafetyObservations {
+  trace_complete: JsonValue;
+  tool_calls_count: number;
+  memory_retrievals: number;
+  memory_extractions: number;
+  spawned_agents_count: number;
+  guardrail_violations: number;
+  llm_calls_count: number;
+  steps_count: number;
+  duration_ms: number;
+  input_tokens: number;
+  output_tokens: number;
+  total_cost_usd: number;
+  truncated: boolean;
+  continuation_used: boolean;
 }
 
 /**
@@ -14086,9 +17068,65 @@ export interface RejectRunResponse {
   reason?: string;
 }
 
+export interface RejectTenantProposalRequest {
+  reason?: string;
+}
+
 export interface RemoveScheduleResponse {
   removed: boolean;
   agent_id: string;
+}
+
+export interface RepairAgentRecordsRequest {
+  dry_run?: boolean;
+  ops?: RepairAgentRecordsRequestOp[];
+}
+
+export type RepairAgentRecordsRequestOp = 'head_token_caps' | 'head_names' | 'head_pod_descriptions' | 'initial_versions' | 'orphan_schedules' | 'cancel_lessons';
+
+export const REPAIR_AGENT_RECORDS_REQUEST_OP_VALUES = ['head_token_caps', 'head_names', 'head_pod_descriptions', 'initial_versions', 'orphan_schedules', 'cancel_lessons'] as const;
+
+export interface RepairAgentRecordsResponse {
+  dry_run: boolean;
+  tenants: number;
+  head_token_caps: RepairAgentRecordsResponseHeadTokenCaps;
+  head_names: RepairAgentRecordsResponseHeadNames;
+  head_pod_descriptions: RepairAgentRecordsResponseHeadPodDescriptions;
+  initial_versions: RepairAgentRecordsResponseInitialVersions;
+  orphan_schedules: RepairAgentRecordsResponseOrphanSchedules;
+  cancel_lessons: RepairAgentRecordsResponseCancelLessons;
+  errors: RepairAgentRecordsResponseError[];
+}
+
+export interface RepairAgentRecordsResponseCancelLessons {
+  removed?: number;
+}
+
+export interface RepairAgentRecordsResponseError {
+  tenant_id?: string;
+  agent_id?: string;
+  error?: string;
+}
+
+export interface RepairAgentRecordsResponseHeadNames {
+  renamed?: number;
+}
+
+export interface RepairAgentRecordsResponseHeadPodDescriptions {
+  replaced?: number;
+}
+
+export interface RepairAgentRecordsResponseHeadTokenCaps {
+  fixed?: number;
+  by_value?: JsonObject;
+}
+
+export interface RepairAgentRecordsResponseInitialVersions {
+  created?: number;
+}
+
+export interface RepairAgentRecordsResponseOrphanSchedules {
+  removed?: number;
 }
 
 export interface ReplaceConstitutionRequest {
@@ -14198,9 +17236,15 @@ export interface RequestOtpCodeRequest {
   accept_terms?: boolean;
   accept_privacy?: boolean;
   /**
-   * Anonymous visitor cookie, joining the landing visit to this request.
+   * Anonymous visitor cookie; joins landing_visit to otp_requested.
    */
   visitor_id?: string;
+  /**
+   * Language of the letter (since 2026-10-17). Without it: the language the person chose before,
+   * else Accept-Language, else English. The browser's language is remembered for later letters
+   * until the person sets one in GET/PUT /api/v1/me/email-preferences.
+   */
+  locale?: GetHireCatalogLocale;
 }
 
 export interface RequestOtpCodeResponse {
@@ -14262,7 +17306,13 @@ export const RESOURCE_PERMISSION_ACTION_VALUES = ['read', 'write', 'delete', 'ex
 
 export interface ResourceUsageEntry {
   count: number;
-  limit: number;
+  /**
+   * The plan's limit for this resource, or null when the plan does not define one. Null is NOT a
+   * limit of zero: `over_by` is 0 and the resource is simply not capped, while `limit: 0` means
+   * the plan allows none. A client that printed the two the same way told a founder "3 of 0"
+   * about a resource with no ceiling (macOS lane, measured 2026-10-12).
+   */
+  limit: number | null;
   over_by: number;
 }
 
@@ -14313,6 +17363,10 @@ export type ResponsesOutputItemType = 'message';
 
 export const RESPONSES_OUTPUT_ITEM_TYPE_VALUES = ['message'] as const;
 
+export interface RestoreTenantCompanyVersionRequest {
+  version: number;
+}
+
 export interface RestoreWorkspaceTrashRequest {
   /**
    * The `.trash/…` path from a trash listing or a soft-delete response.
@@ -14327,6 +17381,10 @@ export interface RestoreWorkspaceTrashResponse {
 }
 
 export interface ResumeCompanyResponse {
+  status?: string;
+}
+
+export interface ResumeInitiativeResponse {
   status?: string;
 }
 
@@ -14431,9 +17489,34 @@ export interface RetryPublicVideoOrderResponseVideo {
   expires_at: string | null;
 }
 
+export interface ReviewMissionObjectiveRequest {
+  decision: ObjectiveReviewDecision;
+  /**
+   * What to change (required for `revise`), or why not.
+   */
+  feedback?: string;
+}
+
+export interface ReviseRunRequest {
+  /**
+   * What to change. Handed to the agent as the result of the declined action.
+   */
+  feedback: string;
+}
+
+export interface ReviseRunResponse {
+  revised: boolean;
+  run_id: string;
+}
+
 export interface RevokeAPIKeyResponse {
   revoked: boolean;
   key_id: string;
+}
+
+export interface RevokeDataProcessingPolicyResponse {
+  revoked?: boolean;
+  current?: JsonObject;
 }
 
 export interface RevokeMeSessionResponse {
@@ -14511,6 +17594,20 @@ export interface RotateAgentIdentityResponse {
 
 export interface Run {
   /**
+   * Sponsored qualification runs only: the requirements the run was admitted under, stored as
+   * accepted.
+   */
+  execution_requirements?: QualificationExecutionRequirementsV2;
+  /**
+   * Sponsored qualification runs only: until when the run is recoverable by its client request
+   * id.
+   */
+  recovery_expires_at_unix?: number;
+  /**
+   * Sponsored qualification runs only: the grant that paid for it.
+   */
+  sponsorship_grant_id?: string;
+  /**
    * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
    * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
    * client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -14552,8 +17649,10 @@ export interface Run {
    * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`,
    * `limit_usd` and `spent_usd` with `BUDGET_EXCEEDED` (beside the older `max_cost_usd`,
    * `accumulated_cost_usd` and `cap_source`), `limit_ms` and `elapsed_ms` with
-   * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). Never a provider id — this reaches a
-   * screen, and the product does not name the model it picked.
+   * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). `limit_tokens`, `used_tokens` and, when the
+   * model had written anything, `partial_response` (its text so far, at most 8000 characters)
+   * with `MAX_TOKENS_EXCEEDED` (since 2026-10-16). Never a provider id — this reaches a screen,
+   * and the product does not name the model it picked.
    */
   error_details?: JsonObject;
   /**
@@ -14588,6 +17687,10 @@ export interface Run {
 }
 
 export interface RunApproval {
+  /**
+   * `revised` — the person declined the action and sent the run on with feedback (`POST
+   * /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback.
+   */
   decision: RunApprovalDecision;
   /**
    * Tools the run was waiting on when the decision was made.
@@ -14604,9 +17707,13 @@ export interface RunApproval {
   reason?: string;
 }
 
-export type RunApprovalDecision = 'approved' | 'rejected';
+/**
+ * `revised` — the person declined the action and sent the run on with feedback (`POST
+ * /runs/{runId}/revise`, since 2026-10-12); `reason` holds the feedback.
+ */
+export type RunApprovalDecision = 'approved' | 'rejected' | 'revised';
 
-export const RUN_APPROVAL_DECISION_VALUES = ['approved', 'rejected'] as const;
+export const RUN_APPROVAL_DECISION_VALUES = ['approved', 'rejected', 'revised'] as const;
 
 /**
  * The body is optional and carries at most a `response` for the agent. An unknown field is
@@ -14863,9 +17970,9 @@ export interface RunEventTraceContext {
  * forward-compatible addition — but a client should still ignore an unknown one rather than
  * fail, which is how a new type arrives before a client knows it.
  */
-export type RunEventType = 'run.created' | 'run.started' | 'run.completed' | 'run.failed' | 'run.cancelled' | 'run.timeout' | 'run.guardrail_blocked' | 'run.awaiting_approval' | 'run.awaiting_input' | 'run.input_received' | 'run.approved' | 'run.rejected' | 'run.checkpoint' | 'run.paused' | 'run.resumed' | 'run.restored' | 'run.affect' | 'llm.request' | 'llm.response' | 'llm.error' | 'llm.thinking' | 'llm.chunk' | 'llm.timeout' | 'llm.fallback' | 'step.plan' | 'step.act' | 'step.evaluate' | 'step.thinking' | 'tool.call' | 'tool.result' | 'tool.error' | 'tool.timeout' | 'guardrail.check' | 'guardrail.violation' | 'guardrail.custom.check' | 'guardrail.custom.violation' | 'memory.retrieval' | 'memory.extraction' | 'memory.stored' | 'memory.evicted' | 'session.context_compacted' | 'session.created' | 'session.closed' | 'team.message' | 'team.round_start' | 'team.round_end' | 'team.delegate' | 'team.broadcast' | 'team.merge' | 'team.handoff' | 'child_run.completed' | 'child_run.failed' | 'company.tick_start' | 'company.tick_end' | 'company.paused' | 'company.resumed' | 'company.budget_updated' | 'company.escalation' | 'company.objective_updated' | 'circuit_breaker.opened' | 'circuit_breaker.closed' | 'circuit_breaker.half_open' | 'streaming.started' | 'streaming.completed' | 'streaming.error' | 'streaming.buffer_truncated' | 'run.step_started' | 'run.step_completed' | 'budget.soft_threshold_crossed' | 'budget.hard_limit_reached' | 'tenant.created' | 'tenant.suspended' | 'tenant.purged' | 'config.updated' | 'webhook.delivered' | 'webhook.failed' | 'cron.fired' | 'agent.version_created' | 'agent.rollback' | 'mcp.server_log' | 'orchestration.started' | 'orchestration.planned' | 'orchestration.replanned' | 'orchestration.task_started' | 'orchestration.task_completed' | 'orchestration.task_failed' | 'orchestration.checkpoint' | 'orchestration.policy_violation' | 'orchestration.quality_report' | 'orchestration.completed' | 'orchestration.failed' | 'graph.agent_spawned' | 'graph.agent_terminated' | 'graph.task_delegated' | 'graph.edge_added' | 'graph.edge_removed' | 'plan.created' | 'plan.updated' | 'plan.sub_goal_completed' | 'plan.sub_goal_abandoned' | 'mcp.tool_called' | 'mcp.server_connected' | 'mcp.server_disconnected' | 'a2a.task_sent' | 'a2a.task_received' | 'memory.compressed' | 'capability.best_agent_selected' | 'identity.created' | 'identity.rotated' | 'message.signed' | 'message.verified' | 'message.replay_blocked' | 'constitution.bootstrapped' | 'constitution.amended' | 'constitution.check_passed' | 'constitution.check_blocked' | 'constitution.violation' | 'ledger.appended' | 'ledger.integrity_checked' | 'permission.checked' | 'permission.denied' | 'permission.spawn_blocked' | 'attestation.created' | 'attestation.verified' | 'attestation.invalid' | 'arbitration.case_opened' | 'arbitration.ruling_submitted' | 'arbitration.appeal_filed' | 'voting.proposal_created' | 'voting.ballot_cast' | 'voting.tallied' | 'voting.vetoed' | 'resource.spent' | 'resource.earned' | 'resource.transferred' | 'resource.insufficient' | 'ambassador.veto_issued' | 'ambassador.request_submitted' | 'builder.design_submitted' | 'builder.design_approved' | 'builder.design_spawned' | 'emergency.safe_mode_activated' | 'emergency.safe_mode_deactivated' | 'emergency.deadlock_detected' | 'goal.self_formulated' | 'goal.approved' | 'improvement.proposed' | 'improvement.sandbox_tested' | 'improvement.applied' | 'collective.insight_published' | 'collective.insights_retrieved' | 'collective.review_requested' | 'collective.poll_created' | 'collective.agent_rated' | 'collective.feedback_requested' | 'collective.reflection_completed' | 'collective.approaches_compared' | 'collective.lesson_logged' | 'collective.team_formed' | 'collective.team_joined' | 'collective.team_left' | 'collective.team_broadcast' | 'collective.specialist_requested' | 'collective.budget_requested' | 'collective.tokens_transferred' | 'collective.task_posted' | 'collective.bid_placed' | 'collective.bid_accepted' | 'collective.cost_reported' | 'sensor.url_watch_created' | 'sensor.rss_watch_created' | 'sensor.webhook_listener_created' | 'sensor.check_scheduled' | 'sensor.event_subscription_created' | 'sensor.triggered' | 'collective.report_presented' | 'collective.escalation' | 'collective.anomaly_reported' | 'collective.human_override' | 'collective.collective_paused' | 'collective.verification_requested' | 'strategy.created' | 'strategy.kpi_updated' | 'document.edit_start' | 'document.edit_chunk' | 'document.edit_complete';
+export type RunEventType = 'run.created' | 'run.started' | 'run.completed' | 'run.failed' | 'run.cancelled' | 'run.timeout' | 'run.guardrail_blocked' | 'run.awaiting_approval' | 'run.awaiting_input' | 'run.input_received' | 'run.approved' | 'run.rejected' | 'run.checkpoint' | 'run.paused' | 'run.resumed' | 'run.restored' | 'run.affect' | 'llm.request' | 'llm.response' | 'llm.error' | 'llm.thinking' | 'llm.chunk' | 'llm.timeout' | 'llm.fallback' | 'step.plan' | 'step.act' | 'step.evaluate' | 'step.thinking' | 'tool.call' | 'tool.result' | 'tool.error' | 'tool.timeout' | 'guardrail.check' | 'guardrail.violation' | 'guardrail.custom.check' | 'guardrail.custom.violation' | 'memory.retrieval' | 'memory.extraction' | 'memory.stored' | 'memory.evicted' | 'session.context_compacted' | 'session.context' | 'session.created' | 'session.closed' | 'team.message' | 'team.round_start' | 'team.round_end' | 'team.delegate' | 'team.broadcast' | 'team.merge' | 'team.handoff' | 'child_run.completed' | 'child_run.failed' | 'initiative.tick_start' | 'initiative.tick_end' | 'initiative.paused' | 'initiative.resumed' | 'initiative.budget_updated' | 'initiative.escalation' | 'initiative.objective_updated' | 'circuit_breaker.opened' | 'circuit_breaker.closed' | 'circuit_breaker.half_open' | 'streaming.started' | 'streaming.completed' | 'streaming.error' | 'streaming.buffer_truncated' | 'run.step_started' | 'run.step_completed' | 'budget.soft_threshold_crossed' | 'budget.hard_limit_reached' | 'tenant.created' | 'tenant.suspended' | 'tenant.purged' | 'config.updated' | 'webhook.delivered' | 'webhook.failed' | 'cron.fired' | 'agent.version_created' | 'agent.rollback' | 'mcp.server_log' | 'orchestration.started' | 'orchestration.planned' | 'orchestration.replanned' | 'orchestration.task_started' | 'orchestration.task_completed' | 'orchestration.task_failed' | 'orchestration.checkpoint' | 'orchestration.policy_violation' | 'orchestration.quality_report' | 'orchestration.completed' | 'orchestration.failed' | 'graph.agent_spawned' | 'graph.agent_terminated' | 'graph.task_delegated' | 'graph.edge_added' | 'graph.edge_removed' | 'plan.created' | 'plan.updated' | 'plan.sub_goal_completed' | 'plan.sub_goal_abandoned' | 'mcp.tool_called' | 'mcp.server_connected' | 'mcp.server_disconnected' | 'a2a.task_sent' | 'a2a.task_received' | 'memory.compressed' | 'capability.best_agent_selected' | 'identity.created' | 'identity.rotated' | 'message.signed' | 'message.verified' | 'message.replay_blocked' | 'constitution.bootstrapped' | 'constitution.amended' | 'constitution.check_passed' | 'constitution.check_blocked' | 'constitution.violation' | 'ledger.appended' | 'ledger.integrity_checked' | 'permission.checked' | 'permission.denied' | 'permission.spawn_blocked' | 'attestation.created' | 'attestation.verified' | 'attestation.invalid' | 'arbitration.case_opened' | 'arbitration.ruling_submitted' | 'arbitration.appeal_filed' | 'voting.proposal_created' | 'voting.ballot_cast' | 'voting.tallied' | 'voting.vetoed' | 'resource.spent' | 'resource.earned' | 'resource.transferred' | 'resource.insufficient' | 'ambassador.veto_issued' | 'ambassador.request_submitted' | 'builder.design_submitted' | 'builder.design_approved' | 'builder.design_spawned' | 'emergency.safe_mode_activated' | 'emergency.safe_mode_deactivated' | 'emergency.deadlock_detected' | 'goal.self_formulated' | 'goal.approved' | 'improvement.proposed' | 'improvement.sandbox_tested' | 'improvement.applied' | 'collective.insight_published' | 'collective.insights_retrieved' | 'collective.review_requested' | 'collective.poll_created' | 'collective.agent_rated' | 'collective.feedback_requested' | 'collective.reflection_completed' | 'collective.approaches_compared' | 'collective.lesson_logged' | 'collective.team_formed' | 'collective.team_joined' | 'collective.team_left' | 'collective.team_broadcast' | 'collective.specialist_requested' | 'collective.budget_requested' | 'collective.tokens_transferred' | 'collective.task_posted' | 'collective.bid_placed' | 'collective.bid_accepted' | 'collective.cost_reported' | 'sensor.url_watch_created' | 'sensor.rss_watch_created' | 'sensor.webhook_listener_created' | 'sensor.check_scheduled' | 'sensor.event_subscription_created' | 'sensor.triggered' | 'collective.report_presented' | 'collective.escalation' | 'collective.anomaly_reported' | 'collective.human_override' | 'collective.collective_paused' | 'collective.verification_requested' | 'strategy.created' | 'strategy.kpi_updated' | 'document.edit_start' | 'document.edit_chunk' | 'document.edit_complete';
 
-export const RUN_EVENT_TYPE_VALUES = ['run.created', 'run.started', 'run.completed', 'run.failed', 'run.cancelled', 'run.timeout', 'run.guardrail_blocked', 'run.awaiting_approval', 'run.awaiting_input', 'run.input_received', 'run.approved', 'run.rejected', 'run.checkpoint', 'run.paused', 'run.resumed', 'run.restored', 'run.affect', 'llm.request', 'llm.response', 'llm.error', 'llm.thinking', 'llm.chunk', 'llm.timeout', 'llm.fallback', 'step.plan', 'step.act', 'step.evaluate', 'step.thinking', 'tool.call', 'tool.result', 'tool.error', 'tool.timeout', 'guardrail.check', 'guardrail.violation', 'guardrail.custom.check', 'guardrail.custom.violation', 'memory.retrieval', 'memory.extraction', 'memory.stored', 'memory.evicted', 'session.context_compacted', 'session.created', 'session.closed', 'team.message', 'team.round_start', 'team.round_end', 'team.delegate', 'team.broadcast', 'team.merge', 'team.handoff', 'child_run.completed', 'child_run.failed', 'company.tick_start', 'company.tick_end', 'company.paused', 'company.resumed', 'company.budget_updated', 'company.escalation', 'company.objective_updated', 'circuit_breaker.opened', 'circuit_breaker.closed', 'circuit_breaker.half_open', 'streaming.started', 'streaming.completed', 'streaming.error', 'streaming.buffer_truncated', 'run.step_started', 'run.step_completed', 'budget.soft_threshold_crossed', 'budget.hard_limit_reached', 'tenant.created', 'tenant.suspended', 'tenant.purged', 'config.updated', 'webhook.delivered', 'webhook.failed', 'cron.fired', 'agent.version_created', 'agent.rollback', 'mcp.server_log', 'orchestration.started', 'orchestration.planned', 'orchestration.replanned', 'orchestration.task_started', 'orchestration.task_completed', 'orchestration.task_failed', 'orchestration.checkpoint', 'orchestration.policy_violation', 'orchestration.quality_report', 'orchestration.completed', 'orchestration.failed', 'graph.agent_spawned', 'graph.agent_terminated', 'graph.task_delegated', 'graph.edge_added', 'graph.edge_removed', 'plan.created', 'plan.updated', 'plan.sub_goal_completed', 'plan.sub_goal_abandoned', 'mcp.tool_called', 'mcp.server_connected', 'mcp.server_disconnected', 'a2a.task_sent', 'a2a.task_received', 'memory.compressed', 'capability.best_agent_selected', 'identity.created', 'identity.rotated', 'message.signed', 'message.verified', 'message.replay_blocked', 'constitution.bootstrapped', 'constitution.amended', 'constitution.check_passed', 'constitution.check_blocked', 'constitution.violation', 'ledger.appended', 'ledger.integrity_checked', 'permission.checked', 'permission.denied', 'permission.spawn_blocked', 'attestation.created', 'attestation.verified', 'attestation.invalid', 'arbitration.case_opened', 'arbitration.ruling_submitted', 'arbitration.appeal_filed', 'voting.proposal_created', 'voting.ballot_cast', 'voting.tallied', 'voting.vetoed', 'resource.spent', 'resource.earned', 'resource.transferred', 'resource.insufficient', 'ambassador.veto_issued', 'ambassador.request_submitted', 'builder.design_submitted', 'builder.design_approved', 'builder.design_spawned', 'emergency.safe_mode_activated', 'emergency.safe_mode_deactivated', 'emergency.deadlock_detected', 'goal.self_formulated', 'goal.approved', 'improvement.proposed', 'improvement.sandbox_tested', 'improvement.applied', 'collective.insight_published', 'collective.insights_retrieved', 'collective.review_requested', 'collective.poll_created', 'collective.agent_rated', 'collective.feedback_requested', 'collective.reflection_completed', 'collective.approaches_compared', 'collective.lesson_logged', 'collective.team_formed', 'collective.team_joined', 'collective.team_left', 'collective.team_broadcast', 'collective.specialist_requested', 'collective.budget_requested', 'collective.tokens_transferred', 'collective.task_posted', 'collective.bid_placed', 'collective.bid_accepted', 'collective.cost_reported', 'sensor.url_watch_created', 'sensor.rss_watch_created', 'sensor.webhook_listener_created', 'sensor.check_scheduled', 'sensor.event_subscription_created', 'sensor.triggered', 'collective.report_presented', 'collective.escalation', 'collective.anomaly_reported', 'collective.human_override', 'collective.collective_paused', 'collective.verification_requested', 'strategy.created', 'strategy.kpi_updated', 'document.edit_start', 'document.edit_chunk', 'document.edit_complete'] as const;
+export const RUN_EVENT_TYPE_VALUES = ['run.created', 'run.started', 'run.completed', 'run.failed', 'run.cancelled', 'run.timeout', 'run.guardrail_blocked', 'run.awaiting_approval', 'run.awaiting_input', 'run.input_received', 'run.approved', 'run.rejected', 'run.checkpoint', 'run.paused', 'run.resumed', 'run.restored', 'run.affect', 'llm.request', 'llm.response', 'llm.error', 'llm.thinking', 'llm.chunk', 'llm.timeout', 'llm.fallback', 'step.plan', 'step.act', 'step.evaluate', 'step.thinking', 'tool.call', 'tool.result', 'tool.error', 'tool.timeout', 'guardrail.check', 'guardrail.violation', 'guardrail.custom.check', 'guardrail.custom.violation', 'memory.retrieval', 'memory.extraction', 'memory.stored', 'memory.evicted', 'session.context_compacted', 'session.context', 'session.created', 'session.closed', 'team.message', 'team.round_start', 'team.round_end', 'team.delegate', 'team.broadcast', 'team.merge', 'team.handoff', 'child_run.completed', 'child_run.failed', 'initiative.tick_start', 'initiative.tick_end', 'initiative.paused', 'initiative.resumed', 'initiative.budget_updated', 'initiative.escalation', 'initiative.objective_updated', 'circuit_breaker.opened', 'circuit_breaker.closed', 'circuit_breaker.half_open', 'streaming.started', 'streaming.completed', 'streaming.error', 'streaming.buffer_truncated', 'run.step_started', 'run.step_completed', 'budget.soft_threshold_crossed', 'budget.hard_limit_reached', 'tenant.created', 'tenant.suspended', 'tenant.purged', 'config.updated', 'webhook.delivered', 'webhook.failed', 'cron.fired', 'agent.version_created', 'agent.rollback', 'mcp.server_log', 'orchestration.started', 'orchestration.planned', 'orchestration.replanned', 'orchestration.task_started', 'orchestration.task_completed', 'orchestration.task_failed', 'orchestration.checkpoint', 'orchestration.policy_violation', 'orchestration.quality_report', 'orchestration.completed', 'orchestration.failed', 'graph.agent_spawned', 'graph.agent_terminated', 'graph.task_delegated', 'graph.edge_added', 'graph.edge_removed', 'plan.created', 'plan.updated', 'plan.sub_goal_completed', 'plan.sub_goal_abandoned', 'mcp.tool_called', 'mcp.server_connected', 'mcp.server_disconnected', 'a2a.task_sent', 'a2a.task_received', 'memory.compressed', 'capability.best_agent_selected', 'identity.created', 'identity.rotated', 'message.signed', 'message.verified', 'message.replay_blocked', 'constitution.bootstrapped', 'constitution.amended', 'constitution.check_passed', 'constitution.check_blocked', 'constitution.violation', 'ledger.appended', 'ledger.integrity_checked', 'permission.checked', 'permission.denied', 'permission.spawn_blocked', 'attestation.created', 'attestation.verified', 'attestation.invalid', 'arbitration.case_opened', 'arbitration.ruling_submitted', 'arbitration.appeal_filed', 'voting.proposal_created', 'voting.ballot_cast', 'voting.tallied', 'voting.vetoed', 'resource.spent', 'resource.earned', 'resource.transferred', 'resource.insufficient', 'ambassador.veto_issued', 'ambassador.request_submitted', 'builder.design_submitted', 'builder.design_approved', 'builder.design_spawned', 'emergency.safe_mode_activated', 'emergency.safe_mode_deactivated', 'emergency.deadlock_detected', 'goal.self_formulated', 'goal.approved', 'improvement.proposed', 'improvement.sandbox_tested', 'improvement.applied', 'collective.insight_published', 'collective.insights_retrieved', 'collective.review_requested', 'collective.poll_created', 'collective.agent_rated', 'collective.feedback_requested', 'collective.reflection_completed', 'collective.approaches_compared', 'collective.lesson_logged', 'collective.team_formed', 'collective.team_joined', 'collective.team_left', 'collective.team_broadcast', 'collective.specialist_requested', 'collective.budget_requested', 'collective.tokens_transferred', 'collective.task_posted', 'collective.bid_placed', 'collective.bid_accepted', 'collective.cost_reported', 'sensor.url_watch_created', 'sensor.rss_watch_created', 'sensor.webhook_listener_created', 'sensor.check_scheduled', 'sensor.event_subscription_created', 'sensor.triggered', 'collective.report_presented', 'collective.escalation', 'collective.anomaly_reported', 'collective.human_override', 'collective.collective_paused', 'collective.verification_requested', 'strategy.created', 'strategy.kpi_updated', 'document.edit_start', 'document.edit_chunk', 'document.edit_complete'] as const;
 
 /**
  * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
@@ -14928,6 +18035,14 @@ export interface RunFeedbackSet {
 
 export interface RunMetrics {
   /**
+   * The context window of the model that served the run, in tokens.
+   */
+  context_window_tokens?: number;
+  /**
+   * Input tokens of the run's last model call: how full the window was at the end.
+   */
+  last_input_tokens?: number;
+  /**
    * How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
    */
   pricing_confidence?: string;
@@ -14942,6 +18057,11 @@ export interface RunMetrics {
   input_tokens?: number;
   output_tokens?: number;
   thinking_tokens?: number;
+  /**
+   * Prompt tokens served from the provider's prefix cache — a subset of `input_tokens`. Present
+   * only when the provider reports it.
+   */
+  cached_tokens?: number;
   tool_calls_count?: number;
   llm_calls_count?: number;
   guardrail_checks?: number;
@@ -15321,6 +18441,41 @@ export type ScheduleEntryStatus = 'active' | 'paused' | 'error';
 
 export const SCHEDULE_ENTRY_STATUS_VALUES = ['active', 'paused', 'error'] as const;
 
+/**
+ * A cron in a shape clients localize; null when the cron is not one of these — show the cron.
+ * Weekdays are ISO (1 = Monday … 7 = Sunday).
+ */
+export type ScheduleShape = ScheduleShapeVariant2 | ScheduleShapeVariant3 | ScheduleShapeVariant4 | ScheduleShapeVariant5;
+
+export interface ScheduleShapeVariant2 {
+  every: 'hour';
+  minute: number;
+  /**
+   * Every N hours (N divides 24); absent = every hour.
+   */
+  interval?: number;
+}
+
+export interface ScheduleShapeVariant3 {
+  every: 'day';
+  /**
+   * HH:MM
+   */
+  time: string;
+}
+
+export interface ScheduleShapeVariant4 {
+  every: 'week';
+  weekdays: number[];
+  time: string;
+}
+
+export interface ScheduleShapeVariant5 {
+  every: 'month';
+  day: number;
+  time: string;
+}
+
 export interface ScheduleSummary {
   agent_id: string;
   /**
@@ -15361,6 +18516,32 @@ export interface SearchMarketplaceResponse {
 export type SearchMarketplaceSort = 'rating' | 'popularity' | 'recency';
 
 export const SEARCH_MARKETPLACE_SORT_VALUES = ['rating', 'popularity', 'recency'] as const;
+
+export interface SearchMemoryRequest {
+  text?: string;
+  /**
+   * Alias for `text`; `text` wins when both are sent.
+   */
+  query?: string;
+  /**
+   * @default "hybrid"
+   */
+  strategy?: SearchMemoryRequestStrategy;
+  /**
+   * @default 20
+   */
+  limit?: number;
+  /**
+   * Alias of `limit`, the name most vector APIs use (memory.ts MemorySearchSchema); `limit` wins
+   * when both are sent.
+   */
+  top_k?: number;
+  types?: AgentUpdateMemoryType[];
+}
+
+export type SearchMemoryRequestStrategy = 'recency' | 'hybrid';
+
+export const SEARCH_MEMORY_REQUEST_STRATEGY_VALUES = ['recency', 'hybrid'] as const;
 
 export interface SearchMemoryResponse {
   memories: MemoryEntry[];
@@ -15573,6 +18754,41 @@ export interface SessionBranch {
 export type SessionBranchStatus = 'active' | 'abandoned' | 'merged';
 
 export const SESSION_BRANCH_STATUS_VALUES = ['active', 'abandoned', 'merged'] as const;
+
+/**
+ * How full the agent's context is — the chat header's bar, for every agent. Written after each
+ * run of the session (event `session.context`, before `run.completed`). Unknown numbers are
+ * null, never 0: a hired Claude Code does not report its context. Since 2026-10-15.
+ */
+export interface SessionContext {
+  /**
+   * The model's context window.
+   */
+  window_tokens: number | null;
+  /**
+   * Tokens the agent's latest model call was sent.
+   */
+  used_tokens: number | null;
+  /**
+   * Whole percent, only when both numbers are known; 1–100 (at least 1 when anything is used).
+   * Show as served.
+   */
+  percent: number | null;
+  /**
+   * `model`: measured from the platform's own model call; `agent`: reported by a bridge or hired
+   * agent.
+   */
+  source: SessionContextSource;
+  updated_at: string | null;
+}
+
+/**
+ * `model`: measured from the platform's own model call; `agent`: reported by a bridge or hired
+ * agent.
+ */
+export type SessionContextSource = 'model' | 'agent';
+
+export const SESSION_CONTEXT_SOURCE_VALUES = ['model', 'agent'] as const;
 
 export interface SessionExport {
   exported_at: string;
@@ -15958,6 +19174,12 @@ export interface SetScheduleRequest {
    */
   on_failure?: AgentScheduleConfigOnFailure;
   /**
+   * How many runs this schedule may have EXECUTING (queued or running) at once; a fire that
+   * would exceed it is skipped and the schedule moves to its next instant. A run waiting on a
+   * person (awaiting_input / awaiting_approval) does not count, so an unanswered question never
+   * stops the schedule. 0 means no limit. Enforced since 2026-10-12 — before, it was stored and
+   * runs overlapped regardless.
+   *
    * @default 1
    */
   max_concurrent_scheduled?: number;
@@ -16037,6 +19259,10 @@ export interface SharePublicSessionResponse {
 export interface ShareWorkspaceRequest {
   agent_id: string;
 }
+
+export type ShowEmailUnsubscribeC = 'weekly_digest' | 'product_tips';
+
+export const SHOW_EMAIL_UNSUBSCRIBE_C_VALUES = ['weekly_digest', 'product_tips'] as const;
 
 export interface SignUpForAndroidTestingRequest {
   email: string;
@@ -16253,6 +19479,14 @@ export interface StartTeamRunResponse {
   team_run_id: string;
 }
 
+export interface StartTenantTestRunRequest {
+  agent_id?: string;
+  /**
+   * Default: a rehearsal of one work cycle against the company's objective.
+   */
+  message?: string;
+}
+
 /**
  * types/company.ts StrategicGoal — as stored; the create/update body is looser (goal_id
  * assigned by the server).
@@ -16444,6 +19678,10 @@ export interface TeamCreate {
    * @default "supervisor"
    */
   topology?: TeamTopology;
+  /**
+   * Required for `supervisor` and `goal_driven`. Optional for `pipeline` and `round_robin`
+   * (defaults to the first worker, which stays a stage). Ignored for `swarm`.
+   */
   supervisor_agent_id?: string;
   /**
    * Each entry REQUIRES `agent_id` — omitting it answers `422 workers.0.agent_id: Required`.
@@ -16613,8 +19851,25 @@ export interface TeamRunDetail {
   team_run_id: string;
   team_id: string;
   status: string;
-  runs: Run[];
+  /**
+   * Each member run as a projection (routes/teams.ts loadTeamRunVerdict), not a full Run: no
+   * `tenant_id`, `input` or `steps`. This pointed at `Run` until 2026-10-14, and the SDK's
+   * decode failed on the absent `tenant_id`.
+   */
+  runs: TeamRunDetailRun[];
   total_runs: number;
+}
+
+export interface TeamRunDetailRun {
+  run_id: string;
+  agent_id: string;
+  status: string;
+  created_at: string;
+  started_at?: string;
+  completed_at?: string;
+  output?: JsonValue;
+  metrics?: JsonObject;
+  error?: JsonValue;
 }
 
 export interface TeamRunSummary {
@@ -16854,6 +20109,19 @@ export interface TenantInbox {
   counts: TenantInboxCounts;
   items: InboxItem[];
   /**
+   * Mission objectives held at `awaiting_review`, oldest first — answer each with `POST
+   * /missions/{mission_id}/objectives/{objective_id}/review`. A draft whose mission has ended
+   * (`completed`, `failed`, `aborted`) is left out since 2026-10-15: nothing is left to accept
+   * it into; a stopped mission shows in the overview's `problems.missions`. `unsourced_links`
+   * counts links in the result that no tool produced. Since 2026-10-12.
+   */
+  reviews?: TenantInboxReview[];
+  /**
+   * Company changes waiting for a person, newest first — open with `GET
+   * /tenants/me/proposals/{proposal_id}`, decide with `…/apply` or `…/reject`. Since 2026-10-12.
+   */
+  proposals?: TenantInboxProposal[];
+  /**
    * Run records inspected; the scan is capped.
    */
   scanned: number;
@@ -16876,6 +20144,60 @@ export interface TenantInboxCounts {
   input: number;
   paused: number;
   failed: number;
+  /**
+   * Mission results waiting for a person's verdict (since 2026-10-12); included in `total`.
+   */
+  review?: number;
+  /**
+   * Company changes proposed and waiting for a person (since 2026-10-12); included in `total`.
+   */
+  proposal?: number;
+}
+
+export interface TenantInboxProposal {
+  proposal_id: string;
+  summary: string;
+  proposed_by: TenantInboxProposalProposedBy;
+  /**
+   * How many changes.
+   */
+  operations: number;
+  /**
+   * It removes something.
+   */
+  irreversible: boolean;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface TenantInboxProposalProposedBy {
+  kind?: CompanyProposalProposedByKind;
+  id?: string;
+  run_id?: string;
+  session_id?: string;
+}
+
+export interface TenantInboxReview {
+  objective_id?: string;
+  mission_id?: string | null;
+  /**
+   * The objective's own name — for a mission step, the step (`Draft`).
+   */
+  title?: string;
+  /**
+   * The result's first line without markdown markers, at most 120 characters — a better card
+   * heading than `title`. Null when the result has no text. Since 2026-10-15.
+   */
+  headline?: string | null;
+  /**
+   * At most 200 characters, cut at a line or word boundary with `…` when cut. The whole text:
+   * `GET /missions/{mission_id}/objectives` → `output_summary`.
+   */
+  summary?: string;
+  summary_truncated?: boolean;
+  revisions?: number;
+  waiting_since?: string;
+  unsourced_links?: number;
 }
 
 export interface TenantMefConfigResponse {
@@ -17044,7 +20366,8 @@ export interface TenantOverviewRunsRecentItem {
   error_code?: string;
   /**
    * Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`,
-   * `limit_usd`/`spent_usd`, `limit_ms`/`elapsed_ms`. See `Run.error_details`.
+   * `limit_usd`/`spent_usd`, `limit_ms`/`elapsed_ms`,
+   * `limit_tokens`/`used_tokens`/`partial_response`. See `Run.error_details`.
    */
   error_details?: JsonObject;
   /**
@@ -17090,6 +20413,66 @@ export interface TenantOverviewUsage {
   tokens_used: number;
   runs_used: number;
   cost_mtd_usd: number;
+}
+
+export interface TenantPlanFit {
+  plan: string;
+  fits: boolean;
+  window_days: number;
+  run_profile: TenantPlanFitRunProfile;
+  needs: TenantPlanFitNeeds;
+  schedules: TenantPlanFitSchedule[];
+  checks: TenantPlanFitCheck[];
+  monthly_cost_usd: FitRange;
+  /**
+   * The spend cap per month, or null when none is set.
+   */
+  budget_limit_usd: number | null;
+  assumptions: TenantPlanFitAssumption[];
+  suggestions: TenantPlanFitSuggestion[];
+}
+
+export interface TenantPlanFitAssumption {
+  code?: string;
+  text?: string;
+}
+
+export interface TenantPlanFitCheck {
+  code: GetTenantPlanFitResponseCheckCode;
+  needed: number;
+  limit: number | null;
+  status: GetTenantPlanFitResponseCheckStatus;
+}
+
+export interface TenantPlanFitNeeds {
+  agents?: number;
+  squads?: number;
+  runs_per_month?: FitRange;
+  tokens_per_month?: FitRange;
+  tool_calls_per_month?: FitRange;
+}
+
+export interface TenantPlanFitRunProfile {
+  tokens?: FitRange;
+  cost_usd?: FitRange;
+  tool_calls?: FitRange;
+  sample_runs?: number;
+  source?: GetTenantPlanFitResponseRunProfileSource;
+}
+
+export interface TenantPlanFitSchedule {
+  kind?: GetTenantBlueprintResponseScheduleKind;
+  name?: string;
+  cron?: string;
+  timezone?: string | null;
+  runs_per_fire?: number;
+  fires_per_month?: number | null;
+}
+
+export interface TenantPlanFitSuggestion {
+  code?: string;
+  message?: string;
+  plan?: string;
 }
 
 export interface TenantPublicSettings {
@@ -17219,7 +20602,20 @@ export interface TerminateAgentResponse {
 
 export interface TestAdminSmtpConfigRequest {
   to: string;
+  /**
+   * Which sender to test. `auth` (the default) sends sign-in codes; `notify` sends everything
+   * else.
+   */
+  profile?: TestAdminSmtpConfigRequestProfile;
 }
+
+/**
+ * Which sender to test. `auth` (the default) sends sign-in codes; `notify` sends everything
+ * else.
+ */
+export type TestAdminSmtpConfigRequestProfile = 'auth' | 'notify';
+
+export const TEST_ADMIN_SMTP_CONFIG_REQUEST_PROFILE_VALUES = ['auth', 'notify'] as const;
 
 export interface TestAdminSmtpConfigResponse {
   ok: boolean;
@@ -17951,6 +21347,11 @@ export interface UpdateAdminOAuthIdentityConfigRequest {
   apple_services_id?: string;
   apple_team_id?: string;
   apple_bundle_id?: string;
+  /**
+   * A bare host (`app.example.com` — admits its `/auth/callback` paths) or an exact https URL
+   * with a path and no query, fragment or credentials (`https://app.example.com/auth/handoff` —
+   * admits that path only). Any other entry is 422 and nothing is written.
+   */
   oauth_return_to_hosts?: string[];
 }
 
@@ -18131,6 +21532,26 @@ export interface UpdateAdminSmtpConfigRequest {
   /**
    * Empty string clears the stored credential.
    */
+  password?: string;
+  from?: string;
+  from_name?: string;
+  /**
+   * The second sender (since 2026-10-17). The relay refuses a From its login does not own, so a
+   * second address needs its own login. Same merge rules; `password: ""` clears it.
+   */
+  notify?: UpdateAdminSmtpConfigRequestNotify;
+  /**
+   * Reply-To on notify mail; `""` clears it.
+   */
+  reply_to?: string | string;
+}
+
+/**
+ * The second sender (since 2026-10-17). The relay refuses a From its login does not own, so a
+ * second address needs its own login. Same merge rules; `password: ""` clears it.
+ */
+export interface UpdateAdminSmtpConfigRequestNotify {
+  user?: string;
   password?: string;
   from?: string;
   from_name?: string;
@@ -18452,6 +21873,10 @@ export interface UpdateMissionObjectiveRequest {
   commanders_intent?: string;
   roe?: ObjectiveRoE;
   decision_points?: ObjectiveDecisionPoint[];
+  /**
+   * Hold the verified result for a person's review.
+   */
+  review_required?: boolean;
 }
 
 /**
@@ -18461,6 +21886,28 @@ export interface UpdateMissionObjectiveRequestBudget {
   max_runs?: number;
   max_tokens?: number;
   max_cost_usd?: number;
+}
+
+export interface UpdateMyEmailPreferencesRequest {
+  locale?: GetHireCatalogLocale;
+  weekly_digest?: boolean;
+  product_tips?: boolean;
+}
+
+export interface UpdateMyEmailPreferencesResponse {
+  /**
+   * Language of every letter; null until the person or a browser sets it (English then).
+   */
+  locale: string | null;
+  /**
+   * The Monday summary for owners and admins.
+   */
+  weekly_digest: boolean;
+  /**
+   * The day-1 and day-3 letters to a company that has not started.
+   */
+  product_tips: boolean;
+  updated_at?: string;
 }
 
 export interface UpdateMyPreferencesRequest {
@@ -18665,6 +22112,18 @@ export interface UpdateSquadGraphNodeRequest {
 export interface UpdateTeamGraphNodeRequest {
   status?: TeamGraphNodeStatus;
   goal_summary?: string;
+}
+
+export interface UpdateTenantCompanyRequest {
+  business_type?: string;
+  objective?: string;
+  description?: string;
+  target_customer?: string;
+  /**
+   * IANA time zone; anything else is 422.
+   */
+  timezone?: string;
+  expected_version?: number;
 }
 
 /**
@@ -19497,10 +22956,10 @@ export const VOTE_RESULT_STATUS_VALUES = ['passed', 'rejected', 'expired', 'veto
 export interface VotingProposal {
   proposal_id: string;
   tenant_id: string;
-  type: string;
+  type?: string;
   title: string;
   description: string;
-  proposed_by: string;
+  proposed_by?: string;
   payload: JsonObject;
   quorum: number;
   status: VotingProposalStatus;
@@ -19531,9 +22990,9 @@ export interface WebhookDeliveryAttempt {
   created_at: string;
 }
 
-export type WebhookDeliveryAttemptEventType = 'run.completed' | 'run.failed' | 'run.cancelled' | 'agent.created' | 'agent.updated' | 'agent.deleted' | 'quota.threshold' | 'quota.exceeded' | 'guardrail.violated' | 'billing.invoice.created' | 'billing.payment.failed' | 'eval.auto_rollback' | 'company.budget_alert' | 'company.budget_exceeded' | 'company.objective_failed' | 'company.goal_completed' | 'company.paused';
+export type WebhookDeliveryAttemptEventType = 'run.completed' | 'run.failed' | 'run.cancelled' | 'agent.created' | 'agent.updated' | 'agent.deleted' | 'quota.threshold' | 'quota.exceeded' | 'guardrail.violated' | 'billing.invoice.created' | 'billing.payment.failed' | 'eval.auto_rollback' | 'initiative.budget_alert' | 'initiative.budget_exceeded' | 'initiative.objective_failed' | 'initiative.goal_completed' | 'initiative.paused' | 'company.budget_alert' | 'company.budget_exceeded' | 'company.objective_failed' | 'company.goal_completed' | 'company.paused';
 
-export const WEBHOOK_DELIVERY_ATTEMPT_EVENT_TYPE_VALUES = ['run.completed', 'run.failed', 'run.cancelled', 'agent.created', 'agent.updated', 'agent.deleted', 'quota.threshold', 'quota.exceeded', 'guardrail.violated', 'billing.invoice.created', 'billing.payment.failed', 'eval.auto_rollback', 'company.budget_alert', 'company.budget_exceeded', 'company.objective_failed', 'company.goal_completed', 'company.paused'] as const;
+export const WEBHOOK_DELIVERY_ATTEMPT_EVENT_TYPE_VALUES = ['run.completed', 'run.failed', 'run.cancelled', 'agent.created', 'agent.updated', 'agent.deleted', 'quota.threshold', 'quota.exceeded', 'guardrail.violated', 'billing.invoice.created', 'billing.payment.failed', 'eval.auto_rollback', 'initiative.budget_alert', 'initiative.budget_exceeded', 'initiative.objective_failed', 'initiative.goal_completed', 'initiative.paused', 'company.budget_alert', 'company.budget_exceeded', 'company.objective_failed', 'company.goal_completed', 'company.paused'] as const;
 
 export type WebhookDeliveryAttemptStatus = 'pending' | 'success' | 'failed';
 
@@ -19546,6 +23005,21 @@ export interface WebhookSubscription {
   events: string[];
   status: WebhookSubscriptionStatus;
   created_at?: string;
+  updated_at?: string;
+  /**
+   * Consecutive failed deliveries; reset by a success.
+   */
+  failure_count?: number;
+  /**
+   * When the latest delivery failed. Absent when none has.
+   */
+  last_failure_at?: string;
+  /**
+   * The HMAC signing secret. Returned in full ONCE, on `POST /webhooks` (201) — store it then.
+   * Every read (`GET /webhooks`, `GET /webhooks/{webhookId}`) answers the literal
+   * `"[redacted]"`.
+   */
+  secret?: string;
 }
 
 export type WebhookSubscriptionStatus = 'active' | 'disabled' | 'failing';

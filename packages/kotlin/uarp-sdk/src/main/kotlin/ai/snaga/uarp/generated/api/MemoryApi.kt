@@ -238,7 +238,7 @@ public class MemoryApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun search(agentId: String, body: JsonElement, options: RequestOptions = RequestOptions()): SearchMemoryResponse {
+    public suspend fun search(agentId: String, body: SearchMemoryRequest, options: RequestOptions = RequestOptions()): SearchMemoryResponse {
         return client.request<SearchMemoryResponse>(
             RequestSpec(
                 method = "POST",

@@ -7,7 +7,7 @@ package ai.snaga.uarp
 public const val SPEC_VERSION: String = "1.0.0"
 
 /** Version of this SDK. */
-public const val SDK_VERSION: String = "0.10.0"
+public const val SDK_VERSION: String = "0.11.0"
 
 /** Production base URL. */
 public const val DEFAULT_BASE_URL: String = "https://api.test"
@@ -91,6 +91,36 @@ public object EnvelopeSerializer : KSerializer<Envelope> {
 }
 
 /**
+ * `Owner` model.
+ */
+@Serializable
+public data class Owner(
+    public val name: String,
+)
+
+/**
+ * Null until the first rehearsal.
+ */
+@Serializable
+public data class Rehearsal(
+    @SerialName("run_id")
+    public val runId: String,
+)
+
+/**
+ * Null when the cron has no simple shape.
+ */
+public typealias Shape = ShapeVariant2
+
+/**
+ * `ShapeVariant2` model.
+ */
+@Serializable
+public data class ShapeVariant2(
+    public val every: String,
+)
+
+/**
  * Every shape of optionality the spec uses.
  */
 @Serializable
@@ -120,6 +150,18 @@ public data class Thing(
     @SerialName("deprecated_field")
     public val deprecatedField: String? = null,
     public val kind: String? = null,
+    /**
+     * A plain reference: always an object.
+     */
+    public val owner: Owner,
+    /**
+     * The component itself admits null, so the reference does too.
+     */
+    public val rehearsal: Rehearsal? = null,
+    /**
+     * Null spelled as a oneOf member on the component.
+     */
+    public val shape: Shape? = null,
 )
 
 ==> uarp-sdk/src/main/kotlin/ai/snaga/uarp/generated/api/ThingsApi.kt <==
@@ -160,6 +202,21 @@ public class ThingsApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "GET",
                 path = "/things/${encodePathSegment(thingId)}",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * A thing's schedule, or null when it has none
+     *
+     * `GET /things/{thingId}/schedule`
+     */
+    public suspend fun getThingSchedule(thingId: String, options: RequestOptions = RequestOptions()): Owner? {
+        return client.request<Owner?>(
+            RequestSpec(
+                method = "GET",
+                path = "/things/${encodePathSegment(thingId)}/schedule",
                 options = options,
             )
         )

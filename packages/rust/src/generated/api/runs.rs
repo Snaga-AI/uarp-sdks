@@ -70,6 +70,14 @@ pub struct GetRunStepsParams {
 /// Query and header parameters for `listRuns`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListRunsParams {
+    /// Recover a sponsored qualification run: with `purpose`, and no other filter, answers the
+    /// caller's own run for that client request, 0 or 1 item, `has_more: false`. Any other
+    /// combination is 400.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub client_request_id: Option<String>,
+    /// Required with `client_request_id`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub purpose: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -201,6 +209,18 @@ impl RunsApi {
     /// avoid duplicate runs on retries; a repeated request with the same key returns the cached 202
     /// response (same run_id). Pin a specific agent version with `version` to bypass the head
     /// pointer.
+    ///
+    /// A body carrying `execution_requirements` is a sponsored qualification run (Nestor, since
+    /// 2026-10-17) and has its own admission: `QualificationSponsoredRunCreateV2`, strict JSON
+    /// (repeated member names refused, at most 131072 bytes), `metadata` names not starting with
+    /// `_`. The first acceptance answers 201, an exact replay of the same `client_request_id`
+    /// command answers 200 with the original run, another command under that id is 409
+    /// `CLIENT_REQUEST_CONFLICT`. Refusals: 403 `SPONSORSHIP_REQUIRED` (a v1 command: the candidate
+    /// never pays), 403 `SPONSORSHIP_GRANT_MISMATCH` with `reason`, 409
+    /// `SPONSORSHIP_GRANT_UNAVAILABLE` / `SPONSORSHIP_PROGRAM_INACTIVE`, 412
+    /// `PROCESSING_POLICY_NOT_READY` / `PROCESSING_POLICY_CHANGED`, 422
+    /// `EXECUTION_PROFILE_UNVERIFIABLE` / `INVALID_REQUEST`. The managed evaluator cannot be run
+    /// without one (403 `MANAGED_AGENT`).
     ///
     /// `POST /api/v1/runs`
     ///
@@ -431,6 +451,34 @@ impl RunsApi {
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/runs/{}/queue-position", encode_path(run_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Where a run's facts came from
+    ///
+    /// Derived from the run's own tool events and its answer — nothing is stored, so every run has
+    /// one. Each source is a URL with `kind` `read` (the agent opened it: the `url` of a fetch /
+    /// browse / read_feed call) or `found` (it appeared in a tool's result, e.g. a search hit,
+    /// without being opened), the `tool`, and `cited` (the answer links to it); cited first, then
+    /// read. `unsourced_links` are links IN the answer that no tool call or result contained — the
+    /// ones to check first, since nothing the agent read holds them. URLs are compared without
+    /// trailing punctuation, trailing slash or fragment. At most 300 sources (`truncated`). Tool
+    /// results are recorded truncated, so a link deep in a very long result may be missed. `404`
+    /// when the run does not exist. Since 2026-10-12.
+    ///
+    /// `GET /api/v1/runs/{runId}/sources`
+    ///
+    /// Required scopes: `runs:read`.
+    pub async fn get_run_sources(&self, run_id: &str) -> Result<models::GetRunSourcesResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/runs/{}/sources", encode_path(run_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -711,6 +759,34 @@ impl RunsApi {
             .await
     }
 
+    /// Decline the pending action with feedback, and let the run go on
+    ///
+    /// The third answer to a run waiting on approval, beside approve and reject: the person
+    /// declines the action AND says what to change, and the run continues. Every tool call the run
+    /// was waiting on is answered with a result saying it was NOT carried out, carrying `feedback`;
+    /// the model reads that as the outcome of what it tried and revises its work. Recorded on the
+    /// run's `approvals` as `decision: revised` with the feedback as `reason`. Requires the
+    /// `runs.approve` permission. `404` when the run does not exist; `409` unless its status is
+    /// `awaiting_approval`, for a run on a local bridge (decided on that machine — approve or
+    /// reject it), and when a concurrent write wins. `422` without `feedback`. Since 2026-10-12;
+    /// before, the only refusal (`reject`) failed the run.
+    ///
+    /// `POST /api/v1/runs/{runId}/revise`
+    ///
+    /// Required scopes: `runs:create`.
+    pub async fn revise_run(&self, run_id: &str, body: &models::ReviseRunRequest) -> Result<models::ReviseRunResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/runs/{}/revise", encode_path(run_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Save user feedback/reaction for a run
     ///
     /// One reaction per (message, caller); a second PUT for the same `message_id` replaces the
@@ -754,7 +830,10 @@ impl RunsApi {
     /// reconnection. Stream closes when run reaches terminal status. Each event payload includes
     /// `stream_type`: lifecycle (run.*), assistant (llm.chunk), tool (tool.*), or other — use it to
     /// filter client-side. Browsers using EventSource (which cannot set Authorization headers)
-    /// should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`.
+    /// should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`. A
+    /// session run also emits `session.context` (payload: SessionContext plus `session_id`) after
+    /// the run's last model call and before `run.completed` — the context bar's live update, since
+    /// 2026-10-15.
     ///
     /// `GET /api/v1/runs/{runId}/events`
     ///

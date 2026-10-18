@@ -6,18 +6,496 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.11.0 — 2026-10-17
 
-Build `0d6cf25b`, canonical digest `62752162b8e49f78`. No count moves (585 paths,
-789 operations, 382 schemas).
+Build `0837bb4d`, canonical digest `47152b3cf58faed3`. Seven platform builds
+are collected here: `ef5b646d` (2026-10-12), `435ca06c` and `199b0863`
+(2026-10-13), `b108e9a9` (2026-10-15), `d926b90e` (2026-10-16), `e0b37b03` and
+`0837bb4d` (2026-10-17). Against 0.10.0: 585 → 642 paths, 789 → 857 operations
+(+68, −0), 382 → 453 schemas (+71, −0), 50 → 54 groups, 1845 → 2129 named
+types (+284, −0 net).
 
-### Added
+**One family of exported names leaves.** Measured against the released 0.10.0
+rather than against the intermediate drafts: 343 names are added and four are
+removed: `GetReadyResponse`, `GetReadyResponseChecks`, `GetReadyResponseStatus`
+and `GET_READY_RESPONSE_STATUS_VALUES`. `GET /ready` now answers the shared
+`ReadinessReport`, as `GET /health/ready` already did (below). Every other
+import that compiled against 0.10.0 still resolves. The eleven `/companies`
+operations warn at compile time rather than break.
 
-- `language` on the request of `POST /llm/audio/speech`: an optional language
-  tag for the generated speech.
+**The minor moves** because types that 0.10.0 already exported change shape
+under their own names — `ResourceUsageEntry.limit` becomes nullable,
+`RunEventType` renames seven values, the workspace copy and move requests stop
+requiring their paths, build `b108e9a9` corrects eight of them to the wire,
+`getSession` answers a new type, build `e0b37b03` corrects five more to
+the wire, and `AgentStatus` gains `inactive` (all below). Under 1.0 a caret does not
+cross the minor, so `^0.10` keeps building against 0.10.x.
+
+### Changed — `ResourceUsageEntry.limit` is nullable
+
+The field is still required and its type is now `number | null`. **Null is not
+zero**: it means the plan defines no limit for that resource, and `over_by` is
+0 beside it, while `limit: 0` means the plan allows none. A client that printed
+the two the same way told a founder "3 of 0" about a resource with no ceiling
+(macOS lane, measured 2026-10-12). In TypeScript a comparison against `limit`
+now needs the null case handled; in Rust, Swift, Kotlin and Ada the field goes
+from a plain number to an optional one. That is the break, it is one field, and
+one of the reasons this release is not a patch.
+
+### Changed — `RunEventType` renames seven values
+
+Seven `company.*` event types become `initiative.*`: `tick_start`, `tick_end`,
+`paused`, `resumed`, `budget_updated`, `escalation`, `objective_updated`. A
+consumer comparing an emitted `RunEvent.type` against the old literals stops
+matching — in TypeScript at compile time, which is the good case.
+
+Worth knowing for anyone filtering a stream: the `types` query parameter of
+`streamActivityFeed` is a free-form string, not this enum, so a filter is an
+exact match with nothing checking it. `types=company.tick_start` does not fail;
+it returns an empty stream, which reads exactly like "nothing happened".
+`FeedEntryEventType` and `WebhookDeliveryAttemptEventType` keep the old
+spellings and gain the new ones, so historical deliveries still decode.
+
+### Changed — workspace copy and move no longer require their paths
+
+`CopyWorkspaceFileRequest.source_path`/`dest_path` and
+`MoveWorkspaceFileRequest.from_path`/`to_path` go from required to optional
+(build `ef5b646d`). Sending them is unchanged in TypeScript, Swift and Kotlin,
+whose constructors take the old arguments as before. In Rust the fields become
+`Option<String>`, so a struct literal that set `source_path: "a".into()` stops
+compiling and needs `Some(…)`; in Kotlin and Swift, code that *reads* the field
+back gets an optional. Found on 2026-10-14 by diffing the IR of the released
+0.10.0 document against this one, after the two breaks above had already been
+written down as the whole list.
+
+### Added — an API error carries the `code` to switch on
+
+Every problem document the platform sends has a `code` — `SESSION_NOT_ACTIVE`,
+`QUOTA_EXCEEDED`, `resource_limit_reached`, `AUTH_ERROR` — and the document
+says it is what a client should switch on, with `detail` being prose for a
+person. No SDK exposed it. Swift and Kotlin dropped it during decoding, and
+TypeScript and Rust kept it only as an untyped leftover. So the macOS client
+recognised an ended chat by matching the exact English sentence (reported by
+the macOS lane, 2026-10-15). All five now have it:
+`error.code` / `api.code()` / `Problem.Code`.
+
+It is a string, not the `ErrorCode` enum, on purpose: the canon tenant was
+receiving `SIGNING_NOT_CONFIGURED` from `GET /registry/keys` while the enum did
+not list it, and with an enum that whole error would have failed to decode.
+Build `d926b90e` lists it, with nine other codes; a string keeps the next code
+the server sends before the document names it from failing the same way.
+
+Two more things came out of reading real error bodies:
+
+- **The request id.** It was read only from the deprecated `correlationId`.
+  It is now read from `correlation_id` first, then `correlationId`. The header
+  fallback read `X-Correlation-Id`, which the server does not send; it now
+  reads `X-Request-Id`, which it does (production, 2026-10-15).
+  `X-Correlation-Id` is still read after it.
+- **Every other member.** Swift's `Problem.extensions` and Kotlin's
+  `Problem.extensions` (`[String: JSONValue]` / `Map<String, JsonElement>`)
+  hold the members the type does not model, such as `session_status`, `reason`
+  and `retry_after`. Rust already had them in `problem.extra` and TypeScript in
+  the index signature. Swift's `APIError` also gains `body`, the raw bytes,
+  which Kotlin's `ApiException` and Ada's `Problem.Raw` already had.
+- **`reason`, typed.** A refused `X-Active-Tenant` answers 403 `FORBIDDEN`
+  with `reason` set to `not_a_member` or `membership_suspended`, which is how a
+  client tells a lost company from any other refusal (the macOS lane's W33).
+  `error.reason` / `api.reason()` / `Problem.Reason` read it in all five. It is
+  read from the member, not decoded as a field, and is absent when the member
+  is absent or not a string, so a different shape cannot fail the whole error.
+
+What can break:
+
+- **Rust:** `Problem` gains `code` and `correlation_id_legacy`, so an
+  exhaustive struct literal needs them, or `..Default::default()`.
+  `problem.correlation_id` now holds `correlation_id`.
+- **Ada:** `Problem` gains `Code` and `Reason`, so a record aggregate
+  that names every component needs them, or `others => <>`.
+- **Kotlin:** `Problem.correlationId` now reads `correlation_id`. A server that
+  sends only the old spelling, as the 501 above does, leaves it null and fills
+  `legacyCorrelationId`. `ApiException.correlationId` reads both.
+
+Tested on two real bodies in all five SDKs: the 401 production answered with no
+key, and the canon 501. Ada's test is written but, as before, not run here.
+Removing the read of `code` and of `X-Request-Id` turns 3 tests red in
+TypeScript, Rust and Kotlin and 2 in Swift (its third reads `problem.code`
+directly), and leaves the rest green. Extension members are tested on
+the 422 the session route answers for a closed session, with
+`code: SESSION_NOT_ACTIVE` and a top-level `session_status: "closed"`. The API
+lane captured those bytes from the deployed handler, since reproducing the
+refusal on canon would take a write. Dropping the collected members turns 1
+test red in Swift and 1 in Kotlin, out of 63 each.
+
+`reason` is tested on three bodies. `not_a_member` is what production answers
+at `e0b37b03` (2026-10-17). `membership_suspended` is the API lane's capture
+from `handleRequest` at `d6b1c66e5`, the code that build deploys: producing it
+on the wire would mean suspending a membership on canon. The third is the same
+refusal as production answered it at `d926b90e`, the day before, with no `code`
+and no `reason`: there `reason` must be absent, and is. Removing the read of `reason`
+turns that one test red in each of TypeScript (1 of 68), Rust (1 of 46),
+Swift (2 assertions in 1 of 65) and Kotlin (1 of 65), and leaves every other
+test green. Ada's check is written, not run.
+
+### Changed — build `b108e9a9`: eight types follow the wire
+
+Every one of these is the document catching up with what the server already
+sent or required, measured before the deploy: on build `199b0863` the Rust SDK
+failed to decode eight live canon bodies, and after regenerating it decodes all
+eight, re-fetched from `b108e9a9` and as captured before it. A consumer of
+0.10.0 that hit these operations was already getting an error, which is why
+fixing them breaks code that compiles rather than code that worked.
+
+- **`CreateVotingProposalRequest`**: the field is `type`, typed by the
+  `CreateVotingProposalRequestType` enum. The server has required `type` since
+  2026-08-31 and dropped `proposal_type`, so 0.10.0's required `proposal_type`
+  got a 422 on every call; from this build the server also reads
+  `proposal_type` as a deprecated alias when `type` is absent. Both are
+  optional in the type, since either one satisfies the server. In Rust a struct
+  literal setting `proposal_type: "…".into()` needs `Some(…)`.
+- **`GetTeamChatHistoryResponse.chat_state`** and the squad equivalent: an
+  object in 0.10.0, a string on the wire (`IDLE`, `RUNNING`, `DONE` and three
+  more), now the `GetTeamChatHistoryResponseChatState` enum.
+- **`TeamRunDetail.runs`**: `Run[]` → `TeamRunDetailRun[]`, a projection
+  without `tenant_id`, which the route never sent.
+- **`Goal.agent_id`, `ArbiterCase.filed_by` / `against_agent_id` / `rule_ids`,
+  `VotingProposal.type` / `proposed_by`, `AuthProvider.email`**: required →
+  optional. An unlinked auth provider has no email; the governance rows did not
+  carry the others. In Rust, Swift and Kotlin these become optionals for code
+  that reads them.
+- **Added**: `next_step` on the tenant company overview (with
+  `GetTenantCompanyOverviewResponseNextStepKind`: `setup`, `resume`, `decide`,
+  `problem`, `wait`) and `company.objective` (`string | null`), both optional,
+  because a server before this build does not send them. `SESSION_NOT_ACTIVE`
+  joins `ErrorCode`. Nine operations gain `x-capability`.
+
+### Changed — build `d926b90e`: `getSession` answers its own type, and seven hire operations
+
+`GET /sessions/{id}` now declares its body as the `Session` plus a required
+`context`, the agent's context window as the chat header shows it
+(`SessionContext`: `window_tokens`, `used_tokens` and `percent`, null when
+unknown, never 0, plus `source` and `updated_at`). So `getSession` returns
+`GetSessionResponse` instead of `Session`. In TypeScript that is a superset and
+assigns to `Session` unchanged; in Rust, Swift, Kotlin and Ada it is a
+different type, and code that names `Session` for the result stops compiling.
+The session read from the canon tenant on production on 2026-10-17 carries
+`context`; a body captured on 2026-10-15, before the build, has none and
+fails to decode in all three typed SDKs, which is the build's change rather
+than a defect.
+
+Added, all optional. Those the read-only sweep had captured (`cached_tokens`,
+the webhook fields, the goal's legacy values) were on the wire before the
+document named them:
+
+- the `hire` group, an outside agent hired into a tenant: `hireAgent`,
+  `getHireCatalog`, `getHireIcon`, `hiredAgentMcp`, and `newHireCommand` and
+  `disconnectHiredAgent` under `/agents/{agentId}/hire`; `Agent.hire` and
+  `Agent.bridge_status`;
+- `repairAgentRecords`, an admin maintenance route;
+- `RunMetrics.cached_tokens`; `WebhookSubscription.updated_at`,
+  `failure_count`, `last_failure_at` and `secret`, which every read answers as
+  `"[redacted]"` and only the `201` of `POST /webhooks` in full;
+- `Goal.priority` and the `abandoned` status, both on goals stored before
+  2026-08-31 only;
+- `ConversationEntry.author_agent_id`, `author_name`, `error_code` and
+  `error_details`; `InboxItem.goal`; the inbox review's `headline` and
+  `summary_truncated`; the economics' `month_to_date_llm_usd` and
+  `llm_run_rate_basis`; the AI system card's `tool_sources`;
+- ten `ErrorCode` values and the `session.context` run event.
+
+### Added — build `0837bb4d`: qualification sponsorship, data-processing policies, a run's execution receipt
+
+Fourteen operations, none removed, and a 54th group, `qualification`:
+sponsorship programs and grants (`/qualification/sponsorship-programs`,
+`/qualification/sponsorship-grants`), their admin side (sponsor keys, pricing
+revisions, programs), the tenant's qualification evaluator, data-processing
+policies for a tenant and for admins (with revoke), and `GET
+/runs/{runId}/execution-receipt`. `listRuns` takes `client_request_id` and
+`purpose`. `ErrorCode` lists the new codes (`SPONSORSHIP_*`, `QUALIFICATION_*`,
+`PROCESSING_POLICY_*`, `MANAGED_AGENT` and others); `code` stays a string.
+
+`AgentStatus` gains `inactive`, which the wire was already sending (reported
+at build `e0b37b03` as undocumented, and decoded then through the unknown-value
+fallback). A `match`/`when`/`switch` over `AgentStatus` without a default arm
+now needs the case.
+
+`runs.create` is still typed by its `Run`. The document now lists a 200 and a
+201 `QualificationSponsoredRunExcerpt` before the 202 `Run`, but those answer
+only a body that carries `execution_requirements` — the sponsored qualification
+path, which Nestor's server takes under a sponsorship grant and no SDK caller
+does (API lane, from `wantsQualification()`). Typed by the first 2xx, every
+SDK would have demanded `execution_requirements` and the strict decoders would
+have refused every ordinary run. The generator pins `createRun` to its 202 in
+`TYPED_BY_STATUS` (generator/src/parse.ts); the build stops if the document
+ever stops listing it.
+
+### Changed — build `e0b37b03`: five more types follow the wire
+
+The API lane checked the thirteen operations whose bodies carried keys the
+document did not name (listed from the canon sweep here) and fixed the document
+rather than the SDK. Three were document errors, and they change types 0.10.0
+exported:
+
+- **`getMemoriesByEntity`** answers `entries` and `total`. The `items` the
+  document named was never sent, so `GetMemoriesByEntityResponse.items` was
+  always empty; it is gone, and `entries` (required) replaces it.
+- **`getReady`** answers `components`, the same `ReadinessReport` as
+  `healthReady`, and returns that type. The `GetReadyResponse` family leaves.
+- **`getTeamGraph`** carries the stored graph envelope as `graph`
+  (`GetTeamGraphResponseGraph`) beside the nodes and edges.
+
+Two more change shape on purpose:
+
+- **`AmbassadorRequest.type`** is a `string` on read: stored rows hold
+  `question` and other values outside the four the platform now accepts.
+  `AmbassadorRequestType` stays, for `createAmbassadorRequest`, which the
+  server now refuses with 422 for any other value.
+- **`createRun`'s `resource_limits`** is `CreateRunRequestResourceLimits`
+  instead of a free JSON object; the server refuses unknown keys there. In
+  `AgentUpdate`, `resource_limits` and each of its limits may be `null`.
+
+Added, all optional: `getMe`'s `tenant.head_agent_id`, `logo_url` and
+`shared_workspace_id`; the invite's `last_sent_at`; the guardrail's
+`has_secret`; the public tenant's `stats.total_ratings`; the webhook
+deliveries' `truncated`; `listAgentScorers`' `total`; the model list's
+OpenAI fields; `healthzAlias` with the full `/health` body; the head-agent
+template's tier limits and tools. New operations: `getMyEmailPreferences` and
+`updateMyEmailPreferences`, and the unsubscribe page behind a letter
+(`showEmailUnsubscribe`, `confirmEmailUnsubscribe`, which answer HTML). The
+sign-in letter's request takes a `locale`, and the admin SMTP config gains a
+`notify` sender, `reply_to` and a test `profile`.
+
+Re-read on production at this build: all 209 bodies of the read-only canon
+sweep, fetched again, decode in Rust, Swift and Kotlin; the thirteen
+operations' keys are all declared now. Still not in the document: the agent
+row's `bridge_fingerprint` and a `status` of `inactive`, and two run metrics,
+`context_window_tokens` and `last_input_tokens`. They decode (the enum keeps an
+unknown value) and are reported to the API lane.
+
+### Changed — `createTask` and memory search take typed bodies
+
+`createTask` and memory `search` took `JsonValue` in 0.10.0 and now take
+`CreateTaskRequest` and `SearchMemoryRequest`. The document has declared their
+properties throughout; next to them, it had an `anyOf` whose members only list
+`required` keys ("one of `agent_id`, `agent_ids`, `team_id`", "`text` or
+`query`"), and the generator read that rule as a union of shapes, failed to
+type it, and fell back to JSON. It is now read as what it is: a rule about the
+object's own properties, which a type cannot enforce, so every property in it is
+optional.
+
+The fix was forced by this build: the document added the same kind of rule to
+the workspace copy and move bodies, and without it `CopyWorkspaceFileRequest`
+and `MoveWorkspaceFileRequest` disappeared from all five SDKs, their methods
+falling back to `JsonValue`. That would have been the one removal in this
+release. In TypeScript the change only narrows what is accepted; in Rust, Swift
+and Kotlin a caller building a JSON value has to build the struct instead.
+
+### Fixed — a `$ref` to a component that admits null is nullable
+
+The generator took a property's nullability from the property alone, so a
+`$ref` to a component declared `type: ["object", "null"]` — or with a
+`{"type": "null"}` member in its `oneOf` — came out non-null. `CompanyTestRun`
+is declared that way, and `GET /tenants/me/readiness` answers `test_run: null`
+for a company that has never rehearsed: Rust failed with `invalid type: null,
+expected struct CompanyTestRun`, Swift with `valueNotFound … test_run`, Kotlin
+with `Expected start of the object '{'`. `test_run` is now optional in all
+five; the five `ScheduleShape` sites become `ScheduleShape | null` in
+TypeScript (the other four already decoded null into their JSON value type).
+Nothing that 0.10.0 exported changes: neither component existed there.
+
+Build `d926b90e` moves that null from the component to the property, as asked
+of the API lane: `CompanyTestRun` itself is an object, and `readiness.test_run`
+is `CompanyTestRun | null`. So the `202` of `startTenantTestRun`, a whole-body
+`$ref` to the component, is a `CompanyTestRun` again rather than an optional
+one, which is what the route answers ("Started.", with the run it started).
+Neither existed in 0.10.0.
+
+### Changed — a response body that may be null is optional
+
+`GET /agents/{id}/schedule` answers `null` for an agent with no schedule, and
+says so ("null in response body when no schedule is set"). The generator typed
+every response body by its schema and dropped whether it may be null. So
+`getSchedule` returned `Schedule`, and on that answer Rust failed with
+`invalid type: null, expected struct Schedule`, Swift with `valueNotFound` and
+Kotlin likewise. It is now `Schedule | null` in TypeScript, `Option<Schedule>`
+in Rust and `Schedule?` in Swift and Kotlin. Ada has no optional record, and
+`From_JSON` over a null would return an all-empty record that reads like a real
+one, so the Ada function returns the `JSON_Value`: test it with `Is_Null`, then
+call `From_JSON`. That is a break for every caller of `getSchedule`, which
+0.10.0 already had, and one whose old form failed on the answer it now handles.
+
+Found by decoding every JSON body the canon tenant answers a read-only sweep
+with, 209 operations, in the Rust, Swift and Kotlin SDKs. Before this fix 208
+decoded in Rust; after it, all 209 decode in all three, and again against build
+`d926b90e` with `getSession` re-read from production. A harness check on four
+deliberately broken bodies: a missing required key, a null in a non-null
+field and a wrong primitive each fail in all three, and the untouched body
+passes. Removing the parser's `nullable` flag turns 6 generator tests red, and
+1 transport test each in Rust, Swift and Kotlin (Rust at runtime, not at
+compile). TypeScript was always returning the `null`; its change is to the
+type alone.
+
+### Changed — `CompanyProposal.operations` is a discriminated union
+
+This one is internal to the collected drafts and invisible to 0.10.0, which
+never had the Company Builder: it is recorded because it moved the generated
+surface between `ef5b646d` and `435ca06c`.
+
+Nothing in the document is renamed. In `ef5b646d` the array's items were an
+inline object whose only property was `op`; in `435ca06c` they are a `$ref` to
+`ProposalOperation`, a schema that build adds — a `oneOf` of eleven
+`ProposalOp*` variants (`add_agent`, `update_agent`, `remove_agent`,
+`set_agent_schedule`, `set_approval_policy`, `add_squad`, `set_squad_members`,
+`update_company`, `set_budget`, `add_mission_schedule`,
+`remove_mission_schedule`) discriminated by `op`, each variant declaring `op`
+as a single-value enum. So the wire gains the fields each operation carries,
+which the inline shape never described anywhere in any SDK.
+
+The names that move are the generator's. The inline item was hoisted as
+`CompanyProposalOperation` and its enum as `CompanyProposalOperationOp`; a
+`$ref` hoists neither, and both leave the generated surface along with the
+`COMPANY_PROPOSAL_OPERATION_OP_VALUES` const TypeScript exported beside them.
+`operations` becomes `ProposalOperation[]`. A client that read
+`operations[].op` keeps compiling; a client that named the old type, or built
+an operation literal, does not.
+
+Only TypeScript gets the union. The generator renders `oneOf` as a union in one
+target, so Rust and Swift and Kotlin type the element as raw JSON
+(`serde_json::Value`, `JSONValue`, `JsonElement`) and Ada as `JSON_Value`,
+checked in the generated output of all five. A discriminated union in every
+target is generator work nobody has commissioned.
+
+### Added — the Company Builder, second half (build `435ca06c`)
+
+- The template catalogue: `listCompanyTemplates` and `getCompanyTemplate`
+  (`GET /company-templates`, `/company-templates/{templateId}`), which need no
+  tenant, and `fitCompanyTemplate` (`POST /company-templates/{templateId}/fit`),
+  which scores a template against a stated need. Schemas `CompanyTemplate`
+  (with its departments, roles, connectors and defaults), `CompanyTemplateCard`
+  and `FitRange`.
+- `applyTenantCompanyTemplate` (`POST /tenants/me/company/apply-template`) takes
+  a `template_id` and its `inputs` and answers 201 with the **proposal** those
+  inputs would produce — nothing is applied. Same shape for
+  `importTenantCompany` (`POST /tenants/me/company/import`, body
+  `CompanyImportRequest`, only `schema_version` required) and
+  `restoreTenantCompanyVersion` (`POST /tenants/me/company/restore`, body
+  `{version}`): all three propose, and a person applies. Reading the name as a
+  write is the mistake to avoid here.
+- The tenant's own copy: `exportTenantCompany` (`GET /tenants/me/company/export`)
+  returns the manifest — `CompanyExport`, with `ExportExcludedNote` naming what
+  an export leaves out — and `listTenantCompanyVersions`
+  (`GET /tenants/me/company/versions`) lists the versions a restore can name.
+- `getTenantPlanFit` (`GET /tenants/me/fit`): whether this plan fits a stated
+  run profile, per check, with `GetTenantPlanFitResponseCheckStatus` and
+  `...CheckCode` saying what failed and `FitRange` giving the band a check
+  compares against. In build `199b0863` this body became the shared component
+  `TenantPlanFit`, which the template fit `$ref`s too; the method returns that
+  type now. Both names are inside this unreleased batch, so nothing a 0.10.0
+  consumer imported moves.
+- `POST /company/import` bounds `schedules` and `mission_schedules` at 50
+  items each, where the document had said 5 242 880 — a byte ceiling wearing a
+  count. The export measured at 244 384 bytes for 13 agents, so a 50-agent
+  manifest lands near 1 MB and fits one response.
+
+### Added — response fields, both builds
+
+- `truncated` on the answers of `listTenantCompanyChanges` and
+  `listTenantCompanyVersions`: the list was cut at `limit`.
+- `schedules_removed` on `DELETE /squads/{squadId}`: deleting a squad takes its
+  schedules with it, and the number says how many.
+- `proposals` and `counts.proposal` on the inbox (`getTenantInbox`).
+- `"revised"` in `Run.approvals[].decision`: the person declined the action and
+  sent the run on with feedback, instead of `approved` or `rejected`.
+- `initiative_id` on `Agent`, `AgentUpdate` and `Company`: which initiative an
+  agent belongs to, now that `/initiatives` is the canonical surface.
+- `review_required`, `review`, `revisions` and `sources` on objectives, so a
+  mission result waiting on a person's verdict is readable from the object.
+- `proposal_error` on `CreateMyTenantResponse`, and `template_id` with `inputs`
+  on `CreateMyTenantRequest`: creating a company from a template. `x-capability`
+  now marks 49 operations, and the `capabilities` list in `getHealth` says what
+  each name covers — including that `company_versions` gates
+  `POST /company/restore` — so a client can gate a screen without inferring.
+
+### Added — the Company Builder (`company` group)
+
+In this API a company is the tenant itself, so these live under
+`/tenants/me`: `getTenantCompany`, `updateTenantCompany` (PATCH, with
+`expected_version`; a stale one answers 409 `VERSION_CONFLICT`),
+`listTenantCompanyChanges`, `pauseTenantCompany`, `resumeTenantCompany`,
+`previewTenantCompanyPause`, `getTenantBlueprint`, the proposals
+(`listTenantProposals`, `createTenantProposal`, `getTenantProposal`,
+`applyTenantProposal`, `rejectTenantProposal`), `getTenantReadiness`,
+`startTenantTestRun`, `launchTenantCompany` and `getTenantCompanyOverview`.
+New schemas: `CompanyProfile`, `CompanyChange`, `CompanyProposal`,
+`CompanyProposalStep`, `CompanyReadinessItem`, `CompanyTestRun`.
+
+### Added — `/initiatives` (`initiatives` group); `/companies` is deprecated
+
+`/companies` is renamed to `/initiatives`. The eleven new operations are its
+twins: `listInitiatives` (with a paging helper), `createInitiative`,
+`getInitiative`, `updateInitiative`, `deleteInitiative`, `pauseInitiative`,
+`resumeInitiative`, `getInitiativeActivity`, `getInitiativeBudget`,
+`getInitiativeObjectives` and the event stream `streamInitiativeEvents`.
+Every `/companies` operation is marked deprecated in the document, and so in
+all five SDKs (`@deprecated`, `@available(*, deprecated)`, `#[deprecated]`,
+`@Deprecated`, and an Ada comment). They still work, and the server
+answers them as an alias.
+
+### Added — elsewhere
+
+- Mission schedules: `listMissionSchedules`, `createMissionSchedule`,
+  `deleteMissionSchedule` (schema `ScheduleShape`), and
+  `getMissionPerformance` (`GET /analytics/missions`).
+- `reviewMissionObjective` (`POST /missions/{id}/objectives/{oid}/review`).
+- `getRunSources` (`GET /runs/{id}/sources`) and `reviseRun`
+  (`POST /runs/{id}/revise`).
+- `language` on the request of `POST /llm/audio/speech` (build `0d6cf25b`):
+  an optional language tag for the generated speech.
 
 The validation 422 now carries `code: VALIDATION_ERROR`, a value `ErrorCode`
 already had, so no SDK type changes for it.
+
+### Read on the wire
+
+Six of the nine new operations were called on production (`c005edcb`, tenant
+Gliese LLC) by the API lane, whose key this checkout does not hold, and the
+captured bodies were then decoded here against the types above: 0 mismatches —
+no required field absent, no null where the document declares otherwise, no
+primitive of the wrong type, and no key on the wire that the document does not
+mention. The six were `listCompanyTemplates` (1 template),
+`getCompanyTemplate` (14/14 fields), `fitCompanyTemplate`,
+`getTenantPlanFit`, `exportTenantCompany` (13/13 fields, 13 agents, secrets
+excluded) and `listTenantCompanyVersions` (`{items: [], total: 0, truncated:
+false}` — empty, and that tenant has no change journal to be empty of, so the
+zero is honest but unproven). `getTenantPlanFit` settled the one that mattered:
+`budget_limit_usd` is `null` beside `fits: true` on `enterprise`, so null
+really does mean "no limit defined" rather than zero.
+
+The three writes were not run: a proposal is still a row in a tenant, so they
+wait, and they will not be run on `e2e-canon`.
+
+Reading turned up one document defect, which API fixed in build `199b0863`
+rather than leaving it to be worked around: `fitCompanyTemplate`'s 200 declared
+`target`, `template` and `additionalProperties: true`, so the generated
+`FitCompanyTemplateResponse` was `{target?, template?, [key: string]: unknown}`
+and a caller reading `fits` or `checks` got `unknown` and had to cast. The
+captured body said what the shape really was — thirteen keys, byte-for-byte the
+eleven of `GET /tenants/me/fit` plus those two — and the fix is exactly that:
+the plan-fit body moved into a component, `TenantPlanFit`, that both operations
+now `$ref`, and this build's `FitCompanyTemplateResponse` declares all thirteen
+fields with `target` and `template` required.
+
+Verified after the fix, against the same captured bytes and the regenerated
+types: 0 mismatches, and the fit-template response now reports 13 keys against
+13 declared fields rather than 2.
+
+### Not verified on the wire
+
+The three write operations — `applyTenantCompanyTemplate`,
+`importTenantCompany`, `restoreTenantCompanyVersion` — have never been called
+from here. They propose rather than apply, so what is unread is the proposal
+they answer with, not a mutation. The `CompanyProposal` shape they return is
+the one `createTenantProposal` returns, which the contract's own examples cover.
 
 ## 0.10.0 — 2026-10-12
 

@@ -26,7 +26,7 @@ export class SchedulerResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  getSchedule(agentId: string, options?: RequestOptions): Promise<Schedule> {
+  getSchedule(agentId: string, options?: RequestOptions): Promise<Schedule | null> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/schedule`,

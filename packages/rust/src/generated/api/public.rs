@@ -16,6 +16,14 @@ use crate::pagination::CursorGuard;
 use crate::sse::EventStream;
 use crate::util::encode_path;
 
+/// Query and header parameters for `confirmEmailUnsubscribe`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConfirmEmailUnsubscribeParams {
+    pub e: String,
+    pub c: models::ShowEmailUnsubscribeC,
+    pub t: String,
+}
+
 /// Query and header parameters for `getAndroidTestingStatus`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetAndroidTestingStatusParams {
@@ -172,6 +180,16 @@ pub struct RetryPublicVideoOrderParams {
     pub x_order_token: String,
 }
 
+/// Query and header parameters for `showEmailUnsubscribe`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ShowEmailUnsubscribeParams {
+    /// The address, base64url.
+    pub e: String,
+    pub c: models::ShowEmailUnsubscribeC,
+    /// HMAC over the address and category.
+    pub t: String,
+}
+
 /// Unauthenticated public-facing endpoints
 #[derive(Debug, Clone)]
 pub struct PublicApi {
@@ -260,6 +278,26 @@ impl PublicApi {
                 method: Method::POST,
                 path: format!("/api/v1/public/sessions/{}/runs/{}/cancel", encode_path(session_id), encode_path(run_id)),
                 query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Turn one kind of mail off
+    ///
+    /// Turns the category in the link off for that address and answers an HTML page saying so. Also
+    /// what a mail client sends for RFC 8058 one-click unsubscribe (`List-Unsubscribe-Post:
+    /// List-Unsubscribe=One-Click`); the body is not read. Same query parameters as the GET.
+    ///
+    /// `POST /api/v1/public/email/unsubscribe`
+    pub async fn confirm_email_unsubscribe(&self, params: &ConfirmEmailUnsubscribeParams) -> Result<String> {
+        self.client
+            .request_text(Request {
+                method: Method::POST,
+                path: "/api/v1/public/email/unsubscribe".to_string(),
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: true,
@@ -400,8 +438,11 @@ impl PublicApi {
     /// Unfurl a cited link into card metadata
     ///
     /// Open Graph metadata for a URL an agent cited, so the client renders a card instead of a bare
-    /// link. SSRF-guarded: a private or loopback address is refused with 403 rather than fetched.
-    /// Every member of `preview` except `url` and `site` may be null.
+    /// link. SSRF-guarded: a private or loopback address is refused with 403 rather than fetched —
+    /// written as a literal, or as a name that resolves to one (`localtest.me`; since 2026-10-12 —
+    /// before, such a name answered 200 with an empty card, unfetched). A name that resolves to
+    /// nothing still answers 200 with the bare card. Every member of `preview` except `url` and
+    /// `site` may be null.
     ///
     /// `GET /api/v1/public/link-preview`
     pub async fn get_link_preview(&self, params: &GetLinkPreviewParams) -> Result<models::GetLinkPreviewResponse> {
@@ -1211,6 +1252,27 @@ impl PublicApi {
             .await
     }
 
+    /// Unsubscribe page from a letter
+    ///
+    /// The link in the footer of a weekly summary or a tips letter (since 2026-10-17). Answers an
+    /// HTML page with one button and changes nothing, because mail scanners open every link in a
+    /// message. A link that was not signed by Snaga, or names an unknown category, answers 400 with
+    /// an HTML page. Rate limited to 30 per minute per IP.
+    ///
+    /// `GET /api/v1/public/email/unsubscribe`
+    pub async fn show_email_unsubscribe(&self, params: &ShowEmailUnsubscribeParams) -> Result<String> {
+        self.client
+            .request_text(Request {
+                method: Method::GET,
+                path: "/api/v1/public/email/unsubscribe".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Sign up for Android closed testing
     ///
     /// Records the address and, when a testing URL is configured, mails the join link. A repeat
@@ -1235,9 +1297,10 @@ impl PublicApi {
     ///
     /// Server-Sent Events for an anonymous session: the run events of every run in the session,
     /// each with an id of `\<runId\>:\<seq\>`, so a client can resume by sending the last one as
-    /// `Last-Event-ID`. The session token is required (**401** when absent) and is verified inside
-    /// the stream — an invalid token arrives as an `error` event on an otherwise open stream rather
-    /// than an HTTP status. Each open stream takes a slot against the platform's concurrent-SSE
+    /// `Last-Event-ID`. The session token is required and must belong to THIS session: absent,
+    /// invalid, or another session's token is **401** before any stream opens (since 2026-10-12;
+    /// before, an invalid or foreign token got 200 and an `error` event, and still took one of the
+    /// session's SSE slots). Each open stream takes a slot against the platform's concurrent-SSE
     /// ceiling, keyed by public session rather than tenant, and exceeding it answers **429**.
     /// Anonymous, and limited to 240 requests per minute per IP by the router so reconnect storms
     /// do not trip the ordinary public cap.

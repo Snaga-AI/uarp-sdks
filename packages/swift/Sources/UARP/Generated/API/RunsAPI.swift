@@ -77,6 +77,18 @@ public struct RunsAPI: Sendable {
     /// response (same run_id). Pin a specific agent version with `version` to bypass the head
     /// pointer.
     ///
+    /// A body carrying `execution_requirements` is a sponsored qualification run (Nestor, since
+    /// 2026-10-17) and has its own admission: `QualificationSponsoredRunCreateV2`, strict JSON
+    /// (repeated member names refused, at most 131072 bytes), `metadata` names not starting with
+    /// `_`. The first acceptance answers 201, an exact replay of the same `client_request_id`
+    /// command answers 200 with the original run, another command under that id is 409
+    /// `CLIENT_REQUEST_CONFLICT`. Refusals: 403 `SPONSORSHIP_REQUIRED` (a v1 command: the candidate
+    /// never pays), 403 `SPONSORSHIP_GRANT_MISMATCH` with `reason`, 409
+    /// `SPONSORSHIP_GRANT_UNAVAILABLE` / `SPONSORSHIP_PROGRAM_INACTIVE`, 412
+    /// `PROCESSING_POLICY_NOT_READY` / `PROCESSING_POLICY_CHANGED`, 422
+    /// `EXECUTION_PROFILE_UNVERIFIABLE` / `INVALID_REQUEST`. The managed evaluator cannot be run
+    /// without one (403 `MANAGED_AGENT`).
+    ///
     /// `POST /api/v1/runs`
     ///
     /// Required scopes: `runs:create`.
@@ -284,6 +296,29 @@ public struct RunsAPI: Sendable {
         ))
     }
 
+    /// Where a run's facts came from
+    ///
+    /// Derived from the run's own tool events and its answer — nothing is stored, so every run has
+    /// one. Each source is a URL with `kind` `read` (the agent opened it: the `url` of a fetch /
+    /// browse / read_feed call) or `found` (it appeared in a tool's result, e.g. a search hit,
+    /// without being opened), the `tool`, and `cited` (the answer links to it); cited first, then
+    /// read. `unsourced_links` are links IN the answer that no tool call or result contained — the
+    /// ones to check first, since nothing the agent read holds them. URLs are compared without
+    /// trailing punctuation, trailing slash or fragment. At most 300 sources (`truncated`). Tool
+    /// results are recorded truncated, so a link deep in a very long result may be missed. `404`
+    /// when the run does not exist. Since 2026-10-12.
+    ///
+    /// `GET /api/v1/runs/{runId}/sources`
+    ///
+    /// Required scopes: `runs:read`.
+    public func getRunSources(runId: String, options: RequestOptions = .init()) async throws -> GetRunSourcesResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/runs/\(encodePathSegment(runId))/sources",
+            options: options
+        ))
+    }
+
     /// List steps for a run
     ///
     /// Returns the ordered list of steps executed during a run, with per-step metrics including
@@ -335,8 +370,14 @@ public struct RunsAPI: Sendable {
     /// `GET /api/v1/runs`
     ///
     /// Required scopes: `runs:read`.
-    public func list(agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, order: ListRunsOrder? = nil, options: RequestOptions = .init()) async throws -> ListRunsResponse {
+    public func list(clientRequestId: String? = nil, purpose: String? = nil, agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, order: ListRunsOrder? = nil, options: RequestOptions = .init()) async throws -> ListRunsResponse {
         var query: [URLQueryItem] = []
+        if let clientRequestId {
+            query.append(URLQueryItem(name: "client_request_id", value: clientRequestId))
+        }
+        if let purpose {
+            query.append(URLQueryItem(name: "purpose", value: purpose))
+        }
         if let agentId {
             query.append(URLQueryItem(name: "agent_id", value: agentId))
         }
@@ -365,9 +406,9 @@ public struct RunsAPI: Sendable {
 
     /// Stream every item returned by `listRuns`, following the `cursor` cursor until the server
     /// reports no further pages.
-    public func listAll(agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, order: ListRunsOrder? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<Run, Error> {
+    public func listAll(clientRequestId: String? = nil, purpose: String? = nil, agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, order: ListRunsOrder? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<Run, Error> {
         autoPaginate(
-            fetch: { cursor in try await self.list(agentId: agentId, sessionId: sessionId, status: status, limit: limit, cursor: cursor, order: order, options: options) },
+            fetch: { cursor in try await self.list(clientRequestId: clientRequestId, purpose: purpose, agentId: agentId, sessionId: sessionId, status: status, limit: limit, cursor: cursor, order: order, options: options) },
             items: { $0.items },
             cursor: { $0.cursor },
             hasMore: { $0.hasMore }
@@ -525,6 +566,31 @@ public struct RunsAPI: Sendable {
         ))
     }
 
+    /// Decline the pending action with feedback, and let the run go on
+    ///
+    /// The third answer to a run waiting on approval, beside approve and reject: the person
+    /// declines the action AND says what to change, and the run continues. Every tool call the run
+    /// was waiting on is answered with a result saying it was NOT carried out, carrying `feedback`;
+    /// the model reads that as the outcome of what it tried and revises its work. Recorded on the
+    /// run's `approvals` as `decision: revised` with the feedback as `reason`. Requires the
+    /// `runs.approve` permission. `404` when the run does not exist; `409` unless its status is
+    /// `awaiting_approval`, for a run on a local bridge (decided on that machine — approve or
+    /// reject it), and when a concurrent write wins. `422` without `feedback`. Since 2026-10-12;
+    /// before, the only refusal (`reject`) failed the run.
+    ///
+    /// `POST /api/v1/runs/{runId}/revise`
+    ///
+    /// Required scopes: `runs:create`.
+    public func reviseRun(runId: String, body: ReviseRunRequest, options: RequestOptions = .init()) async throws -> ReviseRunResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/runs/\(encodePathSegment(runId))/revise",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Save user feedback/reaction for a run
     ///
     /// One reaction per (message, caller); a second PUT for the same `message_id` replaces the
@@ -564,7 +630,10 @@ public struct RunsAPI: Sendable {
     /// reconnection. Stream closes when run reaches terminal status. Each event payload includes
     /// `stream_type`: lifecycle (run.*), assistant (llm.chunk), tool (tool.*), or other — use it to
     /// filter client-side. Browsers using EventSource (which cannot set Authorization headers)
-    /// should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`.
+    /// should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`. A
+    /// session run also emits `session.context` (payload: SessionContext plus `session_id`) after
+    /// the run's last model call and before `run.completed` — the context bar's live update, since
+    /// 2026-10-15.
     ///
     /// `GET /api/v1/runs/{runId}/events`
     ///

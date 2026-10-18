@@ -6,10 +6,21 @@ public struct Problem: Codable, Hashable, Sendable {
     public var title: String?
     public var status: Int?
     public var detail: String?
-    /// Request identifier to quote when reporting an incident.
+    /// What a client should do about the failure, as a stable value to switch
+    /// on (`SESSION_NOT_ACTIVE`, `QUOTA_EXCEEDED`, `resource_limit_reached`, …).
+    /// `detail` is the sentence for a person and can change; this cannot. The
+    /// values are those of `ErrorCode`, kept as a string here so that a code
+    /// added after this SDK was built still reaches the caller.
+    public var code: String?
+    /// Request identifier to quote when reporting an incident. Read from
+    /// `correlation_id`, or from the deprecated `correlationId` spelling.
     public var correlationId: String?
     /// Field-level validation failures, present on 422 responses.
     public var errors: [FieldError]?
+    /// Every other member of the document, as sent: `session_status`, `reason`,
+    /// `retry_after` and whatever a route adds. A problem document is open by
+    /// definition, and decoding only the six members above lost the rest.
+    public var extensions: [String: JSONValue]
 
     public init(
         type: String? = nil,
@@ -17,7 +28,9 @@ public struct Problem: Codable, Hashable, Sendable {
         status: Int? = nil,
         detail: String? = nil,
         correlationId: String? = nil,
-        errors: [FieldError]? = nil
+        errors: [FieldError]? = nil,
+        code: String? = nil,
+        extensions: [String: JSONValue] = [:]
     ) {
         self.type = type
         self.title = title
@@ -25,6 +38,49 @@ public struct Problem: Codable, Hashable, Sendable {
         self.detail = detail
         self.correlationId = correlationId
         self.errors = errors
+        self.code = code
+        self.extensions = extensions
+    }
+
+    private struct Key: CodingKey {
+        var stringValue: String
+        var intValue: Int? { nil }
+        init(_ string: String) { stringValue = string }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+
+    private static let members: Set<String> = [
+        "type", "title", "status", "detail", "code", "correlation_id", "correlationId", "errors",
+    ]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: Key.self)
+        type = try container.decodeIfPresent(String.self, forKey: Key("type"))
+        title = try container.decodeIfPresent(String.self, forKey: Key("title"))
+        status = try container.decodeIfPresent(Int.self, forKey: Key("status"))
+        detail = try container.decodeIfPresent(String.self, forKey: Key("detail"))
+        code = try container.decodeIfPresent(String.self, forKey: Key("code"))
+        correlationId = try container.decodeIfPresent(String.self, forKey: Key("correlation_id"))
+            ?? container.decodeIfPresent(String.self, forKey: Key("correlationId"))
+        errors = try container.decodeIfPresent([FieldError].self, forKey: Key("errors"))
+        var rest: [String: JSONValue] = [:]
+        for key in container.allKeys where !Self.members.contains(key.stringValue) {
+            rest[key.stringValue] = try container.decode(JSONValue.self, forKey: key)
+        }
+        extensions = rest
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: Key.self)
+        for (key, value) in extensions { try container.encode(value, forKey: Key(key)) }
+        try container.encodeIfPresent(type, forKey: Key("type"))
+        try container.encodeIfPresent(title, forKey: Key("title"))
+        try container.encodeIfPresent(status, forKey: Key("status"))
+        try container.encodeIfPresent(detail, forKey: Key("detail"))
+        try container.encodeIfPresent(code, forKey: Key("code"))
+        try container.encodeIfPresent(correlationId, forKey: Key("correlation_id"))
+        try container.encodeIfPresent(errors, forKey: Key("errors"))
     }
 }
 
@@ -55,12 +111,24 @@ public struct APIError: Error, Sendable, CustomStringConvertible {
     public let problem: Problem
     /// Response headers, keyed by lower-cased name.
     public let headers: [String: String]
+    /// The response body exactly as received, for whatever the problem
+    /// document does not model.
+    public let body: Data?
 
-    public init(status: Int, problem: Problem, headers: [String: String]) {
+    public init(status: Int, problem: Problem, headers: [String: String], body: Data? = nil) {
         self.status = status
         self.problem = problem
         self.headers = headers
+        self.body = body
     }
+
+    /// The stable code to switch on, e.g. `SESSION_NOT_ACTIVE`.
+    public var code: String? { problem.code }
+
+    /// Why, when the code alone does not say: a refused `X-Active-Tenant`
+    /// answers 403 `FORBIDDEN` with `not_a_member` or `membership_suspended`.
+    /// The problem's `reason` member, when it is a string.
+    public var reason: String? { problem.extensions["reason"]?.stringValue }
 
     public var kind: APIErrorKind {
         switch status {
@@ -79,9 +147,10 @@ public struct APIError: Error, Sendable, CustomStringConvertible {
         }
     }
 
-    /// Request identifier for support tickets.
+    /// Request identifier for support tickets. The server sends it as
+    /// `X-Request-Id`; `X-Correlation-Id` is read for older deployments.
     public var correlationId: String? {
-        problem.correlationId ?? headers["x-correlation-id"]
+        problem.correlationId ?? headers["x-request-id"] ?? headers["x-correlation-id"]
     }
 
     /// Seconds the server asked the client to wait, from `Retry-After`.

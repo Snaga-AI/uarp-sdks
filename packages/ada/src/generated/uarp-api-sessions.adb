@@ -171,7 +171,7 @@ package body UARP.API.Sessions is
 
    function Create_Task
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Create_Task_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Created_Task
    is
@@ -181,7 +181,7 @@ package body UARP.API.Sessions is
             (Self,
              "POST",
              "/api/v1/todos",
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));
@@ -280,7 +280,7 @@ package body UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Session
+      return UARP.Models.Get_Session_Response
    is
    begin
       return UARP.Models.From_JSON

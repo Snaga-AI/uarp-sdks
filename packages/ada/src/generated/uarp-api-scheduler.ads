@@ -3,6 +3,7 @@
 --  Cron-based scheduling
 
 with UARP.Client;
+with UARP.JSON_Support;
 with UARP.Models;
 package UARP.API.Scheduler is
 
@@ -23,7 +24,7 @@ package UARP.API.Scheduler is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Schedule;
+      return UARP.JSON_Support.JSON_Value;
 
    --  List every agent schedule
    --

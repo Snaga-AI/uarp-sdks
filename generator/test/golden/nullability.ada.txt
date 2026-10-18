@@ -7,7 +7,7 @@ package UARP.Meta is
    Spec_Version : constant String := "1.0.0";
 
    --  Version of this SDK.
-   SDK_Version : constant String := "0.10.0";
+   SDK_Version : constant String := "0.11.0";
 
    --  Production base URL.
    Default_Base_URL : constant String := "https://api.test";
@@ -55,6 +55,33 @@ package UARP.Models is
    function To_JSON (Model : Envelope) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Envelope;
 
+   --  `Owner` model.
+   type Owner is record
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Owner) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Owner;
+
+   --  Null until the first rehearsal.
+   type Rehearsal is record
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Rehearsal) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Rehearsal;
+
+   --  `ShapeVariant2` model.
+   type Shape_Variant2 is record
+      Every : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Shape_Variant2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Shape_Variant2;
+
+   --  Null when the cron has no simple shape.
+   subtype Shape is UARP.Models.Shape_Variant2;
+
    --  Every shape of optionality the spec uses.
    type Thing is record
       Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -80,6 +107,14 @@ package UARP.Models is
       Deprecated_Field : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Kind : Boolean := False;
       Kind : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  A plain reference: always an object.
+      Owner : UARP.Models.Owner;
+      --  The component itself admits null, so the reference does too.
+      Has_Rehearsal : Boolean := False;
+      Rehearsal : UARP.Models.Rehearsal;
+      --  Null spelled as a oneOf member on the component.
+      Has_Shape : Boolean := False;
+      Shape : UARP.Models.Shape;
    end record;
 
    function To_JSON (Model : Thing) return UARP.JSON_Support.JSON_Value;
@@ -115,6 +150,54 @@ package body UARP.Models is
          Result.Label := JS.As_Text (JS.Get_Value (Node, "label"));
       end if;
       Result.Extra := Node;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Owner) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Owner is
+      Result : Owner;
+   begin
+      if JS.Present (Node, "name") then
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Rehearsal) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Rehearsal is
+      Result : Rehearsal;
+   begin
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Shape_Variant2) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "every", JS.JSON.Create (Model.Every));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Shape_Variant2 is
+      Result : Shape_Variant2;
+   begin
+      if JS.Present (Node, "every") then
+         Result.Every := JS.As_Text (JS.Get_Value (Node, "every"));
+      end if;
       return Result;
    end From_JSON;
 
@@ -159,6 +242,13 @@ package body UARP.Models is
       end if;
       if Model.Has_Kind then
          JS.Set (Result, "kind", JS.JSON.Create (Model.Kind));
+      end if;
+      JS.Set (Result, "owner", To_JSON (Model.Owner));
+      if Model.Has_Rehearsal then
+         JS.Set (Result, "rehearsal", To_JSON (Model.Rehearsal));
+      end if;
+      if Model.Has_Shape then
+         JS.Set (Result, "shape", To_JSON (Model.Shape));
       end if;
       return Result;
    end To_JSON;
@@ -218,6 +308,17 @@ package body UARP.Models is
          Result.Has_Kind := True;
          Result.Kind := JS.As_Text (JS.Get_Value (Node, "kind"));
       end if;
+      if JS.Present (Node, "owner") then
+         Result.Owner := From_JSON (JS.Get_Value (Node, "owner"));
+      end if;
+      if JS.Present (Node, "rehearsal") then
+         Result.Has_Rehearsal := True;
+         Result.Rehearsal := From_JSON (JS.Get_Value (Node, "rehearsal"));
+      end if;
+      if JS.Present (Node, "shape") then
+         Result.Has_Shape := True;
+         Result.Shape := From_JSON (JS.Get_Value (Node, "shape"));
+      end if;
       return Result;
    end From_JSON;
 
@@ -238,6 +339,7 @@ end UARP.API;
 --
 
 with UARP.Client;
+with UARP.JSON_Support;
 with UARP.Models;
 package UARP.API.Things is
 
@@ -254,6 +356,15 @@ package UARP.API.Things is
       Thing_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Thing;
+
+   --  A thing's schedule, or null when it has none
+   --
+   --  GET /things/{thingId}/schedule
+   function Get_Thing_Schedule
+     (Self : Client_Type;
+      Thing_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
 
    --  GET /envelopes
    function List_Envelopes
@@ -284,6 +395,20 @@ package body UARP.API.Things is
              "/things/" & UARP.Types.Encode_Path_Segment (Thing_Id),
              Options => Options));
    end Get;
+
+   function Get_Thing_Schedule
+     (Self : Client_Type;
+      Thing_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value
+   is
+   begin
+      return UARP.Client.Call
+         (Self,
+          "GET",
+          "/things/" & UARP.Types.Encode_Path_Segment (Thing_Id) & "/schedule",
+          Options => Options);
+   end Get_Thing_Schedule;
 
    function List_Envelopes
      (Self : Client_Type;

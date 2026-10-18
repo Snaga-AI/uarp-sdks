@@ -26,6 +26,24 @@ import {
 } from './ir.ts';
 import { camel, pascal, singular, words } from './naming.ts';
 
+/**
+ * Operations typed by a status other than the first settled 2xx, because the
+ * document lists answers that a caller of this SDK can never receive.
+ *
+ * `createRun` (`POST /api/v1/runs`), since build 0837bb4d: 200 and 201 carry a
+ * `QualificationSponsoredRunExcerpt`, but only for a body that holds
+ * `execution_requirements` — the sponsored qualification path, which only the
+ * Nestor server takes under a sponsorship grant. Every other body is answered
+ * 202 with a `Run` (API lane, 2026-10-17: `wantsQualification()` in
+ * packages/api/lib/qualification/runs.ts). Typed by the first 2xx, every SDK's
+ * `runs.create` would demand `execution_requirements` and the strict decoders
+ * would refuse every ordinary run. The API lane proposes listing only 202 in
+ * the document; when it does, this entry is redundant and can go.
+ */
+const TYPED_BY_STATUS: Record<string, number> = {
+  createRun: 202,
+};
+
 type Json = Record<string, any>;
 
 const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const;
@@ -249,6 +267,15 @@ class Parser {
     return node ?? {};
   }
 
+  /** Whether a (dereferenced) schema admits JSON `null`, in any of the spellings #schemaTypeNullable reads. */
+  #permitsNull(schemaIn: Json): boolean {
+    const schema = this.#flattenAllOf(schemaIn);
+    if (schema.nullable === true) return true;
+    if (Array.isArray(schema.type) && schema.type.includes('null')) return true;
+    const composite = (schema.oneOf ?? schema.anyOf) as Json[] | undefined;
+    return Array.isArray(composite) && composite.some((member) => this.#deref(member).type === 'null');
+  }
+
   #lookupRef(ref: string): Json | undefined {
     if (!ref.startsWith('#/')) return undefined;
     let node: any = this.#doc;
@@ -267,10 +294,15 @@ class Parser {
   #schemaTypeNullable(schemaIn: Json | undefined, hint: string): { type: TypeRef; nullable: boolean } {
     if (!schemaIn || typeof schemaIn !== 'object') return { type: PRIM_JSON, nullable: false };
 
-    // A direct $ref keeps the component's identity instead of being hoisted.
+    // A direct $ref keeps the component's identity instead of being hoisted —
+    // but not by dropping what the component says about null. A component
+    // declared `type: ["object", "null"]` (or `oneOf` with a `null` member) is
+    // null wherever it is referenced; reading the reference as non-null made
+    // three clients throw on `readiness.test_run: null` for a company that has
+    // never rehearsed.
     if (typeof schemaIn.$ref === 'string') {
       const m = /^#\/components\/schemas\/(.+)$/.exec(schemaIn.$ref);
-      if (m) return { type: this.#componentType(m[1]!), nullable: false };
+      if (m) return { type: this.#componentType(m[1]!), nullable: this.#permitsNull(this.#deref(schemaIn)) };
       return this.#schemaTypeNullable(this.#deref(schemaIn), hint);
     }
 
@@ -289,7 +321,13 @@ class Parser {
       }
     }
 
-    const composite = (schema.oneOf ?? schema.anyOf) as Json[] | undefined;
+    // A member that only says which keys are `required` is not an alternative
+    // shape but a rule about the object's own properties ("one of these pairs
+    // must be present"). Read as a union, it erased the copy and move bodies to
+    // untyped JSON at build b108e9a9; it constrains, it does not type.
+    const composite = ((schema.oneOf ?? schema.anyOf) as Json[] | undefined)?.filter(
+      (member) => !isConstraintOnly(member),
+    );
     if (composite && composite.length > 0) {
       const variants: TypeRef[] = [];
       for (const [i, member] of composite.entries()) {
@@ -452,7 +490,7 @@ class Parser {
     }
 
     const body = this.#requestBody(raw.requestBody, opName);
-    const { response, sse, errorStatuses } = this.#response(raw.responses ?? {}, opName);
+    const { response, sse, errorStatuses } = this.#response(raw.responses ?? {}, opName, TYPED_BY_STATUS[raw.operationId]);
     const pagination = this.#pagination(response, queryParams);
 
     // Scopes live in `x-scopes` on the operation since the contract's CTR-10
@@ -551,7 +589,11 @@ class Parser {
     };
   }
 
-  #response(responses: Json, opName: string): { response: ResponseInfo; sse: boolean; errorStatuses: number[] } {
+  #response(
+    responses: Json,
+    opName: string,
+    forced?: number,
+  ): { response: ResponseInfo; sse: boolean; errorStatuses: number[] } {
     const codes = Object.keys(responses)
       .map((c) => Number.parseInt(c, 10))
       .filter((n) => Number.isFinite(n));
@@ -564,7 +606,12 @@ class Parser {
     // status is the one the operation is typed by. Picking the lowest code
     // made fifteen 204 operations decode a body they never receive in 0.5.21.
     const settled = success.length > 1 ? success.filter((c) => c !== 202) : success;
-    const status = settled[0] ?? 200;
+    if (forced !== undefined && !success.includes(forced)) {
+      //  An override that no longer matches the document must stop the build,
+      //  not quietly type the operation by something else.
+      throw new Error(`${opName}: TYPED_BY_STATUS names ${forced}, which the document no longer lists`);
+    }
+    const status = forced ?? settled[0] ?? 200;
     const node = this.#deref(responses[String(status)] ?? {});
     const content: Json | undefined = node.content;
 
@@ -586,8 +633,9 @@ class Parser {
       return { response: { status, type: PRIM_JSON, description: node.description }, sse: true, errorStatuses };
     }
     if (json) {
+      const { type, nullable } = this.#schemaTypeNullable(json.schema, `${opName}Response`);
       return {
-        response: { status, type: this.#schemaType(json.schema, `${opName}Response`), description: node.description },
+        response: { status, type, ...(nullable ? { nullable: true } : {}), description: node.description },
         sse: false,
         errorStatuses,
       };
@@ -704,6 +752,13 @@ function itemHintFor(hint: string): string {
   const sing = singular(last);
   if (sing !== last) return pascal([...parts.slice(0, -1), sing].join(' '));
   return hint + 'Item';
+}
+
+/** A composite member that names no shape: only `required`, `not`, or prose. */
+function isConstraintOnly(member: Json): boolean {
+  if (!member || typeof member !== 'object') return false;
+  const keys = Object.keys(member);
+  return keys.length > 0 && keys.every((key) => key === 'required' || key === 'not' || key === 'description');
 }
 
 function dedupeRefs(refs: TypeRef[]): TypeRef[] {

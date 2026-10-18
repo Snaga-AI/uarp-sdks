@@ -539,3 +539,86 @@ test('a non-JSON error body is not thrown away either', async () => {
     },
   );
 });
+
+// Real bytes: the 401 production answered on 2026-10-15 with no key and our own
+// `X-Request-Id`; the 501 `GET /registry/keys` gave the canon tenant the day
+// before. The 501's code is not in the `ErrorCode` enum and it carries only the
+// deprecated `correlationId`.
+const LIVE_401 =
+  '{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Missing Authorization header, token query parameter, or uarp_session cookie","correlationId":"sdk-probe-0001","correlation_id":"sdk-probe-0001","code":"AUTH_ERROR"}';
+const CANON_501 =
+  '{"type": "about:blank", "title": "Not Implemented", "status": 501, "detail": "Artifact signing is disabled (spec_registry.signing_mode = \\"off\\").", "code": "SIGNING_NOT_CONFIGURED", "correlationId": "01a13c8d-1f16-732c-8884-727d6fb7bcdb"}';
+
+function raw(status: number, body: string, headers: Record<string, string> = {}): Response {
+  return new Response(body, { status, headers: { 'content-type': 'application/problem+json', ...headers } });
+}
+
+async function apiErrorFor(response: Response): Promise<APIError> {
+  const { client } = clientWith([response]);
+  try {
+    await client.agents.get('a1');
+  } catch (error) {
+    assert.ok(error instanceof APIError);
+    return error;
+  }
+  throw new Error('must fail');
+}
+
+test('a problem keeps its code and request id', async () => {
+  const error = await apiErrorFor(raw(401, LIVE_401, { 'x-request-id': 'sdk-probe-0001' }));
+  assert.equal(error.code, 'AUTH_ERROR');
+  assert.equal(error.correlationId, 'sdk-probe-0001');
+});
+
+test('a code the enum does not list still reaches the caller', async () => {
+  const error = await apiErrorFor(raw(501, CANON_501));
+  assert.equal(error.code, 'SIGNING_NOT_CONFIGURED');
+  assert.equal(error.correlationId, '01a13c8d-1f16-732c-8884-727d6fb7bcdb');
+});
+
+test('the request id header is the fallback', async () => {
+  const body = '{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}';
+  const error = await apiErrorFor(raw(404, body, { 'x-request-id': 'req-42' }));
+  assert.equal(error.correlationId, 'req-42');
+});
+
+// Real bytes: the 422 the session route answers for a closed session, captured by the API lane from handleRequest on the code deployed as b108e9a9 (2026-10-15).
+// `session_status` is a top-level extension member, as RFC 9457 puts them.
+const SESSION_NOT_ACTIVE_422 =
+  '{"type":"about:blank","title":"Validation Error","status":422,"detail":"Session is not active","correlationId":"01a13f4a-fb5a-7d99-9d94-910550f34d83","correlation_id":"01a13f4a-fb5a-7d99-9d94-910550f34d83","code":"SESSION_NOT_ACTIVE","session_status":"closed"}';
+
+test('an extension member reaches the caller beside the code', async () => {
+  const error = await apiErrorFor(raw(422, SESSION_NOT_ACTIVE_422));
+  assert.equal(error.code, 'SESSION_NOT_ACTIVE');
+  assert.equal(error.problem.session_status, 'closed');
+  assert.equal(error.correlationId, '01a13f4a-fb5a-7d99-9d94-910550f34d83');
+});
+
+// Real bytes: the 403 a refused X-Active-Tenant answers on production, build e0b37b03 (2026-10-17). membership_suspended is the API lane's capture from handleRequest at d6b1c66e5, the same code: producing it on the wire would mean suspending a membership on canon.
+const NOT_A_MEMBER_403 =
+  '{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14b59-dd54-7a2f-aa6b-e4338e105419","correlation_id":"01a14b59-dd54-7a2f-aa6b-e4338e105419","code":"FORBIDDEN","reason":"not_a_member"}';
+const MEMBERSHIP_SUSPENDED_403 =
+  '{"type":"about:blank","title":"Forbidden","status":403,"detail":"Your membership in the active tenant requested by X-Active-Tenant is suspended","correlationId":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","correlation_id":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","code":"FORBIDDEN","reason":"membership_suspended"}';
+// Real bytes: the same refusal on production, build d926b90e (2026-10-17), before batch19: no code and no reason.
+const NOT_A_MEMBER_403_D926 =
+  '{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-337b-7324-9a2a-9354a8fc02c6","correlation_id":"01a14a66-337b-7324-9a2a-9354a8fc02c6"}';
+
+test('the reason a tenant refused the caller reaches it, typed', async () => {
+  const notAMember = await apiErrorFor(raw(403, NOT_A_MEMBER_403));
+  assert.equal(notAMember.code, 'FORBIDDEN');
+  assert.equal(notAMember.reason, 'not_a_member');
+  const suspended = await apiErrorFor(raw(403, MEMBERSHIP_SUSPENDED_403));
+  assert.equal(suspended.reason, 'membership_suspended');
+  const before = await apiErrorFor(raw(403, NOT_A_MEMBER_403_D926));
+  assert.equal(before.reason, undefined);
+  assert.equal(before.code, undefined);
+});
+
+// Real bytes: the 4-byte body `null` that GET /agents/{id}/schedule answered
+// the canon tenant on 2026-10-15 (build b108e9a9) for an agent with no schedule.
+// The method is typed `Schedule | null`; this proves the runtime agrees.
+test('a schedule that is not set is null', async () => {
+  const { client } = clientWith([new Response('null', { status: 200, headers: { 'content-type': 'application/json' } })]);
+  const schedule: unknown = await client.scheduler.getSchedule('a1');
+  assert.equal(schedule, null);
+});

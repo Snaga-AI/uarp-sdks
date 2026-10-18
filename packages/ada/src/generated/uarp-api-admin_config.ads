@@ -19,6 +19,24 @@ package UARP.API.Admin_Config is
 
    No_Delete_Custom_Plan_Params : constant Delete_Custom_Plan_Params := (others => <>);
 
+   --  Confirm the facts as a new revision
+   --
+   --  WRITE SEMANTICS: replaces - each call stores a new immutable revision from the full body;
+   --  nothing is merged or extended. Super-admin only. Refused with 422 when the confirmation
+   --  breaks an invariant: lifetime over 86400 s or not after `observed_at_unix`;
+   --  `archive_enabled=false` without `archives.mode=not_applicable`; runs `no_storage`; a finite
+   --  runs retention shorter than `recovery_window_seconds`.
+   --
+   --  PUT /api/v1/admin/data-processing-policies/{purpose}
+   --
+   --  Required scopes: admin.
+   function Confirm_Data_Processing_Policy
+     (Self : Client_Type;
+      Purpose : String;
+      Payload : UARP.Models.Confirm_Data_Processing_Policy_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Confirm_Data_Processing_Policy_Response;
+
    --  Create Stripe Product+Price for plan
    --
    --  Creates a Stripe Product and recurring Price in the configured Stripe account and stores the
@@ -164,6 +182,20 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_Config_Code_Interpreter_Config;
+
+   --  Current policy confirmation
+   --
+   --  Super-admin only. The current revision of the operator confirmation, revoked or not;
+   --  `current: null` when none.
+   --
+   --  GET /api/v1/admin/data-processing-policies/{purpose}
+   --
+   --  Required scopes: admin.
+   function Get_Admin_Data_Processing_Policy
+     (Self : Client_Type;
+      Purpose : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Admin_Data_Processing_Policy_Response;
 
    --  Tool ids disabled platform-wide
    --
@@ -333,8 +365,8 @@ package UARP.API.Admin_Config is
    --  Apple native sign-in identifiers and the OAuth return-to allowlist
    --
    --  Three-layer read with `effective`, as with founder identity. The environment's
-   --  `oauth_return_to_hosts` is a comma-separated variable, split, trimmed and lower-cased before
-   --  it appears here.
+   --  `oauth_return_to_hosts` is a comma-separated variable, split and normalised the way a PUT is
+   --  (hosts lower-cased, URLs as origin + path); an entry of neither shape is dropped.
    --
    --  GET /api/v1/admin/config/oauth-identity
    --
@@ -747,6 +779,73 @@ package UARP.API.Admin_Config is
       Code : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Promo_Rewards_Response;
+
+   --  Pin an accounting rate
+   --
+   --  WRITE SEMANTICS: replaces, once - the first body is stored and never changed. Super-admin
+   --  only (UARP addition to the contract). The provider, model and micro-USD per million input
+   --  and output tokens a program's runs are accounted at; a qualification run refuses any other
+   --  provider or model. The same body again answers 200; another body for an existing revision is
+   --  409 `SPONSORSHIP_PROGRAM_IMMUTABLE`. This is UARP's accounting rate, not the provider's
+   --  invoice.
+   --
+   --  PUT /api/v1/admin/qualification/pricing-revisions/{pricing_revision}
+   --
+   --  Required scopes: admin.
+   function Put_Qualification_Pricing_Revision
+     (Self : Client_Type;
+      Pricing_Revision : String;
+      Payload : UARP.Models.Put_Qualification_Pricing_Revision_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
+
+   --  Make a key a sponsor key
+   --
+   --  WRITE SEMANTICS: replaces - the record is the body (company and program list). Super-admin
+   --  only (UARP addition). Names the API key of the sponsor's company (Nestor's server) and the
+   --  programs it may spend from; a key with no programs spends nothing. The role cannot be
+   --  created by the key's own company, a header, metadata or a role.
+   --
+   --  PUT /api/v1/admin/qualification/sponsor-keys/{key_id}
+   --
+   --  Required scopes: admin.
+   function Put_Qualification_Sponsor_Key
+     (Self : Client_Type;
+      Key_Id : String;
+      Payload : UARP.Models.Put_Qualification_Sponsor_Key_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
+
+   --  Configure a sponsorship program
+   --
+   --  WRITE SEMANTICS: replaces - full configuration, never merged; the ledger is kept.
+   --  Super-admin only, under `expected_revision` (0 creates); `Idempotency-Key` required.
+   --  Purpose, sponsor company and pricing revision are immutable. The budget is a funded ceiling,
+   --  never below `reserved + spent`. Ledger activity does not change the revision.
+   --
+   --  PUT /api/v1/admin/qualification/sponsorship-programs/{program_id}
+   --
+   --  Required scopes: admin.
+   function Put_Qualification_Sponsorship_Program
+     (Self : Client_Type;
+      Program_Id : String;
+      Payload : UARP.Models.Qualification_Program_Put;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Qualification_Program;
+
+   --  Revoke the current confirmation
+   --
+   --  Super-admin only. The revision stays readable and reads as `revoked`; new qualification runs
+   --  are refused. 409 when there is nothing current to revoke.
+   --
+   --  POST /api/v1/admin/data-processing-policies/{purpose}/revoke
+   --
+   --  Required scopes: admin.
+   function Revoke_Data_Processing_Policy
+     (Self : Client_Type;
+      Purpose : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Revoke_Data_Processing_Policy_Response;
 
    --  Run reconciliation
    --

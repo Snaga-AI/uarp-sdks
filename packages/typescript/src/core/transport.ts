@@ -402,7 +402,7 @@ async function decodeBody(response: Response, type: ResponseType): Promise<unkno
  * RFC 9457 keys. A body carrying none of them is not a problem document,
  * however well-formed its JSON is.
  */
-const PROBLEM_KEYS = ['type', 'title', 'status', 'detail', 'correlationId', 'errors'] as const;
+const PROBLEM_KEYS = ['type', 'title', 'status', 'detail', 'code', 'correlation_id', 'correlationId', 'errors'] as const;
 
 /**
  * Extract the failure message, whatever shape the server used to send it.

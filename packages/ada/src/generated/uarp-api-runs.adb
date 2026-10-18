@@ -270,6 +270,21 @@ package body UARP.API.Runs is
              Options => Options));
    end Get_Run_Queue_Position;
 
+   function Get_Run_Sources
+     (Self : Client_Type;
+      Run_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Run_Sources_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/sources",
+             Options => Options));
+   end Get_Run_Sources;
+
    function Get_Run_Steps
      (Self : Client_Type;
       Run_Id : String;
@@ -351,6 +366,12 @@ package body UARP.API.Runs is
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Client_Request_Id then
+         UARP.Types.Add (Query, "client_request_id", Params.Client_Request_Id);
+      end if;
+      if Params.Has_Purpose then
+         UARP.Types.Add (Query, "purpose", Params.Purpose);
+      end if;
       if Params.Has_Agent_Id then
          UARP.Types.Add (Query, "agent_id", Params.Agent_Id);
       end if;
@@ -545,6 +566,25 @@ package body UARP.API.Runs is
              Idempotent => True,
              Options => Options));
    end Resume;
+
+   function Revise_Run
+     (Self : Client_Type;
+      Run_Id : String;
+      Payload : UARP.Models.Revise_Run_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Revise_Run_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/revise",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Revise_Run;
 
    function Set_Run_Feedback
      (Self : Client_Type;

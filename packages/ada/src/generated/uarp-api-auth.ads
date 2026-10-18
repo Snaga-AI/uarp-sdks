@@ -24,10 +24,18 @@ package UARP.API.Auth is
 
    --  Query and header parameters for `startOAuthLogin`.
    type Start_O_Auth_Login_Params is record
-      --  Where to redirect after callback. Same-origin paths, Universal-Link hosts (default
-      --  `snaga.ai/auth/callback`), and `snaga://` allowed. Anything else is silently dropped.
+      --  Where to redirect after callback. Same-origin paths, `snaga://`, `/auth/callback` on an
+      --  allowlisted host (default `snaga.ai`), and an exact https URL listed in
+      --  `oauth_return_to_hosts` are allowed. Anything else is silently dropped, and the callback
+      --  then answers the JSON session body.
       Has_Return_To : Boolean := False;
       Return_To : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  SHA-256 of a verifier the caller keeps, base64url without padding (RFC 7636 S256). With an
+      --  accepted `return_to` the callback carries `#code=` rather than `#api_key=`, and `POST
+      --  /auth/oauth/exchange` releases the key for the verifier. Ignored without an accepted
+      --  `return_to`; absent, the redirect carries `api_key` as before.
+      Has_App_Code_Challenge : Boolean := False;
+      App_Code_Challenge : UARP.Types.Text := UARP.Types.Empty_Text;
       --  Human-readable device name surfaced on the minted api_key.
       Has_Device_Label : Boolean := False;
       Device_Label : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -112,13 +120,13 @@ package UARP.API.Auth is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Mfa_Enrolment;
 
-   --  Trade a mobile hand-off code for the session
+   --  Trade a sign-in hand-off code for the session
    --
-   --  Second half of the mobile sign-in hand-off. When `start` is called with
-   --  `app_code_challenge`, the callback redirects to the app with `#code=` instead of
-   --  `#api_key=`, and the key is only released here, to a caller that presents the matching
-   --  verifier. Single-use and short-lived: the code is consumed on the first attempt, successful
-   --  or not.
+   --  Second half of the sign-in hand-off, for a mobile app or a separate web app alike. When
+   --  `start` is called with `app_code_challenge` and an accepted `return_to`, the callback
+   --  redirects there with `#code=` instead of `#api_key=`, and the key is only released here, to
+   --  a caller that presents the matching verifier. Single-use and short-lived: the code is
+   --  consumed on the first attempt, successful or not.
    --
    --  POST /api/v1/auth/oauth/exchange
    function Exchange_O_Auth_App_Code
@@ -321,7 +329,8 @@ package UARP.API.Auth is
    --  Redirects the browser to GitHub/Google authorize URL. Server stores a one-shot state record
    --  (10 min TTL) keyed by the `state` query the provider will echo back. PKCE codeVerifier is
    --  generated server-side. `return_to` defaults to nothing (response is JSON); when set, must
-   --  satisfy the allow-list (same-origin paths, configured Universal-Link hosts, or `snaga://`).
+   --  satisfy the allow-list (same-origin paths, `snaga://`, or an entry of
+   --  `oauth_return_to_hosts`: a host's `/auth/callback` paths or an exact https callback URL).
    --  `device_label` is captured here and surfaces on the minted `api_key` for `/me/sessions`.
    --
    --  GET /api/v1/auth/oauth/{provider}/start

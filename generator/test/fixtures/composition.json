@@ -3,6 +3,31 @@
   "info": { "title": "Composition", "version": "1.0.0" },
   "servers": [{ "url": "https://api.test" }],
   "paths": {
+    "/files/copy": {
+      "post": {
+        "operationId": "copyFile",
+        "tags": ["Files"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "One of each pair is required: a rule about these properties, not a second shape.",
+                "anyOf": [{ "required": ["source_path", "dest_path"] }, { "required": ["from_path", "to_path"] }],
+                "properties": {
+                  "source_path": { "type": "string" },
+                  "dest_path": { "type": "string" },
+                  "from_path": { "type": "string" },
+                  "to_path": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "204": { "description": "copied" } }
+      }
+    },
     "/embeddings": {
       "post": {
         "operationId": "createEmbedding",

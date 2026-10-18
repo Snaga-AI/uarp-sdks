@@ -1546,6 +1546,32 @@ package UARP.API.Admin is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Reactivate_Tenant_Response;
 
+   --  Repair stored agent records (one-off)
+   --
+   --  One-off repairs of agent records that no code writes any more but production still carries.
+   --  **Super-admin only.** `head_token_caps`: a head agent's stored
+   --  `resource_limits.max_tokens_per_run` below the platform's per-run budget is removed, so the
+   --  platform budget applies. `head_names`: a head agent still named `Head Agent` or `<Company>
+   --  Head Agent` becomes `Chief of Staff` (and its description, when that still names a Head
+   --  Agent). `head_pod_descriptions`: a head agent whose description still says "Pod" gets the
+   --  Chief of Staff description, whatever its name. `initial_versions`: an agent with no version
+   --  gets v1 from its current record. `orphan_schedules`: a cron schedule whose agent is gone is
+   --  deleted (it fired a run daily that failed with agent_not_found). `cancel_lessons`: an
+   --  episodic memory "[Failure] ... failed: Run cancelled" - a person's stop stored as a lesson -
+   --  is deleted. A changed head agent gets a new version, since chat runs pin the latest one.
+   --  `dry_run: true` counts without writing. Idempotent: a second run finds nothing to do. Since
+   --  2026-10-16.
+   --
+   --  POST /api/v1/admin/maintenance/agent-records
+   --
+   --  Required scopes: admin.
+   function Repair_Agent_Records
+     (Self : Client_Type;
+      Payload : UARP.Models.Repair_Agent_Records_Request;
+      Include_Payload : Boolean := True;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Repair_Agent_Records_Response;
+
    --  Store or update one provider's OAuth credentials
    --
    --  WRITE SEMANTICS: merges, and the merge is what makes the route usable. An omitted or blank

@@ -13,6 +13,13 @@ use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
 use crate::util::encode_path;
 
+/// Query and header parameters for `getMissionPerformance`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMissionPerformanceParams {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub days: Option<i64>,
+}
+
 /// Query and header parameters for `getPublicChatAnalytics`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetPublicChatAnalyticsParams {
@@ -58,6 +65,36 @@ impl Client {
 }
 
 impl AnalyticsApi {
+    /// How well the work goes — acceptance, revisions, cost, time
+    ///
+    /// Over missions created in the last `days` (default 30, 1–365): missions and objectives by
+    /// status, failed objectives by reason, and the review record of objectives with
+    /// `review_required` — `accepted_first_pass`, `accepted_after_revision`, `rejected`,
+    /// `first_pass_rate` (first-pass / reviewed) and `avg_revisions`. `quality` reports what the
+    /// platform can see about the work itself: how many reviewed results cite a link no tool
+    /// produced (`with_unsourced_links`, `unsourced_link_rate` — null, not zero, when nothing
+    /// carried provenance) and how many edits an accepted result took (`revisions_per_accepted`).
+    /// `actions_rejected` counts objectives ended because a person refused an action mid-run.
+    /// `cost_per_completed_usd` and `avg_minutes_to_complete` are over completed objectives.
+    /// `by_agent` repeats the figures per assignee (`team:\<id\>` for a squad). Requires the
+    /// `analytics:read` scope. Since 2026-10-12.
+    ///
+    /// `GET /api/v1/analytics/missions`
+    ///
+    /// Required scopes: `analytics:read`.
+    pub async fn get_mission_performance(&self, params: &GetMissionPerformanceParams) -> Result<models::GetMissionPerformanceResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/analytics/missions".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Public chat funnel
     ///
     /// Visits, engagement and messages on the tenant's public chat surfaces, with
@@ -85,7 +122,8 @@ impl AnalyticsApi {
     /// Runs waiting on a human
     ///
     /// Approvals, input requests, paused and failed runs, each with a one-line summary of what is
-    /// being asked — tool names, the question, or the error.
+    /// being asked — and, in `reviews`, mission results waiting for a person's verdict — tool
+    /// names, the question, or the error.
     ///
     /// `counts` is computed over the whole scan while `items` honours `limit`, so a truncated list
     /// still reports the true backlog.

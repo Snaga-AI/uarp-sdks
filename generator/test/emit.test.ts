@@ -153,3 +153,33 @@ test('Ada declares a cycle member before the record that holds its vector', () =
   assert.match(ada, /To_JSON \(Element\.all\)/);
   assert.match(ada, /Append \(new Tree'\(From_JSON/);
 });
+
+test('Ada handles an alias of raw JSON as an array element and as an answer', () => {
+  //  Build 0837bb4d brought both at once — `ProposalOperation` (a oneOf) in an
+  //  array and `QualificationProcessingPolicyResponse` as an answer — and the
+  //  Ada package stopped compiling on every platform: a vector instantiated
+  //  over JSON_Value with no visible "=", and a `From_JSON` that does not exist.
+  const document = {
+    openapi: '3.1.0',
+    info: { title: 'Aliases', version: '1.0.0' },
+    servers: [{ url: 'https://api.test' }],
+    paths: {
+      '/policy': {
+        get: {
+          operationId: 'getPolicy',
+          tags: ['Policy'],
+          responses: { '200': { description: 'ok', content: { 'application/json': { schema: { $ref: '#/components/schemas/Policy' } } } } },
+        },
+      },
+    },
+    components: {
+      schemas: {
+        Policy: { oneOf: [{ type: 'object', properties: { a: { type: 'string' } } }, { type: 'object', properties: { b: { type: 'string' } } }] },
+        Proposal: { type: 'object', properties: { ops: { type: 'array', items: { $ref: '#/components/schemas/Policy' } } } },
+      },
+    },
+  };
+  const ada = renderTarget(parse(document), 'ada');
+  assert.match(ada, /package Policy_Vectors is new Ada\.Containers\.Vectors\n\s+\(Index_Type => Positive, Element_Type => Policy,\n\s+"=" => UARP\.JSON_Support\.JSON\."="\);/);
+  assert.doesNotMatch(ada, /return UARP\.Models\.From_JSON\n\s+\(UARP\.Client\.Call[^;]*"\/policy"/);
+});

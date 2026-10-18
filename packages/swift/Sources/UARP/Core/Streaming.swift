@@ -225,7 +225,8 @@ public struct EventStream: AsyncSequence, Sendable {
                 let apiError = APIError(
                     status: http.statusCode,
                     problem: UARPClient.problem(from: body),
-                    headers: UARPClient.normalizedHeaders(http)
+                    headers: UARPClient.normalizedHeaders(http),
+                    body: body
                 )
                 // 401 always surfaces so the caller can act on it (the app stops the
                 // stream); any other HTTP error retries like a dropped connection
@@ -247,7 +248,8 @@ public struct EventStream: AsyncSequence, Sendable {
                 throw UARPError.api(APIError(
                     status: http.statusCode,
                     problem: UARPClient.problem(from: body),
-                    headers: UARPClient.normalizedHeaders(http)
+                    headers: UARPClient.normalizedHeaders(http),
+                    body: body
                 ))
             }
 

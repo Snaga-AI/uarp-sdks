@@ -142,13 +142,13 @@ public class AuthApi internal constructor(private val client: UarpClient) {
     }
 
     /**
-     * Trade a mobile hand-off code for the session
+     * Trade a sign-in hand-off code for the session
      *
-     * Second half of the mobile sign-in hand-off. When `start` is called with
-     * `app_code_challenge`, the callback redirects to the app with `#code=` instead of
-     * `#api_key=`, and the key is only released here, to a caller that presents the matching
-     * verifier. Single-use and short-lived: the code is consumed on the first attempt, successful
-     * or not.
+     * Second half of the sign-in hand-off, for a mobile app or a separate web app alike. When
+     * `start` is called with `app_code_challenge` and an accepted `return_to`, the callback
+     * redirects there with `#code=` instead of `#api_key=`, and the key is only released here, to
+     * a caller that presents the matching verifier. Single-use and short-lived: the code is
+     * consumed on the first attempt, successful or not.
      *
      * `POST /api/v1/auth/oauth/exchange`
      */
@@ -449,14 +449,16 @@ public class AuthApi internal constructor(private val client: UarpClient) {
      * Redirects the browser to GitHub/Google authorize URL. Server stores a one-shot state record
      * (10 min TTL) keyed by the `state` query the provider will echo back. PKCE codeVerifier is
      * generated server-side. `return_to` defaults to nothing (response is JSON); when set, must
-     * satisfy the allow-list (same-origin paths, configured Universal-Link hosts, or `snaga://`).
+     * satisfy the allow-list (same-origin paths, `snaga://`, or an entry of
+     * `oauth_return_to_hosts`: a host's `/auth/callback` paths or an exact https callback URL).
      * `device_label` is captured here and surfaces on the minted `api_key` for `/me/sessions`.
      *
      * `GET /api/v1/auth/oauth/{provider}/start`
      */
-    public suspend fun startOAuthLogin(provider: OAuthLoginProviderConfigStatusProvider, returnTo: String? = null, deviceLabel: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun startOAuthLogin(provider: OAuthLoginProviderConfigStatusProvider, returnTo: String? = null, appCodeChallenge: String? = null, deviceLabel: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
         val query = buildList {
             if (returnTo != null) add("return_to" to returnTo)
+            if (appCodeChallenge != null) add("app_code_challenge" to appCodeChallenge)
             if (deviceLabel != null) add("device_label" to deviceLabel)
         }
         return client.request<JsonElement>(

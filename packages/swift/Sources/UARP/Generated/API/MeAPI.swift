@@ -57,6 +57,23 @@ public struct MeAPI: Sendable {
         ))
     }
 
+    /// Read email preferences
+    ///
+    /// The language of every letter Snaga sends this person, and the two kinds of mail they may
+    /// turn off (since 2026-10-17). Keyed by the email address, so the same answer in every company
+    /// the person belongs to. Mail about the account itself (sign-in codes, invites, approvals,
+    /// billing, security) is always sent. Requires a credential bound to a person; a key without a
+    /// user identity is refused with 403.
+    ///
+    /// `GET /api/v1/me/email-preferences`
+    public func getMyEmailPreferences(options: RequestOptions = .init()) async throws -> GetMyEmailPreferencesResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/me/email-preferences",
+            options: options
+        ))
+    }
+
     /// Read personal instructions
     ///
     /// Requires a credential bound to a person: an API key that carries no user identity is refused
@@ -91,7 +108,7 @@ public struct MeAPI: Sendable {
         ))
     }
 
-    /// Switch the active workspace
+    /// Switch the active company (tenant)
     ///
     /// Requires a **user session (JWT)**. An API key is refused with 403, because a key is bound to
     /// the tenant it was created in — create a key inside the target tenant instead. This endpoint
@@ -106,6 +123,22 @@ public struct MeAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/me/tenants/switch",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Update email preferences
+    ///
+    /// WRITE SEMANTICS: merges. A field the body omits keeps its value. Setting `locale` here fixes
+    /// it: a browser's Accept-Language no longer changes it. An unknown locale is 422.
+    ///
+    /// `PUT /api/v1/me/email-preferences`
+    public func updateMyEmailPreferences(body: UpdateMyEmailPreferencesRequest, options: RequestOptions = .init()) async throws -> UpdateMyEmailPreferencesResponse {
+        return try await client.send(RequestSpec(
+            method: "PUT",
+            path: "/api/v1/me/email-preferences",
             body: try client.encode(body),
             idempotent: true,
             options: options

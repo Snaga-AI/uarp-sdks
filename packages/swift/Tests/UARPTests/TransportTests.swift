@@ -22,6 +22,16 @@ final class TransportTests: XCTestCase {
         XCTAssertTrue(recorded.value(forHTTPHeaderField: "User-Agent")?.hasPrefix("uarp-sdk-swift/") == true)
     }
 
+    /// Real bytes: the 4-byte body `null` that GET /agents/{id}/schedule answered the canon tenant on 2026-10-15 (build b108e9a9) for an agent with no schedule.
+    func testAScheduleThatIsNotSetIsNil() async throws {
+        let client = makeClient()
+        MockURLProtocol.handler = { request in
+            (MockURLProtocol.response(request, status: 200), Data("null".utf8))
+        }
+        let schedule = try await client.scheduler.getSchedule(agentId: "a1")
+        XCTAssertNil(schedule)
+    }
+
     func testSerialisesQueryParametersAndSkipsNil() async throws {
         let client = makeClient()
         MockURLProtocol.handler = { request in
@@ -582,5 +592,60 @@ final class ProblemDecodingTests: XCTestCase {
 
     func testEmptyBodyStaysEmpty() {
         XCTAssertNil(UARPClient.problem(from: Data()).detail)
+    }
+    /// Real bytes: the 401 production answered on 2026-10-15 with no key and
+    /// our own `X-Request-Id`; the 501 `GET /registry/keys` gave the canon
+    /// tenant the day before. The 501's code is not in the `ErrorCode` enum and
+    /// it carries only the deprecated `correlationId`.
+    static let live401 = #"{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Missing Authorization header, token query parameter, or uarp_session cookie","correlationId":"sdk-probe-0001","correlation_id":"sdk-probe-0001","code":"AUTH_ERROR"}"#
+    static let canon501 = #"{"type": "about:blank", "title": "Not Implemented", "status": 501, "detail": "Artifact signing is disabled (spec_registry.signing_mode = \"off\").", "code": "SIGNING_NOT_CONFIGURED", "correlationId": "01a13c8d-1f16-732c-8884-727d6fb7bcdb"}"#
+
+    func testAProblemKeepsItsCodeAndRequestId() {
+        let data = Data(Self.live401.utf8)
+        let error = APIError(status: 401, problem: UARPClient.problem(from: data), headers: [:], body: data)
+        XCTAssertEqual(error.code, "AUTH_ERROR")
+        XCTAssertEqual(error.correlationId, "sdk-probe-0001")
+        XCTAssertEqual(error.problem.extensions, [:])
+        XCTAssertEqual(error.body, data)
+    }
+
+    func testACodeTheEnumDoesNotListStillReachesTheCaller() {
+        let problem = UARPClient.problem(from: Data(Self.canon501.utf8))
+        XCTAssertEqual(problem.code, "SIGNING_NOT_CONFIGURED")
+        XCTAssertEqual(problem.correlationId, "01a13c8d-1f16-732c-8884-727d6fb7bcdb")
+    }
+
+    /// Real bytes: the 422 the session route answers for a closed session, captured by the API lane from handleRequest on the code deployed as b108e9a9 (2026-10-15).
+    static let sessionNotActive422 = #"{"type":"about:blank","title":"Validation Error","status":422,"detail":"Session is not active","correlationId":"01a13f4a-fb5a-7d99-9d94-910550f34d83","correlation_id":"01a13f4a-fb5a-7d99-9d94-910550f34d83","code":"SESSION_NOT_ACTIVE","session_status":"closed"}"#
+
+    func testAnExtensionMemberReachesTheCallerBesideTheCode() {
+        let problem = UARPClient.problem(from: Data(Self.sessionNotActive422.utf8))
+        XCTAssertEqual(problem.code, "SESSION_NOT_ACTIVE")
+        XCTAssertEqual(problem.extensions, ["session_status": .string("closed")])
+        XCTAssertEqual(problem.correlationId, "01a13f4a-fb5a-7d99-9d94-910550f34d83")
+    }
+
+    /// Real bytes: the 403 a refused X-Active-Tenant answers on production, build e0b37b03 (2026-10-17). membership_suspended is the API lane's capture from handleRequest at d6b1c66e5, the same code: producing it on the wire would mean suspending a membership on canon.
+    static let notAMember403 = #"{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14b59-dd54-7a2f-aa6b-e4338e105419","correlation_id":"01a14b59-dd54-7a2f-aa6b-e4338e105419","code":"FORBIDDEN","reason":"not_a_member"}"#
+    static let membershipSuspended403 = #"{"type":"about:blank","title":"Forbidden","status":403,"detail":"Your membership in the active tenant requested by X-Active-Tenant is suspended","correlationId":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","correlation_id":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","code":"FORBIDDEN","reason":"membership_suspended"}"#
+    /// Real bytes: the same refusal on production, build d926b90e (2026-10-17), before batch19: no code and no reason.
+    static let notAMember403D926 = #"{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-337b-7324-9a2a-9354a8fc02c6","correlation_id":"01a14a66-337b-7324-9a2a-9354a8fc02c6"}"#
+
+    func testTheReasonATenantRefusedTheCallerReachesItTyped() {
+        func error(_ body: String) -> APIError {
+            let data = Data(body.utf8)
+            return APIError(status: 403, problem: UARPClient.problem(from: data), headers: [:], body: data)
+        }
+        XCTAssertEqual(error(Self.notAMember403).code, "FORBIDDEN")
+        XCTAssertEqual(error(Self.notAMember403).reason, "not_a_member")
+        XCTAssertEqual(error(Self.membershipSuspended403).reason, "membership_suspended")
+        XCTAssertNil(error(Self.notAMember403D926).reason)
+        XCTAssertNil(error(Self.notAMember403D926).code)
+    }
+
+    func testTheRequestIdHeaderIsTheFallback() {
+        let data = Data(#"{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}"#.utf8)
+        let error = APIError(status: 404, problem: UARPClient.problem(from: data), headers: ["x-request-id": "req-42"])
+        XCTAssertEqual(error.correlationId, "req-42")
     }
 }

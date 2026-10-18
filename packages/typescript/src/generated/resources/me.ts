@@ -7,10 +7,13 @@ import type {
   AccountExport,
   DeleteMeResponse,
   ExportMyAccountFormat,
+  GetMyEmailPreferencesResponse,
   PatchMeRequest,
   PatchMeResponse,
   SwitchTenantRequest,
   SwitchTenantResponse,
+  UpdateMyEmailPreferencesRequest,
+  UpdateMyEmailPreferencesResponse,
   UpdateMyPreferencesRequest,
   UserPreferences,
 } from '../models.js';
@@ -76,6 +79,25 @@ export class MeResource extends APIResource {
   }
 
   /**
+   * Read email preferences
+   *
+   * The language of every letter Snaga sends this person, and the two kinds of mail they may
+   * turn off (since 2026-10-17). Keyed by the email address, so the same answer in every company
+   * the person belongs to. Mail about the account itself (sign-in codes, invites, approvals,
+   * billing, security) is always sent. Requires a credential bound to a person; a key without a
+   * user identity is refused with 403.
+   *
+   * `GET /api/v1/me/email-preferences`
+   */
+  getMyEmailPreferences(options?: RequestOptions): Promise<GetMyEmailPreferencesResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/me/email-preferences',
+      options,
+    });
+  }
+
+  /**
    * Read personal instructions
    *
    * Requires a credential bound to a person: an API key that carries no user identity is refused
@@ -114,7 +136,7 @@ export class MeResource extends APIResource {
   }
 
   /**
-   * Switch the active workspace
+   * Switch the active company (tenant)
    *
    * Requires a **user session (JWT)**. An API key is refused with 403, because a key is bound to
    * the tenant it was created in — create a key inside the target tenant instead. This endpoint
@@ -130,6 +152,24 @@ export class MeResource extends APIResource {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/me/tenants/switch',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Update email preferences
+   *
+   * WRITE SEMANTICS: merges. A field the body omits keeps its value. Setting `locale` here fixes
+   * it: a browser's Accept-Language no longer changes it. An unknown locale is 422.
+   *
+   * `PUT /api/v1/me/email-preferences`
+   */
+  updateMyEmailPreferences(body: UpdateMyEmailPreferencesRequest, options?: RequestOptions): Promise<UpdateMyEmailPreferencesResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/me/email-preferences',
       body,
       idempotent: true,
       options,

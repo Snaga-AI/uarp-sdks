@@ -43,6 +43,27 @@ pub struct Envelope {
     pub extra: HashMap<String, serde_json::Value>,
 }
 
+/// `Owner` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Owner {
+    pub name: String,
+}
+
+/// Null until the first rehearsal.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Rehearsal {
+    pub run_id: String,
+}
+
+/// Null when the cron has no simple shape.
+pub type Shape = ShapeVariant2;
+
+/// `ShapeVariant2` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ShapeVariant2 {
+    pub every: String,
+}
+
 /// Every shape of optionality the spec uses.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Thing {
@@ -70,6 +91,14 @@ pub struct Thing {
     /// Always `thing`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    /// A plain reference: always an object.
+    pub owner: Owner,
+    /// The component itself admits null, so the reference does too.
+    #[serde(default)]
+    pub rehearsal: Option<Rehearsal>,
+    /// Null spelled as a oneOf member on the component.
+    #[serde(default)]
+    pub shape: Option<Shape>,
 }
 
 ==> src/generated/api/mod.rs <==
@@ -121,6 +150,22 @@ impl ThingsApi {
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/things/{}", encode_path(thing_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// A thing's schedule, or null when it has none
+    ///
+    /// `GET /things/{thingId}/schedule`
+    pub async fn get_thing_schedule(&self, thing_id: &str) -> Result<Option<models::Owner>> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/things/{}/schedule", encode_path(thing_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),

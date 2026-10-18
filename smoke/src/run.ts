@@ -14,7 +14,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { Transport } from '../../packages/typescript/dist/index.js';
-import { buildPlan, captureId, loadQuarantine, PHASE_NAMES, type PlannedCall } from './plan.ts';
+import { buildPlan, captureId, firstItem, loadQuarantine, PHASE_NAMES, type PlannedCall } from './plan.ts';
 import { assertClean, redactValue } from './redact.ts';
 import { loadSpec, successResponse, type Operation, type Spec } from './spec.ts';
 import { synthParameter, synthValue, uuid, type SynthContext } from './synth.ts';
@@ -86,6 +86,16 @@ class IdStore {
     this.created.push({ path: collectionPath, name, value });
   }
 
+  /**
+   * An identifier read off a collection rather than made by this run. It fills
+   * paths the same way, but is never listed as created: the report's "left
+   * behind" list is what a person goes and deletes.
+   */
+  observe(collectionPath: string, name: string, value: string): void {
+    this.#byPrefix.set(`${collectionPath}:${name}`, value);
+    if (name !== 'id' && name !== 'name') this.#byName.set(name, value);
+  }
+
   resolve(path: string, name: string): string | undefined {
     return this.#byPrefix.get(`${IdStore.prefixFor(path, name)}:${name}`) ?? this.#byName.get(name);
   }
@@ -101,6 +111,8 @@ interface Options {
   only?: string;
   allow: Set<string>;
   includeQuarantined: boolean;
+  /** Send nothing but GET; item reads take their ids from the collections. */
+  readOnly: boolean;
 }
 
 function parseArgs(argv: string[]): Options {
@@ -112,6 +124,7 @@ function parseArgs(argv: string[]): Options {
     delayMs: 120,
     allow: new Set(),
     includeQuarantined: false,
+    readOnly: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
@@ -125,6 +138,7 @@ function parseArgs(argv: string[]): Options {
     else if (arg === '--only') options.only = next();
     else if (arg === '--allow') options.allow.add(next());
     else if (arg === '--include-quarantined') options.includeQuarantined = true;
+    else if (arg === '--read-only') options.readOnly = true;
     else throw new Error(`unknown flag: ${arg}`);
   }
   return options;
@@ -211,10 +225,14 @@ async function main(): Promise<void> {
 
   let calls = plan.calls;
   if (options.only) calls = calls.filter((c) => c.op.path.includes(options.only!) || c.op.id.includes(options.only!));
+  //  On a tenant whose writes cannot be undone (e2e-canon is production) the
+  //  sweep reads and nothing else. Filtered here, and refused again at the
+  //  point of sending, so a later change to the plan cannot slip a write past.
+  if (options.readOnly) calls = calls.filter((c) => c.op.method === 'GET');
   if (options.limit !== undefined) calls = calls.slice(0, options.limit);
 
   console.log(`${spec.title} ${spec.version}`);
-  console.log(`${calls.length} calls against ${options.baseURL}`);
+  console.log(`${calls.length} calls against ${options.baseURL}${options.readOnly ? ' (read-only: GET only)' : ''}`);
   for (const [phase, name] of Object.entries(PHASE_NAMES)) {
     const count = calls.filter((c) => c.phase === Number(phase)).length;
     if (count > 0) console.log(`  ${name.padEnd(28)} ${count}`);
@@ -291,6 +309,10 @@ async function main(): Promise<void> {
       body = synthValue(synth, op.requestBody.schema, op.id);
     }
 
+    if (options.readOnly && op.method !== 'GET') {
+      throw new Error(`read-only run refused to send ${op.method} ${op.path}`);
+    }
+
     slot.current = undefined;
     const started = performance.now();
     let record: CallRecord;
@@ -311,6 +333,13 @@ async function main(): Promise<void> {
         const captured = captureId(result, name);
         if (captured) ids.register(op.path, name, captured);
       }
+      //  A collection read names real children: the first item's id lets the
+      //  item reads below hit a row that exists instead of an invented 404.
+      if (op.method === 'GET' && call.childParam && !ids.resolve(`${op.path}/{${call.childParam}}`, call.childParam)) {
+        const first = firstItem(result);
+        const observed = first === undefined ? undefined : captureId(first, call.childParam);
+        if (observed) ids.observe(op.path, call.childParam, observed);
+      }
     } catch (error) {
       record = fromError(call, path, started, slot.current, error, speculative, spec);
     }
@@ -329,6 +358,12 @@ async function main(): Promise<void> {
     if (options.delayMs > 0) await new Promise((r) => setTimeout(r, options.delayMs));
   }
 
+  //  A response that carries the credential back is a finding in its own
+  //  right — name the call, never the value — and the value is masked before
+  //  anything is written, so the guard below is the last line, not the only one.
+  const echoed = records.filter((r) => JSON.stringify(r).includes(apiKey));
+  for (const r of echoed) console.log(`! the response to ${r.method} ${r.path} contains the API key in use`);
+
   mkdirSync(options.out, { recursive: true });
   const payload = JSON.stringify(
     {
@@ -343,7 +378,7 @@ async function main(): Promise<void> {
     },
     null,
     2,
-  );
+  ).split(apiKey).join('<the API key in use>');
   assertClean(payload, [apiKey]);
   writeFileSync(resolve(options.out, 'results.json'), payload);
   console.log(`\nwrote ${resolve(options.out, 'results.json')}`);

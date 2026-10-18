@@ -14,6 +14,7 @@ import { BootstrapResource } from './bootstrap.js';
 import { BridgeResource } from './bridge.js';
 import { CanvasResource } from './canvas.js';
 import { CompaniesResource } from './companies.js';
+import { CompanyResource } from './company.js';
 import { DataExplorerResource } from './data-explorer.js';
 import { DrawingsResource } from './drawings.js';
 import { EvaluationsResource } from './evaluations.js';
@@ -24,6 +25,8 @@ import { GDPRResource } from './gdpr.js';
 import { GovernanceResource } from './governance.js';
 import { GuardrailsResource } from './guardrails.js';
 import { HealthResource } from './health.js';
+import { HireResource } from './hire.js';
+import { InitiativesResource } from './initiatives.js';
 import { IntegrationsResource } from './integrations.js';
 import { KnowledgeResource } from './knowledge.js';
 import { LLMCredentialsResource } from './llm-credentials.js';
@@ -40,6 +43,7 @@ import { ProgramsResource } from './programs.js';
 import { ProjectsResource } from './projects.js';
 import { ProvidersResource } from './providers.js';
 import { PublicResource } from './public.js';
+import { QualificationResource } from './qualification.js';
 import { RegistryResource } from './registry.js';
 import { ReportsResource } from './reports.js';
 import { RunsResource } from './runs.js';
@@ -65,6 +69,7 @@ export * from './bootstrap.js';
 export * from './bridge.js';
 export * from './canvas.js';
 export * from './companies.js';
+export * from './company.js';
 export * from './data-explorer.js';
 export * from './drawings.js';
 export * from './evaluations.js';
@@ -75,6 +80,8 @@ export * from './gdpr.js';
 export * from './governance.js';
 export * from './guardrails.js';
 export * from './health.js';
+export * from './hire.js';
+export * from './initiatives.js';
 export * from './integrations.js';
 export * from './knowledge.js';
 export * from './llm-credentials.js';
@@ -91,6 +98,7 @@ export * from './programs.js';
 export * from './projects.js';
 export * from './providers.js';
 export * from './public.js';
+export * from './qualification.js';
 export * from './registry.js';
 export * from './reports.js';
 export * from './runs.js';
@@ -159,6 +167,7 @@ export interface Resources {
    * Company management
    */
   readonly companies: CompaniesResource;
+  readonly company: CompanyResource;
   /**
    * KV data explorer for admin diagnostics
    */
@@ -199,6 +208,12 @@ export interface Resources {
    * Health checks, readiness, and metrics
    */
   readonly health: HealthResource;
+  /**
+   * Hire an agent the person already uses (Claude Code, …) into their company, with their own
+   * account and subscription
+   */
+  readonly hire: HireResource;
+  readonly initiatives: InitiativesResource;
   /**
    * OAuth integrations and connector management
    */
@@ -264,6 +279,7 @@ export interface Resources {
    * Unauthenticated public-facing endpoints
    */
   readonly public: PublicResource;
+  readonly qualification: QualificationResource;
   /**
    * Spec registry — publish, search, yank, share spec artifacts
    */
@@ -326,6 +342,7 @@ export function createResources(client: Transport): Resources {
     bridge: new BridgeResource(client),
     canvas: new CanvasResource(client),
     companies: new CompaniesResource(client),
+    company: new CompanyResource(client),
     dataExplorer: new DataExplorerResource(client),
     drawings: new DrawingsResource(client),
     evaluations: new EvaluationsResource(client),
@@ -336,6 +353,8 @@ export function createResources(client: Transport): Resources {
     governance: new GovernanceResource(client),
     guardrails: new GuardrailsResource(client),
     health: new HealthResource(client),
+    hire: new HireResource(client),
+    initiatives: new InitiativesResource(client),
     integrations: new IntegrationsResource(client),
     knowledge: new KnowledgeResource(client),
     llmCredentials: new LLMCredentialsResource(client),
@@ -352,6 +371,7 @@ export function createResources(client: Transport): Resources {
     projects: new ProjectsResource(client),
     providers: new ProvidersResource(client),
     public: new PublicResource(client),
+    qualification: new QualificationResource(client),
     registry: new RegistryResource(client),
     reports: new ReportsResource(client),
     runs: new RunsResource(client),

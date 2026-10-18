@@ -1433,3 +1433,97 @@ async fn a_generated_completion_is_a_json_post_sent_once() {
     let received: serde_json::Value = serde_json::from_slice(&sent.body).expect("JSON body");
     assert_eq!(received, json!({"model": "contract/model"}));
 }
+
+/// Real problem documents, byte for byte. The 401 was read from production on
+/// 2026-10-15 with no key and an `X-Request-Id` of our own; the 501 is what
+/// `GET /registry/keys` answered the canon tenant the day before. Between them
+/// they carry everything a caller switches on: a `code`, both spellings of the
+/// request id, and — in the 501 — a code the document's `ErrorCode` enum does
+/// not list and only the deprecated `correlationId`.
+const LIVE_401: &str = r#"{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Missing Authorization header, token query parameter, or uarp_session cookie","correlationId":"sdk-probe-0001","correlation_id":"sdk-probe-0001","code":"AUTH_ERROR"}"#;
+const CANON_501: &str = r#"{"type": "about:blank", "title": "Not Implemented", "status": 501, "detail": "Artifact signing is disabled (spec_registry.signing_mode = \"off\").", "code": "SIGNING_NOT_CONFIGURED", "correlationId": "01a13c8d-1f16-732c-8884-727d6fb7bcdb"}"#;
+
+async fn api_error_for(status: u16, body: &'static str, request_id: Option<&str>) -> uarp_sdk::ApiError {
+    let server = MockServer::start().await;
+    let mut response = ResponseTemplate::new(status).set_body_raw(body, "application/problem+json");
+    if let Some(id) = request_id {
+        response = response.insert_header("x-request-id", id);
+    }
+    Mock::given(method("GET")).and(path("/api/v1/agents/a1")).respond_with(response).mount(&server).await;
+    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(0).build().unwrap();
+    match client.agents().get("a1").await.expect_err("must fail") {
+        Error::Api(api) => *api,
+        other => panic!("unexpected error: {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn a_problem_keeps_its_code_and_request_id() {
+    let api = api_error_for(401, LIVE_401, Some("sdk-probe-0001")).await;
+    assert_eq!(api.code(), Some("AUTH_ERROR"));
+    assert_eq!(api.problem.correlation_id.as_deref(), Some("sdk-probe-0001"));
+    assert_eq!(api.correlation_id(), Some("sdk-probe-0001"));
+    assert!(api.problem.extra.is_empty(), "{:?}", api.problem.extra);
+}
+
+#[tokio::test]
+async fn a_code_the_enum_does_not_list_still_reaches_the_caller() {
+    let api = api_error_for(501, CANON_501, None).await;
+    assert_eq!(api.code(), Some("SIGNING_NOT_CONFIGURED"));
+    assert_eq!(api.correlation_id(), Some("01a13c8d-1f16-732c-8884-727d6fb7bcdb"));
+}
+
+#[tokio::test]
+async fn the_request_id_header_is_the_fallback() {
+    let body = r#"{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}"#;
+    let api = api_error_for(404, body, Some("req-42")).await;
+    assert_eq!(api.correlation_id(), Some("req-42"));
+}
+
+/// Real bytes: the 422 the session route answers for a closed session, captured by the API lane from handleRequest on the code deployed as b108e9a9 (2026-10-15).
+const SESSION_NOT_ACTIVE_422: &str = r#"{"type":"about:blank","title":"Validation Error","status":422,"detail":"Session is not active","correlationId":"01a13f4a-fb5a-7d99-9d94-910550f34d83","correlation_id":"01a13f4a-fb5a-7d99-9d94-910550f34d83","code":"SESSION_NOT_ACTIVE","session_status":"closed"}"#;
+
+#[tokio::test]
+async fn an_extension_member_reaches_the_caller_beside_the_code() {
+    let api = api_error_for(422, SESSION_NOT_ACTIVE_422, None).await;
+    assert_eq!(api.code(), Some("SESSION_NOT_ACTIVE"));
+    assert_eq!(api.problem.extra.get("session_status"), Some(&json!("closed")));
+    assert_eq!(api.problem.extra.len(), 1, "{:?}", api.problem.extra);
+}
+
+/// Real bytes: the 403 a refused X-Active-Tenant answers on production, build e0b37b03 (2026-10-17). membership_suspended is the API lane's capture from handleRequest at d6b1c66e5, the same code: producing it on the wire would mean suspending a membership on canon.
+const NOT_A_MEMBER_403: &str = r#"{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14b59-dd54-7a2f-aa6b-e4338e105419","correlation_id":"01a14b59-dd54-7a2f-aa6b-e4338e105419","code":"FORBIDDEN","reason":"not_a_member"}"#;
+const MEMBERSHIP_SUSPENDED_403: &str = r#"{"type":"about:blank","title":"Forbidden","status":403,"detail":"Your membership in the active tenant requested by X-Active-Tenant is suspended","correlationId":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","correlation_id":"01a14a66-dcfc-7a98-9221-f40af5b6cd0b","code":"FORBIDDEN","reason":"membership_suspended"}"#;
+/// Real bytes: the same refusal on production, build d926b90e (2026-10-17), before batch19: no code and no reason.
+const NOT_A_MEMBER_403_D926: &str = r#"{"type":"about:blank","title":"Forbidden","status":403,"detail":"You are not a member of the active tenant requested by X-Active-Tenant","correlationId":"01a14a66-337b-7324-9a2a-9354a8fc02c6","correlation_id":"01a14a66-337b-7324-9a2a-9354a8fc02c6"}"#;
+
+#[tokio::test]
+async fn the_reason_a_tenant_refused_the_caller_reaches_it_typed() {
+    let not_a_member = api_error_for(403, NOT_A_MEMBER_403, None).await;
+    assert_eq!(not_a_member.code(), Some("FORBIDDEN"));
+    assert_eq!(not_a_member.reason(), Some("not_a_member"));
+    let suspended = api_error_for(403, MEMBERSHIP_SUSPENDED_403, None).await;
+    assert_eq!(suspended.reason(), Some("membership_suspended"));
+    let before = api_error_for(403, NOT_A_MEMBER_403_D926, None).await;
+    assert_eq!(before.reason(), None);
+    assert_eq!(before.code(), None);
+}
+
+/// Real bytes: the 4-byte body `null` that GET /agents/{id}/schedule answered the canon tenant on 2026-10-15 (build b108e9a9) for an agent with no schedule.
+/// The document says so ("null in response body when no schedule is set"), and
+/// the SDK read it as a `Schedule` and failed: `invalid type: null, expected
+/// struct Schedule`.
+#[tokio::test]
+async fn a_schedule_that_is_not_set_is_none() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents/a1/schedule"))
+        .respond_with(ResponseTemplate::new(200).set_body_raw("null", "application/json"))
+        .mount(&server)
+        .await;
+    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(0).build().unwrap();
+    // Asserted through JSON so the test compiles against the old signature too
+    // and fails where the defect was: in decoding, not at compile time.
+    let schedule = client.scheduler().get_schedule("a1").await.expect("null is an answer");
+    assert!(serde_json::to_value(&schedule).unwrap().is_null());
+}

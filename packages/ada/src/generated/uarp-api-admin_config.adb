@@ -4,6 +4,25 @@ with UARP.Types;
 
 package body UARP.API.Admin_Config is
 
+   function Confirm_Data_Processing_Policy
+     (Self : Client_Type;
+      Purpose : String;
+      Payload : UARP.Models.Confirm_Data_Processing_Policy_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Confirm_Data_Processing_Policy_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/data-processing-policies/" & UARP.Types.Encode_Path_Segment (Purpose),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Confirm_Data_Processing_Policy;
+
    function Create_Plan_Stripe_Price
      (Self : Client_Type;
       Plan_Id : String;
@@ -146,6 +165,21 @@ package body UARP.API.Admin_Config is
              "/api/v1/admin/config/code-interpreter",
              Options => Options));
    end Get_Admin_Code_Interpreter_Config;
+
+   function Get_Admin_Data_Processing_Policy
+     (Self : Client_Type;
+      Purpose : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Admin_Data_Processing_Policy_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/data-processing-policies/" & UARP.Types.Encode_Path_Segment (Purpose),
+             Options => Options));
+   end Get_Admin_Data_Processing_Policy;
 
    function Get_Admin_Disabled_Tools
      (Self : Client_Type;
@@ -683,6 +717,77 @@ package body UARP.API.Admin_Config is
              "/api/v1/admin/config/promo-codes/" & UARP.Types.Encode_Path_Segment (Code) & "/rewards",
              Options => Options));
    end List_Promo_Rewards;
+
+   function Put_Qualification_Pricing_Revision
+     (Self : Client_Type;
+      Pricing_Revision : String;
+      Payload : UARP.Models.Put_Qualification_Pricing_Revision_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value
+   is
+   begin
+      return UARP.Client.Call
+         (Self,
+          "PUT",
+          "/api/v1/admin/qualification/pricing-revisions/" & UARP.Types.Encode_Path_Segment (Pricing_Revision),
+          Payload => UARP.Models.To_JSON (Payload),
+          Has_Payload => True,
+          Idempotent => True,
+          Options => Options);
+   end Put_Qualification_Pricing_Revision;
+
+   function Put_Qualification_Sponsor_Key
+     (Self : Client_Type;
+      Key_Id : String;
+      Payload : UARP.Models.Put_Qualification_Sponsor_Key_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value
+   is
+   begin
+      return UARP.Client.Call
+         (Self,
+          "PUT",
+          "/api/v1/admin/qualification/sponsor-keys/" & UARP.Types.Encode_Path_Segment (Key_Id),
+          Payload => UARP.Models.To_JSON (Payload),
+          Has_Payload => True,
+          Idempotent => True,
+          Options => Options);
+   end Put_Qualification_Sponsor_Key;
+
+   function Put_Qualification_Sponsorship_Program
+     (Self : Client_Type;
+      Program_Id : String;
+      Payload : UARP.Models.Qualification_Program_Put;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Qualification_Program
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/qualification/sponsorship-programs/" & UARP.Types.Encode_Path_Segment (Program_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Put_Qualification_Sponsorship_Program;
+
+   function Revoke_Data_Processing_Policy
+     (Self : Client_Type;
+      Purpose : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Revoke_Data_Processing_Policy_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/data-processing-policies/" & UARP.Types.Encode_Path_Segment (Purpose) & "/revoke",
+             Idempotent => True,
+             Options => Options));
+   end Revoke_Data_Processing_Policy;
 
    function Run_Reconciliation
      (Self : Client_Type;

@@ -136,7 +136,10 @@ try {
         ApiErrorKind.NOT_FOUND -> showMessage("No such agent")
         ApiErrorKind.UNPROCESSABLE_ENTITY -> showFieldErrors(error.validationErrors)
         ApiErrorKind.RATE_LIMIT -> retryAfter(error.retryAfterSeconds)
-        else -> report(error.status, error.correlationId)
+        else -> when (error.code) {   // the stable value; `detail` is prose
+            "SESSION_NOT_ACTIVE" -> endChat(error.problem.extensions["session_status"])
+            else -> report(error.status, error.correlationId)
+        }
     }
 } catch (error: TimeoutException) {   // ai.snaga.uarp.TimeoutException,
     showMessage("Timed out")           // not the one in java.util.concurrent

@@ -9,9 +9,13 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root="$(dirname "$here")"
 port="${UARP_TEST_PORT:-8931}"
 
+#  gprbuild's parallelism. Unset means its default, one job per core. CI sets
+#  2; see the comment there for what that did and did not change.
+jobs="${UARP_ADA_JOBS:-0}"
+
 cd "$root"
-alr -n build
-(cd "$here" && alr -n build)
+alr -n build -- -j"$jobs"
+(cd "$here" && alr -n build -- -j"$jobs")
 
 python3 "$here/mock_server.py" "$port" >/dev/null 2>&1 &
 server=$!

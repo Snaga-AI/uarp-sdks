@@ -18,7 +18,7 @@ public struct SchedulerAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/schedule`
     ///
     /// Required scopes: `agents:read`.
-    public func getSchedule(agentId: String, options: RequestOptions = .init()) async throws -> Schedule {
+    public func getSchedule(agentId: String, options: RequestOptions = .init()) async throws -> Schedule? {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/schedule",
