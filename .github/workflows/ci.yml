@@ -209,8 +209,14 @@ jobs:
       - name: Build and test
         run: ./tests/run-tests.sh
         working-directory: packages/ada
+        env:
+          # Two compiler processes, not one per core. At the default the
+          # library took 2.5 h on 2026-10-11 and over 4.5 h at build 0837bb4d,
+          # nearing the 6 h job limit; at -j2 the same commit built its 52 API
+          # units in 17 min, with 14 GB still free and no swap (PR #65).
+          UARP_ADA_JOBS: "2"
       - name: Build the example
-        run: alr -n build
+        run: alr -n build -- -j2
         working-directory: packages/ada/examples
 
   # The community index builds every crate on Windows too, where PE-COFF caps
