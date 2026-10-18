@@ -2,7 +2,7 @@
  * Lazy loader for the generated wire data.
  *
  * `public/wire.json` is produced at build/dev start by `scripts/gen-wire.ts`
- * from `contract/SCENARIOS.md` and the five per-language contract runners, so it
+ * from `contract/SCENARIOS.md` and the six per-language contract runners, so it
  * cannot drift from the contract suite. It is fetched on demand — the landing
  * bundle never imports it.
  */

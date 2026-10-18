@@ -13,7 +13,7 @@ const SUFFIX = 'Snaga SDKs';
 export function usePageTitle(title?: string): void {
   useEffect(() => {
     const previous = document.title;
-    document.title = title ? `${title} — ${SUFFIX}` : `${SUFFIX} — TypeScript, Rust, Swift, Kotlin, Ada`;
+    document.title = title ? `${title} — ${SUFFIX}` : `${SUFFIX} — TypeScript, Python, Rust, Swift, Kotlin, Ada`;
     return () => {
       document.title = previous;
     };

@@ -2,11 +2,11 @@
 #
 #   make generate            regenerate every target
 #   make generate T=rust     regenerate one target
-#   make test                build and test all five packages
+#   make test                build and test all six packages
 #   make test-rust           just one
 
 .DEFAULT_GOAL := help
-.PHONY: help generate stats check ts-deps check-docs check-prose-schema test contract smoke smoke-dry smoke-live update-golden test-generator test-typescript test-rust test-swift test-kotlin test-ada clean
+.PHONY: help generate stats check ts-deps check-docs check-prose-schema test contract smoke smoke-dry smoke-live update-golden test-generator test-typescript test-rust test-swift test-kotlin test-ada test-python clean
 
 T ?=
 
@@ -31,9 +31,9 @@ check-docs: ts-deps ## Compile the code samples in the documentation
 check-prose-schema: ## Does the prose agree with the request schemas?
 	@node scripts/check-prose-schema.ts
 
-test: check-docs test-generator test-typescript test-rust test-swift test-kotlin test-ada ## Build and test everything
+test: check-docs test-generator test-typescript test-rust test-swift test-kotlin test-ada test-python ## Build and test everything
 
-contract: ## Prove the five SDKs put the same bytes on the wire
+contract: ## Prove the six SDKs put the same bytes on the wire
 	@./contract/run.sh
 
 smoke: ## Sweep a live server and report where it diverges from the spec (needs UARP_API_KEY)
@@ -68,9 +68,13 @@ test-kotlin: ## Build and test the Kotlin SDK
 test-ada: ## Build and test the Ada SDK against the mock server
 	@cd packages/ada && ./tests/run-tests.sh
 
+test-python: ## Test and type-check the Python SDK (needs uv)
+	@cd packages/python && uv run pytest -q && uv run mypy
+
 clean: ## Remove build output from every package
 	@rm -rf packages/typescript/dist packages/typescript/node_modules
 	@rm -rf packages/rust/target
 	@rm -rf packages/swift/.build
 	@rm -rf packages/kotlin/build packages/kotlin/uarp-sdk/build packages/kotlin/.gradle
 	@rm -rf packages/ada/obj packages/ada/lib packages/ada/tests/obj packages/ada/tests/bin
+	@rm -rf packages/python/dist packages/python/.venv packages/python/.mypy_cache packages/python/.pytest_cache

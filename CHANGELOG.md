@@ -1,10 +1,72 @@
 # Changelog
 
-All five SDKs share one version, cut from one tag. Set it with
+All six SDKs share one version, cut from one tag. Set it with
 `scripts/set-version.sh <version>`, which also regenerates.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
+
+## 0.12.0 — 2026-10-18
+
+Build `c65c901c`, digest `092f377d6340cec2`. The five existing SDKs change only
+in their version; what is new is a sixth.
+
+### Changed — `runs.create` is typed by the document alone
+
+Build `c65c901c` lists `202` as the only success of `POST /api/v1/runs` and
+moves the sponsored `200`/`201` answers, which only a body carrying
+`execution_requirements` receives, to `x-uarp-sponsored-responses`. The
+generator's pin that typed `createRun` by its `202 Run` in 0.11.0 is removed;
+the generated code is byte-identical, and the test that pinned it now holds
+from the document (it fails against build `0837bb4d` without the pin).
+
+### Added — a Python SDK
+
+`packages/python`, published to PyPI as `uarp-sdk` (import `uarp_sdk`). Python
+3.10+, one dependency, `httpx`. It is generated from the same document by a
+sixth emitter, `generator/src/emit/python.ts`, and covers the same surface as
+the other five: 843 operations in 53 groups and 2064 named types, every one
+reachable from a blocking `Client` and from an asyncio `AsyncClient`.
+
+- **Models** are keyword-only dataclasses and **enums** `str` enums. Responses
+  decode strictly, as Rust, Swift and Kotlin do: an absent required member or a
+  value of the wrong type raises `DecodeError` with its path, and keeps the
+  parsed body on the error. An enum value the server adds later decodes to an
+  instance that reports `is_known` as false. An optional property left at
+  `None` is not sent; a body passed as a plain `dict` goes on the wire as it is,
+  which is how to send an explicit `null`.
+- **Transport** behaves as the other five: the same retry statuses and
+  backoff, `Retry-After` and `X-Should-Retry`, an `Idempotency-Key` on every
+  mutating `/api/v1/*` call and retries only for calls that carry one, strict
+  percent-encoding, form bodies in schema order, `code` and `reason` on
+  `APIError`, event streams that reconnect with `Last-Event-ID`, and
+  `stream_post`, which never retries.
+- **Checked:** `contract/run.sh` runs the 22 scenarios through a Python runner,
+  and its 24 requests are identical to TypeScript's and Rust's, byte for byte,
+  with the same probe readings. The 209 bodies read from production at build
+  `e0b37b03` all decode through the generated models, and the four doctored
+  control bodies fail exactly as they fail in Rust (three refused, one
+  accepted). Every parameterless `GET` was then called on production through
+  the SDK itself, read-only: 128 answers decoded, four event streams opened and
+  delivered, and the rest were refusals the key explains (77 `403` on admin
+  routes, six `404`, two `400`, one `501`). mypy `--strict` passes over the
+  package, and every fixture's output is imported and type-checked by the
+  generator's compile test.
+- **Falsified:** each of fourteen calls in the runtime was removed in turn
+  (the idempotency key, the 429 retry, the problem document, `reason`, the
+  unknown-enum fallback, the omission of unset fields, lower-case booleans,
+  JSON comment frames, `Last-Event-ID` replay, the content-type check in
+  `stream_post`, decoding, the repeated-cursor guard, schema-ordered form
+  fields, strict query encoding). Each turns between one and ten of the 90
+  tests red and leaves the others green.
+- **Not yet:** `exportMyAccount` — the document offers the export as JSON or
+  as a zip, every SDK asks for JSON (`Accept: application/json`), and
+  production answered the zip, so the Python call raises `DecodeError`. The
+  generator types every SDK from the same JSON half; this is the open item on
+  how exports are typed, not something Python adds. The live scenario in `smoke/live`
+  ran against production on 2026-10-18 through TypeScript, Python, Rust, Swift
+  and Kotlin: all five read the same values, and the agent it created was
+  deleted.
 
 ## 0.11.0 — 2026-10-17
 

@@ -2,9 +2,10 @@
  * The samples the portal shows, one set per language.
  *
  * Every one of these was compiled against the package as published — the
- * TypeScript ones by `scripts/check-docs.ts` on each build, the other four by
- * hand against crates.io, the SwiftPM mirror, Maven Central and the Alire
- * tarball. Nothing here is written from memory: this documentation has been
+ * TypeScript ones by `scripts/check-docs.ts` on each build, the Python ones
+ * type-checked by the same script with mypy (it reads the `python:` entries
+ * from this file), the other four by hand against crates.io, the SwiftPM
+ * mirror, Maven Central and the Alire tarball. Nothing here is written from memory: this documentation has been
  * wrong before, in exactly the way that reads perfectly well.
  */
 
@@ -12,6 +13,7 @@ import { VERSION } from 'uarp-sdk';
 
 export const LANGUAGES = [
   { id: 'ts', name: 'TypeScript', registry: 'npm' },
+  { id: 'python', name: 'Python', registry: 'PyPI' },
   { id: 'rust', name: 'Rust', registry: 'crates.io' },
   { id: 'swift', name: 'Swift', registry: 'SwiftPM' },
   { id: 'kotlin', name: 'Kotlin', registry: 'Maven Central' },
@@ -26,7 +28,7 @@ export type Samples = Record<LanguageId, string>;
  * The version the install lines quote.
  *
  * Read from the package this page is built against rather than typed here, so
- * a release cannot leave the documentation behind: the four registries all
+ * a release cannot leave the documentation behind: the registries all
  * carry the same number, and `VERSION` is that number. Measured 2026-09-21 —
  * npm, crates.io and Maven Central all serve 0.6.0.
  */
@@ -53,6 +55,7 @@ const SWIFT_MIRROR = '0.10.0';
 /** The install line, and what it needs. */
 export const INSTALL: Record<LanguageId, { command: string; shell: boolean; needs: string }> = {
   ts: { command: 'npm install uarp-sdk', shell: true, needs: 'Node 18+' },
+  python: { command: 'pip install uarp-sdk', shell: true, needs: 'Python 3.10+' },
   rust: { command: 'cargo add uarp-sdk tokio --features tokio/macros,tokio/rt-multi-thread', shell: true, needs: 'Rust 1.88+' },
   swift: {
     command: `.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "${SWIFT_MIRROR}")`,
@@ -78,6 +81,10 @@ export const HELLO: Samples = {
   ts: `const client = new UarpClient({ apiKey: process.env.UARP_API_KEY });
 const run = await client.runs.create({ agent_id: agentId, input: { message: 'Summarise the last deploy.' } });
 console.log((await client.runs.waitRun(run.run_id)).output);`,
+
+  python: `client = Client()  # UARP_API_KEY, UARP_BASE_URL
+run = client.runs.create(CreateRunRequest(agent_id=agent_id))
+print(client.runs.wait_run(run.run_id).output)`,
 
   rust: `let client = uarp_sdk::Client::from_env()?;
 let run = client.runs().create(&CreateRunRequest { agent_id, ..Default::default() }).await?;
@@ -105,6 +112,15 @@ const client = new UarpClient({ apiKey: process.env.UARP_API_KEY });
 // Or from the environment: UARP_API_KEY, then SNAGA_API_KEY.
 // The base URL falls back to UARP_BASE_URL, then production.
 const fromEnv = new UarpClient({});`,
+
+  python: `from uarp_sdk import Client
+
+# From the environment: UARP_API_KEY, then SNAGA_API_KEY.
+# The base URL falls back to UARP_BASE_URL, then production.
+client = Client()
+
+# Or explicitly
+client = Client(api_key=key, max_retries=3)`,
 
   rust: `// From the environment: UARP_API_KEY, UARP_BASE_URL
 let client = uarp_sdk::Client::from_env()?;
@@ -153,6 +169,11 @@ const client = new UarpClient({ apiKey: '', baseURL: '/api/uarp' });
 // An OMITTED key still throws — "forgot to set UARP_API_KEY" is the
 // common mistake, and a 401 is a much worse way to find out.`,
 
+  python: `# No credentials of its own: the header is omitted, not sent empty.
+client = Client(api_key="", base_url=base)
+
+# Client() refuses a set-but-empty UARP_API_KEY with ConfigError.`,
+
   rust: `// No credentials of its own: the header is omitted, not sent empty.
 let client = uarp_sdk::Client::builder()
     .api_key("")
@@ -187,6 +208,14 @@ const run = await client.runs.create({
   agent_id: agent.agent_id,
   input: { message: 'Summarise the last deploy.' },
 });`,
+
+  python: `from uarp_sdk.models import CreateAgentRequest
+
+# The platform selects the model itself, so a create is just a name.
+agent = client.agents.create(CreateAgentRequest(name="support"))
+
+page = client.agents.list(limit=20)
+print(len(page.items), page.has_more)`,
 
   rust: `use uarp_sdk::models::CreateAgentRequest;
 
@@ -234,6 +263,21 @@ try {
     throw error;  // not from the API — a timeout or a dropped connection
   }
 }`,
+
+  python: `from uarp_sdk import APIError, APITimeoutError, NotFoundError, RateLimitError, UnprocessableEntityError
+
+try:
+    client.agents.get("missing")
+except NotFoundError:
+    print("no such agent")
+except UnprocessableEntityError as error:
+    print(error.validation_errors)
+except RateLimitError as error:
+    print("retry after", error.retry_after_seconds)
+except APIError as error:
+    print(error.status, error.code, error.correlation_id)
+except APITimeoutError:
+    print("timed out")`,
 
   rust: `use uarp_sdk::{ApiErrorKind, Error};
 
@@ -298,6 +342,14 @@ export const PAGINATION: Samples = {
 import { collect } from 'uarp-sdk';
 const first50 = await collect(client.agents.listAll(), 50);`,
 
+  python: `from itertools import islice
+
+for agent in client.agents.list_all(limit=100):
+    print(agent.name)
+
+# Or take the first N
+first50 = list(islice(client.agents.list_all(), 50))`,
+
   rust: `use futures_util::StreamExt;
 
 let agents = client.agents();
@@ -334,6 +386,13 @@ for await (const event of stream) {
   }
   if (event.event === 'run.completed') break;  // leaving the loop closes the request
 }`,
+
+  python: `with client.runs.stream_run_events(run_id) as events:
+    for event in events:
+        if event.event == "llm.chunk":
+            print(event.json()["payload"].get("delta", ""), end="")
+        if event.event == "run.completed":
+            break  # and the end of the with block closes the request`,
 
   rust: `use futures_util::StreamExt;
 
@@ -402,6 +461,14 @@ await client.runs.create(body, {
   headers: { 'X-Request-Id': requestId },
   signal: controller.signal,
 });`,
+
+  python: `from uarp_sdk import RequestOptions
+
+client.agents.create(request, request_options=RequestOptions(idempotency_key="order-4711"))
+client.agents.get(agent_id, request_options=RequestOptions(timeout=5.0, max_retries=0))
+
+# Or bind options to a copy of the client; the connection pool is shared.
+traced = client.with_options(headers={"X-Request-Id": request_id})`,
 
   rust: `// Rust has no default arguments, so overrides ride on a cheap clone of the
 // client that shares its connection pool.

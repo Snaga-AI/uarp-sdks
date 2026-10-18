@@ -19,6 +19,14 @@ build/
 .gradle/
 local.properties
 
+# Python
+.venv/
+__pycache__/
+*.pyc
+.mypy_cache/
+.pytest_cache/
+packages/python/uv.lock
+
 # Ada / Alire
 obj/
 lib/

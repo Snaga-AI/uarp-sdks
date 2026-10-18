@@ -67,6 +67,15 @@ else
     wanted typescript && skipped+=("typescript (node)")
 fi
 
+if wanted python && have uv; then
+    echo "==> python"
+    curl -fsS "$base/__reset" >/dev/null
+    (cd "$root/packages/python" && UARP_CONTRACT_BASE_URL="$base" uv run --quiet python "$root/contract/runners/python.py" >/dev/null)
+    record python
+else
+    wanted python && skipped+=("python (uv)")
+fi
+
 if wanted rust && have cargo; then
     echo "==> rust"
     curl -fsS "$base/__reset" >/dev/null

@@ -18,6 +18,7 @@ This file records what was actually verified, and what is left.
 | 3 | `packages/swift` | SwiftPM `Snaga-AI/uarp-swift` | **0.3.0 tagged** |
 | 4 | `packages/kotlin` | Maven `ai.snaga:uarp-sdk` | **0.3.0 published** |
 | 5 | `packages/ada` | Alire `uarp_sdk` | **submitted** — alire-index#2059, now 0.3.0 |
+| 6 | `packages/python` | PyPI `uarp-sdk` | **not yet published** — pending trusted publisher since 2026-10-17 |
 
 ---
 
@@ -223,6 +224,28 @@ the published archive and checked the hash.
 
 The rest is review by the Alire maintainers, and their CI builds the crate on
 Linux — which this repository's CI already does on every push.
+
+---
+
+## Stage 6 — PyPI, `uarp-sdk` — not yet published
+
+Trusted publishing, so there is no token: PUBLISHING.md has the pending
+publisher and the `pypi` environment. Verified on 2026-10-17 at 0.10.0, before
+the first upload:
+
+```sh
+cd packages/python && uv build                     # sdist + wheel, 67 modules
+uv venv -p 3.14 /tmp/consumer/.venv
+uv pip install -p /tmp/consumer/.venv/bin/python dist/uarp_sdk-<version>-py3-none-any.whl
+/tmp/consumer/.venv/bin/python -I -c 'import uarp_sdk; print(uarp_sdk.__version__)'
+```
+
+The installed wheel, outside the source tree, imported from `site-packages`,
+carried `py.typed`, and answered `health.get()`, `agents.list()` and
+`auth.get_me()` on production with a real key.
+
+Left for the first release: the upload itself, through `release.yml` on the
+`v*` tag; then `pip install uarp-sdk` in a clean environment.
 
 ---
 

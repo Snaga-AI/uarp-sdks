@@ -7,7 +7,8 @@
  * core, and the lot is checked in a single compiler pass.
  *
  * Kotlin and Ada are covered by the production spec, which their package builds
- * compile in CI.
+ * compile in CI. Python has no compiler: its check imports every fixture's
+ * output, builds a decoder for every model, and type-checks the lot with mypy.
  *
  * Each check skips itself when its toolchain is missing, and
  * `UARP_COMPILE_TARGETS=swift` narrows the run to one language — CI uses that
@@ -29,6 +30,9 @@ const generatorRoot = dirname(here);
 const tsPackage = join(repoRoot, 'packages/typescript');
 const rustPackage = join(repoRoot, 'packages/rust');
 const swiftPackage = join(repoRoot, 'packages/swift');
+const pythonPackage = join(repoRoot, 'packages/python');
+/** The interpreter with httpx and mypy: `$UARP_PYTHON`, or the package's own virtualenv. */
+const python = process.env.UARP_PYTHON ?? join(pythonPackage, '.venv/bin/python');
 
 /** True when a command is on PATH. */
 function available(command: string): boolean {
@@ -215,6 +219,49 @@ test(
         .filter((part) => part !== undefined && part !== '')
         .join('\n');
       assert.fail(`generated Swift does not compile:\n${output || '(the compiler said nothing)'}`);
+    }
+  },
+);
+
+test(
+  'every fixture emits Python that imports, decodes and type-checks',
+  { skip: skipReason('python', python) },
+  () => {
+    const target = TARGETS.python!;
+    //  Imports every generated module and builds a decoder for every model
+    //  and enum, which evaluates every annotation the way a decode will.
+    const probe = [
+      'import dataclasses, importlib, pkgutil, uarp_sdk',
+      'from uarp_sdk._models import UarpEnum, _decoder',
+      'import uarp_sdk.generated.models as models',
+      'import uarp_sdk.generated.resources as resources',
+      "for info in pkgutil.iter_modules(resources.__path__): importlib.import_module(f'uarp_sdk.generated.resources.{info.name}')",
+      'for value in vars(models).values():',
+      '    if isinstance(value, type) and (dataclasses.is_dataclass(value) or issubclass(value, UarpEnum)): _decoder(value)',
+    ].join('\n');
+
+    for (const name of fixtureNames()) {
+      const root = join(workspace, 'python', name);
+      cpSync(join(pythonPackage, 'src/uarp_sdk'), join(root, 'uarp_sdk'), {
+        recursive: true,
+        filter: (source) => !source.includes('__pycache__') && !source.endsWith('/generated'),
+      });
+      for (const file of target.emit(fixture(name))) {
+        const full = join(root, file.path.replace(/^src\//, ''));
+        mkdirSync(dirname(full), { recursive: true });
+        writeFileSync(full, file.content);
+      }
+      for (const [step, args] of [
+        ['import', ['-c', probe]],
+        ['mypy', ['-m', 'mypy', '--strict', '--no-incremental', '-p', 'uarp_sdk']],
+      ] as const) {
+        try {
+          execFileSync(python, [...args], { cwd: root, encoding: 'utf8', stdio: 'pipe', env: { ...process.env, PYTHONPATH: root } });
+        } catch (error) {
+          const details = error as { stderr?: string; stdout?: string };
+          assert.fail(`${name}: generated Python fails ${step}:\n${details.stdout ?? ''}${details.stderr ?? ''}`);
+        }
+      }
     }
   },
 );

@@ -47,7 +47,7 @@ capture() {
     fi
 }
 
-#  A toolchain that fails to build must not stop the other four from running:
+#  A toolchain that fails to build must not stop the others from running:
 #  the point of the check is the comparison, and a partial comparison still
 #  finds disagreements.
 if wanted typescript && have node; then
@@ -55,6 +55,12 @@ if wanted typescript && have node; then
         && capture typescript node "$root/smoke/live/runners/typescript.ts" || true
 else
     wanted typescript && skipped+=("typescript (node)")
+fi
+
+if wanted python && have uv; then
+    capture python uv run --quiet --project "$root/packages/python" python "$root/smoke/live/runners/python.py" || true
+else
+    wanted python && skipped+=("python (uv)")
 fi
 
 if wanted rust && have cargo; then

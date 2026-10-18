@@ -14,6 +14,7 @@ import { LANGUAGES, type LanguageId } from '../docs/content';
 /** Where each package actually lives, for the link in the header. */
 const REGISTRY_URL: Record<LanguageId, string> = {
   ts: 'https://www.npmjs.com/package/uarp-sdk',
+  python: 'https://pypi.org/project/uarp-sdk/',
   rust: 'https://crates.io/crates/uarp-sdk',
   swift: 'https://github.com/Snaga-AI/uarp-swift',
   kotlin: 'https://central.sonatype.com/artifact/ai.snaga/uarp-sdk',

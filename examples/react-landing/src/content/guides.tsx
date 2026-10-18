@@ -8,7 +8,7 @@
  * block, and its method names, path params and request-body fields are taken
  * from `reference.json` (itself generated from the shipped TS), not written from
  * memory. This documentation has been wrong before, in exactly the way that
- * reads perfectly well, so the rule is: if it isn't verified, it isn't five
+ * reads perfectly well, so the rule is: if it isn't verified, it isn't six
  * languages.
  */
 import type { Samples } from '../docs/content';
@@ -32,7 +32,7 @@ export const GUIDES: Guide[] = [
   {
     slug: 'getting-started',
     title: 'Install & authenticate',
-    summary: 'Add the SDK in any of the five languages and construct a client.',
+    summary: 'Add the SDK in any of the six languages and construct a client.',
     blocks: [
       { kind: 'prose', text: "Every SDK ships to its language's native registry. Pick the one you already build in." },
       { kind: 'install' },

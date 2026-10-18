@@ -117,6 +117,52 @@ jobs:
         run: cargo package --allow-dirty
         working-directory: packages/rust
 
+  pypi-build:
+    name: PyPI (build)
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv run pytest
+        working-directory: packages/python
+      - run: uv build
+        working-directory: packages/python
+      # pyproject.toml carries its own copy of the version; set-version.sh
+      # keeps it in step, and this is where a drift would show.
+      - name: The wheel must carry VERSION
+        run: test -f "packages/python/dist/uarp_sdk-${{ needs.verify.outputs.version }}-py3-none-any.whl"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: packages/python/dist/
+
+  # Separate from the build because the `pypi` environment only admits `v*`
+  # tags: a dry run from a branch still builds and tests the wheel above, and
+  # never reaches this job.
+  pypi:
+    name: PyPI
+    needs: pypi-build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    # Trusted publishing. pypi.org accepts this job's OIDC token for
+    # `uarp-sdk` because the publisher registered there names this
+    # repository, this workflow file and this environment. There is no token
+    # to store, rotate or leak.
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+      # A re-run after another job failed must not go red on a version that
+      # is already up.
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+
   maven:
     name: Maven Central
     needs: verify
@@ -131,7 +177,7 @@ jobs:
       - run: ./gradlew :uarp-sdk:build
         working-directory: packages/kotlin
       # Central needs a verified namespace and a signing key. Until those exist
-      # the release should still ship the other four packages rather than fail
+      # the release should still ship the other five packages rather than fail
       # as a whole — but it must say so, not skip in silence.
       - id: creds
         env:
@@ -311,8 +357,9 @@ jobs:
     # reached a release page the community index could point at. Nine
     # releases were filled in by hand on 2026-08-21. The mirror's own
     # failure still fails the workflow, loudly; it just no longer erases
-    # the release.
-    needs: [verify, npm, crates, maven, swift, ada]
+    # the release. The same holds for PyPI: the build gates the release, the
+    # upload — which a lapsed trusted publisher would refuse — does not.
+    needs: [verify, npm, crates, maven, swift, ada, pypi-build]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:

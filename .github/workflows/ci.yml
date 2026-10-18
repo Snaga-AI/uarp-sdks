@@ -164,6 +164,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+      - uses: astral-sh/setup-uv@v6
       - uses: alire-project/setup-alire@v4
         with:
           # Without a version the action installs alr 2.0.2, whose pinned index
@@ -192,6 +193,43 @@ jobs:
       # Every SDK whose toolchain is present runs the same scenarios; the
       # script fails if their traffic differs.
       - run: ./contract/run.sh
+
+  python:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor the package promises and the newest release: what the
+        # pyproject says is what gets checked.
+        python: ['3.10', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync
+        working-directory: packages/python
+      - run: uv run pytest
+        working-directory: packages/python
+      - run: uv run mypy
+        working-directory: packages/python
+      # Last, because a toolchain action that ran afterwards would put its own
+      # node on the PATH ahead of this one.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # Type-checked with mypy against the package. Named explicitly: the
+      # checker skips a language whose interpreter is absent, and a silent
+      # skip would look exactly like a pass.
+      - name: The Python samples in the READMEs must type-check
+        run: node scripts/check-docs.ts python
+      # The fixtures cover edge cases the production spec does not contain.
+      # The generator job has no Python environment, so the check rides here.
+      - name: Import and type-check the generator fixtures
+        run: |
+          npm install --prefix generator
+          UARP_COMPILE_TARGETS=python node --test generator/test/compile.test.ts
 
   ada:
     name: Ada
