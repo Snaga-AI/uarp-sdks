@@ -207,7 +207,11 @@ jobs:
           version: 2.1.1
           toolchain: gnat_native^15 gprbuild^26
       - name: Build and test
-        run: ./tests/run-tests.sh
+        run: |
+          nproc; free -m
+          (while sleep 60; do echo "probe $(date -u +%H:%M) $(free -m | awk '/Mem/{print "used="$3" avail="$7}') $(free -m | awk '/Swap/{print "swap="$3}') gnat1=$(pgrep -c gnat1)"; ps -eo rss,args --sort=-rss | awk '/gnat1/{print "  rss="int($1/1024)"M", $NF; n++} n==4{exit}'; done) &
+          alr -n build -- -j2
+          ./tests/run-tests.sh
         working-directory: packages/ada
       - name: Build the example
         run: alr -n build
