@@ -55,6 +55,14 @@ function InstallBody(): ReactElement {
           belong in <Term>Snaga-AI/uarp-sdks</Term>.
         </Note>
       )}
+      {language === 'python' && (
+        <Note>
+          Every call exists twice: on <Term>Client</Term>, which blocks, and on{' '}
+          <Term>AsyncClient</Term>, where the same methods are awaited. Models are
+          keyword-only dataclasses in <Term>uarp_sdk.models</Term>, and the package ships{' '}
+          <Term>py.typed</Term>, so a type checker such as mypy checks your calls against the API.
+        </Note>
+      )}
       {language === 'kotlin' && (
         <Note tone="warn">
           Built with <strong>Kotlin 2.2</strong>. A project on 2.0 fails with "Module was
@@ -134,21 +142,21 @@ function CallingBody(): ReactElement {
         so explicitly.
       </p>
       <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 border-t border-rule-soft pt-4 text-sm text-ink-soft">
-        <dt className="font-medium text-ink">789 operations</dt>
+        <dt className="font-medium text-ink">857 operations</dt>
         <dd>
-          across 585 paths and 50 resource groups, counted at 0.9.0. Beside the ordinary
+          across 642 paths and 54 resource groups, counted at 0.11.0. Beside the ordinary
           list, create, read, update and delete are nested collections and named actions
           like <Term>cancel</Term>, <Term>approve</Term> and <Term>rollback</Term>.
         </dd>
-        <dt className="font-medium text-ink">187 of them admin</dt>
+        <dt className="font-medium text-ink">194 of them admin</dt>
         <dd>
           the two admin groups, which the{' '}
           <a className="text-accent underline underline-offset-2" href="https://snaga.ai/docs">API reference</a>{' '}
           leaves out — that is why it counts fewer than this page does. The SDKs
           generate all of them; you only ever see the group you call.
         </dd>
-        <dt className="font-medium text-ink">1844 models</dt>
-        <dd>1543 objects and 301 enumerations, each a named type in your language</dd>
+        <dt className="font-medium text-ink">2118 models</dt>
+        <dd>1762 objects and 356 enumerations, each a named type in your language</dd>
       </dl>
     </>
   );

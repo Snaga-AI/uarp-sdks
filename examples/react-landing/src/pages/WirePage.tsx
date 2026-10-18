@@ -99,10 +99,10 @@ export function WirePage() {
       <header className="flex flex-col gap-2 border-b border-rule-soft pb-4">
         <h2 className="text-2xl font-semibold tracking-tight">Wire</h2>
         <p className="text-ink-soft">
-          Every SDK is pinned against the same sixteen contract scenarios — the same calls
-          replayed in TypeScript, Rust, Swift, Kotlin and Ada, with a gate that refuses to pass
+          Every SDK is pinned against the same twenty-two contract scenarios — the same calls
+          replayed in TypeScript, Python, Rust, Swift, Kotlin and Ada, with a gate that refuses to pass
           on fewer than two SDKs agreeing. The point is not that each call succeeds but that all
-          five put the same bytes on the wire for the same logical request.
+          six put the same bytes on the wire for the same logical request.
         </p>
         <p className="text-sm text-ink-soft">
           {wire

@@ -1,14 +1,14 @@
 /**
  * Build-time generator for `/docs/wire`.
  *
- * The contract suite (`apps/sdk/contract`) proves the five SDKs put the same
+ * The contract suite (`apps/sdk/contract`) proves the six SDKs put the same
  * bytes on the wire for the same logical request. This generator turns the two
- * source-of-truth artifacts — `contract/SCENARIOS.md` (the 16-row table and its
- * prose) and the five per-language runners — into `public/wire.json` so the wire
+ * source-of-truth artifacts — `contract/SCENARIOS.md` (the scenario table and its
+ * prose) and the six per-language runners — into `public/wire.json` so the wire
  * page renders them without drifting from the contract.
  *
- * Each runner performs the same 16 calls in the same order, and each call is
- * preceded by a comment marker `// N. …` (Ada: `--  N. …`). We split a runner
+ * Each runner performs the same calls in the same order, and each call is
+ * preceded by a comment marker `// N. …` (Ada: `--  N. …`, Python: `# N. …`). We split a runner
  * on those markers into one snippet per scenario. The last scenario is cut at
  * the trailing `… runner done` print line so the snippet does not carry the
  * runner's epilogue; the marker line itself is dropped, since the scenario card
@@ -25,14 +25,16 @@ const contractRoot = resolve(sdkRoot, 'contract');
 
 const RUNNERS: Record<string, string> = {
   ts: resolve(contractRoot, 'runners/typescript.ts'),
+  python: resolve(contractRoot, 'runners/python.py'),
   rust: resolve(sdkRoot, 'packages/rust/examples/contract.rs'),
   swift: resolve(sdkRoot, 'packages/swift/Sources/UARPContract/main.swift'),
   kotlin: resolve(sdkRoot, 'packages/kotlin/uarp-sdk/src/test/kotlin/ai/snaga/uarp/ContractRunner.kt'),
   ada: resolve(sdkRoot, 'packages/ada/examples/src/contract.adb'),
 };
 
-const MARKER = /^\s*(?:\/\/|--)\s*(\d{1,2})\.\s+.+$/;
-const DONE = /runner done/i;
+const MARKER = /^\s*(?:\/\/|--|#)\s*(\d{1,2})\.\s+.+$/;
+//  The epilogue: the report of what was decoded, or the final print.
+const DONE = /runner done|^\s*(?:\/\/|--|#)\s*One report/i;
 
 export interface WireScenario {
   num: number;
@@ -65,7 +67,7 @@ function parseScenarios(md: string): { scenarios: { num: number; call: string; p
     const m = line.match(/^\|\s*(\d{1,2})\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|$/);
     if (!m) continue;
     const num = Number(m[1]);
-    if (num < 1 || num > 16) continue;
+    if (num < 1) continue;
     scenarios.push({ num, call: unbacktick(m[2]), pins: m[3].trim() });
   }
   scenarios.sort((a, b) => a.num - b.num);

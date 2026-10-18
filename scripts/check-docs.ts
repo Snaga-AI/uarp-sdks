@@ -58,6 +58,24 @@ interface Language {
 function extract(file: string, language: Language): Block[] {
   const lines = readFileSync(join(ROOT, file), 'utf8').split('\n');
   const found: Block[] = [];
+  //  The portal's samples are template literals keyed by language in a
+  //  TypeScript module, `python: \`…\`,`, rather than fenced markdown.
+  if (file.endsWith('.ts')) {
+    const opening = `  ${language.fence}: \``;
+    for (let index = 0; index < lines.length; index++) {
+      if (!lines[index]!.startsWith(opening)) continue;
+      const body = [lines[index]!.slice(opening.length)];
+      let end = index;
+      while (!/(^|[^\\])`,?$/.test(body[body.length - 1]!) && end + 1 < lines.length) body.push(lines[++end]!);
+      const code = body
+        .join('\n')
+        .replace(/`,?$/, '')
+        .replace(/\\(.)/g, '$1');
+      found.push({ file, line: index, code, standalone: language.isStandalone(code) });
+      index = end;
+    }
+    return found;
+  }
 
   for (let index = 0; index < lines.length; index++) {
     if (lines[index]!.trim() !== '```' + language.fence) continue;
@@ -115,7 +133,11 @@ const PYTHON_PARAMETERS = [
   'id: str',
   'agent_id: str',
   'trace_id: str',
+  'request_id: str',
+  'key: str',
+  'base: str',
   'body: CreateAgentRequest',
+  'request: CreateAgentRequest',
 ].join(', ');
 
 /** The interpreter with the SDK's dependencies and mypy: `$UARP_PYTHON`, or the package's virtualenv. */
@@ -182,13 +204,13 @@ const LANGUAGES: Record<string, Language> = {
   python: {
     fence: 'python',
     tool: PYTHON,
-    sources: ['README.md', 'packages/python/README.md'],
+    sources: ['README.md', 'packages/python/README.md', 'examples/react-landing/src/docs/content.ts'],
     isStandalone: () => false,
     prepare(workspace, blocks) {
       const source: string[] = [
         '# Generated from the documentation — edit the markdown, not this.',
         'from uarp_sdk import Client',
-        'from uarp_sdk.models import CreateAgentRequest',
+        'from uarp_sdk.models import CreateAgentRequest, CreateRunRequest',
       ];
       const origin = new Map<number, string>();
       for (const [index, block] of blocks.entries()) {

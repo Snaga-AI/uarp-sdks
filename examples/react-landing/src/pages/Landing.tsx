@@ -24,12 +24,12 @@ const AREAS = [
   {
     to: '/docs/reference',
     title: 'Reference',
-    body: 'Every one of the 736 operations across 49 resource groups, generated from the TypeScript SDK so it cannot drift from the wire.',
+    body: 'Every one of the 857 operations across 54 resource groups, generated from the TypeScript SDK so it cannot drift from the wire.',
   },
   {
     to: '/docs/wire',
     title: 'Wire',
-    body: 'The sixteen contract scenarios every SDK is pinned against — the same calls replayed in all five languages.',
+    body: 'The twenty-two contract scenarios every SDK is pinned against — the same calls replayed in all six languages.',
   },
 ] as const;
 
@@ -50,7 +50,7 @@ export function Landing() {
             Three lines to an agent that answers.
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-ink-soft">
-            One OpenAPI document, five clients — TypeScript, Rust, Swift, Kotlin and Ada — released
+            One OpenAPI document, six clients — TypeScript, Python, Rust, Swift, Kotlin and Ada — released
             together on one version number. Around 95% of each is generated, so they cannot drift
             from the platform or from each other.
           </p>
@@ -89,9 +89,9 @@ export function Landing() {
 
         <footer className="border-t border-rule-soft pt-8 text-sm text-ink-soft">
           Documentation for the UARP client libraries at{' '}
-          <span className="font-mono">{VERSION}</span> — one version across all five. This page is
+          <span className="font-mono">{VERSION}</span> — one version across all six. This page is
           itself the example: everything it describes is running here, and the TypeScript and Rust
-          samples are compiled on every build.
+          samples are compiled, and the Python ones type-checked, on every build.
         </footer>
       </div>
     </div>

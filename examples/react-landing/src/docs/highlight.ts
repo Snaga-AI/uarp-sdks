@@ -33,6 +33,11 @@ const SHARED = [
  */
 const KEYWORDS_BY_LANGUAGE: Record<string, Set<string>> = {
   ts: new Set(SHARED),
+  python: new Set([
+    'import', 'from', 'as', 'def', 'return', 'await', 'async', 'for', 'in', 'if', 'elif', 'else',
+    'try', 'except', 'finally', 'raise', 'with', 'class', 'break', 'continue', 'not', 'and', 'or',
+    'is', 'lambda', 'None', 'True', 'False', 'pass', 'yield',
+  ]),
   rust: new Set([...SHARED, 'fn', 'mut', 'match', 'impl', 'pub', 'use', 'struct', 'enum', 'while', 'loop', 'move', 'Some', 'None', 'Ok', 'Err', 'self']),
   swift: new Set([...SHARED, 'func', 'guard', 'struct', 'enum', 'var', 'do', 'where', 'some', 'try', 'nil', 'init', 'Decodable']),
   kotlin: new Set([...SHARED, 'fun', 'val', 'suspend', 'when', 'object', 'data', 'is', 'when', 'it']),
@@ -69,7 +74,11 @@ export function tokenise(source: string, language = 'ts'): Token[] {
     const rest = source.slice(index);
 
     //  Comments run to the end of the line, or to the closing marker.
-    if (rest.startsWith('//') || (language === 'ada' && rest.startsWith('--'))) {
+    if (
+      (language !== 'python' && rest.startsWith('//')) ||
+      (language === 'ada' && rest.startsWith('--')) ||
+      (language === 'python' && rest.startsWith('#'))
+    ) {
       const end = source.indexOf('\n', index);
       const stop = end === -1 ? source.length : end;
       push('comment', source.slice(index, stop));
