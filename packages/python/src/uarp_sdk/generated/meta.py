@@ -5,7 +5,7 @@
 SPEC_VERSION = "0.4.0"
 
 #: Version of this SDK.
-SDK_VERSION = "0.10.0"
+SDK_VERSION = "0.11.0"
 
 #: Production base URL.
 DEFAULT_BASE_URL = "https://api.snaga.ai"

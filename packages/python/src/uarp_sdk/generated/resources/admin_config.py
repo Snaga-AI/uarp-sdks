@@ -35,6 +35,28 @@ class AdminConfigResource:
     def __init__(self, client: SyncTransport) -> None:
         self._client = client
 
+    def confirm_data_processing_policy(self, purpose: str, body: Union[_m.ConfirmDataProcessingPolicyRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.ConfirmDataProcessingPolicyResponse:
+        """Confirm the facts as a new revision
+
+        WRITE SEMANTICS: replaces — each call stores a new immutable revision from the full body;
+        nothing is merged or extended. Super-admin only. Refused with 422 when the confirmation
+        breaks an invariant: lifetime over 86400 s or not after `observed_at_unix`;
+        `archive_enabled=false` without `archives.mode=not_applicable`; runs `no_storage`; a finite
+        runs retention shorter than `recovery_window_seconds`.
+
+        `PUT /api/v1/admin/data-processing-policies/{purpose}`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.ConfirmDataProcessingPolicyResponse", self._client._request(
+            "PUT",
+            f"/api/v1/admin/data-processing-policies/{_segment(purpose)}",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.ConfirmDataProcessingPolicyResponse),
+            request_options=request_options,
+        ))
+
     def create_plan_stripe_price(self, plan_id: _m.PlanLLMLimitsTierAccessItem, body: Union[_m.CreatePlanStripePriceRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.CreatePlanStripePriceResponse:
         """Create Stripe Product+Price for plan
 
@@ -214,6 +236,23 @@ class AdminConfigResource:
             "GET",
             "/api/v1/admin/config/code-interpreter",
             response=_Response(type=_m.AdminConfigCodeInterpreterConfig),
+            request_options=request_options,
+        ))
+
+    def get_admin_data_processing_policy(self, purpose: str, *, request_options: Optional[RequestOptions] = None) -> _m.GetAdminDataProcessingPolicyResponse:
+        """Current policy confirmation
+
+        Super-admin only. The current revision of the operator confirmation, revoked or not;
+        `current: null` when none.
+
+        `GET /api/v1/admin/data-processing-policies/{purpose}`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.GetAdminDataProcessingPolicyResponse", self._client._request(
+            "GET",
+            f"/api/v1/admin/data-processing-policies/{_segment(purpose)}",
+            response=_Response(type=_m.GetAdminDataProcessingPolicyResponse),
             request_options=request_options,
         ))
 
@@ -949,6 +988,89 @@ class AdminConfigResource:
             "GET",
             f"/api/v1/admin/config/promo-codes/{_segment(code)}/rewards",
             response=_Response(type=_m.ListPromoRewardsResponse),
+            request_options=request_options,
+        ))
+
+    def put_qualification_pricing_revision(self, pricing_revision: str, body: Union[_m.PutQualificationPricingRevisionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> JsonValue:
+        """Pin an accounting rate
+
+        WRITE SEMANTICS: replaces, once — the first body is stored and never changed. Super-admin
+        only (UARP addition to the contract). The provider, model and micro-USD per million input
+        and output tokens a program's runs are accounted at; a qualification run refuses any other
+        provider or model. The same body again answers 200; another body for an existing revision is
+        409 `SPONSORSHIP_PROGRAM_IMMUTABLE`. This is UARP's accounting rate, not the provider's
+        invoice.
+
+        `PUT /api/v1/admin/qualification/pricing-revisions/{pricing_revision}`
+
+        Required scopes: `admin`.
+        """
+        return _cast("JsonValue", self._client._request(
+            "PUT",
+            f"/api/v1/admin/qualification/pricing-revisions/{_segment(pricing_revision)}",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=None),
+            request_options=request_options,
+        ))
+
+    def put_qualification_sponsor_key(self, key_id: str, body: Union[_m.PutQualificationSponsorKeyRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> JsonValue:
+        """Make a key a sponsor key
+
+        WRITE SEMANTICS: replaces — the record is the body (company and program list). Super-admin
+        only (UARP addition). Names the API key of the sponsor's company (Nestor's server) and the
+        programs it may spend from; a key with no programs spends nothing. The role cannot be
+        created by the key's own company, a header, metadata or a role.
+
+        `PUT /api/v1/admin/qualification/sponsor-keys/{key_id}`
+
+        Required scopes: `admin`.
+        """
+        return _cast("JsonValue", self._client._request(
+            "PUT",
+            f"/api/v1/admin/qualification/sponsor-keys/{_segment(key_id)}",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=None),
+            request_options=request_options,
+        ))
+
+    def put_qualification_sponsorship_program(self, program_id: str, body: Union[_m.QualificationProgramPut, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.QualificationProgram:
+        """Configure a sponsorship program
+
+        WRITE SEMANTICS: replaces — full configuration, never merged; the ledger is kept.
+        Super-admin only, under `expected_revision` (0 creates); `Idempotency-Key` required.
+        Purpose, sponsor company and pricing revision are immutable. The budget is a funded ceiling,
+        never below `reserved + spent`. Ledger activity does not change the revision.
+
+        `PUT /api/v1/admin/qualification/sponsorship-programs/{program_id}`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.QualificationProgram", self._client._request(
+            "PUT",
+            f"/api/v1/admin/qualification/sponsorship-programs/{_segment(program_id)}",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.QualificationProgram),
+            request_options=request_options,
+        ))
+
+    def revoke_data_processing_policy(self, purpose: str, *, request_options: Optional[RequestOptions] = None) -> _m.RevokeDataProcessingPolicyResponse:
+        """Revoke the current confirmation
+
+        Super-admin only. The revision stays readable and reads as `revoked`; new qualification runs
+        are refused. 409 when there is nothing current to revoke.
+
+        `POST /api/v1/admin/data-processing-policies/{purpose}/revoke`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.RevokeDataProcessingPolicyResponse", self._client._request(
+            "POST",
+            f"/api/v1/admin/data-processing-policies/{_segment(purpose)}/revoke",
+            idempotent=True,
+            response=_Response(type=_m.RevokeDataProcessingPolicyResponse),
             request_options=request_options,
         ))
 
@@ -2146,6 +2268,28 @@ class AsyncAdminConfigResource:
     def __init__(self, client: AsyncTransport) -> None:
         self._client = client
 
+    async def confirm_data_processing_policy(self, purpose: str, body: Union[_m.ConfirmDataProcessingPolicyRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.ConfirmDataProcessingPolicyResponse:
+        """Confirm the facts as a new revision
+
+        WRITE SEMANTICS: replaces — each call stores a new immutable revision from the full body;
+        nothing is merged or extended. Super-admin only. Refused with 422 when the confirmation
+        breaks an invariant: lifetime over 86400 s or not after `observed_at_unix`;
+        `archive_enabled=false` without `archives.mode=not_applicable`; runs `no_storage`; a finite
+        runs retention shorter than `recovery_window_seconds`.
+
+        `PUT /api/v1/admin/data-processing-policies/{purpose}`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.ConfirmDataProcessingPolicyResponse", await self._client._request(
+            "PUT",
+            f"/api/v1/admin/data-processing-policies/{_segment(purpose)}",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.ConfirmDataProcessingPolicyResponse),
+            request_options=request_options,
+        ))
+
     async def create_plan_stripe_price(self, plan_id: _m.PlanLLMLimitsTierAccessItem, body: Union[_m.CreatePlanStripePriceRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.CreatePlanStripePriceResponse:
         """Create Stripe Product+Price for plan
 
@@ -2325,6 +2469,23 @@ class AsyncAdminConfigResource:
             "GET",
             "/api/v1/admin/config/code-interpreter",
             response=_Response(type=_m.AdminConfigCodeInterpreterConfig),
+            request_options=request_options,
+        ))
+
+    async def get_admin_data_processing_policy(self, purpose: str, *, request_options: Optional[RequestOptions] = None) -> _m.GetAdminDataProcessingPolicyResponse:
+        """Current policy confirmation
+
+        Super-admin only. The current revision of the operator confirmation, revoked or not;
+        `current: null` when none.
+
+        `GET /api/v1/admin/data-processing-policies/{purpose}`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.GetAdminDataProcessingPolicyResponse", await self._client._request(
+            "GET",
+            f"/api/v1/admin/data-processing-policies/{_segment(purpose)}",
+            response=_Response(type=_m.GetAdminDataProcessingPolicyResponse),
             request_options=request_options,
         ))
 
@@ -3060,6 +3221,89 @@ class AsyncAdminConfigResource:
             "GET",
             f"/api/v1/admin/config/promo-codes/{_segment(code)}/rewards",
             response=_Response(type=_m.ListPromoRewardsResponse),
+            request_options=request_options,
+        ))
+
+    async def put_qualification_pricing_revision(self, pricing_revision: str, body: Union[_m.PutQualificationPricingRevisionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> JsonValue:
+        """Pin an accounting rate
+
+        WRITE SEMANTICS: replaces, once — the first body is stored and never changed. Super-admin
+        only (UARP addition to the contract). The provider, model and micro-USD per million input
+        and output tokens a program's runs are accounted at; a qualification run refuses any other
+        provider or model. The same body again answers 200; another body for an existing revision is
+        409 `SPONSORSHIP_PROGRAM_IMMUTABLE`. This is UARP's accounting rate, not the provider's
+        invoice.
+
+        `PUT /api/v1/admin/qualification/pricing-revisions/{pricing_revision}`
+
+        Required scopes: `admin`.
+        """
+        return _cast("JsonValue", await self._client._request(
+            "PUT",
+            f"/api/v1/admin/qualification/pricing-revisions/{_segment(pricing_revision)}",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=None),
+            request_options=request_options,
+        ))
+
+    async def put_qualification_sponsor_key(self, key_id: str, body: Union[_m.PutQualificationSponsorKeyRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> JsonValue:
+        """Make a key a sponsor key
+
+        WRITE SEMANTICS: replaces — the record is the body (company and program list). Super-admin
+        only (UARP addition). Names the API key of the sponsor's company (Nestor's server) and the
+        programs it may spend from; a key with no programs spends nothing. The role cannot be
+        created by the key's own company, a header, metadata or a role.
+
+        `PUT /api/v1/admin/qualification/sponsor-keys/{key_id}`
+
+        Required scopes: `admin`.
+        """
+        return _cast("JsonValue", await self._client._request(
+            "PUT",
+            f"/api/v1/admin/qualification/sponsor-keys/{_segment(key_id)}",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=None),
+            request_options=request_options,
+        ))
+
+    async def put_qualification_sponsorship_program(self, program_id: str, body: Union[_m.QualificationProgramPut, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.QualificationProgram:
+        """Configure a sponsorship program
+
+        WRITE SEMANTICS: replaces — full configuration, never merged; the ledger is kept.
+        Super-admin only, under `expected_revision` (0 creates); `Idempotency-Key` required.
+        Purpose, sponsor company and pricing revision are immutable. The budget is a funded ceiling,
+        never below `reserved + spent`. Ledger activity does not change the revision.
+
+        `PUT /api/v1/admin/qualification/sponsorship-programs/{program_id}`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.QualificationProgram", await self._client._request(
+            "PUT",
+            f"/api/v1/admin/qualification/sponsorship-programs/{_segment(program_id)}",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.QualificationProgram),
+            request_options=request_options,
+        ))
+
+    async def revoke_data_processing_policy(self, purpose: str, *, request_options: Optional[RequestOptions] = None) -> _m.RevokeDataProcessingPolicyResponse:
+        """Revoke the current confirmation
+
+        Super-admin only. The revision stays readable and reads as `revoked`; new qualification runs
+        are refused. 409 when there is nothing current to revoke.
+
+        `POST /api/v1/admin/data-processing-policies/{purpose}/revoke`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.RevokeDataProcessingPolicyResponse", await self._client._request(
+            "POST",
+            f"/api/v1/admin/data-processing-policies/{_segment(purpose)}/revoke",
+            idempotent=True,
+            response=_Response(type=_m.RevokeDataProcessingPolicyResponse),
             request_options=request_options,
         ))
 

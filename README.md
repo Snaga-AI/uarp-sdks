@@ -3,6 +3,8 @@
 Client libraries for the **UARP — Universal Agent Runtime Platform** API
 (<https://snaga.ai>), in six languages, generated from one OpenAPI document.
 
+Documentation, with every sample in every language: <https://dev.snaga.ai>.
+
 | Language | Package | Artifact | Requirements |
 | --- | --- | --- | --- |
 | TypeScript / Node | `packages/typescript` | `uarp-sdk` (npm) | Node 18+ |
@@ -12,8 +14,8 @@ Client libraries for the **UARP — Universal Agent Runtime Platform** API
 | Ada | `packages/ada` | `uarp_sdk` (Alire) | GNAT 2022, libcurl |
 | Python | `packages/python` | `uarp-sdk` (PyPI) | Python 3.10+, httpx |
 
-Every SDK covers the **whole** API surface — at 0.10.0, 789 operations across 50
-resource groups, 1845 named types, 15 server-sent-event streams and the
+Every SDK covers the **whole** API surface — at 0.11.0, 857 operations across 54
+resource groups, 2129 named types, 16 server-sent-event streams and the
 cursor-paginated endpoints — plus the platform's auth, idempotency and retry semantics.
 
 ## What each SDK gives you
@@ -160,7 +162,7 @@ same bytes on the wire?
 make contract
 ```
 
-It starts one server, runs the twelve-request scenario in
+It starts one server, runs the 24-request, 22-scenario sequence in
 [contract/SCENARIOS.md](contract/SCENARIOS.md) through every SDK whose
 toolchain is installed, records what each one sent, and fails if the traces
 differ. Volatile values — the user agent, the idempotency key, the multipart
@@ -229,10 +231,8 @@ the output of their own `GET`, and thirty error responses that were not the RFC
 
 [smoke/live/](smoke/live/SCENARIO.md) closes the last gap by running one fixed
 scenario through all six SDKs against the real server and comparing what each
-decoded — the only check that exercises the Rust, Swift, Kotlin and Ada
+decoded — the only check that exercises the Python, Rust, Swift, Kotlin and Ada
 transports against real TLS and real infrastructure rather than a local mock.
-(The Python runner is in place; its first run against production waits on a
-scenario run that is allowed to create and delete its agent there.)
 
 ## Releasing
 

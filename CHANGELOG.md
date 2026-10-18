@@ -6,30 +6,7 @@ All six SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.11.0 — 2026-10-17
-
-Build `0837bb4d`, canonical digest `47152b3cf58faed3`. Seven platform builds
-are collected here: `ef5b646d` (2026-10-12), `435ca06c` and `199b0863`
-(2026-10-13), `b108e9a9` (2026-10-15), `d926b90e` (2026-10-16), `e0b37b03` and
-`0837bb4d` (2026-10-17). Against 0.10.0: 585 → 642 paths, 789 → 857 operations
-(+68, −0), 382 → 453 schemas (+71, −0), 50 → 54 groups, 1845 → 2129 named
-types (+284, −0 net).
-
-**One family of exported names leaves.** Measured against the released 0.10.0
-rather than against the intermediate drafts: 343 names are added and four are
-removed: `GetReadyResponse`, `GetReadyResponseChecks`, `GetReadyResponseStatus`
-and `GET_READY_RESPONSE_STATUS_VALUES`. `GET /ready` now answers the shared
-`ReadinessReport`, as `GET /health/ready` already did (below). Every other
-import that compiled against 0.10.0 still resolves. The eleven `/companies`
-operations warn at compile time rather than break.
-
-**The minor moves** because types that 0.10.0 already exported change shape
-under their own names — `ResourceUsageEntry.limit` becomes nullable,
-`RunEventType` renames seven values, the workspace copy and move requests stop
-requiring their paths, build `b108e9a9` corrects eight of them to the wire,
-`getSession` answers a new type, build `e0b37b03` corrects five more to
-the wire, and `AgentStatus` gains `inactive` (all below). Under 1.0 a caret does not
-cross the minor, so `^0.10` keeps building against 0.10.x.
+## Unreleased
 
 ### Added — a Python SDK
 
@@ -75,8 +52,34 @@ reachable from a blocking `Client` and from an asyncio `AsyncClient`.
   production answered the zip, so the Python call raises `DecodeError`. The
   generator types every SDK from the same JSON half; this is the open item on
   how exports are typed, not something Python adds. The live scenario in `smoke/live`
-  has a Python runner but has not been run against production, because it
-  creates and deletes an agent there.
+  ran against production on 2026-10-18 through TypeScript, Python, Rust, Swift
+  and Kotlin: all five read the same values, and the agent it created was
+  deleted.
+
+## 0.11.0 — 2026-10-17
+
+Build `0837bb4d`, canonical digest `47152b3cf58faed3`. Seven platform builds
+are collected here: `ef5b646d` (2026-10-12), `435ca06c` and `199b0863`
+(2026-10-13), `b108e9a9` (2026-10-15), `d926b90e` (2026-10-16), `e0b37b03` and
+`0837bb4d` (2026-10-17). Against 0.10.0: 585 → 642 paths, 789 → 857 operations
+(+68, −0), 382 → 453 schemas (+71, −0), 50 → 54 groups, 1845 → 2129 named
+types (+284, −0 net).
+
+**One family of exported names leaves.** Measured against the released 0.10.0
+rather than against the intermediate drafts: 343 names are added and four are
+removed: `GetReadyResponse`, `GetReadyResponseChecks`, `GetReadyResponseStatus`
+and `GET_READY_RESPONSE_STATUS_VALUES`. `GET /ready` now answers the shared
+`ReadinessReport`, as `GET /health/ready` already did (below). Every other
+import that compiled against 0.10.0 still resolves. The eleven `/companies`
+operations warn at compile time rather than break.
+
+**The minor moves** because types that 0.10.0 already exported change shape
+under their own names — `ResourceUsageEntry.limit` becomes nullable,
+`RunEventType` renames seven values, the workspace copy and move requests stop
+requiring their paths, build `b108e9a9` corrects eight of them to the wire,
+`getSession` answers a new type, build `e0b37b03` corrects five more to
+the wire, and `AgentStatus` gains `inactive` (all below). Under 1.0 a caret does not
+cross the minor, so `^0.10` keeps building against 0.10.x.
 
 ### Changed — `ResourceUsageEntry.limit` is nullable
 

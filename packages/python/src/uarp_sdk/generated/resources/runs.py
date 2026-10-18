@@ -107,6 +107,18 @@ class RunsResource:
         response (same run_id). Pin a specific agent version with `version` to bypass the head
         pointer.
 
+        A body carrying `execution_requirements` is a sponsored qualification run (Nestor, since
+        2026-10-17) and has its own admission: `QualificationSponsoredRunCreateV2`, strict JSON
+        (repeated member names refused, at most 131072 bytes), `metadata` names not starting with
+        `_`. The first acceptance answers 201, an exact replay of the same `client_request_id`
+        command answers 200 with the original run, another command under that id is 409
+        `CLIENT_REQUEST_CONFLICT`. Refusals: 403 `SPONSORSHIP_REQUIRED` (a v1 command: the candidate
+        never pays), 403 `SPONSORSHIP_GRANT_MISMATCH` with `reason`, 409
+        `SPONSORSHIP_GRANT_UNAVAILABLE` / `SPONSORSHIP_PROGRAM_INACTIVE`, 412
+        `PROCESSING_POLICY_NOT_READY` / `PROCESSING_POLICY_CHANGED`, 422
+        `EXECUTION_PROFILE_UNVERIFIABLE` / `INVALID_REQUEST`. The managed evaluator cannot be run
+        without one (403 `MANAGED_AGENT`).
+
         `POST /api/v1/runs`
 
         Required scopes: `runs:create`.
@@ -365,7 +377,7 @@ class RunsResource:
             if cursor is None:
                 return
 
-    def list(self, *, agent_id: Optional[str] = None, session_id: Optional[str] = None, status: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, order: Optional[_m.ListRunsOrder] = None, request_options: Optional[RequestOptions] = None) -> _m.ListRunsResponse:
+    def list(self, *, client_request_id: Optional[str] = None, purpose: Optional[str] = None, agent_id: Optional[str] = None, session_id: Optional[str] = None, status: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, order: Optional[_m.ListRunsOrder] = None, request_options: Optional[RequestOptions] = None) -> _m.ListRunsResponse:
         """List all runs for tenant
 
         Ordered NEWEST FIRST, and that is a guarantee, not an accident of storage: page one is the
@@ -383,18 +395,18 @@ class RunsResource:
         return _cast("_m.ListRunsResponse", self._client._request(
             "GET",
             "/api/v1/runs",
-            query=[("agent_id", agent_id), ("session_id", session_id), ("status", status), ("limit", limit), ("cursor", cursor), ("order", order)],
+            query=[("client_request_id", client_request_id), ("purpose", purpose), ("agent_id", agent_id), ("session_id", session_id), ("status", status), ("limit", limit), ("cursor", cursor), ("order", order)],
             response=_Response(type=_m.ListRunsResponse),
             request_options=request_options,
         ))
 
-    def list_all(self, *, agent_id: Optional[str] = None, session_id: Optional[str] = None, status: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, order: Optional[_m.ListRunsOrder] = None, request_options: Optional[RequestOptions] = None) -> Iterator[_m.Run]:
+    def list_all(self, *, client_request_id: Optional[str] = None, purpose: Optional[str] = None, agent_id: Optional[str] = None, session_id: Optional[str] = None, status: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, order: Optional[_m.ListRunsOrder] = None, request_options: Optional[RequestOptions] = None) -> Iterator[_m.Run]:
         """Every item `list` returns, following the `cursor` cursor until the server reports no further
         pages. Starts at `cursor` when one is given.
         """
         guard = _CursorGuard()
         while True:
-            page = self.list(agent_id=agent_id, session_id=session_id, status=status, limit=limit, cursor=cursor, order=order, request_options=request_options)
+            page = self.list(client_request_id=client_request_id, purpose=purpose, agent_id=agent_id, session_id=session_id, status=status, limit=limit, cursor=cursor, order=order, request_options=request_options)
             items = page.items
             yield from items
             cursor = guard.advance(page.cursor, page.has_more, not items)
@@ -740,6 +752,18 @@ class AsyncRunsResource:
         response (same run_id). Pin a specific agent version with `version` to bypass the head
         pointer.
 
+        A body carrying `execution_requirements` is a sponsored qualification run (Nestor, since
+        2026-10-17) and has its own admission: `QualificationSponsoredRunCreateV2`, strict JSON
+        (repeated member names refused, at most 131072 bytes), `metadata` names not starting with
+        `_`. The first acceptance answers 201, an exact replay of the same `client_request_id`
+        command answers 200 with the original run, another command under that id is 409
+        `CLIENT_REQUEST_CONFLICT`. Refusals: 403 `SPONSORSHIP_REQUIRED` (a v1 command: the candidate
+        never pays), 403 `SPONSORSHIP_GRANT_MISMATCH` with `reason`, 409
+        `SPONSORSHIP_GRANT_UNAVAILABLE` / `SPONSORSHIP_PROGRAM_INACTIVE`, 412
+        `PROCESSING_POLICY_NOT_READY` / `PROCESSING_POLICY_CHANGED`, 422
+        `EXECUTION_PROFILE_UNVERIFIABLE` / `INVALID_REQUEST`. The managed evaluator cannot be run
+        without one (403 `MANAGED_AGENT`).
+
         `POST /api/v1/runs`
 
         Required scopes: `runs:create`.
@@ -1002,7 +1026,7 @@ class AsyncRunsResource:
             if cursor is None:
                 return
 
-    async def list(self, *, agent_id: Optional[str] = None, session_id: Optional[str] = None, status: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, order: Optional[_m.ListRunsOrder] = None, request_options: Optional[RequestOptions] = None) -> _m.ListRunsResponse:
+    async def list(self, *, client_request_id: Optional[str] = None, purpose: Optional[str] = None, agent_id: Optional[str] = None, session_id: Optional[str] = None, status: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, order: Optional[_m.ListRunsOrder] = None, request_options: Optional[RequestOptions] = None) -> _m.ListRunsResponse:
         """List all runs for tenant
 
         Ordered NEWEST FIRST, and that is a guarantee, not an accident of storage: page one is the
@@ -1020,18 +1044,18 @@ class AsyncRunsResource:
         return _cast("_m.ListRunsResponse", await self._client._request(
             "GET",
             "/api/v1/runs",
-            query=[("agent_id", agent_id), ("session_id", session_id), ("status", status), ("limit", limit), ("cursor", cursor), ("order", order)],
+            query=[("client_request_id", client_request_id), ("purpose", purpose), ("agent_id", agent_id), ("session_id", session_id), ("status", status), ("limit", limit), ("cursor", cursor), ("order", order)],
             response=_Response(type=_m.ListRunsResponse),
             request_options=request_options,
         ))
 
-    async def list_all(self, *, agent_id: Optional[str] = None, session_id: Optional[str] = None, status: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, order: Optional[_m.ListRunsOrder] = None, request_options: Optional[RequestOptions] = None) -> AsyncIterator[_m.Run]:
+    async def list_all(self, *, client_request_id: Optional[str] = None, purpose: Optional[str] = None, agent_id: Optional[str] = None, session_id: Optional[str] = None, status: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, order: Optional[_m.ListRunsOrder] = None, request_options: Optional[RequestOptions] = None) -> AsyncIterator[_m.Run]:
         """Every item `list` returns, following the `cursor` cursor until the server reports no further
         pages. Starts at `cursor` when one is given.
         """
         guard = _CursorGuard()
         while True:
-            page = await self.list(agent_id=agent_id, session_id=session_id, status=status, limit=limit, cursor=cursor, order=order, request_options=request_options)
+            page = await self.list(client_request_id=client_request_id, purpose=purpose, agent_id=agent_id, session_id=session_id, status=status, limit=limit, cursor=cursor, order=order, request_options=request_options)
             items = page.items
             for item in items:
                 yield item

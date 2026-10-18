@@ -48,6 +48,7 @@ from .programs import ProgramsResource, AsyncProgramsResource
 from .projects import ProjectsResource, AsyncProjectsResource
 from .providers import ProvidersResource, AsyncProvidersResource
 from .public import PublicResource, AsyncPublicResource
+from .qualification import QualificationResource, AsyncQualificationResource
 from .registry import RegistryResource, AsyncRegistryResource
 from .reports import ReportsResource, AsyncReportsResource
 from .runs import RunsResource, AsyncRunsResource
@@ -280,6 +281,11 @@ class SyncResources:
     def public(self) -> PublicResource:
         """Unauthenticated public-facing endpoints"""
         return PublicResource(cast("SyncTransport", self))
+
+    @functools.cached_property
+    def qualification(self) -> QualificationResource:
+        """Operations tagged `Qualification`."""
+        return QualificationResource(cast("SyncTransport", self))
 
     @functools.cached_property
     def registry(self) -> RegistryResource:
@@ -557,6 +563,11 @@ class AsyncResources:
         return AsyncPublicResource(cast("AsyncTransport", self))
 
     @functools.cached_property
+    def qualification(self) -> AsyncQualificationResource:
+        """Operations tagged `Qualification`."""
+        return AsyncQualificationResource(cast("AsyncTransport", self))
+
+    @functools.cached_property
     def registry(self) -> AsyncRegistryResource:
         """Spec registry — publish, search, yank, share spec artifacts"""
         return AsyncRegistryResource(cast("AsyncTransport", self))
@@ -701,6 +712,8 @@ __all__ = [
     "AsyncProvidersResource",
     "PublicResource",
     "AsyncPublicResource",
+    "QualificationResource",
+    "AsyncQualificationResource",
     "RegistryResource",
     "AsyncRegistryResource",
     "ReportsResource",

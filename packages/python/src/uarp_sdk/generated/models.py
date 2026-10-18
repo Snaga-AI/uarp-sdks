@@ -304,6 +304,7 @@ class AgentStatus(UarpEnum):
     SUSPENDED = "suspended"
     TERMINATED = "terminated"
     DEPOSED = "deposed"
+    INACTIVE = "inactive"
 
 
 class AgentStatusReasonCode(UarpEnum):
@@ -1037,12 +1038,14 @@ class ErrorCode(UarpEnum):
     ALREADY_EXISTS = "ALREADY_EXISTS"
     ANON_BUSY = "ANON_BUSY"
     ARTIFACT_INTEGRITY_ERROR = "ARTIFACT_INTEGRITY_ERROR"
+    ASSESSMENT_ISOLATION_REQUIRED = "ASSESSMENT_ISOLATION_REQUIRED"
     AUTH_ERROR = "AUTH_ERROR"
     BILLING_CANCELLED = "BILLING_CANCELLED"
     BILLING_DISPUTED = "BILLING_DISPUTED"
     BILLING_PAST_DUE = "BILLING_PAST_DUE"
     BUDGET_EXCEEDED = "BUDGET_EXCEEDED"
     CHECKSUM_MISMATCH = "CHECKSUM_MISMATCH"
+    CLIENT_REQUEST_CONFLICT = "CLIENT_REQUEST_CONFLICT"
     COMPANY_NOT_READY = "COMPANY_NOT_READY"
     COMPANY_PAUSED = "COMPANY_PAUSED"
     CONCURRENCY_LIMIT = "CONCURRENCY_LIMIT"
@@ -1055,6 +1058,8 @@ class ErrorCode(UarpEnum):
     DAILY_LIMIT = "DAILY_LIMIT"
     DEPENDENCY_EXISTS = "DEPENDENCY_EXISTS"
     EVENT_STORE_ERROR = "EVENT_STORE_ERROR"
+    EXECUTION_PROFILE_UNVERIFIABLE = "EXECUTION_PROFILE_UNVERIFIABLE"
+    EXECUTION_RECEIPT_PENDING = "EXECUTION_RECEIPT_PENDING"
     EXTERNAL_SERVICE_ERROR = "EXTERNAL_SERVICE_ERROR"
     FEATURED_SET_CONTENDED = "FEATURED_SET_CONTENDED"
     FEATURE_DISABLED = "FEATURE_DISABLED"
@@ -1062,6 +1067,7 @@ class ErrorCode(UarpEnum):
     FILE_TYPE_NOT_ALLOWED = "FILE_TYPE_NOT_ALLOWED"
     FORBIDDEN = "FORBIDDEN"
     GUARDRAIL_VIOLATION = "GUARDRAIL_VIOLATION"
+    IDEMPOTENCY_CONFLICT = "IDEMPOTENCY_CONFLICT"
     IDEMPOTENCY_KEY_REUSED = "IDEMPOTENCY_KEY_REUSED"
     INITIATIVE_BUDGET_EXHAUSTED = "INITIATIVE_BUDGET_EXHAUSTED"
     INITIATIVE_PAUSED = "INITIATIVE_PAUSED"
@@ -1075,7 +1081,9 @@ class ErrorCode(UarpEnum):
     INVALID_SHARE_LIST = "INVALID_SHARE_LIST"
     INVALID_SHARE_TARGET = "INVALID_SHARE_TARGET"
     INVALID_STATE_TRANSITION = "INVALID_STATE_TRANSITION"
+    ISOLATION_VIOLATION = "ISOLATION_VIOLATION"
     LLM_ERROR = "LLM_ERROR"
+    MANAGED_AGENT = "MANAGED_AGENT"
     MAX_DURATION_EXCEEDED = "MAX_DURATION_EXCEEDED"
     MAX_TOKENS_EXCEEDED = "MAX_TOKENS_EXCEEDED"
     METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED"
@@ -1093,6 +1101,7 @@ class ErrorCode(UarpEnum):
     NOT_YANKED = "NOT_YANKED"
     NO_RUNNABLE_TARGET = "NO_RUNNABLE_TARGET"
     OAUTH_FAILED = "OAUTH_FAILED"
+    OUTPUT_TOO_LARGE = "OUTPUT_TOO_LARGE"
     PAYLOAD_TOO_LARGE = "PAYLOAD_TOO_LARGE"
     PERSISTENCE_ERROR = "PERSISTENCE_ERROR"
     PLANNER_OUTPUT_INVALID = "PLANNER_OUTPUT_INVALID"
@@ -1101,9 +1110,15 @@ class ErrorCode(UarpEnum):
     PREREQUISITE_MISSING = "PREREQUISITE_MISSING"
     PRICING_UNAVAILABLE = "PRICING_UNAVAILABLE"
     PRIVATE_NOT_SHARED = "PRIVATE_NOT_SHARED"
+    PROCESSING_POLICY_CHANGED = "PROCESSING_POLICY_CHANGED"
+    PROCESSING_POLICY_NOT_READY = "PROCESSING_POLICY_NOT_READY"
     PROMO_REDEMPTION_FAILED = "PROMO_REDEMPTION_FAILED"
     PROPOSAL_EXPIRED = "PROPOSAL_EXPIRED"
+    QUALIFICATION_BUDGET_STOP = "QUALIFICATION_BUDGET_STOP"
+    QUALIFICATION_ROUTE_MISMATCH = "QUALIFICATION_ROUTE_MISMATCH"
+    QUALIFICATION_VERSION_UNAVAILABLE = "QUALIFICATION_VERSION_UNAVAILABLE"
     QUOTA_EXCEEDED = "QUOTA_EXCEEDED"
+    RATE_LIMITED = "RATE_LIMITED"
     RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED"
     REFERENCE_NOT_FOUND = "REFERENCE_NOT_FOUND"
     RESERVED_SCOPE = "RESERVED_SCOPE"
@@ -1120,12 +1135,28 @@ class ErrorCode(UarpEnum):
     SIGNING_NOT_CONFIGURED = "SIGNING_NOT_CONFIGURED"
     SIZE_LIMIT = "SIZE_LIMIT"
     SPEC_NOT_FOUND = "SPEC_NOT_FOUND"
+    SPONSORSHIP_BUDGET_BELOW_COMMITTED = "SPONSORSHIP_BUDGET_BELOW_COMMITTED"
+    SPONSORSHIP_BUDGET_EXHAUSTED = "SPONSORSHIP_BUDGET_EXHAUSTED"
+    SPONSORSHIP_CANDIDATE_LIMIT = "SPONSORSHIP_CANDIDATE_LIMIT"
+    SPONSORSHIP_CONCURRENCY_LIMIT = "SPONSORSHIP_CONCURRENCY_LIMIT"
+    SPONSORSHIP_FUNDING_UNAVAILABLE = "SPONSORSHIP_FUNDING_UNAVAILABLE"
+    SPONSORSHIP_GRANT_CONFLICT = "SPONSORSHIP_GRANT_CONFLICT"
+    SPONSORSHIP_GRANT_IN_USE = "SPONSORSHIP_GRANT_IN_USE"
+    SPONSORSHIP_GRANT_MISMATCH = "SPONSORSHIP_GRANT_MISMATCH"
+    SPONSORSHIP_GRANT_UNAVAILABLE = "SPONSORSHIP_GRANT_UNAVAILABLE"
+    SPONSORSHIP_OUTCOME_UNKNOWN = "SPONSORSHIP_OUTCOME_UNKNOWN"
+    SPONSORSHIP_PROGRAM_IMMUTABLE = "SPONSORSHIP_PROGRAM_IMMUTABLE"
+    SPONSORSHIP_PROGRAM_INACTIVE = "SPONSORSHIP_PROGRAM_INACTIVE"
+    SPONSORSHIP_PROGRAM_REVISION_CONFLICT = "SPONSORSHIP_PROGRAM_REVISION_CONFLICT"
+    SPONSORSHIP_REQUIRED = "SPONSORSHIP_REQUIRED"
+    SPONSORSHIP_SCOPE_REQUIRED = "SPONSORSHIP_SCOPE_REQUIRED"
     STARTED_BY_ANOTHER_USER = "STARTED_BY_ANOTHER_USER"
     STRATEGIST_MODEL_UNCONFIGURED = "STRATEGIST_MODEL_UNCONFIGURED"
     TASK_GRAPH_FAILED = "TASK_GRAPH_FAILED"
     TEAM_ABORT = "TEAM_ABORT"
     TERMS_NOT_ACCEPTED = "TERMS_NOT_ACCEPTED"
     TEXT_EXTRACTION_FAILED = "TEXT_EXTRACTION_FAILED"
+    UNAUTHENTICATED = "UNAUTHENTICATED"
     USER_REQUIRED = "USER_REQUIRED"
     VALIDATION_ERROR = "VALIDATION_ERROR"
     VERIFICATION_FAILED = "VERIFICATION_FAILED"
@@ -1167,7 +1198,7 @@ class ErrorCode(UarpEnum):
     PROVIDER_NOT_CONFIGURED = "provider_not_configured"
     PROVIDER_RATE_LIMITED = "provider_rate_limited"
     QUOTA_EXCEEDED_2 = "quota_exceeded"
-    RATE_LIMITED = "rate_limited"
+    RATE_LIMITED_2 = "rate_limited"
     RESOURCE_LIMIT_REACHED = "resource_limit_reached"
     RUN_APPROVAL_EXPIRED = "run_approval_expired"
     RUN_INPUT_TIMEOUT = "run_input_timeout"
@@ -2438,6 +2469,125 @@ class PublicVideoTemplateCurrency(UarpEnum):
     """`PublicVideoTemplateCurrency` enumeration."""
 
     USD = "usd"
+
+
+class QualificationConfirmedPolicyResponseBlocker(UarpEnum):
+    """`QualificationConfirmedPolicyResponseBlocker` enumeration."""
+
+    POLICY_NOT_CONFIGURED = "POLICY_NOT_CONFIGURED"
+    RETENTION_UNKNOWN = "RETENTION_UNKNOWN"
+    LLM_TRAINING_UNCONFIRMED = "LLM_TRAINING_UNCONFIRMED"
+    LLM_TRAINING_USED = "LLM_TRAINING_USED"
+    PROCESSOR_UNCONFIRMED = "PROCESSOR_UNCONFIRMED"
+    EVIDENCE_UNCONFIRMED = "EVIDENCE_UNCONFIRMED"
+    POLICY_EXPIRED = "POLICY_EXPIRED"
+    POLICY_REVOKED = "POLICY_REVOKED"
+
+
+class QualificationConfirmedPolicyResponseReadiness(UarpEnum):
+    """`QualificationConfirmedPolicyResponseReadiness` enumeration."""
+
+    CONFIRMED = "confirmed"
+
+
+class QualificationConfirmedRetentionRuleVariant3mode(UarpEnum):
+    """`QualificationConfirmedRetentionRuleVariant3mode` enumeration."""
+
+    INDEFINITE = "indefinite"
+    NOT_APPLICABLE = "not_applicable"
+
+
+class QualificationExecutionReceiptResponseV2profileStatus(UarpEnum):
+    """`QualificationExecutionReceiptResponseV2profileStatus` enumeration."""
+
+    ACTIVE = "active"
+    REVOKED = "revoked"
+    UNKNOWN = "unknown"
+
+
+class QualificationGrantBillingBasisVariant1(UarpEnum):
+    """`QualificationGrantBillingBasisVariant1` enumeration."""
+
+    METERED = "metered"
+    RESERVED_CAP_UNKNOWN = "reserved_cap_unknown"
+    NO_DISPATCH = "no_dispatch"
+
+
+class QualificationGrantStatus(UarpEnum):
+    """`QualificationGrantStatus` enumeration."""
+
+    RESERVED = "reserved"
+    CONSUMED = "consumed"
+    SETTLED = "settled"
+    RELEASED = "released"
+    EXPIRED = "expired"
+
+
+class QualificationGrantUnknownCostReasonVariant1(UarpEnum):
+    """`QualificationGrantUnknownCostReasonVariant1` enumeration."""
+
+    PROVIDER_OUTCOME_UNKNOWN = "provider_outcome_unknown"
+    ATTEMPT_LEDGER_INCOMPLETE = "attempt_ledger_incomplete"
+    PRICING_OBSERVATION_INCOMPLETE = "pricing_observation_incomplete"
+
+
+class QualificationInactivePolicyResponseReadiness(UarpEnum):
+    """`QualificationInactivePolicyResponseReadiness` enumeration."""
+
+    EXPIRED = "expired"
+    REVOKED = "revoked"
+
+
+class QualificationIncompletePolicyResponseReadiness(UarpEnum):
+    """`QualificationIncompletePolicyResponseReadiness` enumeration."""
+
+    INCOMPLETE = "incomplete"
+
+
+class QualificationProcessingPolicyLLMTrainingUse(UarpEnum):
+    """`QualificationProcessingPolicyLLMTrainingUse` enumeration."""
+
+    NOT_USED = "not_used"
+    USED = "used"
+    UNKNOWN = "unknown"
+
+
+class QualificationRetentionRuleVariant3mode(UarpEnum):
+    """`QualificationRetentionRuleVariant3mode` enumeration."""
+
+    INDEFINITE = "indefinite"
+    NOT_APPLICABLE = "not_applicable"
+    UNKNOWN = "unknown"
+
+
+class QualificationUnverifiableExecutionReceiptV2executionOrigin(UarpEnum):
+    """`QualificationUnverifiableExecutionReceiptV2executionOrigin` enumeration."""
+
+    CLOUD_RUNTIME = "cloud_runtime"
+    BRIDGE = "bridge"
+    UNKNOWN = "unknown"
+
+
+class QualificationVerifiedExecutionReceiptV2reasonCode(UarpEnum):
+    """`QualificationVerifiedExecutionReceiptV2reasonCode` enumeration."""
+
+    MODEL_REVISION_UNRESOLVED = "MODEL_REVISION_UNRESOLVED"
+    EXECUTION_TRACE_INCOMPLETE = "EXECUTION_TRACE_INCOMPLETE"
+    MIXED_EXECUTION_PROFILES = "MIXED_EXECUTION_PROFILES"
+    RUNTIME_NOT_ATTESTABLE = "RUNTIME_NOT_ATTESTABLE"
+    METERING_INCOMPLETE = "METERING_INCOMPLETE"
+    ISOLATION_NOT_PROVEN = "ISOLATION_NOT_PROVEN"
+
+
+class QualificationVerifiedExecutionReceiptV2runStatus(UarpEnum):
+    """`QualificationVerifiedExecutionReceiptV2runStatus` enumeration."""
+
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    TIMEOUT = "timeout"
+    GUARDRAIL_BLOCKED = "guardrail_blocked"
+    REJECTED = "rejected"
 
 
 class QuotaProblemCode(UarpEnum):
@@ -6024,6 +6174,11 @@ class AdminVoicePresets(Model):
 class Agent(Model):
     """`Agent` model."""
 
+    bridge_fingerprint: Optional[str] = None
+    """Bridge agents only: the stable fingerprint of the machine that enrolled it, used to adopt
+    the same agent after a reconnect. Absent on records enrolled before 2026-09-03.
+    """
+
     initiative_id: Optional[str] = None
     """The initiative (`/initiatives`) this agent works for, when it has one. Its runs are charged
     to that initiative's budget, and automated runs are refused (`INITIATIVE_PAUSED`) while it
@@ -7438,13 +7593,13 @@ class AgentVersion(Model):
     canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
     provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
     detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-    provisioned`, `Platform agent config migrated on boot`, `Hired`, `Registered from a local
-    app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`,
-    `Token cap removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N =
-    the version rolled back to), `Self-improvement: N changes based on N analysis` (the
-    self-improvement loop: the first N is a count, the second is one of errors, ratings or
-    feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC
-    11).
+    provisioned`, `Platform agent config migrated on boot`, `Qualification evaluator template
+    revision N` (N = the template revision), `Hired`, `Registered from a local app`, `Token cap
+    removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap
+    removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version
+    rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement
+    loop: the first N is a count, the second is one of errors, ratings or feedback — words, not
+    a number). A reason code beside the prose is the owner's decision (DEC 11).
     """
 
     created_at: str
@@ -9968,6 +10123,36 @@ class CompleteOAuthLoginResponse(Model):
 
 
 @_dataclass(kw_only=True)
+class ConfirmDataProcessingPolicyRequest(Model):
+    """`ConfirmDataProcessingPolicyRequest` model."""
+
+    processor_name: Optional[str]
+
+    processing_region: Optional[str]
+
+    llm_training_use: QualificationProcessingPolicyLLMTrainingUse
+
+    archive_enabled: Optional[bool]
+
+    storage: QualificationStoragePolicy
+
+    evidence_hash: Optional[str]
+
+    recovery_window_seconds: int
+
+    observed_at_unix: int
+
+    expires_at_unix: int
+
+
+@_dataclass(kw_only=True)
+class ConfirmDataProcessingPolicyResponse(Model):
+    """`ConfirmDataProcessingPolicyResponse` model."""
+
+    current: Optional[JsonObject] = None
+
+
+@_dataclass(kw_only=True)
 class ConfirmSessionTodoRequest(Model):
     """`ConfirmSessionTodoRequest` model."""
 
@@ -10333,6 +10518,12 @@ class ConversationEntryRunMetrics(Model):
     """On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
     publicRunMetrics).
     """
+
+    context_window_tokens: Optional[int] = None
+    """The context window of the model that served the run, in tokens."""
+
+    last_input_tokens: Optional[int] = None
+    """Input tokens of the run's last model call: how full the window was at the end."""
 
     pricing_confidence: Optional[str] = None
     """How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts)."""
@@ -14113,6 +14304,13 @@ class GetAdminBlogConfigResponse(Model):
 
 
 @_dataclass(kw_only=True)
+class GetAdminDataProcessingPolicyResponse(Model):
+    """`GetAdminDataProcessingPolicyResponse` model."""
+
+    current: Optional[JsonObject] = None
+
+
+@_dataclass(kw_only=True)
 class GetAdminDisabledToolsResponse(Model):
     """`GetAdminDisabledToolsResponse` model."""
 
@@ -15636,6 +15834,19 @@ class GetRunQueuePositionResponse(Model):
 @_dataclass(kw_only=True)
 class GetRunResponse(Model):
     """`GetRunResponse` model."""
+
+    execution_requirements: Optional[QualificationExecutionRequirementsV2] = None
+    """Sponsored qualification runs only: the requirements the run was admitted under, stored as
+    accepted.
+    """
+
+    recovery_expires_at_unix: Optional[int] = None
+    """Sponsored qualification runs only: until when the run is recoverable by its client request
+    id.
+    """
+
+    sponsorship_grant_id: Optional[str] = None
+    """Sponsored qualification runs only: the grant that paid for it."""
 
     execution_mode: Optional[RunExecutionMode] = None
     """Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
@@ -23738,6 +23949,899 @@ class PutCareersConfigResponse(Model):
 
 
 @_dataclass(kw_only=True)
+class PutQualificationPricingRevisionRequest(Model):
+    """`PutQualificationPricingRevisionRequest` model."""
+
+    provider: str
+
+    model: str
+
+    input_microusd_per_million_tokens: str
+
+    output_microusd_per_million_tokens: str
+
+
+@_dataclass(kw_only=True)
+class PutQualificationSponsorKeyRequest(Model):
+    """`PutQualificationSponsorKeyRequest` model."""
+
+    tenant_id: str
+
+    programs: List[str]
+
+
+@_dataclass(kw_only=True)
+class QualificationAssessmentInputMessage(Model):
+    """Prepared Nestor message only. No files or attachments. Source is untrusted data and must not
+    become instructions.
+    """
+
+    message: str
+
+
+@_dataclass(kw_only=True)
+class QualificationConfirmedPolicyResponse(Model):
+    """policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+    incomplete readiness. confirmed requires current verified terms, not_used training and no
+    unknown storage categories.
+    """
+
+    kind: JsonValue
+    """Always `uarp.data-processing-policy-response.v1`."""
+
+    policy: QualificationConfirmedProcessingPolicy
+
+    policy_hash: str
+
+    readiness: QualificationConfirmedPolicyResponseReadiness
+
+    blockers: List[QualificationConfirmedPolicyResponseBlocker]
+
+
+@_dataclass(kw_only=True)
+class QualificationConfirmedProcessingPolicy(Model):
+    """Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+    86400 seconds later. recovery_window_seconds is the minimum durable client request
+    reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+    run records or receipt identifiers persist.
+    """
+
+    schema_version: JsonValue
+    """Always `uarp.data-processing-policy.v1`."""
+
+    id: str
+
+    revision: int
+
+    tenant_id: str
+
+    purpose: JsonValue
+    """Always `nestor.public-qualification.v1`."""
+
+    recipient: JsonValue
+    """Always `https://api.snaga.ai`."""
+
+    processor_name: str
+
+    processing_region: str
+
+    llm_training_use: JsonValue
+    """Always `not_used`."""
+
+    archive_enabled: bool
+
+    storage: QualificationConfirmedStoragePolicy
+
+    evidence_hash: str
+
+    recovery_window_seconds: int
+
+    observed_at_unix: int
+
+    expires_at_unix: int
+
+
+@_dataclass(kw_only=True)
+class QualificationConfirmedRetentionRuleVariant1(Model):
+    """`QualificationConfirmedRetentionRuleVariant1` model."""
+
+    mode: JsonValue
+    """Always `finite`."""
+
+    max_seconds: int
+
+
+@_dataclass(kw_only=True)
+class QualificationConfirmedRetentionRuleVariant2(Model):
+    """`QualificationConfirmedRetentionRuleVariant2` model."""
+
+    mode: JsonValue
+    """Always `no_storage`."""
+
+    max_seconds: JsonValue
+
+
+@_dataclass(kw_only=True)
+class QualificationConfirmedRetentionRuleVariant3(Model):
+    """`QualificationConfirmedRetentionRuleVariant3` model."""
+
+    mode: QualificationConfirmedRetentionRuleVariant3mode
+
+    max_seconds: JsonValue
+
+
+@_dataclass(kw_only=True)
+class QualificationConfirmedStoragePolicy(Model):
+    """`QualificationConfirmedStoragePolicy` model."""
+
+    runs: JsonValue
+
+    events: JsonValue
+
+    artifacts: JsonValue
+
+    checkpoints: JsonValue
+
+    archives: JsonValue
+
+    backups: JsonValue
+
+    llm: JsonValue
+
+
+@_dataclass(kw_only=True)
+class QualificationExecutionReceiptResponseV2(Model):
+    """receipt_hash binds only receipt. profile_status and its observation time are current
+    server-owned validity outside immutable history. Authenticated HTTPS readback is mandatory;
+    a hash alone does not authenticate a server.
+    """
+
+    kind: JsonValue
+    """Always `uarp.execution-receipt-response.v2`."""
+
+    receipt: JsonValue
+
+    receipt_hash: str
+
+    profile_status: QualificationExecutionReceiptResponseV2profileStatus
+
+    profile_status_observed_at_unix: int
+
+
+@_dataclass(kw_only=True)
+class QualificationExecutionRequirementsBeforeGrantV2(Model):
+    """Hash material only, never accepted by POST /runs. Omit exactly sponsorship_grant_id to avoid
+    a circular grant/hash dependency.
+    """
+
+    schema_version: JsonValue
+    """Always `uarp.execution-requirements.v2`."""
+
+    purpose: JsonValue
+    """Always `nestor.public-qualification.v1`."""
+
+    client_request_id: str
+
+    processing_policy_id: str
+
+    processing_policy_hash: str
+
+    isolation_profile: JsonValue
+    """Always `isolated-assessment.v1`."""
+
+    require_verifiable_execution: bool
+
+    expected_execution_profile_hash: Optional[str]
+
+
+@_dataclass(kw_only=True)
+class QualificationExecutionRequirementsV2(Model):
+    """Closed sponsored v2. Existing v1 remains unchanged. Phase A uses false/null; strict mode
+    still requires independently accepted evidence/calibration.
+    """
+
+    schema_version: JsonValue
+    """Always `uarp.execution-requirements.v2`."""
+
+    purpose: JsonValue
+    """Always `nestor.public-qualification.v1`."""
+
+    client_request_id: str
+
+    processing_policy_id: str
+
+    processing_policy_hash: str
+
+    isolation_profile: JsonValue
+    """Always `isolated-assessment.v1`."""
+
+    require_verifiable_execution: bool
+
+    expected_execution_profile_hash: Optional[str]
+
+    sponsorship_grant_id: str
+
+
+@_dataclass(kw_only=True)
+class QualificationGrant(Model):
+    """One immutable settlement per grant, later corrections are unique append-only credits, never
+    additional debits. Unknown-cost cap is a conservative sponsor charge, not provider actual
+    cost.
+    """
+
+    authorization: QualificationGrantAuthorization
+
+    grant_hash: str
+
+    status: QualificationGrantStatus
+
+    run_id: Optional[str]
+
+    charged_microusd: Optional[str]
+
+    refunded_microusd: str
+
+    billing_basis: Optional[QualificationGrantBillingBasisVariant1]
+
+    unknown_cost_reason: Optional[QualificationGrantUnknownCostReasonVariant1]
+
+    settlement_id: Optional[str]
+
+
+@_dataclass(kw_only=True)
+class QualificationGrantAuthorization(Model):
+    """Immutable server authorization snapshot. grant_hash hashes only this object, not mutable
+    envelope fields.
+    """
+
+    grant_id: str
+
+    program_id: str
+
+    purpose: JsonValue
+    """Always `nestor.public-qualification.v1`."""
+
+    candidate_tenant_id: str
+
+    candidate_user_id: str
+
+    client_request_id: str
+
+    run_input_hash: str
+
+    run_authorization_hash: str
+
+    agent_id: str
+
+    agent_version_id: str
+
+    agent_version: int
+
+    template_hash: str
+
+    max_cost_microusd: str
+    """Positive integer micro-USD string, at most USD 1."""
+
+    expires_at_unix: int
+
+    pricing_revision: str
+
+    created_at_unix: int
+
+
+@_dataclass(kw_only=True)
+class QualificationGrantCreate(Model):
+    """No raw input, credential or payer override. Canonical body hash binds expiry too. Unique
+    durable program/tenant/user/client_request_id; replay returns original grant current state,
+    never another reserve.
+    """
+
+    program_id: str
+
+    purpose: JsonValue
+    """Always `nestor.public-qualification.v1`."""
+
+    candidate_tenant_id: str
+
+    candidate_user_id: str
+
+    client_request_id: str
+
+    run_input_hash: str
+
+    run_authorization_hash: str
+
+    agent_id: str
+
+    agent_version_id: str
+
+    agent_version: int
+
+    template_hash: str
+
+    max_cost_microusd: str
+    """Positive integer micro-USD string, at most USD 1."""
+
+    expires_at_unix: int
+
+
+@_dataclass(kw_only=True)
+class QualificationGrantPage(Model):
+    """`QualificationGrantPage` model."""
+
+    items: List[QualificationGrant]
+
+    has_more: JsonValue
+
+    cursor: JsonValue
+
+
+@_dataclass(kw_only=True)
+class QualificationInactivePolicyResponse(Model):
+    """policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+    incomplete readiness. confirmed requires current verified terms, not_used training and no
+    unknown storage categories.
+    """
+
+    kind: JsonValue
+    """Always `uarp.data-processing-policy-response.v1`."""
+
+    policy: QualificationProcessingPolicy
+
+    policy_hash: str
+
+    readiness: QualificationInactivePolicyResponseReadiness
+
+    blockers: List[QualificationConfirmedPolicyResponseBlocker]
+
+
+@_dataclass(kw_only=True)
+class QualificationIncompletePolicyResponse(Model):
+    """policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+    incomplete readiness. confirmed requires current verified terms, not_used training and no
+    unknown storage categories.
+    """
+
+    kind: JsonValue
+    """Always `uarp.data-processing-policy-response.v1`."""
+
+    policy: QualificationProcessingPolicy
+
+    policy_hash: str
+
+    readiness: QualificationIncompletePolicyResponseReadiness
+
+    blockers: List[QualificationConfirmedPolicyResponseBlocker]
+
+
+@_dataclass(kw_only=True)
+class QualificationManagedEvaluator(Model):
+    """One private managed binding per tenant/purpose; immutable applied version and template,
+    independent of personal agent/version caps. Readback with candidate credential required.
+    """
+
+    agent_id: str
+
+    agent_version_id: str
+
+    agent_version: int
+
+    template_revision: int
+
+    template_hash: str
+
+    managed_by: JsonValue
+    """Always `qualification:nestor.public-qualification.v1`."""
+
+    governance: QualificationManagedEvaluatorGovernance
+
+
+@_dataclass(kw_only=True)
+class QualificationManagedEvaluatorGovernance(Model):
+    """`QualificationManagedEvaluatorGovernance` model."""
+
+    can_spawn: JsonValue
+
+    max_spawn_depth: JsonValue
+
+    can_self_modify: JsonValue
+
+    max_budget_per_run_usd: JsonValue
+
+
+@_dataclass(kw_only=True)
+class QualificationMissingPolicyResponse(Model):
+    """policy_hash is SHA-256 of RFC8785 JCS(policy). A missing policy is null with null hash and
+    incomplete readiness. confirmed requires current verified terms, not_used training and no
+    unknown storage categories.
+    """
+
+    kind: JsonValue
+    """Always `uarp.data-processing-policy-response.v1`."""
+
+    policy: JsonValue
+
+    policy_hash: JsonValue
+
+    readiness: QualificationIncompletePolicyResponseReadiness
+
+    blockers: List[QualificationConfirmedPolicyResponseBlocker]
+
+
+@_dataclass(kw_only=True)
+class QualificationProcessingPolicy(Model):
+    """Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
+    86400 seconds later. recovery_window_seconds is the minimum durable client request
+    reservation lifetime, disclosed as storage in the runs category. No no_storage claim when
+    run records or receipt identifiers persist.
+    """
+
+    schema_version: JsonValue
+    """Always `uarp.data-processing-policy.v1`."""
+
+    id: str
+
+    revision: int
+
+    tenant_id: str
+
+    purpose: JsonValue
+    """Always `nestor.public-qualification.v1`."""
+
+    recipient: JsonValue
+    """Always `https://api.snaga.ai`."""
+
+    processor_name: Optional[str]
+
+    processing_region: Optional[str]
+
+    llm_training_use: QualificationProcessingPolicyLLMTrainingUse
+
+    archive_enabled: Optional[bool]
+
+    storage: QualificationStoragePolicy
+
+    evidence_hash: Optional[str]
+
+    recovery_window_seconds: int
+
+    observed_at_unix: int
+
+    expires_at_unix: int
+
+
+@_dataclass(kw_only=True)
+class QualificationProgram(Model):
+    """budget_limit = reserved + spent + remaining, exact integer arithmetic. Configuration
+    revision is not incremented for ledger activity.
+    """
+
+    program_id: str
+
+    revision: int
+
+    purpose: JsonValue
+    """Always `nestor.public-qualification.v1`."""
+
+    sponsor_tenant_id: str
+
+    budget_limit_microusd: str
+
+    reserved_microusd: str
+
+    spent_microusd: str
+
+    remaining_microusd: str
+
+    pricing_revision: str
+
+    limits: QualificationProgramLimits
+
+    active: bool
+
+
+@_dataclass(kw_only=True)
+class QualificationProgramLimits(Model):
+    """Every cap is required. Per-run cap <=1000000 and daily amount >= per-run cap are server
+    invariants. Daily counters aggregate the same user across candidate tenants. Reserved and
+    consumed grants both occupy active slots.
+    """
+
+    max_cost_per_run_microusd: str
+    """Positive integer micro-USD string, at most USD 1."""
+
+    max_grants_per_candidate_per_utc_day: int
+
+    max_issued_per_candidate_per_utc_day_microusd: str
+
+    max_active_grants_per_candidate: int
+
+    max_active_grants: int
+
+    grant_ttl_seconds_max: int
+
+    max_attempts_per_run: JsonValue
+
+
+@_dataclass(kw_only=True)
+class QualificationProgramPut(Model):
+    """Full configuration replacement, not merge. Initial expected_revision=0. Immutable
+    purpose/sponsor/pricing. Funded ceiling, not mint/charge endpoint. Ceiling cannot fall below
+    spent+reserved.
+    """
+
+    expected_revision: int
+
+    purpose: JsonValue
+    """Always `nestor.public-qualification.v1`."""
+
+    sponsor_tenant_id: str
+
+    budget_limit_microusd: str
+
+    pricing_revision: str
+
+    limits: QualificationProgramLimits
+
+    active: bool
+
+
+@_dataclass(kw_only=True)
+class QualificationReceiptPending(Model):
+    """`QualificationReceiptPending` model."""
+
+    code: JsonValue
+    """Always `EXECUTION_RECEIPT_PENDING`."""
+
+    run_id: str
+
+
+@_dataclass(kw_only=True)
+class QualificationRetentionRuleVariant1(Model):
+    """`QualificationRetentionRuleVariant1` model."""
+
+    mode: JsonValue
+    """Always `finite`."""
+
+    max_seconds: int
+
+
+@_dataclass(kw_only=True)
+class QualificationRetentionRuleVariant2(Model):
+    """`QualificationRetentionRuleVariant2` model."""
+
+    mode: JsonValue
+    """Always `no_storage`."""
+
+    max_seconds: JsonValue
+
+
+@_dataclass(kw_only=True)
+class QualificationRetentionRuleVariant3(Model):
+    """`QualificationRetentionRuleVariant3` model."""
+
+    mode: QualificationRetentionRuleVariant3mode
+
+    max_seconds: JsonValue
+
+
+@_dataclass(kw_only=True)
+class QualificationRunBeforeGrantV2(Model):
+    """Hash material, not a createRun command."""
+
+    agent_id: str
+
+    version: int
+
+    input: QualificationAssessmentInputMessage
+
+    resource_limits: QualificationSponsoredLimits
+
+    metadata: Dict[str, JsonValue]
+
+    execution_requirements: QualificationExecutionRequirementsBeforeGrantV2
+
+
+@_dataclass(kw_only=True)
+class QualificationSafetyObservations(Model):
+    """Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+    as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+    required fields cannot be stated.
+    """
+
+    trace_complete: bool
+
+    tool_calls_count: int
+
+    memory_retrievals: int
+
+    memory_extractions: int
+
+    spawned_agents_count: int
+
+    guardrail_violations: int
+
+    llm_calls_count: int
+
+    steps_count: int
+
+    duration_ms: float
+
+    input_tokens: int
+
+    output_tokens: int
+
+    total_cost_usd: float
+
+    truncated: bool
+
+    continuation_used: bool
+
+
+@_dataclass(kw_only=True)
+class QualificationSponsoredLimits(Model):
+    """Wire-compatible limits. Actual tool calls are forbidden by isolation regardless of
+    max_tool_calls=1. Aggregate budgets include all attempts.
+    """
+
+    max_duration_ms: JsonValue
+
+    max_steps: JsonValue
+
+    max_tool_calls: JsonValue
+
+    max_tokens_per_run: JsonValue
+
+    max_cost_usd: float
+    """Legacy run DTO unit. Must convert exactly to integer micro-USD and be <= grant cap. No
+    rounding up or silently raising the grant.
+    """
+
+
+@_dataclass(kw_only=True)
+class QualificationSponsoredRunAuthorizationMaterial(Model):
+    """JCS SHA-256 of this exact object is run_authorization_hash. UARP reconstructs it from the
+    authenticated user, grant and immutable evaluator/run facts, never trusting metadata as
+    authority.
+    """
+
+    schema_version: JsonValue
+    """Always `uarp.sponsored-run-authorization.v1`."""
+
+    program_id: str
+
+    candidate_tenant_id: str
+
+    candidate_user_id: str
+
+    agent_version_id: str
+
+    template_hash: str
+
+    max_cost_microusd: str
+    """Positive integer micro-USD string, at most USD 1."""
+
+    run: QualificationRunBeforeGrantV2
+
+
+@_dataclass(kw_only=True)
+class QualificationSponsoredRunCreateV2(Model):
+    """Sponsored subset of canonical POST /runs; <=131072 UTF-8 bytes, duplicate JSON keys
+    rejected. Other purposes retain the canonical API behavior. All metadata is explicit, even
+    if empty.
+    """
+
+    agent_id: str
+
+    version: int
+
+    input: QualificationAssessmentInputMessage
+
+    resource_limits: QualificationSponsoredLimits
+
+    metadata: Dict[str, JsonValue]
+
+    execution_requirements: QualificationExecutionRequirementsV2
+
+
+@_dataclass(kw_only=True)
+class QualificationSponsoredRunExcerpt(Model):
+    """Excerpt of existing Run with additive server-stored execution_requirements and recovery
+    horizon. Existing fields remain available. A full canonical Run read is required for Nestor
+    validation.
+    """
+
+    run_id: str
+
+    tenant_id: str
+
+    agent_id: str
+
+    status: str
+
+    input: JsonObject
+
+    output: Optional[JsonObject] = None
+
+    metadata: Optional[JsonObject] = None
+
+    execution_requirements: QualificationExecutionRequirementsV2
+
+    recovery_expires_at_unix: int
+
+    additional_properties: Dict[str, Any] = _field(default_factory=dict, metadata={"additional": True})
+    """Members the server sent that the document does not name, as sent."""
+
+
+@_dataclass(kw_only=True)
+class QualificationStoragePolicy(Model):
+    """`QualificationStoragePolicy` model."""
+
+    runs: JsonValue
+
+    events: JsonValue
+
+    artifacts: JsonValue
+
+    checkpoints: JsonValue
+
+    archives: JsonValue
+
+    backups: JsonValue
+
+    llm: JsonValue
+
+
+@_dataclass(kw_only=True)
+class QualificationUnverifiableExecutionReceiptV2(Model):
+    """Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+    hash identifies stable actual resolved configuration; it excludes
+    run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+    verified does not mean the engineer is qualified or that a failed run is acceptable.
+    """
+
+    schema_version: JsonValue
+    """Always `uarp.execution-receipt.v2`."""
+
+    run_id: str
+
+    tenant_id: str
+
+    initiator_user_id: str
+
+    agent_id: str
+
+    agent_version_id: str
+
+    agent_version: int
+
+    client_request_id: str
+
+    purpose: JsonValue
+    """Always `nestor.public-qualification.v1`."""
+
+    processing_policy_id: str
+
+    processing_policy_hash: str
+
+    execution_requirements: QualificationExecutionRequirementsV2
+
+    execution_profile_hash: Optional[str]
+
+    run_input_hash: str
+
+    run_output_hash: str
+
+    execution_trace_hash: Optional[str]
+
+    execution_origin: QualificationUnverifiableExecutionReceiptV2executionOrigin
+
+    run_status: QualificationVerifiedExecutionReceiptV2runStatus
+
+    completed_at: str
+
+    verification_status: JsonValue
+    """Always `unverifiable`."""
+
+    reason_codes: List[QualificationVerifiedExecutionReceiptV2reasonCode]
+
+    observations: Optional[QualificationSafetyObservations]
+
+
+@_dataclass(kw_only=True)
+class QualificationVerifiedExecutionReceiptV2(Model):
+    """Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
+    hash identifies stable actual resolved configuration; it excludes
+    run/user/input/output/time. Per-run hashes and the full trace bind the concrete execution.
+    verified does not mean the engineer is qualified or that a failed run is acceptable.
+    """
+
+    schema_version: JsonValue
+    """Always `uarp.execution-receipt.v2`."""
+
+    run_id: str
+
+    tenant_id: str
+
+    initiator_user_id: str
+
+    agent_id: str
+
+    agent_version_id: str
+
+    agent_version: int
+
+    client_request_id: str
+
+    purpose: JsonValue
+    """Always `nestor.public-qualification.v1`."""
+
+    processing_policy_id: str
+
+    processing_policy_hash: str
+
+    execution_requirements: QualificationExecutionRequirementsV2
+
+    execution_profile_hash: str
+
+    run_input_hash: str
+
+    run_output_hash: str
+
+    execution_trace_hash: str
+
+    execution_origin: JsonValue
+    """Always `cloud_runtime`."""
+
+    run_status: QualificationVerifiedExecutionReceiptV2runStatus
+
+    completed_at: str
+
+    verification_status: JsonValue
+    """Always `verified`."""
+
+    reason_codes: List[QualificationVerifiedExecutionReceiptV2reasonCode]
+
+    observations: QualificationVerifiedSafetyObservations
+
+
+@_dataclass(kw_only=True)
+class QualificationVerifiedSafetyObservations(Model):
+    """Actual aggregate observations across all attempts. Unknown observations cannot be fabricated
+    as zero; unavailable/incomplete metering yields unverifiable, with observations=null if
+    required fields cannot be stated.
+    """
+
+    trace_complete: JsonValue
+
+    tool_calls_count: int
+
+    memory_retrievals: int
+
+    memory_extractions: int
+
+    spawned_agents_count: int
+
+    guardrail_violations: int
+
+    llm_calls_count: int
+
+    steps_count: int
+
+    duration_ms: float
+
+    input_tokens: int
+
+    output_tokens: int
+
+    total_cost_usd: float
+
+    truncated: bool
+
+    continuation_used: bool
+
+
+@_dataclass(kw_only=True)
 class QuotaProblem(Model):
     """A limit refusal. `code` separates a throttle from a wall: `rate_limit_exceeded` clears in
     seconds (see `Retry-After`); `quota_exceeded` clears at `quota.resets_at`; `limit_reached`
@@ -24927,6 +26031,15 @@ class RevokeAPIKeyResponse(Model):
 
 
 @_dataclass(kw_only=True)
+class RevokeDataProcessingPolicyResponse(Model):
+    """`RevokeDataProcessingPolicyResponse` model."""
+
+    revoked: Optional[bool] = None
+
+    current: Optional[JsonObject] = None
+
+
+@_dataclass(kw_only=True)
 class RevokeMeSessionResponse(Model):
     """`RevokeMeSessionResponse` model."""
 
@@ -25010,6 +26123,19 @@ class RotateAgentIdentityResponse(Model):
 @_dataclass(kw_only=True)
 class Run(Model):
     """`Run` model."""
+
+    execution_requirements: Optional[QualificationExecutionRequirementsV2] = None
+    """Sponsored qualification runs only: the requirements the run was admitted under, stored as
+    accepted.
+    """
+
+    recovery_expires_at_unix: Optional[int] = None
+    """Sponsored qualification runs only: until when the run is recoverable by its client request
+    id.
+    """
+
+    sponsorship_grant_id: Optional[str] = None
+    """Sponsored qualification runs only: the grant that paid for it."""
 
     execution_mode: Optional[RunExecutionMode] = None
     """Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
@@ -25423,6 +26549,12 @@ class RunFeedbackSet(Model):
 @_dataclass(kw_only=True)
 class RunMetrics(Model):
     """`RunMetrics` model."""
+
+    context_window_tokens: Optional[int] = None
+    """The context window of the model that served the run, in tokens."""
+
+    last_input_tokens: Optional[int] = None
+    """Input tokens of the run's last model call: how full the window was at the end."""
 
     pricing_confidence: Optional[str] = None
     """How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts)."""
@@ -32351,6 +33483,17 @@ class WorkspaceFileVersion(Model):
 BridgeAgentStats: TypeAlias = JsonObject
 #: One change a proposal makes, discriminated by `op`.
 ProposalOperation: TypeAlias = JsonValue
+QualificationConfirmedRetentionRule: TypeAlias = JsonValue
+QualificationDigest: TypeAlias = str
+QualificationExecutionReceiptV2: TypeAlias = JsonValue
+#: Integer micro-USD string. 1000000 = USD 1. No float or FX.
+QualificationMicrousd: TypeAlias = str
+QualificationPositiveMicrousd: TypeAlias = str
+QualificationProcessingPolicyResponse: TypeAlias = JsonValue
+QualificationRetentionRule: TypeAlias = JsonValue
+#: Exact canonical metadata is hashed. No credentials, raw code or security authority in
+#: metadata.
+QualificationRunMetadata: TypeAlias = Dict[str, JsonValue]
 #: A cron in a shape clients localize; null when the cron is not one of these — show the cron.
 #: Weekdays are ISO (1 = Monday … 7 = Sunday).
 ScheduleShape: TypeAlias = JsonValue
@@ -32806,6 +33949,8 @@ __all__ = [
     "CompleteOAuthLoginFormPostRequest",
     "CompleteOAuthLoginFormPostResponse",
     "CompleteOAuthLoginResponse",
+    "ConfirmDataProcessingPolicyRequest",
+    "ConfirmDataProcessingPolicyResponse",
     "ConfirmSessionTodoRequest",
     "ConformityReport",
     "ConformityReportSection",
@@ -33101,6 +34246,7 @@ __all__ = [
     "GenerateAdminBlogPostResponse",
     "GetActivityFeedResponse",
     "GetAdminBlogConfigResponse",
+    "GetAdminDataProcessingPolicyResponse",
     "GetAdminDisabledToolsResponse",
     "GetAdminIntegrationOAuthProviderProvider",
     "GetAdminIntegrationOAuthProviderResponse",
@@ -33779,6 +34925,67 @@ __all__ = [
     "PushBridgeTaskEventsResponse",
     "PutCareersConfigRequest",
     "PutCareersConfigResponse",
+    "PutQualificationPricingRevisionRequest",
+    "PutQualificationSponsorKeyRequest",
+    "QualificationAssessmentInputMessage",
+    "QualificationConfirmedPolicyResponse",
+    "QualificationConfirmedPolicyResponseBlocker",
+    "QualificationConfirmedPolicyResponseReadiness",
+    "QualificationConfirmedProcessingPolicy",
+    "QualificationConfirmedRetentionRule",
+    "QualificationConfirmedRetentionRuleVariant1",
+    "QualificationConfirmedRetentionRuleVariant2",
+    "QualificationConfirmedRetentionRuleVariant3",
+    "QualificationConfirmedRetentionRuleVariant3mode",
+    "QualificationConfirmedStoragePolicy",
+    "QualificationDigest",
+    "QualificationExecutionReceiptResponseV2",
+    "QualificationExecutionReceiptResponseV2profileStatus",
+    "QualificationExecutionReceiptV2",
+    "QualificationExecutionRequirementsBeforeGrantV2",
+    "QualificationExecutionRequirementsV2",
+    "QualificationGrant",
+    "QualificationGrantAuthorization",
+    "QualificationGrantBillingBasisVariant1",
+    "QualificationGrantCreate",
+    "QualificationGrantPage",
+    "QualificationGrantStatus",
+    "QualificationGrantUnknownCostReasonVariant1",
+    "QualificationInactivePolicyResponse",
+    "QualificationInactivePolicyResponseReadiness",
+    "QualificationIncompletePolicyResponse",
+    "QualificationIncompletePolicyResponseReadiness",
+    "QualificationManagedEvaluator",
+    "QualificationManagedEvaluatorGovernance",
+    "QualificationMicrousd",
+    "QualificationMissingPolicyResponse",
+    "QualificationPositiveMicrousd",
+    "QualificationProcessingPolicy",
+    "QualificationProcessingPolicyLLMTrainingUse",
+    "QualificationProcessingPolicyResponse",
+    "QualificationProgram",
+    "QualificationProgramLimits",
+    "QualificationProgramPut",
+    "QualificationReceiptPending",
+    "QualificationRetentionRule",
+    "QualificationRetentionRuleVariant1",
+    "QualificationRetentionRuleVariant2",
+    "QualificationRetentionRuleVariant3",
+    "QualificationRetentionRuleVariant3mode",
+    "QualificationRunBeforeGrantV2",
+    "QualificationRunMetadata",
+    "QualificationSafetyObservations",
+    "QualificationSponsoredLimits",
+    "QualificationSponsoredRunAuthorizationMaterial",
+    "QualificationSponsoredRunCreateV2",
+    "QualificationSponsoredRunExcerpt",
+    "QualificationStoragePolicy",
+    "QualificationUnverifiableExecutionReceiptV2",
+    "QualificationUnverifiableExecutionReceiptV2executionOrigin",
+    "QualificationVerifiedExecutionReceiptV2",
+    "QualificationVerifiedExecutionReceiptV2reasonCode",
+    "QualificationVerifiedExecutionReceiptV2runStatus",
+    "QualificationVerifiedSafetyObservations",
     "QuotaProblem",
     "QuotaProblemCode",
     "QuotaProblemQuota",
@@ -33879,6 +35086,7 @@ __all__ = [
     "ReviseRunRequest",
     "ReviseRunResponse",
     "RevokeAPIKeyResponse",
+    "RevokeDataProcessingPolicyResponse",
     "RevokeMeSessionResponse",
     "RiskClassification",
     "RiskClassificationUpdate",
