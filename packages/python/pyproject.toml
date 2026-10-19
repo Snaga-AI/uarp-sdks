@@ -29,6 +29,7 @@ dependencies = ["httpx>=0.27,<1"]
 
 [project.urls]
 Homepage = "https://snaga.ai"
+Documentation = "https://dev.snaga.ai"
 Repository = "https://github.com/Snaga-AI/uarp-sdks"
 Changelog = "https://github.com/Snaga-AI/uarp-sdks/blob/main/CHANGELOG.md"
 

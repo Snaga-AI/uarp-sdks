@@ -102,6 +102,32 @@ for crate in packages/ada/alire.toml packages/ada/tests/alire.toml packages/ada/
     edit "s/^version = \".*\"/version = \"$version\"/" "$crate"
 done
 
+# The install lines a reader copies. They were never part of this script, so
+# they stayed wherever they were first written: at 0.12.0 the Rust README
+# still said "0.3", Kotlin 0.3.0, Ada ^0.3.0 and Swift 0.7.0, while every
+# registry served 0.12.0 (found 2026-10-19 by the web lane writing docs from
+# the tag). Each line is rewritten, then checked: a reworded line that the
+# pattern no longer matches fails the release here instead of drifting again.
+install_line() {
+    local file="$1" pattern="$2" expected="$3"
+    edit "$pattern" "$file"
+    grep -qF -- "$expected" "$file" || {
+        echo "set-version: $file has no install line reading: $expected" >&2
+        exit 1
+    }
+}
+install_line packages/rust/README.md "s/^uarp-sdk = \"[^\"]*\"/uarp-sdk = \"$version\"/" "uarp-sdk = \"$version\""
+install_line packages/ada/README.md "s/^uarp_sdk = \"[^\"]*\"/uarp_sdk = \"^$version\"/" "uarp_sdk = \"^$version\""
+for file in packages/kotlin/README.md RELEASE-CHECKLIST.md docs/sdk-docs-kit.html; do
+    install_line "$file" "s/ai\.snaga:uarp-sdk:[0-9][0-9A-Za-z.-]*/ai.snaga:uarp-sdk:$version/g" "ai.snaga:uarp-sdk:$version"
+done
+# The Swift mirror receives the tag in the same release run that publishes the
+# other registries, so by the time a reader sees a README at this tag, the
+# mirror has it too.
+for file in packages/swift/README.md PUBLISHING.md RELEASE-CHECKLIST.md docs/sdk-docs-kit.html; do
+    install_line "$file" "s/(uarp-swift\", from: \")[^\"]*\"/\\1$version\"/g" "uarp-swift\", from: \"$version\""
+done
+
 # The Ada root package names the version for the hand-written client.
 edit "s/SDK_Version : constant String := \".*\"/SDK_Version : constant String := \"$version\"/" \
     packages/ada/src/uarp.ads

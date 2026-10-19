@@ -6,7 +6,7 @@ OkHttp + kotlinx.serialization.
 
 ```kotlin
 dependencies {
-    implementation("ai.snaga:uarp-sdk:0.3.0")
+    implementation("ai.snaga:uarp-sdk:0.12.0")
 }
 ```
 

@@ -6,6 +6,17 @@ All six SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed — install lines in the READMEs follow the version
+
+At 0.12.0 the Rust README still asked for `"0.3"`, Kotlin for `0.3.0`, Ada for
+`^0.3.0` and Swift for `0.7.0`, and `PUBLISHING.md`, `RELEASE-CHECKLIST.md` and
+the docs kit quoted 0.3.0, while every registry served 0.12.0. None of those
+lines were ever touched by `scripts/set-version.sh`; now each one is, and a
+line its pattern no longer matches stops the script. The Python package also
+links its documentation (dev.snaga.ai) from PyPI.
+
 ## 0.12.0 — 2026-10-18
 
 Build `c65c901c`, digest `092f377d6340cec2`. The five existing SDKs change only
