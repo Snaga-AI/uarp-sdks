@@ -124,7 +124,7 @@ so nothing in a monorepo subdirectory can be depended upon. `packages/swift` is
 copied into its own repository and tagged there.
 
 ```swift
-.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.3.0")
+.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.12.0")
 ```
 
 ### Checked
@@ -171,7 +171,7 @@ namespace verification. Everything else had already passed.
 
 ```kotlin
 repositories { mavenCentral() }
-dependencies { implementation("ai.snaga:uarp-sdk:0.3.0") }
+dependencies { implementation("ai.snaga:uarp-sdk:0.12.0") }
 ```
 
 ### Known and deliberate
