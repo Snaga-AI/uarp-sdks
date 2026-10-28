@@ -139,13 +139,14 @@ public struct MeAPI: Sendable {
     /// `chief_voice`. Send any subset, at least one; `null` clears a field.
     ///
     /// - `avatar_url` must name a file this tenant owns — `/api/v1/files/<file_id>/content`,
-    /// absolute or relative — whose `mime_type` is `image/*`.
+    ///   absolute or relative — whose `mime_type` is `image/*`.
     /// - `interface_language` is a BCP-47 language tag with a 2–3 letter primary language, at most
-    /// 16 characters (`uk`, `en-US`, `zh-Hant-TW`). It is stored in canonical case (`en-us` is
-    /// stored and returned as `en-US`); a malformed tag (`en_US`, `english`) is 400.
+    ///   16 characters (`uk`, `en-US`, `zh-Hant-TW`). It is stored in canonical case (`en-us` is
+    ///   stored and returned as `en-US`); a malformed tag (`en_US`, `english`) is 400.
     /// - `chief_voice` is the voice the Chief of Staff speaks in: `{model, voice}` naming an entry
-    /// of `GET /voices` (`voice` is the entry's `id`). Anything else — including a bare voice name
-    /// — is 400. `POST /llm/audio/speech` with the head agent's `agent_id` then speaks in it.
+    ///   of `GET /voices` (`voice` is the entry's `id`). Anything else — including a bare voice
+    ///   name — is 400. `POST /llm/audio/speech` with the head agent's `agent_id` then speaks in
+    ///   it.
     ///
     /// The values belong to the person, not to one organisation: the change is written to the
     /// caller's user row in every tenant they belong to (`updated_rows` says how many). Anything

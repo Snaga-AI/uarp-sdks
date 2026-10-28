@@ -506,9 +506,9 @@ export class AgentsResource extends APIResource {
    * screen. Precedence `needs_you` > `working` > `done` > `idle`:
    *
    * - `needs_you` — something waits on a person: a run of the agent awaiting approval or an
-   * answer (the inbox's `approval` and `input` items, `GET /analytics/inbox`), or a change to
-   * the company the agent proposed; or the agent's last run failed (`failed`, `timeout`,
-   * `guardrail_blocked`, not a tool a person refused), which also sets `failed: true`.
+   *   answer (the inbox's `approval` and `input` items, `GET /analytics/inbox`), or a change to
+   *   the company the agent proposed; or the agent's last run failed (`failed`, `timeout`,
+   *   `guardrail_blocked`, not a tool a person refused), which also sets `failed: true`.
    * - `working` — a run is queued, running or paused.
    * - `done` — the agent has run and none of the above holds.
    * - `idle` — no run of it in the window below.

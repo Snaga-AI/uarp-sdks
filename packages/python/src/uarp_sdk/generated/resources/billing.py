@@ -337,14 +337,14 @@ class BillingResource:
         names. Handled types:
 
         - `SUBSCRIBED`, `DID_RENEW`: set the plan the product buys and extend `app_store_expires_ms`
-        (`action: plan_applied`; `unchanged` for an older transaction; `stripe_active` / `refused`
-        when Stripe or an operator owns the plan, which is left as it is).
+          (`action: plan_applied`; `unchanged` for an older transaction; `stripe_active` / `refused`
+          when Stripe or an operator owns the plan, which is left as it is).
         - `EXPIRED`, `REFUND`, `REVOKE`, `DID_FAIL_TO_RENEW` (without the `GRACE_PERIOD` subtype),
-        `GRACE_PERIOD_EXPIRED`: drop the plan to free — only when `plan_source` is `app_store` and
-        the record holds this subscription (`action: downgraded_to_free`, else `not_app_store_plan`
-        / `superseded_subscription`).
+          `GRACE_PERIOD_EXPIRED`: drop the plan to free — only when `plan_source` is `app_store` and
+          the record holds this subscription (`action: downgraded_to_free`, else
+          `not_app_store_plan` / `superseded_subscription`).
         - `DID_FAIL_TO_RENEW` with subtype `GRACE_PERIOD`: the plan stays; `app_store_expires_ms`
-        moves to the grace end (`action: grace_period`).
+          moves to the grace end (`action: grace_period`).
         - Every other type is logged and acknowledged (`handled: false`, `action: ignored`).
 
         `POST /api/v1/webhooks/app-store`
@@ -791,14 +791,14 @@ class AsyncBillingResource:
         names. Handled types:
 
         - `SUBSCRIBED`, `DID_RENEW`: set the plan the product buys and extend `app_store_expires_ms`
-        (`action: plan_applied`; `unchanged` for an older transaction; `stripe_active` / `refused`
-        when Stripe or an operator owns the plan, which is left as it is).
+          (`action: plan_applied`; `unchanged` for an older transaction; `stripe_active` / `refused`
+          when Stripe or an operator owns the plan, which is left as it is).
         - `EXPIRED`, `REFUND`, `REVOKE`, `DID_FAIL_TO_RENEW` (without the `GRACE_PERIOD` subtype),
-        `GRACE_PERIOD_EXPIRED`: drop the plan to free — only when `plan_source` is `app_store` and
-        the record holds this subscription (`action: downgraded_to_free`, else `not_app_store_plan`
-        / `superseded_subscription`).
+          `GRACE_PERIOD_EXPIRED`: drop the plan to free — only when `plan_source` is `app_store` and
+          the record holds this subscription (`action: downgraded_to_free`, else
+          `not_app_store_plan` / `superseded_subscription`).
         - `DID_FAIL_TO_RENEW` with subtype `GRACE_PERIOD`: the plan stays; `app_store_expires_ms`
-        moves to the grace end (`action: grace_period`).
+          moves to the grace end (`action: grace_period`).
         - Every other type is logged and acknowledged (`handled: false`, `action: ignored`).
 
         `POST /api/v1/webhooks/app-store`

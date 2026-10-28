@@ -354,15 +354,15 @@ impl NotificationsApi {
     /// {"timestamp", "event": "update"|"end", "content-state"}}`):
     ///
     /// - a status change (`run.started`/`resumed`/`approved`/`input_received` → *Running*,
-    /// `run.awaiting_approval` → *Awaiting approval*, `run.awaiting_input` → *Awaiting input*,
-    /// `run.paused` → *Paused*) is sent at once with `apns-priority: 10`;
+    ///   `run.awaiting_approval` → *Awaiting approval*, `run.awaiting_input` → *Awaiting input*,
+    ///   `run.paused` → *Paused*) is sent at once with `apns-priority: 10`;
     /// - step progress (each `llm.request` → *Thinking* / `Step N`, each `tool.call` → *Running
-    /// tool* / tool name) is sent with `apns-priority: 5`, at most once per 5 seconds per run
-    /// (pushes inside the window are dropped; the next one carries the latest counts);
+    ///   tool* / tool name) is sent with `apns-priority: 5`, at most once per 5 seconds per run
+    ///   (pushes inside the window are dropped; the next one carries the latest counts);
     /// - the terminal event
-    /// (`run.completed`/`failed`/`cancelled`/`timeout`/`guardrail_blocked`/`rejected`) sends
-    /// `event: "end"` and DELETES the target, since an ended activity's token is useless. A token
-    /// APNs answers 410 for is deleted too.
+    ///   (`run.completed`/`failed`/`cancelled`/`timeout`/`guardrail_blocked`/`rejected`) sends
+    ///   `event: "end"` and DELETES the target, since an ended activity's token is useless. A token
+    ///   APNs answers 410 for is deleted too.
     ///
     /// `content-state` is `{status: string, detail: string, awaitingApproval: boolean, finished:
     /// boolean, step: integer, toolCalls: integer}` — the first four are the iOS
