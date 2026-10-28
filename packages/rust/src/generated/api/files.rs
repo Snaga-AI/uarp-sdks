@@ -24,6 +24,10 @@ pub struct ListFilesParams {
     pub limit: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
+    /// Only the files this agent's runs wrote. Not a UUID: `400`. At most 2,000 records are read
+    /// per request; follow `cursor`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
 }
 
 /// File upload for multimodal content
@@ -122,6 +126,14 @@ impl FilesApi {
     /// whether one was returned. `mime_prefix` is applied after the page is read, so it filters the
     /// current page rather than the whole collection — a page can come back empty while later pages
     /// still hold matches. Metadata only; no bytes.
+    ///
+    /// `agent_id` lists the files that agent's runs wrote, newest first (since 2026-10-19). Only
+    /// records stamped with `agent_id` match — an upload, or a file written before the stamp
+    /// existed, belongs to no agent and none is guessed for it. There is no index behind this
+    /// filter: one request reads at most 2,000 file records and answers the matches it found with a
+    /// cursor to continue, so a page can be short or empty while `has_more` is true; follow the
+    /// cursor. `mime_prefix` combines with it and is then applied during the scan, not per page.
+    /// `agent_id` that is not a UUID is `400`.
     ///
     /// `GET /api/v1/files`
     ///

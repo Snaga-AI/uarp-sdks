@@ -154,7 +154,10 @@ impl AgentsApi {
     /// the list against `max_mcp_servers`; on success the handler also writes version 1, creates
     /// the agent's Ed25519 identity, registers any inline `schedule` with the cron scheduler, and —
     /// when the agent is created public — the cross-tenant discovery index. The response withholds
-    /// `model.provider`, `model.model_ref`, `model.endpoint_url` and `fallback_model`.
+    /// `model.provider`, `model.model_ref`, `model.endpoint_url` and `fallback_model`. Installing
+    /// `@platform/super-control` or `@platform/server-control` is refused `403` on every agent:
+    /// they make up the super-admin tool package, which the platform attaches to the platform
+    /// owner's Chief by itself (since 2026-10-19).
     ///
     /// `POST /api/v1/agents`
     ///
@@ -488,6 +491,42 @@ impl AgentsApi {
             .await
     }
 
+    /// Every agent with what it needs from you
+    ///
+    /// One row per agent the caller's tenant lists in `GET /agents` by default (the same rows:
+    /// offline bridge agents and child profiles left out, newest first), with a `ring` for a home
+    /// screen. Precedence `needs_you` \> `working` \> `done` \> `idle`:
+    ///
+    /// - `needs_you` — something waits on a person: a run of the agent awaiting approval or an
+    /// answer (the inbox's `approval` and `input` items, `GET /analytics/inbox`), or a change to
+    /// the company the agent proposed; or the agent's last run failed (`failed`, `timeout`,
+    /// `guardrail_blocked`, not a tool a person refused), which also sets `failed: true`.
+    /// - `working` — a run is queued, running or paused.
+    /// - `done` — the agent has run and none of the above holds.
+    /// - `idle` — no run of it in the window below.
+    ///
+    /// `pending_count` counts the waiting items. Bounded: at most 500 agent rows are read, and runs
+    /// come from the tenant's newest 500 — the window the inbox reads. Runs have no per-agent
+    /// index, so an agent whose every run is older than that window reads `idle` with null times;
+    /// it is a floor, not an all-time answer. Same permission and scope as `GET /agents`. Not
+    /// paged.
+    ///
+    /// `GET /api/v1/agents/overview`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn get_agents_overview(&self) -> Result<models::GetAgentsOverviewResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/agents/overview".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Tool → output-view catalog
     ///
     /// What the builder needs to render a tool result: for each tool the agent can actually call,
@@ -758,7 +797,9 @@ impl AgentsApi {
     /// `a2a`, `risk_classification` and `autonomy` are replaced whole, and every array replaces the
     /// stored list. The body is `AgentUpdate`, the schema the handler validates with
     /// (`UpdateAgentSchema`): a declared field of the wrong type or outside its enum is `422`, an
-    /// unknown field is dropped.
+    /// unknown field is dropped. Installing `@platform/super-control` or `@platform/server-control`
+    /// is refused `403` on every agent: they make up the super-admin tool package, which the
+    /// platform attaches to the platform owner's Chief by itself (since 2026-10-19).
     ///
     /// `PATCH /api/v1/agents/{agentId}`
     ///
@@ -972,6 +1013,9 @@ impl AgentsApi {
     /// the write and again after it, so one update appends two entries to the version list; the
     /// version quota is informational here and a full history only skips the snapshot rather than
     /// failing the update. The record is written under CAS, so a concurrent update answers `409`.
+    /// Installing `@platform/super-control` or `@platform/server-control` is refused `403` on every
+    /// agent: they make up the super-admin tool package, which the platform attaches to the
+    /// platform owner's Chief by itself (since 2026-10-19).
     ///
     /// `PUT /api/v1/agents/{agentId}`
     ///

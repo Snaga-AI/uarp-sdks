@@ -83,15 +83,32 @@ class AnalyticsResource:
             request_options=request_options,
         ))
 
-    def get_tenant_inbox(self, *, limit: Optional[int] = None, request_options: Optional[RequestOptions] = None) -> _m.TenantInbox:
+    def get_tenant_inbox(self, *, limit: Optional[int] = None, cursor: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> _m.TenantInbox:
         """Runs waiting on a human
 
         Approvals, input requests, paused and failed runs, each with a one-line summary of what is
         being asked — and, in `reviews`, mission results waiting for a person's verdict — tool
         names, the question, or the error.
 
-        `counts` is computed over the whole scan while `items` honours `limit`, so a truncated list
-        still reports the true backlog.
+        **Limits.** One page reads one SCAN WINDOW of the tenant's 500 newest run records (newest
+        first), sorts every waiting run in it by urgency (approval, input, paused, failed; newest
+        first inside each) and returns at most `limit` of them (1–200, default 50). `counts` is
+        computed over the window, not over `items`, so a short page still reports the window's
+        backlog. Failed runs count only for 24 hours after they were created.
+
+        **Paging** (since 2026-10-19). When the window held more waiting runs than `limit`, or older
+        runs exist past it (`truncated`), the answer carries `has_more: true` and a `cursor`. Pass
+        it back unchanged as `?cursor=` (with any `limit`) to continue: first through the rest of
+        the same window, then into the next 500 runs, and so on — every waiting run is reached
+        exactly once, however old. A continuation page whose window holds nothing to show reads on,
+        up to 4 windows (2 000 runs) per request, before answering. On a continuation page `counts`
+        and `scanned` describe that page's span only, and `reviews`/`proposals` — complete lists,
+        not windowed — are empty: read them from the first page. A run that changes status between
+        pages can be seen twice or not at all, and a run created between pages can shift the first
+        window by one. A cursor this endpoint did not issue is 400.
+
+        Without `cursor` the answer is the first window, exactly as before paging existed;
+        `has_more`/`cursor` are additive.
 
         `GET /api/v1/analytics/inbox`
 
@@ -100,10 +117,23 @@ class AnalyticsResource:
         return _cast("_m.TenantInbox", self._client._request(
             "GET",
             "/api/v1/analytics/inbox",
-            query=[("limit", limit)],
+            query=[("limit", limit), ("cursor", cursor)],
             response=_Response(type=_m.TenantInbox),
             request_options=request_options,
         ))
+
+    def get_tenant_inbox_all(self, *, limit: Optional[int] = None, cursor: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> Iterator[_m.InboxItem]:
+        """Every item `get_tenant_inbox` returns, following the `cursor` cursor until the server
+        reports no further pages. Starts at `cursor` when one is given.
+        """
+        guard = _CursorGuard()
+        while True:
+            page = self.get_tenant_inbox(limit=limit, cursor=cursor, request_options=request_options)
+            items = page.items
+            yield from items
+            cursor = guard.advance(page.cursor, page.has_more, not items)
+            if cursor is None:
+                return
 
     def get_tenant_overview(self, *, days: Optional[int] = None, request_options: Optional[RequestOptions] = None) -> _m.TenantOverview:
         """Mission Control overview
@@ -205,15 +235,32 @@ class AsyncAnalyticsResource:
             request_options=request_options,
         ))
 
-    async def get_tenant_inbox(self, *, limit: Optional[int] = None, request_options: Optional[RequestOptions] = None) -> _m.TenantInbox:
+    async def get_tenant_inbox(self, *, limit: Optional[int] = None, cursor: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> _m.TenantInbox:
         """Runs waiting on a human
 
         Approvals, input requests, paused and failed runs, each with a one-line summary of what is
         being asked — and, in `reviews`, mission results waiting for a person's verdict — tool
         names, the question, or the error.
 
-        `counts` is computed over the whole scan while `items` honours `limit`, so a truncated list
-        still reports the true backlog.
+        **Limits.** One page reads one SCAN WINDOW of the tenant's 500 newest run records (newest
+        first), sorts every waiting run in it by urgency (approval, input, paused, failed; newest
+        first inside each) and returns at most `limit` of them (1–200, default 50). `counts` is
+        computed over the window, not over `items`, so a short page still reports the window's
+        backlog. Failed runs count only for 24 hours after they were created.
+
+        **Paging** (since 2026-10-19). When the window held more waiting runs than `limit`, or older
+        runs exist past it (`truncated`), the answer carries `has_more: true` and a `cursor`. Pass
+        it back unchanged as `?cursor=` (with any `limit`) to continue: first through the rest of
+        the same window, then into the next 500 runs, and so on — every waiting run is reached
+        exactly once, however old. A continuation page whose window holds nothing to show reads on,
+        up to 4 windows (2 000 runs) per request, before answering. On a continuation page `counts`
+        and `scanned` describe that page's span only, and `reviews`/`proposals` — complete lists,
+        not windowed — are empty: read them from the first page. A run that changes status between
+        pages can be seen twice or not at all, and a run created between pages can shift the first
+        window by one. A cursor this endpoint did not issue is 400.
+
+        Without `cursor` the answer is the first window, exactly as before paging existed;
+        `has_more`/`cursor` are additive.
 
         `GET /api/v1/analytics/inbox`
 
@@ -222,10 +269,25 @@ class AsyncAnalyticsResource:
         return _cast("_m.TenantInbox", await self._client._request(
             "GET",
             "/api/v1/analytics/inbox",
-            query=[("limit", limit)],
+            query=[("limit", limit), ("cursor", cursor)],
             response=_Response(type=_m.TenantInbox),
             request_options=request_options,
         ))
+
+    async def get_tenant_inbox_all(self, *, limit: Optional[int] = None, cursor: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> AsyncIterator[_m.InboxItem]:
+        """Every item `get_tenant_inbox` returns, following the `cursor` cursor until the server
+        reports no further pages. Starts at `cursor` when one is given.
+        """
+        guard = _CursorGuard()
+        while True:
+            page = await self.get_tenant_inbox(limit=limit, cursor=cursor, request_options=request_options)
+            items = page.items
+            for item in items:
+                yield item
+
+            cursor = guard.advance(page.cursor, page.has_more, not items)
+            if cursor is None:
+                return
 
     async def get_tenant_overview(self, *, days: Optional[int] = None, request_options: Optional[RequestOptions] = None) -> _m.TenantOverview:
         """Mission Control overview

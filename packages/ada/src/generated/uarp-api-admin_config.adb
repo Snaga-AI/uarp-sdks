@@ -718,22 +718,41 @@ package body UARP.API.Admin_Config is
              Options => Options));
    end List_Promo_Rewards;
 
+   function Post_Qualification_Usage_Correction
+     (Self : Client_Type;
+      Payload : UARP.Models.Post_Qualification_Usage_Correction_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Qualification_Usage_Correction
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/qualification/usage-corrections",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Post_Qualification_Usage_Correction;
+
    function Put_Qualification_Pricing_Revision
      (Self : Client_Type;
       Pricing_Revision : String;
       Payload : UARP.Models.Put_Qualification_Pricing_Revision_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Qualification_Pricing_Revision
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/admin/qualification/pricing-revisions/" & UARP.Types.Encode_Path_Segment (Pricing_Revision),
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/qualification/pricing-revisions/" & UARP.Types.Encode_Path_Segment (Pricing_Revision),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Put_Qualification_Pricing_Revision;
 
    function Put_Qualification_Sponsor_Key
@@ -741,17 +760,18 @@ package body UARP.API.Admin_Config is
       Key_Id : String;
       Payload : UARP.Models.Put_Qualification_Sponsor_Key_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Put_Qualification_Sponsor_Key_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/admin/qualification/sponsor-keys/" & UARP.Types.Encode_Path_Segment (Key_Id),
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/qualification/sponsor-keys/" & UARP.Types.Encode_Path_Segment (Key_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Put_Qualification_Sponsor_Key;
 
    function Put_Qualification_Sponsorship_Program

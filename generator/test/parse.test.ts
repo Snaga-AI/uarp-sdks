@@ -464,7 +464,15 @@ test('parses the production document into the expected shape', () => {
   // qualification sponsorship (programs, grants, sponsor keys, pricing
   // revisions, the tenant's evaluator), data-processing policies (tenant and
   // admin, with revoke) and a run's execution receipt.
-  assert.equal(ops.length, 857);
+  // 857 -> 871 on 2026-10-28 (build 9eadfc19): fourteen and none removed —
+  // App Store billing (`POST /billing/app-store/transactions` and the
+  // `/webhooks/app-store` notification hook), a run's review (`GET`/`POST
+  // /runs/{runId}/review`), the agents pinned to a person's rail (`GET`/`PUT
+  // /me/rail-agents`), `GET /agents/overview`, `GET
+  // /agents/{agentId}/sessions`, `PATCH /sessions/{sessionId}`, `GET /voices`,
+  // `POST /hire/permission`, and three admin one-offs (retiring platform
+  // agents, backfilling session titles, reversing a sponsored run's usage).
+  assert.equal(ops.length, 871);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -749,7 +757,13 @@ test('parses the production document into the expected shape', () => {
   // 2064 -> 2129 on 2026-10-17 (build 0837bb4d): +65, none removed — the
   // qualification sponsorship and execution-receipt schemas, data-processing
   // policies, and fourteen new operations' hoisted bodies.
-  assert.equal(spec.types.length, 2129);
+  // 2129 -> 2214 on 2026-10-28 (build 9eadfc19): +85, none removed — fourteen
+  // schemas (the run review and its text, image and code anchors, the voice
+  // catalogue, the usage correction), the fourteen new operations' hoisted
+  // bodies, and what typed inline bodies gained: the company's goals, budget
+  // and config stopped being free-form, a live-activity notification target,
+  // and App Store fields on billing.
+  assert.equal(spec.types.length, 2214);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);
@@ -794,7 +808,10 @@ test('parses the production document into the expected shape', () => {
   // and runs, KB documents, governance violations, company activity and the
   // admin audit trail. Each now gets its paging helper.
   // 35 -> 36 on 2026-10-12 (build ef5b646d): `GET /initiatives`.
-  assert.equal(ops.filter((o) => o.pagination).length, 36);
+  // 36 -> 38 on 2026-10-28 (build 9eadfc19): the new `listAgentSessions`, and
+  // `getTenantInbox`, whose `cursor` and `has_more` arrived on an inbox that
+  // existed before.
+  assert.equal(ops.filter((o) => o.pagination).length, 38);
   // 2 -> 3:  joins the two that were already
   // multipart. It is the reason for the type count above — a route that
   // takes a file and said so nowhere.

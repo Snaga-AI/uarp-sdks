@@ -270,6 +270,21 @@ package body UARP.API.Runs is
              Options => Options));
    end Get_Run_Queue_Position;
 
+   function Get_Run_Review
+     (Self : Client_Type;
+      Run_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Run_Review
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/review",
+             Options => Options));
+   end Get_Run_Review;
+
    function Get_Run_Sources
      (Self : Client_Type;
       Run_Id : String;
@@ -566,6 +581,25 @@ package body UARP.API.Runs is
              Idempotent => True,
              Options => Options));
    end Resume;
+
+   function Review_Run
+     (Self : Client_Type;
+      Run_Id : String;
+      Payload : UARP.Models.Review_Run_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Run_Review
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/review",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Review_Run;
 
    function Revise_Run
      (Self : Client_Type;

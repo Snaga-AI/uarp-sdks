@@ -568,6 +568,88 @@ package body UARP.API.Sessions is
       return Collected;
    end List_All;
 
+   function List_Agent_Sessions
+     (Self : Client_Type;
+      Agent_Id : String;
+      Params : List_Agent_Sessions_Params := No_List_Agent_Sessions_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Agent_Sessions_Response
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Group_By then
+         UARP.Types.Add (Query, "group_by", UARP.Models.Image (Params.Group_By));
+      end if;
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
+      if Params.Has_Archived then
+         UARP.Types.Add (Query, "archived", UARP.Models.Image (Params.Archived));
+      end if;
+      if Params.Has_Pinned then
+         UARP.Types.Add (Query, "pinned", UARP.Models.Image (Params.Pinned));
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/sessions",
+             Query => Query,
+             Options => Options));
+   end List_Agent_Sessions;
+
+   function List_Agent_Sessions_All
+     (Self : Client_Type;
+      Agent_Id : String;
+      Params : List_Agent_Sessions_Params := No_List_Agent_Sessions_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Session_Vectors.Vector
+   is
+      Collected : UARP.Models.Session_Vectors.Vector;
+      Page_Params : List_Agent_Sessions_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.List_Agent_Sessions_Response :=
+               List_Agent_Sessions
+                  (Self,
+                   Agent_Id => Agent_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Items loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Items.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end List_Agent_Sessions_All;
+
    function List_Session_Annotations
      (Self : Client_Type;
       Session_Id : String;
@@ -708,6 +790,25 @@ package body UARP.API.Sessions is
              "/api/v1/todos",
              Options => Options));
    end List_Todos;
+
+   function Patch
+     (Self : Client_Type;
+      Session_Id : String;
+      Payload : UARP.Models.Patch_Session_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Session
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Patch;
 
    function Resolve_Shared_Session
      (Self : Client_Type;

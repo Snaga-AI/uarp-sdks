@@ -210,6 +210,13 @@ public struct ProvidersAPI: Sendable {
     /// model is 502, no TTS provider configured at all is 501 because nothing upstream was
     /// contacted, and the plan's per-minute limit answers 429.
     ///
+    /// **The Chief of Staff's voice** (since 2026-10-19): send `agent_id` with the id of the
+    /// tenant's head agent (`tenant.head_agent_id` on `GET /me`) and NO `model` or `voice`, and the
+    /// calling person's `chief_voice` (`PATCH /me`) is used instead of the admin default. A `model`
+    /// or `voice` in the body always wins; another `agent_id`, no `agent_id`, or no `chief_voice`
+    /// set keeps the admin default; a picked model this deployment no longer serves falls back to
+    /// the default voice instead of failing.
+    ///
     /// `POST /api/v1/llm/audio/speech`
     ///
     /// Required scopes: `agents:read`.

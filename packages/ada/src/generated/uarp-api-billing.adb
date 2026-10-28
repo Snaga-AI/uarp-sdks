@@ -2,6 +2,24 @@
 
 package body UARP.API.Billing is
 
+   function Apply_App_Store_Transaction
+     (Self : Client_Type;
+      Payload : UARP.Models.Apply_App_Store_Transaction_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Apply_App_Store_Transaction_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/billing/app-store/transactions",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Apply_App_Store_Transaction;
+
    function Check_Quota
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -202,6 +220,24 @@ package body UARP.API.Billing is
              Query => Query,
              Options => Options));
    end Get_Usage_Timeseries;
+
+   function Handle_App_Store_Notification
+     (Self : Client_Type;
+      Payload : UARP.Models.Handle_App_Store_Notification_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Handle_App_Store_Notification_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/webhooks/app-store",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Handle_App_Store_Notification;
 
    function Handle_Stripe_Webhook
      (Self : Client_Type;

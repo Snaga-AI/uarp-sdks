@@ -174,6 +174,10 @@ export interface AarObjectiveOutcome {
    * The objective record's `abort_reason`, copied. Absent when it has none.
    */
   abort_reason?: string;
+  /**
+   * The failed objective's recorded result: the verifier or execution reason.
+   */
+  failure_reason?: string;
   final_agent_id?: string;
   final_model?: string;
   duration_ms?: number;
@@ -198,9 +202,11 @@ export const AAR_PHASE_RECORD_PHASE_VALUES = ['recon', 'plan', 'authorize', 'exe
 export interface AarRootCause {
   objective_id: string;
   /**
-   * Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
-   * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed`, `not_dispatchable`
-   * and `verifier_error` → `external_error`. Branch on `code` for the precise reason.
+   * Coarse and closed. `exhausted_strikes_<n>` → `verification_failed`; `budget_exhausted` →
+   * `unknown`; `dependency_failed`, `not_dispatchable` and `verifier_error` → `external_error`.
+   * Only an explicit duration cause yields `max_duration_exceeded`. `code` preserves the precise
+   * abort reason and `details` includes the recorded failure reason. Existing finalized AARs are
+   * presented with corrected diagnostics without rewriting their stored audit record.
    */
   category: AarRootCauseCategory;
   details: string;
@@ -212,9 +218,11 @@ export interface AarRootCause {
 }
 
 /**
- * Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
- * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed`, `not_dispatchable`
- * and `verifier_error` → `external_error`. Branch on `code` for the precise reason.
+ * Coarse and closed. `exhausted_strikes_<n>` → `verification_failed`; `budget_exhausted` →
+ * `unknown`; `dependency_failed`, `not_dispatchable` and `verifier_error` → `external_error`.
+ * Only an explicit duration cause yields `max_duration_exceeded`. `code` preserves the precise
+ * abort reason and `details` includes the recorded failure reason. Existing finalized AARs are
+ * presented with corrected diagnostics without rewriting their stored audit record.
  */
 export type AarRootCauseCategory = 'llm_timeout' | 'llm_idle' | 'llm_loop' | 'tool_error' | 'tool_truncation' | 'verification_failed' | 'authorization_denied' | 'external_error' | 'max_duration_exceeded' | 'unknown';
 
@@ -407,6 +415,9 @@ export interface AdminAnalyticsOverviewResponse {
 }
 
 export interface AdminAnalyticsOverviewResponseProductCohorts {
+  /**
+   * When tracking began; null before the first cohort row exists.
+   */
   tracking_since: string | null;
   as_of: string;
   complete: boolean;
@@ -501,15 +512,15 @@ export interface AdminConfigAgentMemoryConfigAgentMemory {
    * The model memory extraction calls after a run. On PUT, `null` clears the stored override so
    * the platform default applies again; GET then omits the field. Added 2026-09-23.
    */
-  extraction_model: string;
+  extraction_model?: string;
   eviction_threshold: number;
   embedding_dimensions: number;
-  embedding_provider: string;
-  embedding_model: string;
+  embedding_provider?: string;
+  embedding_model?: string;
   /**
    * On PUT, `null` clears the stored override; GET then omits the field. Added 2026-09-23.
    */
-  compression_model: string;
+  compression_model?: string;
 }
 
 /**
@@ -2290,7 +2301,10 @@ export interface AgentHire {
   /**
    * `pending`: a command was issued and nothing has connected with it; `connected`: the agent
    * connected with its current command; `disconnected`: the person disconnected it — POST
-   * /agents/{agentId}/hire/command brings it back.
+   * /agents/{agentId}/hire/command brings it back. A one-way record of what happened, not
+   * presence: it is written on the first authenticated request and never cleared, so it still
+   * reads `connected` after the agent's process has stopped. Show `online` for "is it working
+   * now".
    */
   status: AgentHireStatus;
   connected_at?: string;
@@ -2298,12 +2312,29 @@ export interface AgentHire {
    * Pending only: when the current command stops working if still unused.
    */
   expires_at?: string;
+  /**
+   * Whether the agent is polling right now: a bridge connection with a heartbeat in the last two
+   * minutes. Derived on every read and always agrees with the agent's `bridge_status`. Added
+   * 2026-10-20 — before it, a client had only `status` and kept calling a stopped agent
+   * "connected".
+   */
+  online: boolean;
+  /**
+   * The agent's most recent heartbeat, read from its bridge connection; `null` when it has never
+   * been seen, or when that connection record was deregistered or swept. While the record exists
+   * it keeps the time of the last sighting, so a screen can say when the agent was last alive.
+   * Added 2026-10-20.
+   */
+  last_seen_at: string | null;
 }
 
 /**
  * `pending`: a command was issued and nothing has connected with it; `connected`: the agent
  * connected with its current command; `disconnected`: the person disconnected it — POST
- * /agents/{agentId}/hire/command brings it back.
+ * /agents/{agentId}/hire/command brings it back. A one-way record of what happened, not
+ * presence: it is written on the first authenticated request and never cleared, so it still
+ * reads `connected` after the agent's process has stopped. Show `online` for "is it working
+ * now".
  */
 export type AgentHireStatus = 'pending' | 'connected' | 'disconnected';
 
@@ -3119,14 +3150,14 @@ export interface AgentVersion {
    * (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to
    * canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
    * provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
-   * detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-   * provisioned`, `Platform agent config migrated on boot`, `Qualification evaluator template
-   * revision N` (N = the template revision), `Hired`, `Registered from a local app`, `Token cap
-   * removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap
-   * removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version
-   * rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement
-   * loop: the first N is a count, the second is one of errors, ratings or feedback — words, not
-   * a number). A reason code beside the prose is the owner's decision (DEC 11).
+   * detached`, `Workspace tools enabled`, `Tool trust override updated`, `Qualification
+   * evaluator template revision N` (N = the template revision), `Hired`, `Registered from a
+   * local app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of
+   * Staff`, `Token cap removed and Head Agent renamed to Chief of Staff`, `Destructive tools
+   * removed from auto-approval (template v2)`, `Rollback to version N` (N = the version rolled
+   * back to), `Self-improvement: N changes based on N analysis` (the self-improvement loop: the
+   * first N is a count, the second is one of errors, ratings or feedback — words, not a number).
+   * A reason code beside the prose is the owner's decision (DEC 11).
    */
   changelog?: string | null;
   created_at: string;
@@ -3255,6 +3286,29 @@ export interface AnalyticsTopValue {
   value: string;
   count: number;
 }
+
+/**
+ * A place in a result (2026-10-19): a text range, a point or box on an image, or lines of
+ * code. `kind` says which. Every kind is a closed object: an unknown key inside an anchor is
+ * refused with `422`, never dropped — a dropped coordinate would turn "this corner" into "the
+ * whole picture". The same shape is used by session annotations and by `POST
+ * /runs/{runId}/review`.
+ */
+export type Anchor = TextAnchor | ImageAnchor | CodeAnchor;
+
+/**
+ * What an annotation or anchor is on: a chat `message` (the id `GET
+ * /sessions/{sessionId}/messages` serves), an `artifact`, a `file` (a file id), or a run's
+ * output (`run_output`, the run id). Stored as sent; the id is not looked up.
+ */
+export interface AnchorTarget {
+  type: AnchorTargetType;
+  id: string;
+}
+
+export type AnchorTargetType = 'message' | 'artifact' | 'file' | 'run_output';
+
+export const ANCHOR_TARGET_TYPE_VALUES = ['message', 'artifact', 'file', 'run_output'] as const;
 
 export interface AndroidTester {
   email: string;
@@ -3553,6 +3607,44 @@ export type ApplicationCvMimeType = 'application/pdf' | 'application/vnd.openxml
 
 export const APPLICATION_CV_MIME_TYPE_VALUES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/markdown', 'text/plain'] as const;
 
+export interface ApplyAppStoreTransactionRequest {
+  /**
+   * `Transaction.jwsRepresentation` — a compact JWS.
+   */
+  signed_transaction: string;
+  /**
+   * Where StoreKit says the transaction came from; must match the signed payload. `Xcode` is
+   * refused in production.
+   */
+  environment: ApplyAppStoreTransactionRequestEnvironment;
+}
+
+/**
+ * Where StoreKit says the transaction came from; must match the signed payload. `Xcode` is
+ * refused in production.
+ */
+export type ApplyAppStoreTransactionRequestEnvironment = 'Production' | 'Sandbox' | 'Xcode';
+
+export const APPLY_APP_STORE_TRANSACTION_REQUEST_ENVIRONMENT_VALUES = ['Production', 'Sandbox', 'Xcode'] as const;
+
+export interface ApplyAppStoreTransactionResponse {
+  plan: ApplyAppStoreTransactionResponsePlan;
+  plan_source: ApplyAppStoreTransactionResponsePlanSource;
+  /**
+   * Paid up to: the latest verified `expiresDate`.
+   */
+  expires_at: string;
+  original_transaction_id: string;
+}
+
+export type ApplyAppStoreTransactionResponsePlan = 'starter' | 'pro';
+
+export const APPLY_APP_STORE_TRANSACTION_RESPONSE_PLAN_VALUES = ['starter', 'pro'] as const;
+
+export type ApplyAppStoreTransactionResponsePlanSource = 'app_store';
+
+export const APPLY_APP_STORE_TRANSACTION_RESPONSE_PLAN_SOURCE_VALUES = ['app_store'] as const;
+
 export interface ApplyProgramRequest {
   session_id: string;
   start_date: string;
@@ -3709,6 +3801,46 @@ export interface AuthVerifyCodeResponse {
    * uarp_<prefix>_<secret>; store and use as Authorization: Bearer <api_key>
    */
   api_key: string;
+}
+
+export interface BackfillSessionTitlesRequest {
+  dry_run?: boolean;
+  /**
+   * @default 50
+   */
+  limit?: number;
+}
+
+export interface BackfillSessionTitlesResponse {
+  dry_run: boolean;
+  /**
+   * Tenants scanned.
+   */
+  tenants: number;
+  /**
+   * Sessions still without a title, across all tenants.
+   */
+  candidates: number;
+  /**
+   * Candidates this pass reached: the newest, at most `limit`.
+   */
+  attempted: number;
+  /**
+   * Titles written. Always 0 with `dry_run`.
+   */
+  titled: number;
+  /**
+   * Attempted but not titled: no platform model or key, the model failed or answered nothing
+   * usable, or the session was renamed meanwhile.
+   */
+  skipped: number;
+  errors: BackfillSessionTitlesResponseError[];
+}
+
+export interface BackfillSessionTitlesResponseError {
+  tenant_id?: string;
+  session_id?: string;
+  error?: string;
 }
 
 export interface Ballot {
@@ -4427,6 +4559,20 @@ export interface CheckSpawnPermissionRequest {
   child_permissions: PermissionSet;
 }
 
+/**
+ * A voice for the Chief of Staff: a TTS model and one of its voices from `GET /voices`.
+ */
+export interface ChiefVoice {
+  /**
+   * The catalog entry's `model`, e.g. `cartesia/sonic-3`.
+   */
+  model: string;
+  /**
+   * The catalog entry's `id` — what TTS takes as `voice`.
+   */
+  voice: string;
+}
+
 export interface ClearBillingBudgetResponse {
   configured?: boolean;
   budget?: JsonObject | null;
@@ -4436,6 +4582,21 @@ export interface CloseSessionResponse {
   deleted: boolean;
   session_id: string;
 }
+
+/**
+ * Lines of code, 1-based and inclusive: `line_end` must not be before `line_start` (`422`
+ * otherwise). `path` names the file when the result has more than one.
+ */
+export interface CodeAnchor {
+  kind: CodeAnchorKind;
+  path?: string;
+  line_start: number;
+  line_end: number;
+}
+
+export type CodeAnchorKind = 'code';
+
+export const CODE_ANCHOR_KIND_VALUES = ['code'] as const;
 
 /**
  * An **initiative** (`/initiatives`; until 2026-10-12 called a company): a long-running goal
@@ -4519,31 +4680,47 @@ export const COMPANY_CHANGE_SOURCE_VALUES = ['api', 'proposal', 'template', 'pau
  */
 export interface CompanyCreate {
   name: string;
-  /**
-   * What the company exists to do.
-   */
   mission: string;
-  /**
-   * Spend ceiling and pacing for the company.
-   */
-  budget: CompanyCreateBudget;
   description?: string;
-  strategic_goals?: string[];
-  config?: JsonObject;
+  strategic_goals?: CompanyCreateStrategicGoal[];
+  budget: CompanyCreateBudget;
+  config?: CompanyCreateConfig;
+  strategist_model?: string;
   workspace_id?: string;
 }
 
-/**
- * Spend ceiling and pacing for the company.
- */
 export interface CompanyCreateBudget {
   total_usd: number;
   daily_limit_usd: number;
   alert_threshold_pct: number;
   /**
-   * Metered by the platform. Ignored on create (set to 0) and on update.
+   * Metered by the platform. Ignored on create and update.
    */
   spent_usd?: number;
+}
+
+export interface CompanyCreateConfig {
+  review_interval_ms?: number;
+  escalation_on?: CompanyCreateConfigEscalationOnItem[];
+}
+
+export type CompanyCreateConfigEscalationOnItem = 'budget_80pct' | 'objective_failed' | 'goal_completed' | 'stuck';
+
+export const COMPANY_CREATE_CONFIG_ESCALATION_ON_ITEM_VALUES = ['budget_80pct', 'objective_failed', 'goal_completed', 'stuck'] as const;
+
+export interface CompanyCreateStrategicGoal {
+  goal_id?: string;
+  title: string;
+  description?: string;
+  kpis?: CompanyCreateStrategicGoalKpisItem[];
+  root_objective_id?: string;
+  deadline?: string;
+}
+
+export interface CompanyCreateStrategicGoalKpisItem {
+  name?: string;
+  target?: string;
+  current?: string | number;
 }
 
 /**
@@ -5010,10 +5187,45 @@ export interface CompanyTestRun {
 export interface CompanyUpdate {
   name?: string;
   mission?: string;
-  budget?: number;
   description?: string;
-  strategic_goals?: string[];
-  config?: JsonObject;
+  status?: CompanyUpdateStatus;
+  strategic_goals?: CompanyUpdateStrategicGoal[];
+  budget?: CompanyUpdateBudget;
+  config?: CompanyUpdateConfig;
+}
+
+export interface CompanyUpdateBudget {
+  total_usd: number;
+  daily_limit_usd: number;
+  alert_threshold_pct: number;
+  /**
+   * Metered by the platform. Ignored on create and update.
+   */
+  spent_usd?: number;
+}
+
+export interface CompanyUpdateConfig {
+  review_interval_ms?: number;
+  escalation_on?: CompanyCreateConfigEscalationOnItem[];
+}
+
+export type CompanyUpdateStatus = 'active' | 'paused' | 'completed' | 'archived';
+
+export const COMPANY_UPDATE_STATUS_VALUES = ['active', 'paused', 'completed', 'archived'] as const;
+
+export interface CompanyUpdateStrategicGoal {
+  goal_id?: string;
+  title: string;
+  description?: string;
+  kpis?: CompanyUpdateStrategicGoalKpisItem[];
+  root_objective_id?: string;
+  deadline?: string;
+}
+
+export interface CompanyUpdateStrategicGoalKpisItem {
+  name?: string;
+  target?: string;
+  current?: string | number;
 }
 
 export interface CompanyVersionRow {
@@ -5352,6 +5564,13 @@ export interface ConversationEntry {
   importance?: ConversationEntryImportance;
   attachments?: ConversationEntryAttachment[];
   /**
+   * Present only on an entry that is not an ordinary turn. Today: the morning summary — an
+   * assistant entry the head agent posts at 08:00 tenant-local time (since 2026-10-19) with
+   * `kind: "daily_summary"` and the local `date` it summarises from; no run produced it, so its
+   * `run_id` is `morning-summary-<date>`.
+   */
+  metadata?: ConversationEntryMetadata;
+  /**
    * On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
    * publicRunMetrics).
    */
@@ -5415,6 +5634,21 @@ export type ConversationEntryImportance = 'high' | 'normal';
 export const CONVERSATION_ENTRY_IMPORTANCE_VALUES = ['high', 'normal'] as const;
 
 /**
+ * Present only on an entry that is not an ordinary turn. Today: the morning summary — an
+ * assistant entry the head agent posts at 08:00 tenant-local time (since 2026-10-19) with
+ * `kind: "daily_summary"` and the local `date` it summarises from; no run produced it, so its
+ * `run_id` is `morning-summary-<date>`.
+ */
+export interface ConversationEntryMetadata {
+  kind: ConversationEntryMetadataKind;
+  date: string;
+}
+
+export type ConversationEntryMetadataKind = 'daily_summary';
+
+export const CONVERSATION_ENTRY_METADATA_KIND_VALUES = ['daily_summary'] as const;
+
+/**
  * On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
  * publicRunMetrics).
  */
@@ -5454,9 +5688,19 @@ export interface ConversationEntryRunMetrics {
   memory_retrievals?: number;
   memory_extractions?: number;
   /**
-   * Estimated total cost in USD
+   * Estimated total cost in USD — the tenant's bill, except when `cost_attribution` says
+   * otherwise.
    */
   total_cost_usd?: number | null;
+  /**
+   * Present only on a sponsored qualification run (since 2026-10-19). `total_cost_usd` is then
+   * execution telemetry at the platform's catalog rate: never billed to the company the run
+   * executed in, and never counted in its usage, quotas, daily share, run count, spend budget or
+   * overage. The sponsor's debit is the grant's `charged_microusd`, accounted at the program's
+   * frozen pricing revision, and the two differ (production run 01a151cf…: telemetry $0.010312,
+   * sponsor debit 5414 micro-USD). Absent on every other run.
+   */
+  cost_attribution?: RunMetricsCostAttribution;
 }
 
 export interface ConversationEntryToolCall {
@@ -6300,6 +6544,8 @@ export interface CreateRunRequestResourceLimits {
 export interface CreateSessionAnnotationRequest {
   message_id: string;
   content: string;
+  anchor?: Anchor;
+  target?: AnchorTarget;
 }
 
 export interface CreateSessionAnnotationResponse {
@@ -6309,6 +6555,8 @@ export interface CreateSessionAnnotationResponse {
   author?: string;
   created_at?: string;
   resolved?: boolean;
+  anchor?: Anchor;
+  target?: AnchorTarget;
 }
 
 export interface CreateSessionBranchRequest {
@@ -7019,6 +7267,12 @@ export interface DeploymentFeatures {
    * Published marketplace listings can be invoked. Always false today: no executor runs them.
    */
   marketplace_invoke: boolean;
+  /**
+   * App Store in-app purchases are accepted: the app's bundle id is configured
+   * (`apple_bundle_id` / `APPLE_BUNDLE_ID`), which every signed transaction and notification is
+   * checked against.
+   */
+  app_store: boolean;
 }
 
 /**
@@ -7675,9 +7929,9 @@ export interface Error {
  * code only when its call site names one. Other statuses: absent when there is no
  * machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'ASSESSMENT_ISOLATION_REQUIRED' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CLIENT_REQUEST_CONFLICT' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXECUTION_PROFILE_UNVERIFIABLE' | 'EXECUTION_RECEIPT_PENDING' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURED_SET_CONTENDED' | 'FEATURE_DISABLED' | 'FILE_NOT_FOUND' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_CONFLICT' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INTERNAL_ERROR' | 'INVALID_ARCHIVE' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_MANIFEST' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'ISOLATION_VIOLATION' | 'LLM_ERROR' | 'MANAGED_AGENT' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSING_SCOPE' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'OUTPUT_TOO_LARGE' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROCESSING_POLICY_CHANGED' | 'PROCESSING_POLICY_NOT_READY' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUALIFICATION_BUDGET_STOP' | 'QUALIFICATION_ROUTE_MISMATCH' | 'QUALIFICATION_VERSION_UNAVAILABLE' | 'QUOTA_EXCEEDED' | 'RATE_LIMITED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SECURITY_SCAN_FAILED' | 'SESSION_NOT_ACTIVE' | 'SHARE_LIST_CONFLICT' | 'SIGNING_NOT_CONFIGURED' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'SPONSORSHIP_BUDGET_BELOW_COMMITTED' | 'SPONSORSHIP_BUDGET_EXHAUSTED' | 'SPONSORSHIP_CANDIDATE_LIMIT' | 'SPONSORSHIP_CONCURRENCY_LIMIT' | 'SPONSORSHIP_FUNDING_UNAVAILABLE' | 'SPONSORSHIP_GRANT_CONFLICT' | 'SPONSORSHIP_GRANT_IN_USE' | 'SPONSORSHIP_GRANT_MISMATCH' | 'SPONSORSHIP_GRANT_UNAVAILABLE' | 'SPONSORSHIP_OUTCOME_UNKNOWN' | 'SPONSORSHIP_PROGRAM_IMMUTABLE' | 'SPONSORSHIP_PROGRAM_INACTIVE' | 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT' | 'SPONSORSHIP_REQUIRED' | 'SPONSORSHIP_SCOPE_REQUIRED' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'UNAUTHENTICATED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'hire_catalog_unknown' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'not_hired' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'ASSESSMENT_ISOLATION_REQUIRED' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CLIENT_REQUEST_CONFLICT' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXECUTION_PROFILE_UNVERIFIABLE' | 'EXECUTION_RECEIPT_PENDING' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURED_SET_CONTENDED' | 'FEATURE_DISABLED' | 'FILE_NOT_FOUND' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_CONFLICT' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INTERNAL_ERROR' | 'INVALID_ARCHIVE' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_MANIFEST' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'ISOLATION_VIOLATION' | 'LLM_ERROR' | 'MANAGED_AGENT' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSING_SCOPE' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'OUTPUT_CONTRACT_VIOLATION' | 'OUTPUT_TOO_LARGE' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROCESSING_POLICY_CHANGED' | 'PROCESSING_POLICY_NOT_READY' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUALIFICATION_BUDGET_STOP' | 'QUALIFICATION_ROUTE_MISMATCH' | 'QUALIFICATION_VERSION_UNAVAILABLE' | 'QUOTA_EXCEEDED' | 'RATE_LIMITED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SECURITY_SCAN_FAILED' | 'SESSION_NOT_ACTIVE' | 'SHARE_LIST_CONFLICT' | 'SIGNING_NOT_CONFIGURED' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'SPONSORSHIP_BUDGET_BELOW_COMMITTED' | 'SPONSORSHIP_BUDGET_EXHAUSTED' | 'SPONSORSHIP_CANDIDATE_LIMIT' | 'SPONSORSHIP_CONCURRENCY_LIMIT' | 'SPONSORSHIP_FUNDING_UNAVAILABLE' | 'SPONSORSHIP_GRANT_CONFLICT' | 'SPONSORSHIP_GRANT_IN_USE' | 'SPONSORSHIP_GRANT_MISMATCH' | 'SPONSORSHIP_GRANT_UNAVAILABLE' | 'SPONSORSHIP_OUTCOME_UNKNOWN' | 'SPONSORSHIP_PROGRAM_IMMUTABLE' | 'SPONSORSHIP_PROGRAM_INACTIVE' | 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT' | 'SPONSORSHIP_REQUIRED' | 'SPONSORSHIP_SCOPE_REQUIRED' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'SUPER_ADMIN_REQUIRED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'UNAUTHENTICATED' | 'USAGE_CORRECTION_EXCEEDS_COUNTERS' | 'USAGE_CORRECTION_IN_PROGRESS' | 'USAGE_CORRECTION_NOT_SETTLED' | 'USAGE_CORRECTION_NOT_SPONSORED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'hire_catalog_unknown' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'not_hired' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_agent_stopped' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'ASSESSMENT_ISOLATION_REQUIRED', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CLIENT_REQUEST_CONFLICT', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXECUTION_PROFILE_UNVERIFIABLE', 'EXECUTION_RECEIPT_PENDING', 'EXTERNAL_SERVICE_ERROR', 'FEATURED_SET_CONTENDED', 'FEATURE_DISABLED', 'FILE_NOT_FOUND', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INTERNAL_ERROR', 'INVALID_ARCHIVE', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_MANIFEST', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'ISOLATION_VIOLATION', 'LLM_ERROR', 'MANAGED_AGENT', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSING_SCOPE', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'OUTPUT_TOO_LARGE', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROCESSING_POLICY_CHANGED', 'PROCESSING_POLICY_NOT_READY', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUALIFICATION_BUDGET_STOP', 'QUALIFICATION_ROUTE_MISMATCH', 'QUALIFICATION_VERSION_UNAVAILABLE', 'QUOTA_EXCEEDED', 'RATE_LIMITED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SECURITY_SCAN_FAILED', 'SESSION_NOT_ACTIVE', 'SHARE_LIST_CONFLICT', 'SIGNING_NOT_CONFIGURED', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'SPONSORSHIP_BUDGET_BELOW_COMMITTED', 'SPONSORSHIP_BUDGET_EXHAUSTED', 'SPONSORSHIP_CANDIDATE_LIMIT', 'SPONSORSHIP_CONCURRENCY_LIMIT', 'SPONSORSHIP_FUNDING_UNAVAILABLE', 'SPONSORSHIP_GRANT_CONFLICT', 'SPONSORSHIP_GRANT_IN_USE', 'SPONSORSHIP_GRANT_MISMATCH', 'SPONSORSHIP_GRANT_UNAVAILABLE', 'SPONSORSHIP_OUTCOME_UNKNOWN', 'SPONSORSHIP_PROGRAM_IMMUTABLE', 'SPONSORSHIP_PROGRAM_INACTIVE', 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT', 'SPONSORSHIP_REQUIRED', 'SPONSORSHIP_SCOPE_REQUIRED', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'UNAUTHENTICATED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'hire_catalog_unknown', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'not_hired', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'ASSESSMENT_ISOLATION_REQUIRED', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CLIENT_REQUEST_CONFLICT', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXECUTION_PROFILE_UNVERIFIABLE', 'EXECUTION_RECEIPT_PENDING', 'EXTERNAL_SERVICE_ERROR', 'FEATURED_SET_CONTENDED', 'FEATURE_DISABLED', 'FILE_NOT_FOUND', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INTERNAL_ERROR', 'INVALID_ARCHIVE', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_MANIFEST', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'ISOLATION_VIOLATION', 'LLM_ERROR', 'MANAGED_AGENT', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSING_SCOPE', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'OUTPUT_CONTRACT_VIOLATION', 'OUTPUT_TOO_LARGE', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROCESSING_POLICY_CHANGED', 'PROCESSING_POLICY_NOT_READY', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUALIFICATION_BUDGET_STOP', 'QUALIFICATION_ROUTE_MISMATCH', 'QUALIFICATION_VERSION_UNAVAILABLE', 'QUOTA_EXCEEDED', 'RATE_LIMITED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SECURITY_SCAN_FAILED', 'SESSION_NOT_ACTIVE', 'SHARE_LIST_CONFLICT', 'SIGNING_NOT_CONFIGURED', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'SPONSORSHIP_BUDGET_BELOW_COMMITTED', 'SPONSORSHIP_BUDGET_EXHAUSTED', 'SPONSORSHIP_CANDIDATE_LIMIT', 'SPONSORSHIP_CONCURRENCY_LIMIT', 'SPONSORSHIP_FUNDING_UNAVAILABLE', 'SPONSORSHIP_GRANT_CONFLICT', 'SPONSORSHIP_GRANT_IN_USE', 'SPONSORSHIP_GRANT_MISMATCH', 'SPONSORSHIP_GRANT_UNAVAILABLE', 'SPONSORSHIP_OUTCOME_UNKNOWN', 'SPONSORSHIP_PROGRAM_IMMUTABLE', 'SPONSORSHIP_PROGRAM_INACTIVE', 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT', 'SPONSORSHIP_REQUIRED', 'SPONSORSHIP_SCOPE_REQUIRED', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'SUPER_ADMIN_REQUIRED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'UNAUTHENTICATED', 'USAGE_CORRECTION_EXCEEDS_COUNTERS', 'USAGE_CORRECTION_IN_PROGRESS', 'USAGE_CORRECTION_NOT_SETTLED', 'USAGE_CORRECTION_NOT_SPONSORED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'hire_catalog_unknown', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'not_hired', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_agent_stopped', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -7972,6 +8226,16 @@ export interface FileEntry {
   sha256: string;
   size_bytes: number;
   tenant_id: string;
+  /**
+   * The agent whose run wrote this file (since 2026-10-19). Absent for a person's or an API
+   * caller's upload and for every older record, which is not attributed after the fact.
+   */
+  agent_id?: string;
+  /**
+   * The run that wrote it; present only with `agent_id`, and only when the write happened inside
+   * a run.
+   */
+  run_id?: string;
 }
 
 /**
@@ -7986,6 +8250,16 @@ export interface FileRecord {
   size_bytes: number;
   sha256: string;
   created_at: string;
+  /**
+   * The agent whose run wrote this file (since 2026-10-19). Absent for a person's or an API
+   * caller's upload and for every older record, which is not attributed after the fact.
+   */
+  agent_id?: string;
+  /**
+   * The run that wrote it; present only with `agent_id`, and only when the write happened inside
+   * a run.
+   */
+  run_id?: string;
 }
 
 export interface FitCompanyTemplateRequest {
@@ -8235,7 +8509,10 @@ export interface GenerateAdminBlogPostResponse {
 
 export interface GetActivityFeedResponse {
   entries?: FeedEntry[];
-  cursor?: string;
+  /**
+   * Cursor for the next page; null on the last page — which is what the handler sends.
+   */
+  cursor?: string | null;
   total?: number;
 }
 
@@ -8509,6 +8786,39 @@ export interface GetAgentObligationsResponse {
   count?: number;
 }
 
+export interface GetAgentsOverviewResponse {
+  items: GetAgentsOverviewResponseItem[];
+}
+
+export interface GetAgentsOverviewResponseItem {
+  agent_id: string;
+  name: string;
+  /**
+   * A hired agent's catalog icon, else `metadata.avatar_url` when it is a string, else null —
+   * draw the agent from `metadata.ui.avatar` then.
+   */
+  avatar_url: string | null;
+  ring: GetAgentsOverviewResponseItemRing;
+  /**
+   * The last run failed; `ring` is then `needs_you`.
+   */
+  failed: boolean;
+  pending_count: number;
+  /**
+   * The last run's `completed_at`, else `started_at`, else `created_at`; null when no run is in
+   * the window.
+   */
+  last_activity_at: string | null;
+  /**
+   * When the newest completed run in the window completed.
+   */
+  last_completed_at: string | null;
+}
+
+export type GetAgentsOverviewResponseItemRing = 'needs_you' | 'working' | 'done' | 'idle';
+
+export const GET_AGENTS_OVERVIEW_RESPONSE_ITEM_RING_VALUES = ['needs_you', 'working', 'done', 'idle'] as const;
+
 export type GetAgentSystemCardFormat = 'json' | 'markdown';
 
 export const GET_AGENT_SYSTEM_CARD_FORMAT_VALUES = ['json', 'markdown'] as const;
@@ -8742,7 +9052,10 @@ export interface GetDataExplorerValueResponse {
 
 export interface GetGovernanceLedgerResponse {
   entries: GovernanceLedgerEntry[];
-  head: GovernanceLedgerHead;
+  /**
+   * Newest entry of the global ledger; null when the ledger is empty.
+   */
+  head: GovernanceLedgerHead | null;
   /**
    * Number of entries IN THIS RESPONSE, not the size of the ledger. Measured 2026-08-20: `total`
    * was 16 while `GET /governance/ledger/verify` reported `entries_checked: 6698` against the
@@ -8803,25 +9116,27 @@ export interface GetHealthResponse {
    * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
    * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
    * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-   * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
-   * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
-   * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
-   * `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
-   * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
-   * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
-   * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
-   * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
-   * `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
-   * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
-   * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
-   * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
-   * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
-   * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
-   * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
-   * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
-   * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
-   * /company/versions` AND `POST /company/restore` — there is deliberately no separate
-   * `company_restore`, since a snapshot and the rollback to it ship together.
+   * `company_import`, `company_versions` (since 2026-10-12), `run_review` (since 2026-10-19). A
+   * NAME ALONE DOES NOT SAY WHAT IT COVERS, so here is the coverage — added 2026-10-13 because a
+   * client asked which name gates `POST /tenants/me/company/restore` and the answer existed only
+   * in prose no client can read: `initiatives` = `/initiatives/*` (`/companies` is its
+   * deprecated old name); `initiative_pause` = pausing an initiative; `mission_review` =
+   * objectives with `review_required` and `POST /missions/{id}/objectives/{oid}/review`;
+   * `run_revise` = `POST /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`;
+   * `mission_schedules` = `/missions/schedules`; `mission_analytics` = `GET /analytics/missions`
+   * and the inbox `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and
+   * `/company/changes`; `company_pause` = `POST /company/pause` and `/resume`;
+   * `company_blueprint` = `GET /tenants/me/blueprint`; `company_pause_preview` = `GET
+   * /company/pause-scope`; `company_proposals` = `/tenants/me/proposals` with apply and reject;
+   * `company_launch` = `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET
+   * /tenants/me/overview`; `company_fit` = `GET /tenants/me/fit` (template fit is
+   * `company_templates`); `company_templates` = `/company-templates`,
+   * `/company-templates/{id}/fit`, `POST /company/apply-template`, `POST /me/tenants/create`
+   * with `template_id`; `company_export` = `GET /company/export`; `company_import` = `POST
+   * /company/import`; `company_versions` = `GET /company/versions` AND `POST /company/restore` —
+   * there is deliberately no separate `company_restore`, since a snapshot and the rollback to it
+   * ship together. `run_review` = `POST` and `GET /runs/{id}/review`, and `anchor`/`target` on
+   * session annotations.
    */
   capabilities?: string[];
   /**
@@ -8829,6 +9144,14 @@ export interface GetHealthResponse {
    * falls as they are picked up — but it is a queue depth, not a count of recoveries.
    */
   runs_queued?: number;
+  /**
+   * Runs in flight in THIS process right now — the scheduler's own live count, the same field
+   * that answers `degraded` at 90% of its ceiling. This is the number to read when you want to
+   * know whether work is happening: `runs_queued` is zero whenever everything is running rather
+   * than waiting, and `pending_resumes` is a constant zero. It counts runs, not users — one run
+   * may serve many turns.
+   */
+  runs_active?: number;
 }
 
 export type GetHealthResponseStatus = 'healthy' | 'degraded' | 'unhealthy';
@@ -8960,6 +9283,15 @@ export interface GetMeResponseUser {
   role?: string;
   status?: string;
   avatar_url?: string | null;
+  /**
+   * The person's interface language (canonical BCP-47), null when unset — set with `PATCH /me`.
+   */
+  interface_language?: string | null;
+  /**
+   * The person's Chief of Staff voice, null when unset — set with `PATCH /me`. A value stored in
+   * an older shape reads as null.
+   */
+  chief_voice?: ChiefVoice | null;
   last_login_at?: string | null;
   created_at?: string;
 }
@@ -9152,6 +9484,11 @@ export interface GetMyHeadAgentTemplateResponseTierTierResourceLimits {
   max_steps?: number;
   max_tokens_per_run?: number;
   thinking_budget_tokens?: number;
+}
+
+export interface GetMyRailAgentsResponse {
+  agent_ids: string[];
+  updated_at: string | null;
 }
 
 export interface GetPromoStateResponse {
@@ -9386,6 +9723,12 @@ export interface GetRunResponse {
    * trace on the run.
    */
   approvals?: GetRunResponseApproval[];
+  /**
+   * The latest person's verdict on this run's RESULT (`POST /runs/{runId}/review`, since
+   * 2026-10-19) — not a tool approval, which is `approvals`. Absent until the result is
+   * reviewed. The full record, with the comment and anchors, is `GET /runs/{runId}/review`.
+   */
+  review?: GetRunResponseReview;
   created_at: string;
   started_at?: string | null;
   completed_at?: string | null;
@@ -9479,6 +9822,14 @@ export interface GetRunResponseResourceLimits {
   max_duration_ms?: number;
   max_steps?: number;
   max_tool_calls?: number;
+  /**
+   * Input + output tokens summed over every model call of the run. Since 2026-10-19 it is held
+   * before each call, not only after: each call is sent with `max_tokens` no more than the cap
+   * minus what the run has spent minus the last call's input (which the next call resends), and
+   * once that is nothing the run stops before sending, failing with `MAX_TOKENS_EXCEEDED` and
+   * `used_tokens` at or under the limit. Before, the last call could spend past the cap by up to
+   * a whole step.
+   */
   max_tokens_per_run?: number;
   /**
    * In-run cost ceiling in USD; 0 or absent means no cap from this field. A run that crosses it
@@ -9487,6 +9838,25 @@ export interface GetRunResponseResourceLimits {
    * or non-numeric is 422.
    */
   max_cost_usd?: number;
+}
+
+/**
+ * The latest person's verdict on this run's RESULT (`POST /runs/{runId}/review`, since
+ * 2026-10-19) — not a tool approval, which is `approvals`. Absent until the result is
+ * reviewed. The full record, with the comment and anchors, is `GET /runs/{runId}/review`.
+ */
+export interface GetRunResponseReview {
+  review_id: string;
+  verdict: RunReviewVerdict;
+  decided_at: string;
+  /**
+   * User id of the person who decided; the credential id when no person stands behind it.
+   */
+  decided_by?: string;
+  /**
+   * On `redo`: the run started to do the work again.
+   */
+  follow_up_run_id?: string;
 }
 
 export interface GetRunSourcesResponse {
@@ -9612,6 +9982,21 @@ export interface GetSessionResponse {
    * When it was pinned; order the pinned group by it.
    */
   pinned_at?: string;
+  /**
+   * The chat's name: the stored title, else the `metadata.title` clients wrote before the field
+   * existed (2026-10-19), else `null`. A title the person cleared stays `null` even if that
+   * legacy key is still there. At most 80 characters when a person sets it; a generated one is
+   * at most 60, in the language of the first message. Present on every read — the list, the
+   * detail, create and update.
+   */
+  title?: string | null;
+  /**
+   * `user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
+   * generated title never replaces it; `generated` when the platform named the chat after its
+   * first completed run. Absent when no title was ever stored as a field (none, or only the
+   * legacy `metadata.title`).
+   */
+  title_source?: SessionTitleSource;
   created_by?: string;
   session_id: string;
   tenant_id: string;
@@ -10052,6 +10437,13 @@ export interface GetTenantCompanyOverviewResponseProblems {
    */
   stopped_missions?: number;
   /**
+   * Schedules the quota gate refused to fire, since 2026-10-24. A scheduled agent that does not
+   * run because its tenant is over quota left no trace on any product surface before this field;
+   * the count leads, the list names the agents. `next_fire_at` is when the schedule would next
+   * be due.
+   */
+  quota_gated_schedules?: GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedules;
+  /**
    * The newest 5 of them.
    */
   missions?: GetTenantCompanyOverviewResponseProblemsMission[];
@@ -10072,6 +10464,25 @@ export interface GetTenantCompanyOverviewResponseProblemsMission {
 export type GetTenantCompanyOverviewResponseProblemsMissionStatus = 'aborted' | 'failed';
 
 export const GET_TENANT_COMPANY_OVERVIEW_RESPONSE_PROBLEMS_MISSION_STATUS_VALUES = ['aborted', 'failed'] as const;
+
+/**
+ * Schedules the quota gate refused to fire, since 2026-10-24. A scheduled agent that does not
+ * run because its tenant is over quota left no trace on any product surface before this field;
+ * the count leads, the list names the agents. `next_fire_at` is when the schedule would next
+ * be due.
+ */
+export interface GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedules {
+  count?: number;
+  by_agent?: GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedulesByAgentItem[];
+}
+
+export interface GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedulesByAgentItem {
+  agent_id?: string | null;
+  agent_name?: string | null;
+  reason?: string | null;
+  skipped_at?: string | null;
+  next_fire_at?: string | null;
+}
 
 export interface GetTenantCompanyOverviewResponseProblemsRecentItem {
   run_id?: string;
@@ -10329,6 +10740,24 @@ export type GuardrailConfigItemSource = 'kv' | 'default';
 
 export const GUARDRAIL_CONFIG_ITEM_SOURCE_VALUES = ['kv', 'default'] as const;
 
+export interface HandleAppStoreNotificationRequest {
+  /**
+   * The notification, as Apple sends it: a compact JWS.
+   */
+  signedPayload: string;
+}
+
+export interface HandleAppStoreNotificationResponse {
+  received: boolean;
+  handled: boolean;
+  action?: HandleAppStoreNotificationResponseAction;
+  duplicate?: boolean;
+}
+
+export type HandleAppStoreNotificationResponseAction = 'plan_applied' | 'unchanged' | 'stripe_active' | 'refused' | 'downgraded_to_free' | 'not_app_store_plan' | 'superseded_subscription' | 'plan_write_refused' | 'grace_period' | 'unknown_product' | 'revoked_transaction' | 'no_transaction' | 'orphan_no_tenant' | 'missing' | 'ignored';
+
+export const HANDLE_APP_STORE_NOTIFICATION_RESPONSE_ACTION_VALUES = ['plan_applied', 'unchanged', 'stripe_active', 'refused', 'downgraded_to_free', 'not_app_store_plan', 'superseded_subscription', 'plan_write_refused', 'grace_period', 'unknown_product', 'revoked_transaction', 'no_transaction', 'orphan_no_tenant', 'missing', 'ignored'] as const;
+
 export interface HandleStripeWebhookRequest {
   type: string;
   data: JsonObject;
@@ -10357,25 +10786,27 @@ export interface HealthCheckV1aliasResponse {
    * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
    * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
    * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-   * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
-   * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
-   * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
-   * `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
-   * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
-   * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
-   * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
-   * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
-   * `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
-   * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
-   * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
-   * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
-   * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
-   * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
-   * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
-   * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
-   * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
-   * /company/versions` AND `POST /company/restore` — there is deliberately no separate
-   * `company_restore`, since a snapshot and the rollback to it ship together.
+   * `company_import`, `company_versions` (since 2026-10-12), `run_review` (since 2026-10-19). A
+   * NAME ALONE DOES NOT SAY WHAT IT COVERS, so here is the coverage — added 2026-10-13 because a
+   * client asked which name gates `POST /tenants/me/company/restore` and the answer existed only
+   * in prose no client can read: `initiatives` = `/initiatives/*` (`/companies` is its
+   * deprecated old name); `initiative_pause` = pausing an initiative; `mission_review` =
+   * objectives with `review_required` and `POST /missions/{id}/objectives/{oid}/review`;
+   * `run_revise` = `POST /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`;
+   * `mission_schedules` = `/missions/schedules`; `mission_analytics` = `GET /analytics/missions`
+   * and the inbox `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and
+   * `/company/changes`; `company_pause` = `POST /company/pause` and `/resume`;
+   * `company_blueprint` = `GET /tenants/me/blueprint`; `company_pause_preview` = `GET
+   * /company/pause-scope`; `company_proposals` = `/tenants/me/proposals` with apply and reject;
+   * `company_launch` = `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET
+   * /tenants/me/overview`; `company_fit` = `GET /tenants/me/fit` (template fit is
+   * `company_templates`); `company_templates` = `/company-templates`,
+   * `/company-templates/{id}/fit`, `POST /company/apply-template`, `POST /me/tenants/create`
+   * with `template_id`; `company_export` = `GET /company/export`; `company_import` = `POST
+   * /company/import`; `company_versions` = `GET /company/versions` AND `POST /company/restore` —
+   * there is deliberately no separate `company_restore`, since a snapshot and the rollback to it
+   * ship together. `run_review` = `POST` and `GET /runs/{id}/review`, and `anchor`/`target` on
+   * session annotations.
    */
   capabilities?: string[];
 }
@@ -10429,25 +10860,27 @@ export interface HealthzAliasResponse {
    * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
    * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
    * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-   * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
-   * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
-   * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
-   * `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
-   * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
-   * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
-   * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
-   * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
-   * `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
-   * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
-   * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
-   * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
-   * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
-   * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
-   * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
-   * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
-   * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
-   * /company/versions` AND `POST /company/restore` — there is deliberately no separate
-   * `company_restore`, since a snapshot and the rollback to it ship together.
+   * `company_import`, `company_versions` (since 2026-10-12), `run_review` (since 2026-10-19). A
+   * NAME ALONE DOES NOT SAY WHAT IT COVERS, so here is the coverage — added 2026-10-13 because a
+   * client asked which name gates `POST /tenants/me/company/restore` and the answer existed only
+   * in prose no client can read: `initiatives` = `/initiatives/*` (`/companies` is its
+   * deprecated old name); `initiative_pause` = pausing an initiative; `mission_review` =
+   * objectives with `review_required` and `POST /missions/{id}/objectives/{oid}/review`;
+   * `run_revise` = `POST /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`;
+   * `mission_schedules` = `/missions/schedules`; `mission_analytics` = `GET /analytics/missions`
+   * and the inbox `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and
+   * `/company/changes`; `company_pause` = `POST /company/pause` and `/resume`;
+   * `company_blueprint` = `GET /tenants/me/blueprint`; `company_pause_preview` = `GET
+   * /company/pause-scope`; `company_proposals` = `/tenants/me/proposals` with apply and reject;
+   * `company_launch` = `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET
+   * /tenants/me/overview`; `company_fit` = `GET /tenants/me/fit` (template fit is
+   * `company_templates`); `company_templates` = `/company-templates`,
+   * `/company-templates/{id}/fit`, `POST /company/apply-template`, `POST /me/tenants/create`
+   * with `template_id`; `company_export` = `GET /company/export`; `company_import` = `POST
+   * /company/import`; `company_versions` = `GET /company/versions` AND `POST /company/restore` —
+   * there is deliberately no separate `company_restore`, since a snapshot and the rollback to it
+   * ship together. `run_review` = `POST` and `GET /runs/{id}/review`, and `anchor`/`target` on
+   * session annotations.
    */
   capabilities?: string[];
   /**
@@ -10455,6 +10888,14 @@ export interface HealthzAliasResponse {
    * falls as they are picked up — but it is a queue depth, not a count of recoveries.
    */
   runs_queued?: number;
+  /**
+   * Runs in flight in THIS process right now — the scheduler's own live count, the same field
+   * that answers `degraded` at 90% of its ceiling. This is the number to read when you want to
+   * know whether work is happening: `runs_queued` is zero whenever everything is running rather
+   * than waiting, and `pending_resumes` is a constant zero. It counts runs, not users — one run
+   * may serve many turns.
+   */
+  runs_active?: number;
 }
 
 export interface HireAgentRequest {
@@ -10506,6 +10947,21 @@ export interface HireConnect {
   ttl_seconds: number;
 }
 
+export interface HiredAgentPermissionRequest {
+  /**
+   * The tool Claude Code wants to use, e.g. `Bash`.
+   */
+  tool_name?: string;
+  /**
+   * Its arguments, shown to the person as stored (up to 2 000 characters).
+   */
+  tool_input?: JsonObject;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
 export interface HostDroplet {
   id: number;
   name: string;
@@ -10519,6 +10975,24 @@ export interface HostDroplet {
   disk_gb: number;
   created_at: string;
 }
+
+/**
+ * A point (`x`, `y`) or a box (`x`, `y` its top-left corner, plus `w`, `h`) on an image, every
+ * value a fraction of the image's width or height, 0–1, from the top-left. `w` and `h` come
+ * together or not at all, and the box must stay inside the image: `x + w <= 1`, `y + h <= 1`
+ * (`422` otherwise).
+ */
+export interface ImageAnchor {
+  kind: ImageAnchorKind;
+  x: number;
+  y: number;
+  w?: number;
+  h?: number;
+}
+
+export type ImageAnchorKind = 'image';
+
+export const IMAGE_ANCHOR_KIND_VALUES = ['image'] as const;
 
 export interface ImageProviderList {
   providers?: MediaProvider[];
@@ -11593,6 +12067,26 @@ export interface ListAgentScorersResponse {
   total?: number;
 }
 
+export type ListAgentSessionsGroupBy = 'day';
+
+export const LIST_AGENT_SESSIONS_GROUP_BY_VALUES = ['day'] as const;
+
+export interface ListAgentSessionsResponse {
+  items?: Session[];
+  days?: ListAgentSessionsResponseDay[];
+  cursor: string | null;
+  has_more: boolean;
+}
+
+export interface ListAgentSessionsResponseDay {
+  date: string;
+  /**
+   * IANA zone the date is read in.
+   */
+  tz: string;
+  sessions: Session[];
+}
+
 export interface ListAgentsResponse {
   items: Agent[];
   /**
@@ -11710,6 +12204,12 @@ export interface ListBillingPlansResponsePlan {
   limits?: JsonObject;
   current?: boolean;
   checkout_available?: boolean;
+  /**
+   * The App Store auto-renewable product that buys this plan in the iOS app. Present on starter
+   * and pro only. Its App Store price is the web price grossed up for Apple's commission (web
+   * net / (1 − Apple rate)).
+   */
+  app_store_product_id?: ListBillingPlansResponsePlanAppStoreProductId;
   price_amount_cents?: number;
   price_currency?: string;
   /**
@@ -11725,6 +12225,15 @@ export interface ListBillingPlansResponsePlan {
    */
   price_interval_count?: number | null;
 }
+
+/**
+ * The App Store auto-renewable product that buys this plan in the iOS app. Present on starter
+ * and pro only. Its App Store price is the web price grossed up for Apple's commission (web
+ * net / (1 − Apple rate)).
+ */
+export type ListBillingPlansResponsePlanAppStoreProductId = 'ai.snaga.starter.monthly' | 'ai.snaga.pro.monthly';
+
+export const LIST_BILLING_PLANS_RESPONSE_PLAN_APP_STORE_PRODUCT_ID_VALUES = ['ai.snaga.starter.monthly', 'ai.snaga.pro.monthly'] as const;
 
 export interface ListBillingSpecPackagesResponse {
   packages: JsonObject[];
@@ -12308,6 +12817,8 @@ export interface ListSessionAnnotationsResponseItem {
   author?: string;
   created_at?: string;
   resolved?: boolean;
+  anchor?: Anchor;
+  target?: AnchorTarget;
 }
 
 export interface ListSessionArtifactsResponse {
@@ -12369,6 +12880,21 @@ export interface ListSessionsResponseItem {
    * When it was pinned; order the pinned group by it.
    */
   pinned_at?: string;
+  /**
+   * The chat's name: the stored title, else the `metadata.title` clients wrote before the field
+   * existed (2026-10-19), else `null`. A title the person cleared stays `null` even if that
+   * legacy key is still there. At most 80 characters when a person sets it; a generated one is
+   * at most 60, in the language of the first message. Present on every read — the list, the
+   * detail, create and update.
+   */
+  title?: string | null;
+  /**
+   * `user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
+   * generated title never replaces it; `generated` when the platform named the chat after its
+   * first completed run. Absent when no title was ever stored as a field (none, or only the
+   * legacy `metadata.title`).
+   */
+  title_source?: SessionTitleSource;
   created_by?: string;
   session_id: string;
   tenant_id: string;
@@ -12733,6 +13259,11 @@ export interface LLMSynthesizeSpeechRequest {
   model?: string;
   input: string;
   voice?: string;
+  /**
+   * The agent being spoken for. The head agent's id selects the person's `chief_voice` when
+   * `model` and `voice` are absent.
+   */
+  agent_id?: string;
   /**
    * The spoken language as a tag (`uk`, `en`, `pt-BR`; the first two letters are sent). Absent:
    * read from `input` — Ukrainian by its own letters (і ї є ґ), Russian by its own (ы э ъ ё),
@@ -13462,7 +13993,9 @@ export interface Mission {
    * `all_objectives_verified` (details `verified`), `objectives_failed` (`failed`, `total`),
    * `planning_failed`, `aborted_by_signal`, `aborted_by_operator` (the operator's reason, when
    * given, is the summary), `watchdog_stuck` (`stuck_status`, `stuck_minutes`),
-   * `paused_by_operator`, `resumed_by_operator`, `authorized_by_operator`.
+   * `paused_by_operator`, `queued_walk_ceiling` (planned, then paused because the tenant was
+   * already running its maximum concurrent missions — resumable with `POST
+   * /missions/{id}/resume`), `resumed_by_operator`, `authorized_by_operator`.
    */
   result_code?: MissionResultCode;
   /**
@@ -13527,11 +14060,13 @@ export const MISSION_OUTCOME_VALUES = ['success', 'partial', 'failed', 'aborted'
  * `all_objectives_verified` (details `verified`), `objectives_failed` (`failed`, `total`),
  * `planning_failed`, `aborted_by_signal`, `aborted_by_operator` (the operator's reason, when
  * given, is the summary), `watchdog_stuck` (`stuck_status`, `stuck_minutes`),
- * `paused_by_operator`, `resumed_by_operator`, `authorized_by_operator`.
+ * `paused_by_operator`, `queued_walk_ceiling` (planned, then paused because the tenant was
+ * already running its maximum concurrent missions — resumable with `POST
+ * /missions/{id}/resume`), `resumed_by_operator`, `authorized_by_operator`.
  */
-export type MissionResultCode = 'all_objectives_verified' | 'objectives_failed' | 'planning_failed' | 'aborted_by_signal' | 'aborted_by_operator' | 'watchdog_stuck' | 'paused_by_operator' | 'resumed_by_operator' | 'authorized_by_operator';
+export type MissionResultCode = 'all_objectives_verified' | 'objectives_failed' | 'planning_failed' | 'aborted_by_signal' | 'aborted_by_operator' | 'watchdog_stuck' | 'paused_by_operator' | 'queued_walk_ceiling' | 'resumed_by_operator' | 'authorized_by_operator';
 
-export const MISSION_RESULT_CODE_VALUES = ['all_objectives_verified', 'objectives_failed', 'planning_failed', 'aborted_by_signal', 'aborted_by_operator', 'watchdog_stuck', 'paused_by_operator', 'resumed_by_operator', 'authorized_by_operator'] as const;
+export const MISSION_RESULT_CODE_VALUES = ['all_objectives_verified', 'objectives_failed', 'planning_failed', 'aborted_by_signal', 'aborted_by_operator', 'watchdog_stuck', 'paused_by_operator', 'queued_walk_ceiling', 'resumed_by_operator', 'authorized_by_operator'] as const;
 
 /**
  * What POST /missions answers. `plan` is echoed back only when the server planned the mission
@@ -13646,11 +14181,13 @@ export interface Notification {
 
 /**
  * Delivery channel. `in_app` is always-on (bell drawer + SSE) and cannot be opted out of;
- * `telegram`/`whatsapp` are reserved and have no adapter yet.
+ * `telegram`/`whatsapp` are reserved and have no adapter yet. `live_activity` holds iOS Live
+ * Activity push tokens: it is never a fan-out destination (naming it in preferences delivers
+ * nothing), only the run a token is registered for moves it.
  */
-export type NotificationChannel = 'in_app' | 'email' | 'webhook' | 'push' | 'web_push' | 'telegram' | 'whatsapp';
+export type NotificationChannel = 'in_app' | 'email' | 'webhook' | 'push' | 'web_push' | 'live_activity' | 'telegram' | 'whatsapp';
 
-export const NOTIFICATION_CHANNEL_VALUES = ['in_app', 'email', 'webhook', 'push', 'web_push', 'telegram', 'whatsapp'] as const;
+export const NOTIFICATION_CHANNEL_VALUES = ['in_app', 'email', 'webhook', 'push', 'web_push', 'live_activity', 'telegram', 'whatsapp'] as const;
 
 export interface NotificationPreferences {
   /**
@@ -13669,6 +14206,17 @@ export interface NotificationPreferences {
    * channels.
    */
   muted_types?: NotificationType[];
+  /**
+   * Whose notifications are pushed to a phone or browser (`push` and `web_push`). `all` (the
+   * default; an omitted field on PUT stores `all`) pushes every agent's; `chief_only` pushes
+   * only those raised by the tenant's head agent (the Chief of Staff, `head_agent_id` on the
+   * tenant). Other notifications still land in the in-app list, and email and webhooks are
+   * unaffected; a notification no agent raised (budget, security, billing) keeps its push.
+   * Anything else is `422`.
+   *
+   * @default "all"
+   */
+  push_from?: NotificationPreferencesInputPushFrom;
   /**
    * Window during which non-critical messages are suppressed; critical always bypasses. Set both
    * start_local and end_local to enable, empty disables.
@@ -13702,6 +14250,17 @@ export interface NotificationPreferencesInput {
    */
   muted_types?: NotificationType[];
   /**
+   * Whose notifications are pushed to a phone or browser (`push` and `web_push`). `all` (the
+   * default; an omitted field on PUT stores `all`) pushes every agent's; `chief_only` pushes
+   * only those raised by the tenant's head agent (the Chief of Staff, `head_agent_id` on the
+   * tenant). Other notifications still land in the in-app list, and email and webhooks are
+   * unaffected; a notification no agent raised (budget, security, billing) keeps its push.
+   * Anything else is `422`.
+   *
+   * @default "all"
+   */
+  push_from?: NotificationPreferencesInputPushFrom;
+  /**
    * Window during which non-critical messages are suppressed; critical always bypasses. Set both
    * start_local and end_local to enable, empty disables.
    */
@@ -13718,6 +14277,18 @@ export interface NotificationPreferencesInputPriorityChannels {
   info?: NotificationChannel[];
   success?: NotificationChannel[];
 }
+
+/**
+ * Whose notifications are pushed to a phone or browser (`push` and `web_push`). `all` (the
+ * default; an omitted field on PUT stores `all`) pushes every agent's; `chief_only` pushes
+ * only those raised by the tenant's head agent (the Chief of Staff, `head_agent_id` on the
+ * tenant). Other notifications still land in the in-app list, and email and webhooks are
+ * unaffected; a notification no agent raised (budget, security, billing) keeps its push.
+ * Anything else is `422`.
+ */
+export type NotificationPreferencesInputPushFrom = 'chief_only' | 'all';
+
+export const NOTIFICATION_PREFERENCES_INPUT_PUSH_FROM_VALUES = ['chief_only', 'all'] as const;
 
 /**
  * Window during which non-critical messages are suppressed; critical always bypasses. Set both
@@ -13810,9 +14381,9 @@ export const NOTIFICATION_SOURCE_KIND_VALUES = ['run', 'agent', 'bridge', 'budge
 
 /**
  * Where outbound notifications go. **Secrets never leave the server**: a webhook's signing
- * secret is reported only as `has_signing_secret`, a device token only by its last four
- * characters, and a Web Push endpoint only by host — the path carries a subscription
- * identifier.
+ * secret is reported only as `has_signing_secret`, a device token (or a Live Activity token)
+ * only by its last four characters, and a Web Push endpoint only by host — the path carries a
+ * subscription identifier.
  */
 export interface NotificationTarget {
   id: string;
@@ -13832,12 +14403,12 @@ export interface NotificationTarget {
    */
   last_delivered_at?: string;
   last_error?: string;
-  config: NotificationTargetConfigVariant1 | NotificationTargetConfigVariant2 | NotificationTargetConfigVariant3 | NotificationTargetConfigVariant4;
+  config: NotificationTargetConfigVariant1 | NotificationTargetConfigVariant2 | NotificationTargetConfigVariant3 | NotificationTargetConfigVariant4 | NotificationTargetConfigVariant5;
 }
 
-export type NotificationTargetChannel = 'email' | 'webhook' | 'push' | 'web_push';
+export type NotificationTargetChannel = 'email' | 'webhook' | 'push' | 'web_push' | 'live_activity';
 
-export const NOTIFICATION_TARGET_CHANNEL_VALUES = ['email', 'webhook', 'push', 'web_push'] as const;
+export const NOTIFICATION_TARGET_CHANNEL_VALUES = ['email', 'webhook', 'push', 'web_push', 'live_activity'] as const;
 
 export interface NotificationTargetConfigVariant1 {
   kind: NotificationTargetConfigVariant1kind;
@@ -13896,6 +14467,31 @@ export interface NotificationTargetConfigVariant4 {
 export type NotificationTargetConfigVariant4kind = 'web_push';
 
 export const NOTIFICATION_TARGET_CONFIG_VARIANT4KIND_VALUES = ['web_push'] as const;
+
+/**
+ * An iOS Live Activity push token (channel `live_activity`). The token itself is never
+ * returned.
+ */
+export interface NotificationTargetConfigVariant5 {
+  kind: NotificationTargetConfigVariant5kind;
+  /**
+   * The ActivityAttributes type name, e.g. `RunActivityAttributes`.
+   */
+  activity_type: string;
+  /**
+   * The run whose progress drives the activity; null when none was given.
+   */
+  run_id: string | null;
+  device_label?: string;
+  /**
+   * Last four characters of the token, for visual identification only.
+   */
+  token_suffix: string;
+}
+
+export type NotificationTargetConfigVariant5kind = 'apns_liveactivity';
+
+export const NOTIFICATION_TARGET_CONFIG_VARIANT5KIND_VALUES = ['apns_liveactivity'] as const;
 
 /**
  * Fine-grained event type. There are no coarse buckets on the server — a UI that groups events
@@ -14050,7 +14646,11 @@ export const OAUTH_LOGIN_PROVIDER_ITEM_ID_VALUES = ['github', 'google', 'apple']
  */
 export interface OAuthLoginProvidersList {
   providers: OAuthLoginProviderItem[];
-  google_one_tap_client_id?: string;
+  /**
+   * Null until the operator configures Google One Tap; the login page reads it to decide whether
+   * to render the one-tap prompt at all.
+   */
+  google_one_tap_client_id?: string | null;
 }
 
 /**
@@ -14358,7 +14958,17 @@ export interface PatchMeRequest {
    * `/api/v1/files/<file_id>/content` of an image uploaded with `POST /files`, or `null` to
    * clear.
    */
-  avatar_url: string | null;
+  avatar_url?: string | null;
+  /**
+   * BCP-47 tag with a 2–3 letter primary language (`uk`, `en-US`); stored canonicalised. `null`
+   * clears.
+   */
+  interface_language?: string | null;
+  /**
+   * An entry of `GET /voices`, as `{model, voice: <entry id>}`. `null` clears (the deployment
+   * default applies).
+   */
+  chief_voice?: ChiefVoice | null;
 }
 
 export interface PatchMeResponse {
@@ -14373,6 +14983,57 @@ export interface PatchMeResponseUser {
   role: string;
   status: string;
   avatar_url: string | null;
+  interface_language: string | null;
+  chief_voice: ChiefVoice | null;
+}
+
+export interface PatchSessionRequest {
+  /**
+   * MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key
+   * it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
+   * `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
+   * `project_id` files the chat under a project: it must name a project that exists and that the
+   * caller may edit — otherwise 404 (403 for a private project shared with the caller
+   * view-only); `null` takes the chat out. Because it merges, the limits are measured on the
+   * RESULT and so accumulate across calls: at most 100 keys, at most 64 KiB of JSON, and at most
+   * 8 levels of nesting. Past any of them the request is refused with 422 and a `detail` naming
+   * the number reached. Remove keys you no longer need; this is a label bag, not content.
+   */
+  metadata?: JsonObject;
+  /**
+   * true archives the session: `GET /sessions` leaves it out unless `?archived=true|all`, it
+   * stays readable by id, and the next message sent to it unarchives it. false unarchives.
+   */
+  archived?: boolean;
+  /**
+   * true pins the session for every client (`GET /sessions?pinned=true`); pinning again keeps
+   * the first `pinned_at`. false unpins.
+   */
+  pinned?: boolean;
+  /**
+   * The chat's name. Trimmed, then 1–80 characters (`422` otherwise); `null` clears it. Either
+   * way `title_source` becomes `user`, and a generated title never replaces it. Stored on the
+   * session, never in `metadata`; `updated_at` is left alone.
+   */
+  title?: string | null;
+  /**
+   * Per-conversation model override. Send null to clear (revert to agent default), or {
+   * provider, model_ref, endpoint_url?, capabilities? } to set. The runtime governance allowlist
+   * is still enforced at run time.
+   */
+  model_override?: PatchSessionRequestModelOverride | null;
+}
+
+/**
+ * Per-conversation model override. Send null to clear (revert to agent default), or {
+ * provider, model_ref, endpoint_url?, capabilities? } to set. The runtime governance allowlist
+ * is still enforced at run time.
+ */
+export interface PatchSessionRequestModelOverride {
+  provider: string;
+  model_ref: string;
+  endpoint_url?: string;
+  capabilities?: JsonObject;
 }
 
 /**
@@ -14978,21 +15639,21 @@ export interface PlatformInfo {
 }
 
 export interface PlatformLLMDefaults {
-  default_endpoint?: string;
+  default_endpoint?: string | null;
   /**
    * Stored model half. May be bare (`minimax-m3`) or already provider-qualified
    * (`ollama/glm-5.2`) — production holds both shapes. Dial `default_model_ref` instead of
-   * joining this yourself.
+   * joining this yourself. Null until the operator sets a platform default.
    */
-  default_model?: string;
-  default_provider?: string;
+  default_model?: string | null;
+  default_provider?: string | null;
   /**
    * Stored model half of the fallback. A vendor path (`MiniMaxAI/MiniMax-M3`) carries a slash
    * while naming no provider, so this string is NOT dialable on its own — use
    * `fallback_model_ref`.
    */
-  fallback_model?: string;
-  fallback_provider?: string;
+  fallback_model?: string | null;
+  fallback_provider?: string | null;
   /**
    * The default as the chat surface accepts it: `provider/model`, already de-duplicated against
    * a model half that carries the provider head. Null when no default model is configured.
@@ -15027,6 +15688,15 @@ export interface PlaygroundTemplate {
   category: string;
   nodes: CanvasNode[];
   edges: CanvasEdge[];
+}
+
+export interface PostQualificationUsageCorrectionRequest {
+  run_id: string;
+  /**
+   * The candidate's company. Optional: found from the run's grant.
+   */
+  tenant_id?: string;
+  dry_run: boolean;
 }
 
 export interface PreviewTenantCompanyPauseResponse {
@@ -15781,9 +16451,17 @@ export interface PublicPlan {
 export interface PublicPlanOverage {
   available?: boolean;
   requires_cap?: boolean;
-  price_per_million_usd?: PublicPlanOveragePricePerMillionUsd;
+  /**
+   * Per-million prices; null when the default model's price or the markup multiplier is not
+   * resolvable — the handler sends null rather than inventing a number.
+   */
+  price_per_million_usd?: PublicPlanOveragePricePerMillionUsd | null;
 }
 
+/**
+ * Per-million prices; null when the default model's price or the markup multiplier is not
+ * resolvable — the handler sends null rather than inventing a number.
+ */
 export interface PublicPlanOveragePricePerMillionUsd {
   input?: number;
   output?: number;
@@ -16056,6 +16734,12 @@ export interface PutQualificationSponsorKeyRequest {
   programs: string[];
 }
 
+export interface PutQualificationSponsorKeyResponse {
+  key_id: string;
+  tenant_id: string;
+  programs: string[];
+}
+
 /**
  * Prepared Nestor message only. No files or attachments. Source is untrusted data and must not
  * become instructions.
@@ -16314,6 +16998,12 @@ export const QUALIFICATION_INCOMPLETE_POLICY_RESPONSE_READINESS_VALUES = ['incom
 /**
  * One private managed binding per tenant/purpose; immutable applied version and template,
  * independent of personal agent/version caps. Readback with candidate credential required.
+ * Template revision 3 (2026-10-19) tells the model that every citation's location is exactly
+ * `source` or `explanation`; whatever the prompt says, a qualification run whose final answer
+ * carries a citation (any array named `citations`, at any depth) with a `location` — or
+ * `field` — outside that enum, or none, fails with `error_code: OUTPUT_CONTRACT_VIOLATION` and
+ * no output: the answer is refused, never rewritten, and the sponsor is charged what the calls
+ * measured.
  */
 export interface QualificationManagedEvaluator {
   agent_id: string;
@@ -16351,6 +17041,14 @@ export interface QualificationMissingPolicyResponse {
 }
 
 export type QualificationPositiveMicrousd = string;
+
+export interface QualificationPricingRevision {
+  pricing_revision: string;
+  provider: string;
+  model: string;
+  input_microusd_per_million_tokens: QualificationPositiveMicrousd;
+  output_microusd_per_million_tokens: QualificationPositiveMicrousd;
+}
 
 /**
  * Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
@@ -16507,6 +17205,16 @@ export interface QualificationSponsoredLimits {
   max_duration_ms: JsonValue;
   max_steps: JsonValue;
   max_tool_calls: JsonValue;
+  /**
+   * Input + output tokens summed over every model call of the run (since 2026-10-19 enforced
+   * before each call, not only between steps): each call's `max_tokens` is what the cap leaves
+   * after the tokens measured or still reserved in the run's attempt ledger and an estimate of
+   * the call's own input, and a call with nothing left is refused unsent (`error_code:
+   * QUALIFICATION_BUDGET_STOP`, `error_details.max_tokens_per_run`). The input estimate counts
+   * the conversation already measured at its measured tokens and only bytes added since at the
+   * densest tokens-per-byte the run has shown (never below one per three bytes), so a tokenizer
+   * denser than that on new text is the one way past the cap.
+   */
   max_tokens_per_run: JsonValue;
   /**
    * Legacy run DTO unit. Must convert exactly to integer micro-USD and be <= grant cap. No
@@ -16613,6 +17321,68 @@ export interface QualificationUnverifiableExecutionReceiptV2 {
 export type QualificationUnverifiableExecutionReceiptV2executionOrigin = 'cloud_runtime' | 'bridge' | 'unknown';
 
 export const QUALIFICATION_UNVERIFIABLE_EXECUTION_RECEIPT_V2EXECUTION_ORIGIN_VALUES = ['cloud_runtime', 'bridge', 'unknown'] as const;
+
+export interface QualificationUsageCorrection {
+  status: QualificationUsageCorrectionStatus;
+  dry_run: boolean;
+  /**
+   * Null for a dry run and for `nothing_recorded`; the same on every call once applied.
+   */
+  correction_id: string | null;
+  run_id: string;
+  candidate_tenant_id: string;
+  grant_id: string;
+  settlement_id: string | null;
+  /**
+   * When and where the run's usage was booked: `completed_at`, the UTC `period` (YYYY-MM) and
+   * `date`, `agent_id`, `model_key`.
+   */
+  basis: JsonObject | null;
+  /**
+   * The amounts taken back: `input_tokens`, `output_tokens`, `thinking_tokens`, `runs_count`,
+   * `tool_calls_count`, `storage_bytes`, `total_cost_usd`, `provider_cost_usd`, `budget_usd`.
+   */
+  reversal: JsonObject | null;
+  /**
+   * What the run touched that this correction leaves as it is, and why.
+   */
+  not_reversed: string[];
+  before: QualificationUsageCorrectionBeforeVariant1 | null;
+  after: QualificationUsageCorrectionAfterVariant1 | null;
+  applied_at?: string;
+}
+
+/**
+ * The candidate's counters for the day and period the run ended in.
+ */
+export interface QualificationUsageCorrectionAfterVariant1 {
+  monthly?: JsonObject;
+  /**
+   * `remaining` is the daily share left that day (`limit` − input − output tokens), null without
+   * a daily cap.
+   */
+  daily?: JsonObject;
+  budget?: JsonObject;
+  workspaces_counted?: number;
+}
+
+/**
+ * The candidate's counters for the day and period the run ended in.
+ */
+export interface QualificationUsageCorrectionBeforeVariant1 {
+  monthly?: JsonObject;
+  /**
+   * `remaining` is the daily share left that day (`limit` − input − output tokens), null without
+   * a daily cap.
+   */
+  daily?: JsonObject;
+  budget?: JsonObject;
+  workspaces_counted?: number;
+}
+
+export type QualificationUsageCorrectionStatus = 'planned' | 'applied' | 'already_applied' | 'nothing_recorded';
+
+export const QUALIFICATION_USAGE_CORRECTION_STATUS_VALUES = ['planned', 'applied', 'already_applied', 'nothing_recorded'] as const;
 
 /**
  * Immutable runtime evidence, never model output. Hashes are RFC8785 JCS + SHA-256. profile
@@ -17138,6 +17908,16 @@ export interface ReplaceConstitutionRequest {
   rationale?: string;
 }
 
+export interface ReplaceMyRailAgentsRequest {
+  agent_ids: string[];
+}
+
+export interface ReplaceMyRailAgentsResponse {
+  agent_ids?: string[];
+  updated_at?: string | null;
+  dropped?: string[];
+}
+
 /**
  * runtime/execution/replay-executor.ts ReplayResult. camelCase on the wire, unlike the rest of
  * the API; `divergencePoint`, `divergenceReason` and `stepComparisons` (execute mode only) are
@@ -17419,6 +18199,75 @@ export interface ResumeRunResponse {
   run_id: string;
 }
 
+export interface RetirePlatformAgentsRequest {
+  /**
+   * @default true
+   */
+  dry_run?: boolean;
+  new_head_agent_id?: string;
+}
+
+export interface RetirePlatformAgentsResponse {
+  dry_run: boolean;
+  super_admin_tenant_id: string | null;
+  agents: RetirePlatformAgentsResponseAgent[];
+  registry_keys: RetirePlatformAgentsResponseRegistryKey[];
+  head: RetirePlatformAgentsResponseHead;
+  untouched: string[];
+  applied: RetirePlatformAgentsResponseApplied | null;
+  errors: RetirePlatformAgentsResponseError[];
+}
+
+export interface RetirePlatformAgentsResponseAgent {
+  tenant_id: string;
+  agent_id: string;
+  name: string | null;
+  kind: RetirePlatformAgentsResponseAgentKind;
+  found_by: RetirePlatformAgentsResponseAgentFoundByItem[];
+  record: boolean;
+  schedule: boolean;
+  permission_set: boolean;
+  is_head: boolean;
+}
+
+export type RetirePlatformAgentsResponseAgentFoundByItem = 'registry_pointer' | 'metadata_marker';
+
+export const RETIRE_PLATFORM_AGENTS_RESPONSE_AGENT_FOUND_BY_ITEM_VALUES = ['registry_pointer', 'metadata_marker'] as const;
+
+export type RetirePlatformAgentsResponseAgentKind = 'super_agent' | 'server_agent';
+
+export const RETIRE_PLATFORM_AGENTS_RESPONSE_AGENT_KIND_VALUES = ['super_agent', 'server_agent'] as const;
+
+export interface RetirePlatformAgentsResponseApplied {
+  agents_deleted?: number;
+  schedules_removed?: number;
+  permission_sets_deleted?: number;
+  registry_keys_deleted?: number;
+  head_agent_id?: string | null;
+  audit_entry_ids?: string[];
+}
+
+export interface RetirePlatformAgentsResponseError {
+  agent_id?: string;
+  error?: string;
+}
+
+export interface RetirePlatformAgentsResponseHead {
+  head_agent_id: string | null;
+  is_platform_agent: boolean;
+  action: RetirePlatformAgentsResponseHeadAction;
+  new_head_agent_id: string | null;
+}
+
+export type RetirePlatformAgentsResponseHeadAction = 'keep' | 'rebind' | 'provision_chief';
+
+export const RETIRE_PLATFORM_AGENTS_RESPONSE_HEAD_ACTION_VALUES = ['keep', 'rebind', 'provision_chief'] as const;
+
+export interface RetirePlatformAgentsResponseRegistryKey {
+  key: string[];
+  value: string;
+}
+
 export interface RetryPublicVideoOrderResponse {
   id: string;
   status: VideoOrderStatus;
@@ -17489,12 +18338,70 @@ export interface RetryPublicVideoOrderResponseVideo {
   expires_at: string | null;
 }
 
+/**
+ * An `Anchor` with two optional fields more: `target`, what the place is on (default: the
+ * reviewed run's own answer), and `note`, what to change there. The same rules as `Anchor`
+ * apply — every kind is a closed object and a coordinate that does not fit is refused with
+ * `422`.
+ */
+export type ReviewAnchor = ReviewTextAnchor | ReviewImageAnchor | ReviewCodeAnchor;
+
+/**
+ * `CodeAnchor` plus `target` and `note`.
+ */
+export interface ReviewCodeAnchor {
+  kind: CodeAnchorKind;
+  path?: string;
+  line_start: number;
+  line_end: number;
+  target?: AnchorTarget;
+  note?: string;
+}
+
+/**
+ * `ImageAnchor` plus `target` and `note`.
+ */
+export interface ReviewImageAnchor {
+  kind: ImageAnchorKind;
+  x: number;
+  y: number;
+  w?: number;
+  h?: number;
+  target?: AnchorTarget;
+  note?: string;
+}
+
 export interface ReviewMissionObjectiveRequest {
   decision: ObjectiveReviewDecision;
   /**
    * What to change (required for `revise`), or why not.
    */
   feedback?: string;
+}
+
+export interface ReviewRunRequest {
+  verdict: RunReviewVerdict;
+  /**
+   * What the person says about the result. On `redo`, what to change; required unless `anchors`
+   * says it.
+   */
+  comment?: string;
+  /**
+   * The places in the result the comment is about.
+   */
+  anchors?: ReviewAnchor[];
+}
+
+/**
+ * `TextAnchor` plus `target` and `note`.
+ */
+export interface ReviewTextAnchor {
+  kind: TextAnchorKind;
+  quote: string;
+  start: number;
+  end: number;
+  target?: AnchorTarget;
+  note?: string;
 }
 
 export interface ReviseRunRequest {
@@ -17661,6 +18568,12 @@ export interface Run {
    * trace on the run.
    */
   approvals?: RunApproval[];
+  /**
+   * The latest person's verdict on this run's RESULT (`POST /runs/{runId}/review`, since
+   * 2026-10-19) — not a tool approval, which is `approvals`. Absent until the result is
+   * reviewed. The full record, with the comment and anchors, is `GET /runs/{runId}/review`.
+   */
+  review?: RunReview2;
   created_at: string;
   started_at?: string | null;
   completed_at?: string | null;
@@ -18069,10 +18982,32 @@ export interface RunMetrics {
   memory_retrievals?: number;
   memory_extractions?: number;
   /**
-   * Estimated total cost in USD
+   * Estimated total cost in USD — the tenant's bill, except when `cost_attribution` says
+   * otherwise.
    */
   total_cost_usd?: number | null;
+  /**
+   * Present only on a sponsored qualification run (since 2026-10-19). `total_cost_usd` is then
+   * execution telemetry at the platform's catalog rate: never billed to the company the run
+   * executed in, and never counted in its usage, quotas, daily share, run count, spend budget or
+   * overage. The sponsor's debit is the grant's `charged_microusd`, accounted at the program's
+   * frozen pricing revision, and the two differ (production run 01a151cf…: telemetry $0.010312,
+   * sponsor debit 5414 micro-USD). Absent on every other run.
+   */
+  cost_attribution?: RunMetricsCostAttribution;
 }
+
+/**
+ * Present only on a sponsored qualification run (since 2026-10-19). `total_cost_usd` is then
+ * execution telemetry at the platform's catalog rate: never billed to the company the run
+ * executed in, and never counted in its usage, quotas, daily share, run count, spend budget or
+ * overage. The sponsor's debit is the grant's `charged_microusd`, accounted at the program's
+ * frozen pricing revision, and the two differ (production run 01a151cf…: telemetry $0.010312,
+ * sponsor debit 5414 micro-USD). Absent on every other run.
+ */
+export type RunMetricsCostAttribution = 'sponsored_telemetry';
+
+export const RUN_METRICS_COST_ATTRIBUTION_VALUES = ['sponsored_telemetry'] as const;
 
 export interface RunMissionResponse {
   accepted: boolean;
@@ -18151,6 +19086,14 @@ export interface RunResourceLimits {
   max_duration_ms?: number;
   max_steps?: number;
   max_tool_calls?: number;
+  /**
+   * Input + output tokens summed over every model call of the run. Since 2026-10-19 it is held
+   * before each call, not only after: each call is sent with `max_tokens` no more than the cap
+   * minus what the run has spent minus the last call's input (which the next call resends), and
+   * once that is nothing the run stops before sending, failing with `MAX_TOKENS_EXCEEDED` and
+   * `used_tokens` at or under the limit. Before, the last call could spend past the cap by up to
+   * a whole step.
+   */
   max_tokens_per_run?: number;
   /**
    * In-run cost ceiling in USD; 0 or absent means no cap from this field. A run that crosses it
@@ -18160,6 +19103,60 @@ export interface RunResourceLimits {
    */
   max_cost_usd?: number;
 }
+
+/**
+ * routes/run-review.ts reviewView — the answer of both `POST` and `GET /runs/{runId}/review`.
+ * Every field is always present; one without a value is `null` (`anchors` is `[]`), so an
+ * unreviewed run answers `reviewed: false` with nulls rather than a `404`.
+ */
+export interface RunReview {
+  run_id: string;
+  /**
+   * Whether the result has a verdict.
+   */
+  reviewed: boolean;
+  review_id: string | null;
+  verdict: string | null;
+  /**
+   * True when the latest verdict is `approve`.
+   */
+  approved: boolean;
+  comment: string | null;
+  anchors: ReviewAnchor[];
+  /**
+   * On `redo`: the run started in the same session for the same agent. Follow it with `GET
+   * /runs/{runId}` or the session's events.
+   */
+  follow_up_run_id: string | null;
+  /**
+   * User id of the person who decided; the credential id when no person stands behind it.
+   */
+  decided_by: string | null;
+  decided_at: string | null;
+}
+
+/**
+ * The latest person's verdict on this run's RESULT (`POST /runs/{runId}/review`, since
+ * 2026-10-19) — not a tool approval, which is `approvals`. Absent until the result is
+ * reviewed. The full record, with the comment and anchors, is `GET /runs/{runId}/review`.
+ */
+export interface RunReview2 {
+  review_id: string;
+  verdict: RunReviewVerdict;
+  decided_at: string;
+  /**
+   * User id of the person who decided; the credential id when no person stands behind it.
+   */
+  decided_by?: string;
+  /**
+   * On `redo`: the run started to do the work again.
+   */
+  follow_up_run_id?: string;
+}
+
+export type RunReviewVerdict = 'approve' | 'redo';
+
+export const RUN_REVIEW_VERDICT_VALUES = ['approve', 'redo'] as const;
 
 export type RunStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'timeout' | 'guardrail_blocked' | 'paused' | 'awaiting_approval' | 'awaiting_input' | 'auth_required' | 'rejected';
 
@@ -18681,6 +19678,21 @@ export interface Session {
    * When it was pinned; order the pinned group by it.
    */
   pinned_at?: string;
+  /**
+   * The chat's name: the stored title, else the `metadata.title` clients wrote before the field
+   * existed (2026-10-19), else `null`. A title the person cleared stays `null` even if that
+   * legacy key is still there. At most 80 characters when a person sets it; a generated one is
+   * at most 60, in the language of the first message. Present on every read — the list, the
+   * detail, create and update.
+   */
+  title?: string | null;
+  /**
+   * `user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
+   * generated title never replaces it; `generated` when the platform named the chat after its
+   * first completed run. Absent when no title was ever stored as a field (none, or only the
+   * legacy `metadata.title`).
+   */
+  title_source?: SessionTitleSource;
   created_by?: string;
   session_id: string;
   tenant_id: string;
@@ -18722,8 +19734,9 @@ export interface Session {
 }
 
 /**
- * sessions.ts AnnotationRecord — the six-field projection create, list and PATCH all answer
- * with.
+ * sessions.ts AnnotationRecord — the projection create, list and PATCH all answer with: six
+ * fields always, plus `anchor` and `target` only on a note that was created with them (since
+ * 2026-10-19).
  */
 export interface SessionAnnotation {
   id: string;
@@ -18732,6 +19745,8 @@ export interface SessionAnnotation {
   author: string;
   created_at: string;
   resolved: boolean;
+  anchor?: Anchor;
+  target?: AnchorTarget;
 }
 
 export interface SessionBranch {
@@ -18833,6 +19848,16 @@ export interface SessionModelOverride {
 export type SessionQueueMode = 'allow' | 'reject';
 
 export const SESSION_QUEUE_MODE_VALUES = ['allow', 'reject'] as const;
+
+/**
+ * `user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
+ * generated title never replaces it; `generated` when the platform named the chat after its
+ * first completed run. Absent when no title was ever stored as a field (none, or only the
+ * legacy `metadata.title`).
+ */
+export type SessionTitleSource = 'generated' | 'user';
+
+export const SESSION_TITLE_SOURCE_VALUES = ['generated', 'user'] as const;
 
 export interface SetAdminIntegrationOAuthProviderRequest {
   enabled?: boolean;
@@ -20052,7 +21077,32 @@ export interface TenantBilling {
   stripe_subscription_id?: string;
   cancel_at_period_end?: boolean;
   current_period_end_ms?: number;
+  /**
+   * Which system owns the paid plan. Absent means stripe. While the plan is paid, only that
+   * system's plan writes land; other writers are refused (an admin grant answers 409).
+   */
+  plan_source?: TenantBillingPlanSource;
+  /**
+   * StoreKit originalTransactionId of the App Store subscription.
+   */
+  app_store_original_transaction_id?: string;
+  /**
+   * App Store product id of that subscription.
+   */
+  app_store_product_id?: string;
+  /**
+   * Unix ms the App Store subscription is paid up to.
+   */
+  app_store_expires_ms?: number;
 }
+
+/**
+ * Which system owns the paid plan. Absent means stripe. While the plan is paid, only that
+ * system's plan writes land; other writers are refused (an admin grant answers 409).
+ */
+export type TenantBillingPlanSource = 'stripe' | 'app_store' | 'operator';
+
+export const TENANT_BILLING_PLAN_SOURCE_VALUES = ['stripe', 'app_store', 'operator'] as const;
 
 export type TenantBillingStatus = 'active' | 'past_due' | 'disputed' | 'cancelled';
 
@@ -20102,9 +21152,10 @@ export const TENANT_CUSTOM_DOMAIN_VERIFICATION_METHOD_VALUES = ['cname'] as cons
 export interface TenantInbox {
   generated_at: string;
   /**
-   * Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
-   * them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
-   * true these are a floor, not a total.
+   * Counted over the page's scan window, NOT over `items` — so `limit` truncating the list does
+   * not move them. The window is capped at 500 runs, though, and that cap they cannot see past:
+   * when `truncated` is true these are a floor, not a total. On a continuation page (`?cursor=`)
+   * they cover that page's span only, and `review`/`proposal` are 0.
    */
   counts: TenantInboxCounts;
   items: InboxItem[];
@@ -20122,21 +21173,32 @@ export interface TenantInbox {
    */
   proposals?: TenantInboxProposal[];
   /**
-   * Run records inspected; the scan is capped.
+   * Run records inspected by this page — at most 500 for a first page, at most 2 000 for a
+   * continuation page that read past empty windows.
    */
   scanned: number;
   /**
-   * The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot
-   * tell you this — the number only means something to a caller who already knows what the cap
-   * is.
+   * Older runs exist past the ones this page read, so `counts` is a floor rather than a total.
+   * `scanned` alone cannot tell you this — the number only means something to a caller who
+   * already knows what the cap is. Follow `cursor` to read them.
    */
   truncated?: boolean;
+  /**
+   * More waiting runs may follow: the rest of this window, or older windows. Since 2026-10-19.
+   */
+  has_more?: boolean;
+  /**
+   * Present exactly when `has_more` is true: pass it as `?cursor=` for the next page. Opaque.
+   * Since 2026-10-19.
+   */
+  cursor?: string;
 }
 
 /**
- * Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
- * them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
- * true these are a floor, not a total.
+ * Counted over the page's scan window, NOT over `items` — so `limit` truncating the list does
+ * not move them. The window is capped at 500 runs, though, and that cap they cannot see past:
+ * when `truncated` is true these are a floor, not a total. On a continuation page (`?cursor=`)
+ * they cover that page's span only, and `review`/`proposal` are 0.
  */
 export interface TenantInboxCounts {
   total: number;
@@ -20584,6 +21646,24 @@ export interface TenantTrial {
 
 export interface TenantUser {
   avatar_url?: string;
+  /**
+   * Canonical BCP-47 tag; absent when the person has not set one.
+   */
+  interface_language?: string;
+  /**
+   * Absent when the person has not chosen one. Normally a `ChiefVoice`; read it through `GET
+   * /me`, which reports any other stored shape as null.
+   */
+  chief_voice?: JsonValue;
+  /**
+   * Present on `GET /users` items only. Derived, never written: `last_seen_at` is the newest
+   * `last_used_at` over the member's non-revoked login-session rows in THIS tenant — stamped by
+   * every authenticated request already — or their `last_login_at` when it is newer or no
+   * session row exists; `online` is true when that moment is within the last 5 minutes. A member
+   * working here through `X-Active-Tenant` from a session minted in another tenant reads as last
+   * seen at their last login; operator API keys never make a person look online.
+   */
+  presence?: TenantUserPresence;
   last_login_at?: string;
   created_at?: string;
   email?: string;
@@ -20593,6 +21673,19 @@ export interface TenantUser {
   status?: string;
   tenant_id?: string;
   updated_at?: string;
+}
+
+/**
+ * Present on `GET /users` items only. Derived, never written: `last_seen_at` is the newest
+ * `last_used_at` over the member's non-revoked login-session rows in THIS tenant — stamped by
+ * every authenticated request already — or their `last_login_at` when it is newer or no
+ * session row exists; `online` is true when that moment is within the last 5 minutes. A member
+ * working here through `X-Active-Tenant` from a session minted in another tenant reads as last
+ * seen at their last login; operator API keys never make a person look online.
+ */
+export interface TenantUserPresence {
+  online: boolean;
+  last_seen_at: string | null;
 }
 
 export interface TerminateAgentResponse {
@@ -20698,6 +21791,8 @@ export interface TestLLMProviderKeyResponse {
 export interface TestNotificationTargetResponse {
   ok: boolean;
   message: string;
+  notification_id: string;
+  target_id: string;
 }
 
 export interface TestWebhookResponse {
@@ -20708,6 +21803,23 @@ export interface TestWebhookResponse {
    */
   event_type: string;
 }
+
+/**
+ * A character range in a text result. Offsets are half-open: `start` is the first character,
+ * `end` is one past the last, so `end` must be greater than `start` (`422` otherwise). For a
+ * paragraph, send the paragraph's range. `quote` is the text the person saw — it is what the
+ * agent is shown on a redo.
+ */
+export interface TextAnchor {
+  kind: TextAnchorKind;
+  quote: string;
+  start: number;
+  end: number;
+}
+
+export type TextAnchorKind = 'text';
+
+export const TEXT_ANCHOR_KIND_VALUES = ['text'] as const;
 
 export interface Todo {
   todo_id: string;
@@ -20945,15 +22057,15 @@ export interface UpdateAdminAgentMemoryConfigResponseAgentMemory {
    * The model memory extraction calls after a run. On PUT, `null` clears the stored override so
    * the platform default applies again; GET then omits the field. Added 2026-09-23.
    */
-  extraction_model: string;
+  extraction_model?: string;
   eviction_threshold: number;
   embedding_dimensions: number;
-  embedding_provider: string;
-  embedding_model: string;
+  embedding_provider?: string;
+  embedding_model?: string;
   /**
    * On PUT, `null` clears the stored override; GET then omits the field. Added 2026-09-23.
    */
-  compression_model: string;
+  compression_model?: string;
 }
 
 export interface UpdateAdminAuthConfigRequest {
@@ -21834,6 +22946,11 @@ export interface UpdateMCPServerRequest {
    * Re-encrypted on write. `{}` clears it.
    */
   env?: JsonObject;
+  /**
+   * Optional replacement authentication (none or api_key). Omit to preserve the stored grant,
+   * including broker-owned OAuth. Client-supplied OAuth is refused.
+   */
+  auth?: MCPServerAuth;
   enabled?: boolean;
   capabilities?: JsonObject;
   status?: MCPServerStatus;
@@ -21989,6 +23106,7 @@ export interface UpdateRuntimeConfigRequest {
   max_cost_usd_ceiling?: number;
   cost_per_image_usd?: number;
   cost_per_video_second_usd?: number;
+  memory_retrieve_timeout_ms?: number;
   vision_max_tokens?: number;
   media_endpoint?: string;
   default_team_budget_usd?: number;
@@ -22068,6 +23186,12 @@ export interface UpdateSessionRequest {
    * the first `pinned_at`. false unpins.
    */
   pinned?: boolean;
+  /**
+   * The chat's name. Trimmed, then 1–80 characters (`422` otherwise); `null` clears it. Either
+   * way `title_source` becomes `user`, and a generated title never replaces it. Stored on the
+   * session, never in `metadata`; `updated_at` is left alone.
+   */
+  title?: string | null;
   /**
    * Per-conversation model override. Send null to clear (revert to agent default), or {
    * provider, model_ref, endpoint_url?, capabilities? } to set. The runtime governance allowlist
@@ -22215,6 +23339,16 @@ export interface UploadFileResponse {
   size_bytes: number;
   sha256: string;
   created_at: string;
+  /**
+   * The agent whose run wrote this file (since 2026-10-19). Absent for a person's or an API
+   * caller's upload and for every older record, which is not attributed after the fact.
+   */
+  agent_id?: string;
+  /**
+   * The run that wrote it; present only with `agent_id`, and only when the write happened inside
+   * a run.
+   */
+  run_id?: string;
   url: string;
 }
 
@@ -22256,7 +23390,7 @@ export interface UpsertNotificationTargetRequest {
    * Defaults to true; only an explicit `false` disables.
    */
   enabled?: boolean;
-  config: UpsertNotificationTargetRequestConfigVariant1 | UpsertNotificationTargetRequestConfigVariant2 | UpsertNotificationTargetRequestConfigVariant3 | UpsertNotificationTargetRequestConfigVariant4;
+  config: UpsertNotificationTargetRequestConfigVariant1 | UpsertNotificationTargetRequestConfigVariant2 | UpsertNotificationTargetRequestConfigVariant3 | UpsertNotificationTargetRequestConfigVariant4 | UpsertNotificationTargetRequestConfigVariant5;
 }
 
 export interface UpsertNotificationTargetRequestConfigVariant1 {
@@ -22292,6 +23426,26 @@ export interface UpsertNotificationTargetRequestConfigVariant4 {
 export interface UpsertNotificationTargetRequestConfigVariant4keys {
   p256dh: string;
   auth: string;
+}
+
+/**
+ * An iOS Live Activity push token — see the operation description.
+ */
+export interface UpsertNotificationTargetRequestConfigVariant5 {
+  kind: NotificationTargetConfigVariant5kind;
+  /**
+   * Hex APNs token for this one activity (16–512 hex characters).
+   */
+  token: string;
+  /**
+   * The ActivityAttributes type name, e.g. `RunActivityAttributes`.
+   */
+  activity_type: string;
+  /**
+   * The run whose progress drives this activity.
+   */
+  run_id?: string;
+  device_label?: string;
 }
 
 export interface UpsertPromoCodeResponse {
@@ -22903,6 +24057,52 @@ export interface VideoTemplateTitle {
   uk: string;
 }
 
+export interface VoiceCatalog {
+  items: VoiceCatalogItem[];
+  /**
+   * `live`: fetched now; `cache`: from the 24-hour cache; `stale`: the refresh failed and this
+   * is the last good catalog; `default`: nothing has been fetched yet, so only the configured
+   * default voice is listed.
+   */
+  source: VoiceCatalogSource;
+  fetched_at: string | null;
+}
+
+export interface VoiceCatalogItem {
+  /**
+   * The provider's voice id (its name when the provider lists none). `(model, id)` identifies
+   * the entry; send `id` as `voice`.
+   */
+  id: string;
+  model: string;
+  /**
+   * Display name.
+   */
+  name: string;
+  /**
+   * When the provider says.
+   */
+  language?: string;
+  /**
+   * When the provider says.
+   */
+  gender?: string;
+  quality_tier: VoiceCatalogItemQualityTier;
+}
+
+export type VoiceCatalogItemQualityTier = 'premium' | 'standard';
+
+export const VOICE_CATALOG_ITEM_QUALITY_TIER_VALUES = ['premium', 'standard'] as const;
+
+/**
+ * `live`: fetched now; `cache`: from the 24-hour cache; `stale`: the refresh failed and this
+ * is the last good catalog; `default`: nothing has been fetched yet, so only the configured
+ * default voice is listed.
+ */
+export type VoiceCatalogSource = 'live' | 'cache' | 'stale' | 'default';
+
+export const VOICE_CATALOG_SOURCE_VALUES = ['live', 'cache', 'stale', 'default'] as const;
+
 export interface VoiceConfig {
   stt?: VoiceConfigStt;
   tts?: VoiceConfigTts;
@@ -22911,16 +24111,16 @@ export interface VoiceConfig {
 export interface VoiceConfigStt {
   configured?: boolean;
   endpoint?: string;
-  model?: string;
-  provider?: string;
+  model?: string | null;
+  provider?: string | null;
 }
 
 export interface VoiceConfigTts {
   configured?: boolean;
   endpoint?: string;
-  model?: string;
-  provider?: string;
-  voice?: string;
+  model?: string | null;
+  provider?: string | null;
+  voice?: string | null;
 }
 
 /**

@@ -32,6 +32,7 @@ import type {
   RespondToRunResponse,
   ResumeRunRequest,
   ResumeRunResponse,
+  ReviewRunRequest,
   ReviseRunRequest,
   ReviseRunResponse,
   Run,
@@ -40,6 +41,7 @@ import type {
   RunFeedbackList,
   RunFeedbackOne,
   RunFeedbackSet,
+  RunReview,
   RunStep,
   SetRunFeedbackRequest,
 } from '../models.js';
@@ -169,7 +171,10 @@ export class RunsResource extends APIResource {
    * Approve a pending tool call (HITL)
    *
    * The body is optional; sending none approves without a message. `reject` has always taken a
-   * body, and the asymmetry was an omission rather than a design.
+   * body, and the asymmetry was an omission rather than a design. A run holding the super-admin
+   * tool package (the platform owner's own run of their workspace's Chief) moves forward only
+   * for the platform owner: anyone else gets `403` `SUPER_ADMIN_REQUIRED` and the run is left
+   * where it was (since 2026-10-19).
    *
    * `POST /api/v1/runs/{runId}/approve`
    *
@@ -216,7 +221,10 @@ export class RunsResource extends APIResource {
   /**
    * Continue a run from a continuation token
    *
-   * Decodes the token, loads the checkpoint, and re-schedules the run.
+   * Decodes the token, loads the checkpoint, and re-schedules the run. A run holding the
+   * super-admin tool package (the platform owner's own run of their workspace's Chief) moves
+   * forward only for the platform owner: anyone else gets `403` `SUPER_ADMIN_REQUIRED` and the
+   * run is left where it was (since 2026-10-19).
    *
    * `POST /api/v1/runs/{runId}/continue`
    *
@@ -464,6 +472,26 @@ export class RunsResource extends APIResource {
   }
 
   /**
+   * The latest verdict on a run's result
+   *
+   * The newest verdict given with `POST /runs/{runId}/review`: `approve` or `redo`, the comment,
+   * the anchors and — on `redo` — the follow-up run. A run nobody reviewed answers `200` with
+   * `reviewed: false` and nulls, not `404`; `404` means the run does not exist. Permission:
+   * reading the session — `sessions` read with `sessions:read`. Since 2026-10-19.
+   *
+   * `GET /api/v1/runs/{runId}/review`
+   *
+   * Required scopes: `sessions:read`.
+   */
+  getRunReview(runId: string, options?: RequestOptions): Promise<RunReview> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/runs/${encodeURIComponent(String(runId))}/review`,
+      options,
+    });
+  }
+
+  /**
    * Where a run's facts came from
    *
    * Derived from the run's own tool events and its answer — nothing is stored, so every run has
@@ -679,7 +707,9 @@ export class RunsResource extends APIResource {
    * wins the CAS, and `400` when `response` is empty or missing. The answer is stored for the
    * runtime to read on resume, the run is returned to `queued` and rescheduled at realtime
    * priority, and a `run.input_received` event is appended. Returns `{status, run_id}` — the run
-   * resumes asynchronously.
+   * resumes asynchronously. A run holding the super-admin tool package (the platform owner's own
+   * run of their workspace's Chief) moves forward only for the platform owner: anyone else gets
+   * `403` `SUPER_ADMIN_REQUIRED` and the run is left where it was (since 2026-10-19).
    *
    * `POST /api/v1/runs/{runId}/respond`
    *
@@ -707,7 +737,9 @@ export class RunsResource extends APIResource {
    * already producing the final answer holds that answer, and a resume without a note releases
    * it without calling the model again; a `run.started` event records that this was a resume.
    * The rescheduling is fire-and-forget, so the `202` means the run was re-queued, not that it
-   * has restarted.
+   * has restarted. A run holding the super-admin tool package (the platform owner's own run of
+   * their workspace's Chief) moves forward only for the platform owner: anyone else gets `403`
+   * `SUPER_ADMIN_REQUIRED` and the run is left where it was (since 2026-10-19).
    *
    * `POST /api/v1/runs/{runId}/resume`
    *
@@ -717,6 +749,57 @@ export class RunsResource extends APIResource {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/resume`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Approve a finished result, or send it back with anchored comments
+   *
+   * A person's verdict on a run's RESULT — a document, an image, code — once the run is finished
+   * (since 2026-10-19). Not the tool-approval answers (`/approve`, `/reject`, `/revise` decide
+   * an action a run is waiting on) and not the mission objective review.
+   *
+   * `approve` records the verdict and marks the run (`review` on `GET /runs/{runId}`); the run
+   * is otherwise unchanged. Only a `completed` run can be approved.
+   *
+   * `redo` starts a follow-up run for the same agent in the same session, exactly as if the
+   * person had written it in the chat (`POST /sessions/{sessionId}/messages`): the same quota,
+   * agent-lifecycle and bridge handling, the active branch, and the person's turn recorded in
+   * the conversation. Its input is plain words — the `comment`, then each anchor as a numbered
+   * place ("the passage “…” (characters 120–180)", "the area of the image starting 40% from the
+   * left and 20% from the top, 10% wide and 5% tall", "lines 12–18 of src/app.ts") with its
+   * `note`; the reviewed answer is already in the conversation the agent is given. The follow-up
+   * carries `input.review_of_run_id`. Any finished run can be sent back, a failed one included.
+   * A redo needs a `comment` or at least one anchor.
+   *
+   * The latest verdict wins; a second `redo` of a result already sent back is refused (`409`) —
+   * review the follow-up instead. Nothing is recorded when the follow-up cannot start: the
+   * refusal of the message route comes back as it is (`402`/`429` quota, `403` a suspended
+   * agent, `409` a run already active in a one-at-a-time session, `410` a terminated agent,
+   * `422` `SESSION_NOT_ACTIVE`).
+   *
+   * Permission: the same as sending a message in the session — `sessions` write, with
+   * `sessions:write` or `runs:create`. `Idempotency-Key` is honoured: a retry with the same key
+   * and body replays the first answer and starts no second run.
+   *
+   * `404` when the run (or, on `redo`, its session) does not exist. `409` when the run is not
+   * finished (one at `awaiting_approval` is answered with where to decide its action), when
+   * approving a run that did not complete, when a `redo` is asked of a run outside any session
+   * or made by an agent other than the session's own, and on a second `redo`. `422` for a body
+   * or anchor that does not fit, and (`ASSESSMENT_ISOLATION_REQUIRED`) for a qualification
+   * assessment run, which is never continued into another run.
+   *
+   * `POST /api/v1/runs/{runId}/review`
+   *
+   * Required scopes: `runs:create`, `sessions:write`.
+   */
+  reviewRun(runId: string, body: ReviewRunRequest, options?: RequestOptions): Promise<RunReview> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/runs/${encodeURIComponent(String(runId))}/review`,
       body,
       idempotent: true,
       options,
@@ -734,7 +817,10 @@ export class RunsResource extends APIResource {
    * `runs.approve` permission. `404` when the run does not exist; `409` unless its status is
    * `awaiting_approval`, for a run on a local bridge (decided on that machine — approve or
    * reject it), and when a concurrent write wins. `422` without `feedback`. Since 2026-10-12;
-   * before, the only refusal (`reject`) failed the run.
+   * before, the only refusal (`reject`) failed the run. A run holding the super-admin tool
+   * package (the platform owner's own run of their workspace's Chief) moves forward only for the
+   * platform owner: anyone else gets `403` `SUPER_ADMIN_REQUIRED` and the run is left where it
+   * was (since 2026-10-19).
    *
    * `POST /api/v1/runs/{runId}/revise`
    *
@@ -795,7 +881,9 @@ export class RunsResource extends APIResource {
    * should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`. A
    * session run also emits `session.context` (payload: SessionContext plus `session_id`) after
    * the run's last model call and before `run.completed` — the context bar's live update, since
-   * 2026-10-15.
+   * 2026-10-15. No event carries the model's identity: `model`, `provider`, `model_ref`,
+   * `endpoint_url` and `api_key_ref` are removed before serialisation, for every caller
+   * including the platform super-admin (since 2026-10-20).
    *
    * `GET /api/v1/runs/{runId}/events`
    *

@@ -18,6 +18,10 @@ package UARP.API.Files is
       Limit : UARP.Types.Integer_Value := 0;
       Has_Cursor : Boolean := False;
       Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Only the files this agent's runs wrote. Not a UUID: `400`. At most 2,000 records are read
+      --  per request; follow `cursor`.
+      Has_Agent_Id : Boolean := False;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    No_List_Files_Params : constant List_Files_Params := (others => <>);
@@ -82,6 +86,14 @@ package UARP.API.Files is
    --  whether one was returned. `mime_prefix` is applied after the page is read, so it filters the
    --  current page rather than the whole collection - a page can come back empty while later pages
    --  still hold matches. Metadata only; no bytes.
+   --
+   --  `agent_id` lists the files that agent's runs wrote, newest first (since 2026-10-19). Only
+   --  records stamped with `agent_id` match - an upload, or a file written before the stamp
+   --  existed, belongs to no agent and none is guessed for it. There is no index behind this
+   --  filter: one request reads at most 2,000 file records and answers the matches it found with a
+   --  cursor to continue, so a page can be short or empty while `has_more` is true; follow the
+   --  cursor. `mime_prefix` combines with it and is then applied during the scan, not per page.
+   --  `agent_id` that is not a UUID is `400`.
    --
    --  GET /api/v1/files
    --

@@ -8,6 +8,38 @@ public struct BillingAPI: Sendable {
 
     init(client: UARPClient) { self.client = client }
 
+    /// Apply a StoreKit 2 purchase to the tenant's plan
+    ///
+    /// The iOS app posts the `jwsRepresentation` of a StoreKit 2 transaction after a purchase (and
+    /// may again on launch, for the current entitlement). The JWS is verified offline — x5c chain
+    /// to Apple Root CA - G3, each link's signature, CA flags, validity and Apple's marker
+    /// extensions, ES256 under the leaf key, the bundle id (`apple_bundle_id` / `APPLE_BUNDLE_ID`),
+    /// and that it was signed for `environment`. No call to Apple. `Xcode` is accepted only outside
+    /// production, against a configured StoreKit test certificate.
+    ///
+    /// A verified, unexpired, unrevoked transaction for a product the platform sells
+    /// (`app_store_product_id` on `GET /billing/plans`) sets the plan with `plan_source:
+    /// app_store`, records the subscription on the tenant's billing, and ends a running trial. The
+    /// subscription is bound to the first tenant that posts it. Idempotent per
+    /// `original_transaction_id`: re-posting, or posting an older transaction of the same
+    /// subscription, changes nothing and answers the stored state.
+    ///
+    /// `appAccountToken`, when the app set one, must be the tenant id. Requires the `billing:write`
+    /// permission and scope.
+    ///
+    /// `POST /api/v1/billing/app-store/transactions`
+    ///
+    /// Required scopes: `billing:read`.
+    public func applyAppStoreTransaction(body: ApplyAppStoreTransactionRequest, options: RequestOptions = .init()) async throws -> ApplyAppStoreTransactionResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/billing/app-store/transactions",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Check tenant quota status
     ///
     /// Reports the tenant's quota position: the effective `plan`, the monthly token and run check
@@ -262,6 +294,42 @@ public struct BillingAPI: Sendable {
             method: "GET",
             path: "/api/v1/usage/timeseries",
             query: query,
+            options: options
+        ))
+    }
+
+    /// Handle App Store Server Notifications V2
+    ///
+    /// The App Store Server Notifications V2 endpoint (app-store.ts). `signedPayload` is verified
+    /// offline — x5c chain to Apple Root CA - G3 (embedded), each link's signature, CA flags,
+    /// validity and Apple's marker extensions, the ES256 signature, the bundle id
+    /// (`apple_bundle_id` / `APPLE_BUNDLE_ID`) — and so is the `signedTransactionInfo` and
+    /// `signedRenewalInfo` it carries. No call to Apple. Deduplicated on `notificationUUID` for ten
+    /// days: a replay answers `duplicate: true` and changes nothing; a handler failure releases the
+    /// claim and answers 500 so Apple retries.
+    ///
+    /// The tenant is the one the subscription's `originalTransactionId` is bound to (by `POST
+    /// /billing/app-store/transactions`), else the tenant the transaction's `appAccountToken`
+    /// names. Handled types:
+    ///
+    /// - `SUBSCRIBED`, `DID_RENEW`: set the plan the product buys and extend `app_store_expires_ms`
+    /// (`action: plan_applied`; `unchanged` for an older transaction; `stripe_active` / `refused`
+    /// when Stripe or an operator owns the plan, which is left as it is).
+    /// - `EXPIRED`, `REFUND`, `REVOKE`, `DID_FAIL_TO_RENEW` (without the `GRACE_PERIOD` subtype),
+    /// `GRACE_PERIOD_EXPIRED`: drop the plan to free — only when `plan_source` is `app_store` and
+    /// the record holds this subscription (`action: downgraded_to_free`, else `not_app_store_plan`
+    /// / `superseded_subscription`).
+    /// - `DID_FAIL_TO_RENEW` with subtype `GRACE_PERIOD`: the plan stays; `app_store_expires_ms`
+    /// moves to the grace end (`action: grace_period`).
+    /// - Every other type is logged and acknowledged (`handled: false`, `action: ignored`).
+    ///
+    /// `POST /api/v1/webhooks/app-store`
+    public func handleAppStoreNotification(body: HandleAppStoreNotificationRequest, options: RequestOptions = .init()) async throws -> HandleAppStoreNotificationResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/webhooks/app-store",
+            body: try client.encode(body),
+            idempotent: true,
             options: options
         ))
     }

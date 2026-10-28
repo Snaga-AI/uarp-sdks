@@ -53,6 +53,9 @@ package body UARP.API.Analytics is
       if Params.Has_Limit then
          UARP.Types.Add (Query, "limit", Params.Limit);
       end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
@@ -61,6 +64,53 @@ package body UARP.API.Analytics is
              Query => Query,
              Options => Options));
    end Get_Tenant_Inbox;
+
+   function Get_Tenant_Inbox_All
+     (Self : Client_Type;
+      Params : Get_Tenant_Inbox_Params := No_Get_Tenant_Inbox_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Inbox_Item_Vectors.Vector
+   is
+      Collected : UARP.Models.Inbox_Item_Vectors.Vector;
+      Page_Params : Get_Tenant_Inbox_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.Tenant_Inbox :=
+               Get_Tenant_Inbox
+                  (Self,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Items loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Items.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end Get_Tenant_Inbox_All;
 
    function Get_Tenant_Overview
      (Self : Client_Type;

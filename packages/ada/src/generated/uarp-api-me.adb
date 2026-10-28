@@ -67,6 +67,34 @@ package body UARP.API.Me is
              Options => Options));
    end Get_My_Preferences;
 
+   function Get_My_Rail_Agents
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_My_Rail_Agents_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/me/rail-agents",
+             Options => Options));
+   end Get_My_Rail_Agents;
+
+   function List_Voices
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Voice_Catalog
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/voices",
+             Options => Options));
+   end List_Voices;
+
    function Patch
      (Self : Client_Type;
       Payload : UARP.Models.Patch_Me_Request;
@@ -84,6 +112,24 @@ package body UARP.API.Me is
              Idempotent => True,
              Options => Options));
    end Patch;
+
+   function Replace_My_Rail_Agents
+     (Self : Client_Type;
+      Payload : UARP.Models.Replace_My_Rail_Agents_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Replace_My_Rail_Agents_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/me/rail-agents",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Replace_My_Rail_Agents;
 
    function Switch_Tenant
      (Self : Client_Type;

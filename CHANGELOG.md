@@ -8,6 +8,55 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+Build `9eadfc19`, canonical digest `30ee77a71a6c5006`. Against 0.12.0: 653
+paths (+11), 871 operations (+14), 467 schemas (+14), 2214 named types (+85);
+nothing removed.
+
+### Added
+
+- **App Store billing**: `POST /billing/app-store/transactions` applies a
+  StoreKit 2 purchase to the tenant's plan; `POST /webhooks/app-store` receives
+  App Store Server Notifications V2. `TenantBilling` gains `plan_source` and the
+  `app_store_*` fields, `DeploymentFeatures` gains `app_store`, and a billing
+  plan names its `app_store_product_id`.
+- **Reviewing a run**: `GET`/`POST /runs/{runId}/review` approve a finished
+  result or send it back (`redo`) with comments anchored to text, an image
+  region or code lines (`RunReview`, `ReviewAnchor`). `Run` carries its latest
+  `review`; session annotations gain the same `anchor` and a `target`.
+- **Agents**: `GET /agents/overview` (every agent with what it needs from you),
+  `GET /agents/{agentId}/sessions` (paginated, optionally grouped by day), and
+  `GET`/`PUT /me/rail-agents` (the agents pinned to a person's rail).
+- **Sessions**: `PATCH /sessions/{sessionId}`; sessions gain `title` and
+  `title_source`.
+- `GET /voices`, the voice catalogue; a tenant user carries `chief_voice`,
+  `interface_language` and `presence`.
+- `POST /hire/permission`: a hired agent asking a person to allow one tool
+  call. `AgentHire` gains `online` and `last_seen_at`.
+- Admin: `retirePlatformAgents`, `backfillSessionTitles` and
+  `postQualificationUsageCorrection`.
+- A `live_activity` notification channel and its `apns_liveactivity` target
+  config; `push_from` in notification preferences; `cursor` and `has_more` on
+  the tenant inbox, which gets a paging helper; `agent_id` and `run_id` on
+  files; `cost_attribution` on run metrics; `failure_reason` on an AAR
+  objective; a `queued_walk_ceiling` mission result code.
+
+### Changed — may need a code change
+
+- **Companies**: `strategic_goals` is a list of objects (`title`, `kpis`,
+  `deadline`, …) rather than strings, `config` is typed (`review_interval_ms`,
+  `escalation_on`) rather than free-form, and on update `budget` is an object
+  (`total_usd`, `daily_limit_usd`, `alert_threshold_pct`) rather than a number.
+  Update also takes `status`, create takes `strategist_model`, and `name`,
+  `mission` and `description` are now length-bounded.
+- Now optional: `extraction_model`, `embedding_provider`, `embedding_model` and
+  `compression_model` in the agent-memory admin config.
+- Now nullable: the governance ledger's `head`, the platform LLM defaults, the
+  voice config's `stt`/`tts` model, provider and voice,
+  `google_one_tap_client_id` and a public plan's overage price.
+
+In the strictly-typed SDKs these members change type (`String` becomes
+`Option<String>` in Rust, `String?` in Swift and Kotlin).
+
 ### Fixed — install lines in the READMEs follow the version
 
 At 0.12.0 the Rust README still asked for `"0.3"`, Kotlin for `0.3.0`, Ada for

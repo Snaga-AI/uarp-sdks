@@ -991,7 +991,38 @@ class AdminConfigResource:
             request_options=request_options,
         ))
 
-    def put_qualification_pricing_revision(self, pricing_revision: str, body: Union[_m.PutQualificationPricingRevisionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> JsonValue:
+    def post_qualification_usage_correction(self, body: Union[_m.PostQualificationUsageCorrectionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.QualificationUsageCorrection:
+        """Reverse a sponsored run's usage booked to the candidate
+
+        WRITE SEMANTICS: idempotent per run. Super-admin only (since 2026-10-19). For a settled
+        sponsored qualification run whose usage the run-end accounting of before 2026-10-19 booked
+        to the candidate's own company: recomputes from the run record what that run added — tokens,
+        the run, tool calls, storage, cost and provider cost in the month, day, agent-day and model
+        shards, and the tenant and agent spend counters (monthly, weekly, daily) — for the UTC day
+        and month the run ended in, and writes the same amounts back as compensating entries.
+        Nothing is deleted; the run, its receipt, the grant and the sponsor's settlement are not
+        touched, and none of the candidate's other usage. `dry_run: true` answers the plan (`status:
+        planned`, `before` and the projected `after`) and writes nothing. The first apply answers
+        201 `applied` with a `correction_id` and writes a `usage.corrected` audit entry; every later
+        call answers 200 `already_applied` with the same `correction_id` and writes nothing. A run
+        ended after the fix carries `metrics.cost_attribution: sponsored_telemetry`, had nothing
+        booked, and answers 200 `nothing_recorded`. The evaluator's workspace is not deleted: it is
+        no longer counted against the plan.
+
+        `POST /api/v1/admin/qualification/usage-corrections`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.QualificationUsageCorrection", self._client._request(
+            "POST",
+            "/api/v1/admin/qualification/usage-corrections",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.QualificationUsageCorrection),
+            request_options=request_options,
+        ))
+
+    def put_qualification_pricing_revision(self, pricing_revision: str, body: Union[_m.PutQualificationPricingRevisionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.QualificationPricingRevision:
         """Pin an accounting rate
 
         WRITE SEMANTICS: replaces, once — the first body is stored and never changed. Super-admin
@@ -1005,16 +1036,16 @@ class AdminConfigResource:
 
         Required scopes: `admin`.
         """
-        return _cast("JsonValue", self._client._request(
+        return _cast("_m.QualificationPricingRevision", self._client._request(
             "PUT",
             f"/api/v1/admin/qualification/pricing-revisions/{_segment(pricing_revision)}",
             body=_Body(body),
             idempotent=True,
-            response=_Response(type=None),
+            response=_Response(type=_m.QualificationPricingRevision),
             request_options=request_options,
         ))
 
-    def put_qualification_sponsor_key(self, key_id: str, body: Union[_m.PutQualificationSponsorKeyRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> JsonValue:
+    def put_qualification_sponsor_key(self, key_id: str, body: Union[_m.PutQualificationSponsorKeyRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.PutQualificationSponsorKeyResponse:
         """Make a key a sponsor key
 
         WRITE SEMANTICS: replaces — the record is the body (company and program list). Super-admin
@@ -1026,12 +1057,12 @@ class AdminConfigResource:
 
         Required scopes: `admin`.
         """
-        return _cast("JsonValue", self._client._request(
+        return _cast("_m.PutQualificationSponsorKeyResponse", self._client._request(
             "PUT",
             f"/api/v1/admin/qualification/sponsor-keys/{_segment(key_id)}",
             body=_Body(body),
             idempotent=True,
-            response=_Response(type=None),
+            response=_Response(type=_m.PutQualificationSponsorKeyResponse),
             request_options=request_options,
         ))
 
@@ -3224,7 +3255,38 @@ class AsyncAdminConfigResource:
             request_options=request_options,
         ))
 
-    async def put_qualification_pricing_revision(self, pricing_revision: str, body: Union[_m.PutQualificationPricingRevisionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> JsonValue:
+    async def post_qualification_usage_correction(self, body: Union[_m.PostQualificationUsageCorrectionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.QualificationUsageCorrection:
+        """Reverse a sponsored run's usage booked to the candidate
+
+        WRITE SEMANTICS: idempotent per run. Super-admin only (since 2026-10-19). For a settled
+        sponsored qualification run whose usage the run-end accounting of before 2026-10-19 booked
+        to the candidate's own company: recomputes from the run record what that run added — tokens,
+        the run, tool calls, storage, cost and provider cost in the month, day, agent-day and model
+        shards, and the tenant and agent spend counters (monthly, weekly, daily) — for the UTC day
+        and month the run ended in, and writes the same amounts back as compensating entries.
+        Nothing is deleted; the run, its receipt, the grant and the sponsor's settlement are not
+        touched, and none of the candidate's other usage. `dry_run: true` answers the plan (`status:
+        planned`, `before` and the projected `after`) and writes nothing. The first apply answers
+        201 `applied` with a `correction_id` and writes a `usage.corrected` audit entry; every later
+        call answers 200 `already_applied` with the same `correction_id` and writes nothing. A run
+        ended after the fix carries `metrics.cost_attribution: sponsored_telemetry`, had nothing
+        booked, and answers 200 `nothing_recorded`. The evaluator's workspace is not deleted: it is
+        no longer counted against the plan.
+
+        `POST /api/v1/admin/qualification/usage-corrections`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.QualificationUsageCorrection", await self._client._request(
+            "POST",
+            "/api/v1/admin/qualification/usage-corrections",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.QualificationUsageCorrection),
+            request_options=request_options,
+        ))
+
+    async def put_qualification_pricing_revision(self, pricing_revision: str, body: Union[_m.PutQualificationPricingRevisionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.QualificationPricingRevision:
         """Pin an accounting rate
 
         WRITE SEMANTICS: replaces, once — the first body is stored and never changed. Super-admin
@@ -3238,16 +3300,16 @@ class AsyncAdminConfigResource:
 
         Required scopes: `admin`.
         """
-        return _cast("JsonValue", await self._client._request(
+        return _cast("_m.QualificationPricingRevision", await self._client._request(
             "PUT",
             f"/api/v1/admin/qualification/pricing-revisions/{_segment(pricing_revision)}",
             body=_Body(body),
             idempotent=True,
-            response=_Response(type=None),
+            response=_Response(type=_m.QualificationPricingRevision),
             request_options=request_options,
         ))
 
-    async def put_qualification_sponsor_key(self, key_id: str, body: Union[_m.PutQualificationSponsorKeyRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> JsonValue:
+    async def put_qualification_sponsor_key(self, key_id: str, body: Union[_m.PutQualificationSponsorKeyRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.PutQualificationSponsorKeyResponse:
         """Make a key a sponsor key
 
         WRITE SEMANTICS: replaces — the record is the body (company and program list). Super-admin
@@ -3259,12 +3321,12 @@ class AsyncAdminConfigResource:
 
         Required scopes: `admin`.
         """
-        return _cast("JsonValue", await self._client._request(
+        return _cast("_m.PutQualificationSponsorKeyResponse", await self._client._request(
             "PUT",
             f"/api/v1/admin/qualification/sponsor-keys/{_segment(key_id)}",
             body=_Body(body),
             idempotent=True,
-            response=_Response(type=None),
+            response=_Response(type=_m.PutQualificationSponsorKeyResponse),
             request_options=request_options,
         ))
 

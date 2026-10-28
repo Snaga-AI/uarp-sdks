@@ -780,6 +780,32 @@ package UARP.API.Admin_Config is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Promo_Rewards_Response;
 
+   --  Reverse a sponsored run's usage booked to the candidate
+   --
+   --  WRITE SEMANTICS: idempotent per run. Super-admin only (since 2026-10-19). For a settled
+   --  sponsored qualification run whose usage the run-end accounting of before 2026-10-19 booked
+   --  to the candidate's own company: recomputes from the run record what that run added - tokens,
+   --  the run, tool calls, storage, cost and provider cost in the month, day, agent-day and model
+   --  shards, and the tenant and agent spend counters (monthly, weekly, daily) - for the UTC day
+   --  and month the run ended in, and writes the same amounts back as compensating entries.
+   --  Nothing is deleted; the run, its receipt, the grant and the sponsor's settlement are not
+   --  touched, and none of the candidate's other usage. `dry_run: true` answers the plan (`status:
+   --  planned`, `before` and the projected `after`) and writes nothing. The first apply answers
+   --  201 `applied` with a `correction_id` and writes a `usage.corrected` audit entry; every later
+   --  call answers 200 `already_applied` with the same `correction_id` and writes nothing. A run
+   --  ended after the fix carries `metrics.cost_attribution: sponsored_telemetry`, had nothing
+   --  booked, and answers 200 `nothing_recorded`. The evaluator's workspace is not deleted: it is
+   --  no longer counted against the plan.
+   --
+   --  POST /api/v1/admin/qualification/usage-corrections
+   --
+   --  Required scopes: admin.
+   function Post_Qualification_Usage_Correction
+     (Self : Client_Type;
+      Payload : UARP.Models.Post_Qualification_Usage_Correction_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Qualification_Usage_Correction;
+
    --  Pin an accounting rate
    --
    --  WRITE SEMANTICS: replaces, once - the first body is stored and never changed. Super-admin
@@ -797,7 +823,7 @@ package UARP.API.Admin_Config is
       Pricing_Revision : String;
       Payload : UARP.Models.Put_Qualification_Pricing_Revision_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Qualification_Pricing_Revision;
 
    --  Make a key a sponsor key
    --
@@ -814,7 +840,7 @@ package UARP.API.Admin_Config is
       Key_Id : String;
       Payload : UARP.Models.Put_Qualification_Sponsor_Key_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Put_Qualification_Sponsor_Key_Response;
 
    --  Configure a sponsorship program
    --

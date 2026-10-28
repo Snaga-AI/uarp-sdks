@@ -62,6 +62,9 @@ package body UARP.API.Files is
       if Params.Has_Cursor then
          UARP.Types.Add (Query, "cursor", Params.Cursor);
       end if;
+      if Params.Has_Agent_Id then
+         UARP.Types.Add (Query, "agent_id", Params.Agent_Id);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,

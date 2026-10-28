@@ -77,9 +77,11 @@ class AarPhaseRecordPhase(UarpEnum):
 
 
 class AarRootCauseCategory(UarpEnum):
-    """Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
-    `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed`, `not_dispatchable`
-    and `verifier_error` → `external_error`. Branch on `code` for the precise reason.
+    """Coarse and closed. `exhausted_strikes_<n>` → `verification_failed`; `budget_exhausted` →
+    `unknown`; `dependency_failed`, `not_dispatchable` and `verifier_error` → `external_error`.
+    Only an explicit duration cause yields `max_duration_exceeded`. `code` preserves the precise
+    abort reason and `details` includes the recorded failure reason. Existing finalized AARs are
+    presented with corrected diagnostics without rewriting their stored audit record.
     """
 
     LLM_TIMEOUT = "llm_timeout"
@@ -247,7 +249,10 @@ class AgentExecutionMode(UarpEnum):
 class AgentHireStatus(UarpEnum):
     """`pending`: a command was issued and nothing has connected with it; `connected`: the agent
     connected with its current command; `disconnected`: the person disconnected it — POST
-    /agents/{agentId}/hire/command brings it back.
+    /agents/{agentId}/hire/command brings it back. A one-way record of what happened, not
+    presence: it is written on the first authenticated request and never cleared, so it still
+    reads `connected` after the agent's process has stopped. Show `online` for "is it working
+    now".
     """
 
     PENDING = "pending"
@@ -447,6 +452,15 @@ class AmbassadorRole(UarpEnum):
     OBSERVER = "observer"
 
 
+class AnchorTargetType(UarpEnum):
+    """`AnchorTargetType` enumeration."""
+
+    MESSAGE = "message"
+    ARTIFACT = "artifact"
+    FILE = "file"
+    RUN_OUTPUT = "run_output"
+
+
 class AnthropicErrorErrorType(UarpEnum):
     """`AnthropicErrorErrorType` enumeration."""
 
@@ -506,6 +520,29 @@ class ApplicationCvMimeType(UarpEnum):
     APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_WORDPROCESSINGML_DOCUMENT = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     TEXT_MARKDOWN = "text/markdown"
     TEXT_PLAIN = "text/plain"
+
+
+class ApplyAppStoreTransactionRequestEnvironment(UarpEnum):
+    """Where StoreKit says the transaction came from; must match the signed payload. `Xcode` is
+    refused in production.
+    """
+
+    PRODUCTION = "Production"
+    SANDBOX = "Sandbox"
+    XCODE = "Xcode"
+
+
+class ApplyAppStoreTransactionResponsePlan(UarpEnum):
+    """`ApplyAppStoreTransactionResponsePlan` enumeration."""
+
+    STARTER = "starter"
+    PRO = "pro"
+
+
+class ApplyAppStoreTransactionResponsePlanSource(UarpEnum):
+    """`ApplyAppStoreTransactionResponsePlanSource` enumeration."""
+
+    APP_STORE = "app_store"
 
 
 class ArbiterCaseStatus(UarpEnum):
@@ -648,6 +685,12 @@ class ChatMessageRole(UarpEnum):
     TOOL = "tool"
 
 
+class CodeAnchorKind(UarpEnum):
+    """`CodeAnchorKind` enumeration."""
+
+    CODE = "code"
+
+
 class CompanyChangeSource(UarpEnum):
     """`CompanyChangeSource` enumeration."""
 
@@ -656,6 +699,15 @@ class CompanyChangeSource(UarpEnum):
     TEMPLATE = "template"
     PAUSE = "pause"
     LAUNCH = "launch"
+
+
+class CompanyCreateConfigEscalationOnItem(UarpEnum):
+    """`CompanyCreateConfigEscalationOnItem` enumeration."""
+
+    BUDGET_80PCT = "budget_80pct"
+    OBJECTIVE_FAILED = "objective_failed"
+    GOAL_COMPLETED = "goal_completed"
+    STUCK = "stuck"
 
 
 class CompanyProfileStatus(UarpEnum):
@@ -694,6 +746,15 @@ class CompanyTemplateDepartmentLead(UarpEnum):
     """`CompanyTemplateDepartmentLead` enumeration."""
 
     CHIEF_OF_STAFF = "chief_of_staff"
+
+
+class CompanyUpdateStatus(UarpEnum):
+    """`CompanyUpdateStatus` enumeration."""
+
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    ARCHIVED = "archived"
 
 
 class CompleteOAuthLoginFormPostProvider(UarpEnum):
@@ -797,6 +858,12 @@ class ConversationEntryImportance(UarpEnum):
 
     HIGH = "high"
     NORMAL = "normal"
+
+
+class ConversationEntryMetadataKind(UarpEnum):
+    """`ConversationEntryMetadataKind` enumeration."""
+
+    DAILY_SUMMARY = "daily_summary"
 
 
 class ConversationEntryToolCallStatus(UarpEnum):
@@ -1101,6 +1168,7 @@ class ErrorCode(UarpEnum):
     NOT_YANKED = "NOT_YANKED"
     NO_RUNNABLE_TARGET = "NO_RUNNABLE_TARGET"
     OAUTH_FAILED = "OAUTH_FAILED"
+    OUTPUT_CONTRACT_VIOLATION = "OUTPUT_CONTRACT_VIOLATION"
     OUTPUT_TOO_LARGE = "OUTPUT_TOO_LARGE"
     PAYLOAD_TOO_LARGE = "PAYLOAD_TOO_LARGE"
     PERSISTENCE_ERROR = "PERSISTENCE_ERROR"
@@ -1152,11 +1220,16 @@ class ErrorCode(UarpEnum):
     SPONSORSHIP_SCOPE_REQUIRED = "SPONSORSHIP_SCOPE_REQUIRED"
     STARTED_BY_ANOTHER_USER = "STARTED_BY_ANOTHER_USER"
     STRATEGIST_MODEL_UNCONFIGURED = "STRATEGIST_MODEL_UNCONFIGURED"
+    SUPER_ADMIN_REQUIRED = "SUPER_ADMIN_REQUIRED"
     TASK_GRAPH_FAILED = "TASK_GRAPH_FAILED"
     TEAM_ABORT = "TEAM_ABORT"
     TERMS_NOT_ACCEPTED = "TERMS_NOT_ACCEPTED"
     TEXT_EXTRACTION_FAILED = "TEXT_EXTRACTION_FAILED"
     UNAUTHENTICATED = "UNAUTHENTICATED"
+    USAGE_CORRECTION_EXCEEDS_COUNTERS = "USAGE_CORRECTION_EXCEEDS_COUNTERS"
+    USAGE_CORRECTION_IN_PROGRESS = "USAGE_CORRECTION_IN_PROGRESS"
+    USAGE_CORRECTION_NOT_SETTLED = "USAGE_CORRECTION_NOT_SETTLED"
+    USAGE_CORRECTION_NOT_SPONSORED = "USAGE_CORRECTION_NOT_SPONSORED"
     USER_REQUIRED = "USER_REQUIRED"
     VALIDATION_ERROR = "VALIDATION_ERROR"
     VERIFICATION_FAILED = "VERIFICATION_FAILED"
@@ -1200,6 +1273,7 @@ class ErrorCode(UarpEnum):
     QUOTA_EXCEEDED_2 = "quota_exceeded"
     RATE_LIMITED_2 = "rate_limited"
     RESOURCE_LIMIT_REACHED = "resource_limit_reached"
+    RUN_AGENT_STOPPED = "run_agent_stopped"
     RUN_APPROVAL_EXPIRED = "run_approval_expired"
     RUN_INPUT_TIMEOUT = "run_input_timeout"
     RUN_NEVER_CLAIMED = "run_never_claimed"
@@ -1363,6 +1437,15 @@ class GetAdminIntegrationOAuthProviderProvider(UarpEnum):
     X_TWITTER = "x_twitter"
     FACEBOOK = "facebook"
     TIKTOK = "tiktok"
+
+
+class GetAgentsOverviewResponseItemRing(UarpEnum):
+    """`GetAgentsOverviewResponseItemRing` enumeration."""
+
+    NEEDS_YOU = "needs_you"
+    WORKING = "working"
+    DONE = "done"
+    IDLE = "idle"
 
 
 class GetAgentSystemCardFormat(UarpEnum):
@@ -1586,12 +1669,38 @@ class GuardrailConfigItemSource(UarpEnum):
     DEFAULT = "default"
 
 
+class HandleAppStoreNotificationResponseAction(UarpEnum):
+    """`HandleAppStoreNotificationResponseAction` enumeration."""
+
+    PLAN_APPLIED = "plan_applied"
+    UNCHANGED = "unchanged"
+    STRIPE_ACTIVE = "stripe_active"
+    REFUSED = "refused"
+    DOWNGRADED_TO_FREE = "downgraded_to_free"
+    NOT_APP_STORE_PLAN = "not_app_store_plan"
+    SUPERSEDED_SUBSCRIPTION = "superseded_subscription"
+    PLAN_WRITE_REFUSED = "plan_write_refused"
+    GRACE_PERIOD = "grace_period"
+    UNKNOWN_PRODUCT = "unknown_product"
+    REVOKED_TRANSACTION = "revoked_transaction"
+    NO_TRANSACTION = "no_transaction"
+    ORPHAN_NO_TENANT = "orphan_no_tenant"
+    MISSING = "missing"
+    IGNORED = "ignored"
+
+
 class HireCatalogItemPlatform(UarpEnum):
     """`HireCatalogItemPlatform` enumeration."""
 
     MACOS = "macos"
     LINUX = "linux"
     WINDOWS = "windows"
+
+
+class ImageAnchorKind(UarpEnum):
+    """`ImageAnchorKind` enumeration."""
+
+    IMAGE = "image"
 
 
 class ImmutableAuditEventEventType(UarpEnum):
@@ -1856,6 +1965,12 @@ class ListAdminDomainHealthResponseRowServingReason(UarpEnum):
     MAPPING_MISMATCH = "mapping_mismatch"
 
 
+class ListAgentSessionsGroupBy(UarpEnum):
+    """`ListAgentSessionsGroupBy` enumeration."""
+
+    DAY = "day"
+
+
 class ListAgentVersionsFields(UarpEnum):
     """`ListAgentVersionsFields` enumeration."""
 
@@ -1869,6 +1984,16 @@ class ListAuthProvidersResponseItemId(UarpEnum):
     GITHUB = "github"
     GOOGLE = "google"
     APPLE = "apple"
+
+
+class ListBillingPlansResponsePlanAppStoreProductId(UarpEnum):
+    """The App Store auto-renewable product that buys this plan in the iOS app. Present on starter
+    and pro only. Its App Store price is the web price grossed up for Apple's commission (web
+    net / (1 − Apple rate)).
+    """
+
+    AI_SNAGA_STARTER_MONTHLY = "ai.snaga.starter.monthly"
+    AI_SNAGA_PRO_MONTHLY = "ai.snaga.pro.monthly"
 
 
 class ListPublicIntegrationsResponseConnectorAuthType(UarpEnum):
@@ -2082,7 +2207,9 @@ class MissionResultCode(UarpEnum):
     `all_objectives_verified` (details `verified`), `objectives_failed` (`failed`, `total`),
     `planning_failed`, `aborted_by_signal`, `aborted_by_operator` (the operator's reason, when
     given, is the summary), `watchdog_stuck` (`stuck_status`, `stuck_minutes`),
-    `paused_by_operator`, `resumed_by_operator`, `authorized_by_operator`.
+    `paused_by_operator`, `queued_walk_ceiling` (planned, then paused because the tenant was
+    already running its maximum concurrent missions — resumable with `POST
+    /missions/{id}/resume`), `resumed_by_operator`, `authorized_by_operator`.
     """
 
     ALL_OBJECTIVES_VERIFIED = "all_objectives_verified"
@@ -2092,6 +2219,7 @@ class MissionResultCode(UarpEnum):
     ABORTED_BY_OPERATOR = "aborted_by_operator"
     WATCHDOG_STUCK = "watchdog_stuck"
     PAUSED_BY_OPERATOR = "paused_by_operator"
+    QUEUED_WALK_CEILING = "queued_walk_ceiling"
     RESUMED_BY_OPERATOR = "resumed_by_operator"
     AUTHORIZED_BY_OPERATOR = "authorized_by_operator"
 
@@ -2112,7 +2240,9 @@ class MissionStatus(UarpEnum):
 
 class NotificationChannel(UarpEnum):
     """Delivery channel. `in_app` is always-on (bell drawer + SSE) and cannot be opted out of;
-    `telegram`/`whatsapp` are reserved and have no adapter yet.
+    `telegram`/`whatsapp` are reserved and have no adapter yet. `live_activity` holds iOS Live
+    Activity push tokens: it is never a fan-out destination (naming it in preferences delivers
+    nothing), only the run a token is registered for moves it.
     """
 
     IN_APP = "in_app"
@@ -2120,8 +2250,22 @@ class NotificationChannel(UarpEnum):
     WEBHOOK = "webhook"
     PUSH = "push"
     WEB_PUSH = "web_push"
+    LIVE_ACTIVITY = "live_activity"
     TELEGRAM = "telegram"
     WHATSAPP = "whatsapp"
+
+
+class NotificationPreferencesInputPushFrom(UarpEnum):
+    """Whose notifications are pushed to a phone or browser (`push` and `web_push`). `all` (the
+    default; an omitted field on PUT stores `all`) pushes every agent's; `chief_only` pushes
+    only those raised by the tenant's head agent (the Chief of Staff, `head_agent_id` on the
+    tenant). Other notifications still land in the in-app list, and email and webhooks are
+    unaffected; a notification no agent raised (budget, security, billing) keeps its push.
+    Anything else is `422`.
+    """
+
+    CHIEF_ONLY = "chief_only"
+    ALL = "all"
 
 
 class NotificationPriority(UarpEnum):
@@ -2151,6 +2295,7 @@ class NotificationTargetChannel(UarpEnum):
     WEBHOOK = "webhook"
     PUSH = "push"
     WEB_PUSH = "web_push"
+    LIVE_ACTIVITY = "live_activity"
 
 
 class NotificationTargetConfigVariant1kind(UarpEnum):
@@ -2184,6 +2329,12 @@ class NotificationTargetConfigVariant4kind(UarpEnum):
     """`NotificationTargetConfigVariant4kind` enumeration."""
 
     WEB_PUSH = "web_push"
+
+
+class NotificationTargetConfigVariant5kind(UarpEnum):
+    """`NotificationTargetConfigVariant5kind` enumeration."""
+
+    APNS_LIVEACTIVITY = "apns_liveactivity"
 
 
 class NotificationType(UarpEnum):
@@ -2568,6 +2719,15 @@ class QualificationUnverifiableExecutionReceiptV2executionOrigin(UarpEnum):
     UNKNOWN = "unknown"
 
 
+class QualificationUsageCorrectionStatus(UarpEnum):
+    """`QualificationUsageCorrectionStatus` enumeration."""
+
+    PLANNED = "planned"
+    APPLIED = "applied"
+    ALREADY_APPLIED = "already_applied"
+    NOTHING_RECORDED = "nothing_recorded"
+
+
 class QualificationVerifiedExecutionReceiptV2reasonCode(UarpEnum):
     """`QualificationVerifiedExecutionReceiptV2reasonCode` enumeration."""
 
@@ -2687,6 +2847,28 @@ class ResponsesOutputItemType(UarpEnum):
     """`ResponsesOutputItemType` enumeration."""
 
     MESSAGE = "message"
+
+
+class RetirePlatformAgentsResponseAgentFoundByItem(UarpEnum):
+    """`RetirePlatformAgentsResponseAgentFoundByItem` enumeration."""
+
+    REGISTRY_POINTER = "registry_pointer"
+    METADATA_MARKER = "metadata_marker"
+
+
+class RetirePlatformAgentsResponseAgentKind(UarpEnum):
+    """`RetirePlatformAgentsResponseAgentKind` enumeration."""
+
+    SUPER_AGENT = "super_agent"
+    SERVER_AGENT = "server_agent"
+
+
+class RetirePlatformAgentsResponseHeadAction(UarpEnum):
+    """`RetirePlatformAgentsResponseHeadAction` enumeration."""
+
+    KEEP = "keep"
+    REBIND = "rebind"
+    PROVISION_CHIEF = "provision_chief"
 
 
 class RiskClassificationUpdateAnnexIiiCategory(UarpEnum):
@@ -2974,6 +3156,25 @@ class RunFeedbackListFeedbackReaction(UarpEnum):
     DOWN = "down"
 
 
+class RunMetricsCostAttribution(UarpEnum):
+    """Present only on a sponsored qualification run (since 2026-10-19). `total_cost_usd` is then
+    execution telemetry at the platform's catalog rate: never billed to the company the run
+    executed in, and never counted in its usage, quotas, daily share, run count, spend budget or
+    overage. The sponsor's debit is the grant's `charged_microusd`, accounted at the program's
+    frozen pricing revision, and the two differ (production run 01a151cf…: telemetry $0.010312,
+    sponsor debit 5414 micro-USD). Absent on every other run.
+    """
+
+    SPONSORED_TELEMETRY = "sponsored_telemetry"
+
+
+class RunReviewVerdict(UarpEnum):
+    """`RunReviewVerdict` enumeration."""
+
+    APPROVE = "approve"
+    REDO = "redo"
+
+
 class RunStatus(UarpEnum):
     """`RunStatus` enumeration."""
 
@@ -3095,6 +3296,17 @@ class SessionQueueMode(UarpEnum):
 
     ALLOW = "allow"
     REJECT = "reject"
+
+
+class SessionTitleSource(UarpEnum):
+    """`user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
+    generated title never replaces it; `generated` when the platform named the chat after its
+    first completed run. Absent when no title was ever stored as a field (none, or only the
+    legacy `metadata.title`).
+    """
+
+    GENERATED = "generated"
+    USER = "user"
 
 
 class SetLLMProviderKeyProvider(UarpEnum):
@@ -3280,6 +3492,16 @@ class TeamTopology(UarpEnum):
     SWARM = "swarm"
 
 
+class TenantBillingPlanSource(UarpEnum):
+    """Which system owns the paid plan. Absent means stripe. While the plan is paid, only that
+    system's plan writes land; other writers are refused (an admin grant answers 409).
+    """
+
+    STRIPE = "stripe"
+    APP_STORE = "app_store"
+    OPERATOR = "operator"
+
+
 class TenantBillingStatus(UarpEnum):
     """`TenantBillingStatus` enumeration."""
 
@@ -3321,6 +3543,12 @@ class TestAdminSmtpConfigRequestProfile(UarpEnum):
 
     AUTH = "auth"
     NOTIFY = "notify"
+
+
+class TextAnchorKind(UarpEnum):
+    """`TextAnchorKind` enumeration."""
+
+    TEXT = "text"
 
 
 class TodoDeliveryChannel(UarpEnum):
@@ -3521,6 +3749,25 @@ class VideoTemplateStatus(UarpEnum):
     DRAFT = "draft"
     PUBLISHED = "published"
     ARCHIVED = "archived"
+
+
+class VoiceCatalogItemQualityTier(UarpEnum):
+    """`VoiceCatalogItemQualityTier` enumeration."""
+
+    PREMIUM = "premium"
+    STANDARD = "standard"
+
+
+class VoiceCatalogSource(UarpEnum):
+    """`live`: fetched now; `cache`: from the 24-hour cache; `stale`: the refresh failed and this
+    is the last good catalog; `default`: nothing has been fetched yet, so only the configured
+    default voice is listed.
+    """
+
+    LIVE = "live"
+    CACHE = "cache"
+    STALE = "stale"
+    DEFAULT = "default"
 
 
 class VoteResultStatus(UarpEnum):
@@ -3811,6 +4058,9 @@ class AarObjectiveOutcome(Model):
     abort_reason: Optional[str] = None
     """The objective record's `abort_reason`, copied. Absent when it has none."""
 
+    failure_reason: Optional[str] = None
+    """The failed objective's recorded result: the verifier or execution reason."""
+
     final_agent_id: Optional[str] = None
 
     final_model: Optional[str] = None
@@ -3843,9 +4093,11 @@ class AarRootCause(Model):
     objective_id: str
 
     category: AarRootCauseCategory
-    """Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
-    `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed`, `not_dispatchable`
-    and `verifier_error` → `external_error`. Branch on `code` for the precise reason.
+    """Coarse and closed. `exhausted_strikes_<n>` → `verification_failed`; `budget_exhausted` →
+    `unknown`; `dependency_failed`, `not_dispatchable` and `verifier_error` → `external_error`.
+    Only an explicit duration cause yields `max_duration_exceeded`. `code` preserves the precise
+    abort reason and `details` includes the recorded failure reason. Existing finalized AARs are
+    presented with corrected diagnostics without rewriting their stored audit record.
     """
 
     details: str
@@ -4148,6 +4400,7 @@ class AdminAnalyticsOverviewResponseProductCohorts(Model):
     """`AdminAnalyticsOverviewResponseProductCohorts` model."""
 
     tracking_since: Optional[str]
+    """When tracking began; null before the first cohort row exists."""
 
     as_of: str
 
@@ -4294,7 +4547,7 @@ class AdminConfigAgentMemoryConfigAgentMemory(Model):
 
     extraction_max_tokens: int
 
-    extraction_model: str
+    extraction_model: Optional[str] = None
     """The model memory extraction calls after a run. On PUT, `null` clears the stored override so
     the platform default applies again; GET then omits the field. Added 2026-09-23.
     """
@@ -4303,11 +4556,11 @@ class AdminConfigAgentMemoryConfigAgentMemory(Model):
 
     embedding_dimensions: int
 
-    embedding_provider: str
+    embedding_provider: Optional[str] = None
 
-    embedding_model: str
+    embedding_model: Optional[str] = None
 
-    compression_model: str
+    compression_model: Optional[str] = None
     """On PUT, `null` clears the stored override; GET then omits the field. Added 2026-09-23."""
 
 
@@ -6641,13 +6894,30 @@ class AgentHire(Model):
     status: AgentHireStatus
     """`pending`: a command was issued and nothing has connected with it; `connected`: the agent
     connected with its current command; `disconnected`: the person disconnected it — POST
-    /agents/{agentId}/hire/command brings it back.
+    /agents/{agentId}/hire/command brings it back. A one-way record of what happened, not
+    presence: it is written on the first authenticated request and never cleared, so it still
+    reads `connected` after the agent's process has stopped. Show `online` for "is it working
+    now".
     """
 
     connected_at: Optional[str] = None
 
     expires_at: Optional[str] = None
     """Pending only: when the current command stops working if still unused."""
+
+    online: bool
+    """Whether the agent is polling right now: a bridge connection with a heartbeat in the last two
+    minutes. Derived on every read and always agrees with the agent's `bridge_status`. Added
+    2026-10-20 — before it, a client had only `status` and kept calling a stopped agent
+    "connected".
+    """
+
+    last_seen_at: Optional[str]
+    """The agent's most recent heartbeat, read from its bridge connection; `null` when it has never
+    been seen, or when that connection record was deregistered or swept. While the record exists
+    it keeps the time of the last sighting, so a screen can say when the agent was last alive.
+    Added 2026-10-20.
+    """
 
 
 @_dataclass(kw_only=True)
@@ -7592,14 +7862,14 @@ class AgentVersion(Model):
     (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to
     canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
     provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
-    detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-    provisioned`, `Platform agent config migrated on boot`, `Qualification evaluator template
-    revision N` (N = the template revision), `Hired`, `Registered from a local app`, `Token cap
-    removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap
-    removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version
-    rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement
-    loop: the first N is a count, the second is one of errors, ratings or feedback — words, not
-    a number). A reason code beside the prose is the owner's decision (DEC 11).
+    detached`, `Workspace tools enabled`, `Tool trust override updated`, `Qualification
+    evaluator template revision N` (N = the template revision), `Hired`, `Registered from a
+    local app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of
+    Staff`, `Token cap removed and Head Agent renamed to Chief of Staff`, `Destructive tools
+    removed from auto-approval (template v2)`, `Rollback to version N` (N = the version rolled
+    back to), `Self-improvement: N changes based on N analysis` (the self-improvement loop: the
+    first N is a count, the second is one of errors, ratings or feedback — words, not a number).
+    A reason code beside the prose is the owner's decision (DEC 11).
     """
 
     created_at: str
@@ -7789,6 +8059,18 @@ class AnalyticsTopValue(Model):
     value: str
 
     count: int
+
+
+@_dataclass(kw_only=True)
+class AnchorTarget(Model):
+    """What an annotation or anchor is on: a chat `message` (the id `GET
+    /sessions/{sessionId}/messages` serves), an `artifact`, a `file` (a file id), or a run's
+    output (`run_output`, the run id). Stored as sent; the id is not looked up.
+    """
+
+    type: AnchorTargetType
+
+    id: str
 
 
 @_dataclass(kw_only=True)
@@ -8141,6 +8423,33 @@ class ApplicationCv(Model):
 
 
 @_dataclass(kw_only=True)
+class ApplyAppStoreTransactionRequest(Model):
+    """`ApplyAppStoreTransactionRequest` model."""
+
+    signed_transaction: str
+    """`Transaction.jwsRepresentation` — a compact JWS."""
+
+    environment: ApplyAppStoreTransactionRequestEnvironment
+    """Where StoreKit says the transaction came from; must match the signed payload. `Xcode` is
+    refused in production.
+    """
+
+
+@_dataclass(kw_only=True)
+class ApplyAppStoreTransactionResponse(Model):
+    """`ApplyAppStoreTransactionResponse` model."""
+
+    plan: ApplyAppStoreTransactionResponsePlan
+
+    plan_source: ApplyAppStoreTransactionResponsePlanSource
+
+    expires_at: str
+    """Paid up to: the latest verified `expiresDate`."""
+
+    original_transaction_id: str
+
+
+@_dataclass(kw_only=True)
 class ApplyProgramRequest(Model):
     """`ApplyProgramRequest` model."""
 
@@ -8366,6 +8675,53 @@ class AuthVerifyCodeResponse(Model):
 
     api_key: str
     """uarp_<prefix>_<secret>; store and use as Authorization: Bearer <api_key>"""
+
+
+@_dataclass(kw_only=True)
+class BackfillSessionTitlesRequest(Model):
+    """`BackfillSessionTitlesRequest` model."""
+
+    dry_run: Optional[bool] = None
+
+    limit: Optional[int] = None
+    """Server default: `50`."""
+
+
+@_dataclass(kw_only=True)
+class BackfillSessionTitlesResponse(Model):
+    """`BackfillSessionTitlesResponse` model."""
+
+    dry_run: bool
+
+    tenants: int
+    """Tenants scanned."""
+
+    candidates: int
+    """Sessions still without a title, across all tenants."""
+
+    attempted: int
+    """Candidates this pass reached: the newest, at most `limit`."""
+
+    titled: int
+    """Titles written. Always 0 with `dry_run`."""
+
+    skipped: int
+    """Attempted but not titled: no platform model or key, the model failed or answered nothing
+    usable, or the session was renamed meanwhile.
+    """
+
+    errors: List[BackfillSessionTitlesResponseError]
+
+
+@_dataclass(kw_only=True)
+class BackfillSessionTitlesResponseError(Model):
+    """`BackfillSessionTitlesResponseError` model."""
+
+    tenant_id: Optional[str] = None
+
+    session_id: Optional[str] = None
+
+    error: Optional[str] = None
 
 
 @_dataclass(kw_only=True)
@@ -9275,6 +9631,17 @@ class CheckSpawnPermissionRequest(Model):
 
 
 @_dataclass(kw_only=True)
+class ChiefVoice(Model):
+    """A voice for the Chief of Staff: a TTS model and one of its voices from `GET /voices`."""
+
+    model: str
+    """The catalog entry's `model`, e.g. `cartesia/sonic-3`."""
+
+    voice: str
+    """The catalog entry's `id` — what TTS takes as `voice`."""
+
+
+@_dataclass(kw_only=True)
 class ClearBillingBudgetResponse(Model):
     """`ClearBillingBudgetResponse` model."""
 
@@ -9290,6 +9657,21 @@ class CloseSessionResponse(Model):
     deleted: bool
 
     session_id: str
+
+
+@_dataclass(kw_only=True)
+class CodeAnchor(Model):
+    """Lines of code, 1-based and inclusive: `line_end` must not be before `line_start` (`422`
+    otherwise). `path` names the file when the result has more than one.
+    """
+
+    kind: CodeAnchorKind
+
+    path: Optional[str] = None
+
+    line_start: int
+
+    line_end: int
 
 
 @_dataclass(kw_only=True)
@@ -9392,23 +9774,23 @@ class CompanyCreate(Model):
     name: str
 
     mission: str
-    """What the company exists to do."""
-
-    budget: CompanyCreateBudget
-    """Spend ceiling and pacing for the company."""
 
     description: Optional[str] = None
 
-    strategic_goals: Optional[List[str]] = None
+    strategic_goals: Optional[List[CompanyCreateStrategicGoal]] = None
 
-    config: Optional[JsonObject] = None
+    budget: CompanyCreateBudget
+
+    config: Optional[CompanyCreateConfig] = None
+
+    strategist_model: Optional[str] = None
 
     workspace_id: Optional[str] = None
 
 
 @_dataclass(kw_only=True)
 class CompanyCreateBudget(Model):
-    """Spend ceiling and pacing for the company."""
+    """`CompanyCreateBudget` model."""
 
     total_usd: float
 
@@ -9417,7 +9799,44 @@ class CompanyCreateBudget(Model):
     alert_threshold_pct: float
 
     spent_usd: Optional[float] = None
-    """Metered by the platform. Ignored on create (set to 0) and on update."""
+    """Metered by the platform. Ignored on create and update."""
+
+
+@_dataclass(kw_only=True)
+class CompanyCreateConfig(Model):
+    """`CompanyCreateConfig` model."""
+
+    review_interval_ms: Optional[float] = None
+
+    escalation_on: Optional[List[CompanyCreateConfigEscalationOnItem]] = None
+
+
+@_dataclass(kw_only=True)
+class CompanyCreateStrategicGoal(Model):
+    """`CompanyCreateStrategicGoal` model."""
+
+    goal_id: Optional[str] = None
+
+    title: str
+
+    description: Optional[str] = None
+
+    kpis: Optional[List[CompanyCreateStrategicGoalKpisItem]] = None
+
+    root_objective_id: Optional[str] = None
+
+    deadline: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class CompanyCreateStrategicGoalKpisItem(Model):
+    """`CompanyCreateStrategicGoalKpisItem` model."""
+
+    name: Optional[str] = None
+
+    target: Optional[str] = None
+
+    current: JsonValue = None
 
 
 @_dataclass(kw_only=True)
@@ -10046,13 +10465,66 @@ class CompanyUpdate(Model):
 
     mission: Optional[str] = None
 
-    budget: Optional[float] = None
+    description: Optional[str] = None
+
+    status: Optional[CompanyUpdateStatus] = None
+
+    strategic_goals: Optional[List[CompanyUpdateStrategicGoal]] = None
+
+    budget: Optional[CompanyUpdateBudget] = None
+
+    config: Optional[CompanyUpdateConfig] = None
+
+
+@_dataclass(kw_only=True)
+class CompanyUpdateBudget(Model):
+    """`CompanyUpdateBudget` model."""
+
+    total_usd: float
+
+    daily_limit_usd: float
+
+    alert_threshold_pct: float
+
+    spent_usd: Optional[float] = None
+    """Metered by the platform. Ignored on create and update."""
+
+
+@_dataclass(kw_only=True)
+class CompanyUpdateConfig(Model):
+    """`CompanyUpdateConfig` model."""
+
+    review_interval_ms: Optional[float] = None
+
+    escalation_on: Optional[List[CompanyCreateConfigEscalationOnItem]] = None
+
+
+@_dataclass(kw_only=True)
+class CompanyUpdateStrategicGoal(Model):
+    """`CompanyUpdateStrategicGoal` model."""
+
+    goal_id: Optional[str] = None
+
+    title: str
 
     description: Optional[str] = None
 
-    strategic_goals: Optional[List[str]] = None
+    kpis: Optional[List[CompanyUpdateStrategicGoalKpisItem]] = None
 
-    config: Optional[JsonObject] = None
+    root_objective_id: Optional[str] = None
+
+    deadline: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class CompanyUpdateStrategicGoalKpisItem(Model):
+    """`CompanyUpdateStrategicGoalKpisItem` model."""
+
+    name: Optional[str] = None
+
+    target: Optional[str] = None
+
+    current: JsonValue = None
 
 
 @_dataclass(kw_only=True)
@@ -10442,6 +10914,13 @@ class ConversationEntry(Model):
 
     attachments: Optional[List[ConversationEntryAttachment]] = None
 
+    metadata: Optional[ConversationEntryMetadata] = None
+    """Present only on an entry that is not an ordinary turn. Today: the morning summary — an
+    assistant entry the head agent posts at 08:00 tenant-local time (since 2026-10-19) with
+    `kind: "daily_summary"` and the local `date` it summarises from; no run produced it, so its
+    `run_id` is `morning-summary-<date>`.
+    """
+
     run_metrics: Optional[ConversationEntryRunMetrics] = None
     """On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
     publicRunMetrics).
@@ -10514,6 +10993,19 @@ class ConversationEntryContentVariant2itemMedia(Model):
 
 
 @_dataclass(kw_only=True)
+class ConversationEntryMetadata(Model):
+    """Present only on an entry that is not an ordinary turn. Today: the morning summary — an
+    assistant entry the head agent posts at 08:00 tenant-local time (since 2026-10-19) with
+    `kind: "daily_summary"` and the local `date` it summarises from; no run produced it, so its
+    `run_id` is `morning-summary-<date>`.
+    """
+
+    kind: ConversationEntryMetadataKind
+
+    date: str
+
+
+@_dataclass(kw_only=True)
 class ConversationEntryRunMetrics(Model):
     """On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
     publicRunMetrics).
@@ -10561,7 +11053,18 @@ class ConversationEntryRunMetrics(Model):
     memory_extractions: Optional[int] = None
 
     total_cost_usd: Optional[float] = None
-    """Estimated total cost in USD"""
+    """Estimated total cost in USD — the tenant's bill, except when `cost_attribution` says
+    otherwise.
+    """
+
+    cost_attribution: Optional[RunMetricsCostAttribution] = None
+    """Present only on a sponsored qualification run (since 2026-10-19). `total_cost_usd` is then
+    execution telemetry at the platform's catalog rate: never billed to the company the run
+    executed in, and never counted in its usage, quotas, daily share, run count, spend budget or
+    overage. The sponsor's debit is the grant's `charged_microusd`, accounted at the program's
+    frozen pricing revision, and the two differ (production run 01a151cf…: telemetry $0.010312,
+    sponsor debit 5414 micro-USD). Absent on every other run.
+    """
 
 
 @_dataclass(kw_only=True)
@@ -11723,6 +12226,10 @@ class CreateSessionAnnotationRequest(Model):
 
     content: str
 
+    anchor: JsonValue = None
+
+    target: Optional[AnchorTarget] = None
+
 
 @_dataclass(kw_only=True)
 class CreateSessionAnnotationResponse(Model):
@@ -11739,6 +12246,10 @@ class CreateSessionAnnotationResponse(Model):
     created_at: Optional[str] = None
 
     resolved: Optional[bool] = None
+
+    anchor: JsonValue = None
+
+    target: Optional[AnchorTarget] = None
 
 
 @_dataclass(kw_only=True)
@@ -12758,6 +13269,12 @@ class DeploymentFeatures(Model):
 
     marketplace_invoke: bool
     """Published marketplace listings can be invoked. Always false today: no executor runs them."""
+
+    app_store: bool
+    """App Store in-app purchases are accepted: the app's bundle id is configured
+    (`apple_bundle_id` / `APPLE_BUNDLE_ID`), which every signed transaction and notification is
+    checked against.
+    """
 
 
 @_dataclass(kw_only=True)
@@ -13888,6 +14405,16 @@ class FileEntry(Model):
 
     tenant_id: str
 
+    agent_id: Optional[str] = None
+    """The agent whose run wrote this file (since 2026-10-19). Absent for a person's or an API
+    caller's upload and for every older record, which is not attributed after the fact.
+    """
+
+    run_id: Optional[str] = None
+    """The run that wrote it; present only with `agent_id`, and only when the write happened inside
+    a run.
+    """
+
 
 @_dataclass(kw_only=True)
 class FileRecord(Model):
@@ -13908,6 +14435,16 @@ class FileRecord(Model):
     sha256: str
 
     created_at: str
+
+    agent_id: Optional[str] = None
+    """The agent whose run wrote this file (since 2026-10-19). Absent for a person's or an API
+    caller's upload and for every older record, which is not attributed after the fact.
+    """
+
+    run_id: Optional[str] = None
+    """The run that wrote it; present only with `agent_id`, and only when the write happened inside
+    a run.
+    """
 
 
 @_dataclass(kw_only=True)
@@ -14292,6 +14829,7 @@ class GetActivityFeedResponse(Model):
     entries: Optional[List[FeedEntry]] = None
 
     cursor: Optional[str] = None
+    """Cursor for the next page; null on the last page — which is what the handler sends."""
 
     total: Optional[int] = None
 
@@ -14667,6 +15205,42 @@ class GetAgentObligationsResponse(Model):
 
 
 @_dataclass(kw_only=True)
+class GetAgentsOverviewResponse(Model):
+    """`GetAgentsOverviewResponse` model."""
+
+    items: List[GetAgentsOverviewResponseItem]
+
+
+@_dataclass(kw_only=True)
+class GetAgentsOverviewResponseItem(Model):
+    """`GetAgentsOverviewResponseItem` model."""
+
+    agent_id: str
+
+    name: str
+
+    avatar_url: Optional[str]
+    """A hired agent's catalog icon, else `metadata.avatar_url` when it is a string, else null —
+    draw the agent from `metadata.ui.avatar` then.
+    """
+
+    ring: GetAgentsOverviewResponseItemRing
+
+    failed: bool
+    """The last run failed; `ring` is then `needs_you`."""
+
+    pending_count: int
+
+    last_activity_at: Optional[str]
+    """The last run's `completed_at`, else `started_at`, else `created_at`; null when no run is in
+    the window.
+    """
+
+    last_completed_at: Optional[str]
+    """When the newest completed run in the window completed."""
+
+
+@_dataclass(kw_only=True)
 class GetAgentTrafficResponse(Model):
     """`GetAgentTrafficResponse` model."""
 
@@ -15027,7 +15601,8 @@ class GetGovernanceLedgerResponse(Model):
 
     entries: List[GovernanceLedgerEntry]
 
-    head: GovernanceLedgerHead
+    head: Optional[GovernanceLedgerHead]
+    """Newest entry of the global ledger; null when the ledger is empty."""
 
     total: int
     """Number of entries IN THIS RESPONSE, not the size of the ledger. Measured 2026-08-20: `total`
@@ -15095,30 +15670,40 @@ class GetHealthResponse(Model):
     `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
     `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
     `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-    `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
-    COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
-    `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
-    `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
-    `initiative_pause` = pausing an initiative; `mission_review` = objectives with
-    `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
-    /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
-    `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
-    `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
-    `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
-    /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
-    `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
-    `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
-    `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
-    `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
-    /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
-    `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
-    /company/versions` AND `POST /company/restore` — there is deliberately no separate
-    `company_restore`, since a snapshot and the rollback to it ship together.
+    `company_import`, `company_versions` (since 2026-10-12), `run_review` (since 2026-10-19). A
+    NAME ALONE DOES NOT SAY WHAT IT COVERS, so here is the coverage — added 2026-10-13 because a
+    client asked which name gates `POST /tenants/me/company/restore` and the answer existed only
+    in prose no client can read: `initiatives` = `/initiatives/*` (`/companies` is its
+    deprecated old name); `initiative_pause` = pausing an initiative; `mission_review` =
+    objectives with `review_required` and `POST /missions/{id}/objectives/{oid}/review`;
+    `run_revise` = `POST /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`;
+    `mission_schedules` = `/missions/schedules`; `mission_analytics` = `GET /analytics/missions`
+    and the inbox `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and
+    `/company/changes`; `company_pause` = `POST /company/pause` and `/resume`;
+    `company_blueprint` = `GET /tenants/me/blueprint`; `company_pause_preview` = `GET
+    /company/pause-scope`; `company_proposals` = `/tenants/me/proposals` with apply and reject;
+    `company_launch` = `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET
+    /tenants/me/overview`; `company_fit` = `GET /tenants/me/fit` (template fit is
+    `company_templates`); `company_templates` = `/company-templates`,
+    `/company-templates/{id}/fit`, `POST /company/apply-template`, `POST /me/tenants/create`
+    with `template_id`; `company_export` = `GET /company/export`; `company_import` = `POST
+    /company/import`; `company_versions` = `GET /company/versions` AND `POST /company/restore` —
+    there is deliberately no separate `company_restore`, since a snapshot and the rollback to it
+    ship together. `run_review` = `POST` and `GET /runs/{id}/review`, and `anchor`/`target` on
+    session annotations.
     """
 
     runs_queued: Optional[int] = None
     """Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
     falls as they are picked up — but it is a queue depth, not a count of recoveries.
+    """
+
+    runs_active: Optional[int] = None
+    """Runs in flight in THIS process right now — the scheduler's own live count, the same field
+    that answers `degraded` at 90% of its ceiling. This is the number to read when you want to
+    know whether work is happening: `runs_queued` is zero whenever everything is running rather
+    than waiting, and `pending_resumes` is a constant zero. It counts runs, not users — one run
+    may serve many turns.
     """
 
 
@@ -15329,6 +15914,14 @@ class GetMeResponseUser(Model):
     status: Optional[str] = None
 
     avatar_url: Optional[str] = None
+
+    interface_language: Optional[str] = None
+    """The person's interface language (canonical BCP-47), null when unset — set with `PATCH /me`."""
+
+    chief_voice: Optional[ChiefVoice] = None
+    """The person's Chief of Staff voice, null when unset — set with `PATCH /me`. A value stored in
+    an older shape reads as null.
+    """
 
     last_login_at: Optional[str] = None
 
@@ -15592,6 +16185,15 @@ class GetMyHeadAgentTemplateResponseTierTierResourceLimits(Model):
     max_tokens_per_run: Optional[int] = None
 
     thinking_budget_tokens: Optional[int] = None
+
+
+@_dataclass(kw_only=True)
+class GetMyRailAgentsResponse(Model):
+    """`GetMyRailAgentsResponse` model."""
+
+    agent_ids: List[str]
+
+    updated_at: Optional[str]
 
 
 @_dataclass(kw_only=True)
@@ -15909,6 +16511,12 @@ class GetRunResponse(Model):
     trace on the run.
     """
 
+    review: Optional[GetRunResponseReview] = None
+    """The latest person's verdict on this run's RESULT (`POST /runs/{runId}/review`, since
+    2026-10-19) — not a tool approval, which is `approvals`. Absent until the result is
+    reviewed. The full record, with the comment and anchors, is `GET /runs/{runId}/review`.
+    """
+
     created_at: str
 
     started_at: Optional[str] = None
@@ -16007,6 +16615,13 @@ class GetRunResponseResourceLimits(Model):
     max_tool_calls: Optional[int] = None
 
     max_tokens_per_run: Optional[int] = None
+    """Input + output tokens summed over every model call of the run. Since 2026-10-19 it is held
+    before each call, not only after: each call is sent with `max_tokens` no more than the cap
+    minus what the run has spent minus the last call's input (which the next call resends), and
+    once that is nothing the run stops before sending, failing with `MAX_TOKENS_EXCEEDED` and
+    `used_tokens` at or under the limit. Before, the last call could spend past the cap by up to
+    a whole step.
+    """
 
     max_cost_usd: Optional[float] = None
     """In-run cost ceiling in USD; 0 or absent means no cap from this field. A run that crosses it
@@ -16014,6 +16629,26 @@ class GetRunResponseResourceLimits(Model):
     Accepted on POST /runs and on the agent's resource_limits (POST/PUT/PATCH /agents); negative
     or non-numeric is 422.
     """
+
+
+@_dataclass(kw_only=True)
+class GetRunResponseReview(Model):
+    """The latest person's verdict on this run's RESULT (`POST /runs/{runId}/review`, since
+    2026-10-19) — not a tool approval, which is `approvals`. Absent until the result is
+    reviewed. The full record, with the comment and anchors, is `GET /runs/{runId}/review`.
+    """
+
+    review_id: str
+
+    verdict: RunReviewVerdict
+
+    decided_at: str
+
+    decided_by: Optional[str] = None
+    """User id of the person who decided; the credential id when no person stands behind it."""
+
+    follow_up_run_id: Optional[str] = None
+    """On `redo`: the run started to do the work again."""
 
 
 @_dataclass(kw_only=True)
@@ -16170,6 +16805,21 @@ class GetSessionResponse(Model):
 
     pinned_at: Optional[str] = None
     """When it was pinned; order the pinned group by it."""
+
+    title: Optional[str] = None
+    """The chat's name: the stored title, else the `metadata.title` clients wrote before the field
+    existed (2026-10-19), else `null`. A title the person cleared stays `null` even if that
+    legacy key is still there. At most 80 characters when a person sets it; a generated one is
+    at most 60, in the language of the first message. Present on every read — the list, the
+    detail, create and update.
+    """
+
+    title_source: Optional[SessionTitleSource] = None
+    """`user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
+    generated title never replaces it; `generated` when the platform named the chat after its
+    first completed run. Absent when no title was ever stored as a field (none, or only the
+    legacy `metadata.title`).
+    """
 
     created_by: Optional[str] = None
 
@@ -16795,6 +17445,13 @@ class GetTenantCompanyOverviewResponseProblems(Model):
     `aborted_by_operator`) — the watchdog, a failed plan, failed objectives. Since 2026-10-15.
     """
 
+    quota_gated_schedules: Optional[GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedules] = None
+    """Schedules the quota gate refused to fire, since 2026-10-24. A scheduled agent that does not
+    run because its tenant is over quota left no trace on any product surface before this field;
+    the count leads, the list names the agents. `next_fire_at` is when the schedule would next
+    be due.
+    """
+
     missions: Optional[List[GetTenantCompanyOverviewResponseProblemsMission]] = None
     """The newest 5 of them."""
 
@@ -16815,6 +17472,34 @@ class GetTenantCompanyOverviewResponseProblemsMission(Model):
     result_summary: Optional[str] = None
 
     at: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedules(Model):
+    """Schedules the quota gate refused to fire, since 2026-10-24. A scheduled agent that does not
+    run because its tenant is over quota left no trace on any product surface before this field;
+    the count leads, the list names the agents. `next_fire_at` is when the schedule would next
+    be due.
+    """
+
+    count: Optional[int] = None
+
+    by_agent: Optional[List[GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedulesByAgentItem]] = None
+
+
+@_dataclass(kw_only=True)
+class GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedulesByAgentItem(Model):
+    """`GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedulesByAgentItem` model."""
+
+    agent_id: Optional[str] = None
+
+    agent_name: Optional[str] = None
+
+    reason: Optional[str] = None
+
+    skipped_at: Optional[str] = None
+
+    next_fire_at: Optional[str] = None
 
 
 @_dataclass(kw_only=True)
@@ -17109,6 +17794,27 @@ class GuardrailConfigItem(Model):
 
 
 @_dataclass(kw_only=True)
+class HandleAppStoreNotificationRequest(Model):
+    """`HandleAppStoreNotificationRequest` model."""
+
+    signed_payload: str = _field(metadata={"wire": "signedPayload"})
+    """The notification, as Apple sends it: a compact JWS."""
+
+
+@_dataclass(kw_only=True)
+class HandleAppStoreNotificationResponse(Model):
+    """`HandleAppStoreNotificationResponse` model."""
+
+    received: bool
+
+    handled: bool
+
+    action: Optional[HandleAppStoreNotificationResponseAction] = None
+
+    duplicate: Optional[bool] = None
+
+
+@_dataclass(kw_only=True)
 class HandleStripeWebhookRequest(Model):
     """`HandleStripeWebhookRequest` model."""
 
@@ -17158,25 +17864,27 @@ class HealthCheckV1aliasResponse(Model):
     `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
     `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
     `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-    `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
-    COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
-    `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
-    `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
-    `initiative_pause` = pausing an initiative; `mission_review` = objectives with
-    `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
-    /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
-    `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
-    `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
-    `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
-    /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
-    `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
-    `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
-    `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
-    `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
-    /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
-    `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
-    /company/versions` AND `POST /company/restore` — there is deliberately no separate
-    `company_restore`, since a snapshot and the rollback to it ship together.
+    `company_import`, `company_versions` (since 2026-10-12), `run_review` (since 2026-10-19). A
+    NAME ALONE DOES NOT SAY WHAT IT COVERS, so here is the coverage — added 2026-10-13 because a
+    client asked which name gates `POST /tenants/me/company/restore` and the answer existed only
+    in prose no client can read: `initiatives` = `/initiatives/*` (`/companies` is its
+    deprecated old name); `initiative_pause` = pausing an initiative; `mission_review` =
+    objectives with `review_required` and `POST /missions/{id}/objectives/{oid}/review`;
+    `run_revise` = `POST /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`;
+    `mission_schedules` = `/missions/schedules`; `mission_analytics` = `GET /analytics/missions`
+    and the inbox `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and
+    `/company/changes`; `company_pause` = `POST /company/pause` and `/resume`;
+    `company_blueprint` = `GET /tenants/me/blueprint`; `company_pause_preview` = `GET
+    /company/pause-scope`; `company_proposals` = `/tenants/me/proposals` with apply and reject;
+    `company_launch` = `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET
+    /tenants/me/overview`; `company_fit` = `GET /tenants/me/fit` (template fit is
+    `company_templates`); `company_templates` = `/company-templates`,
+    `/company-templates/{id}/fit`, `POST /company/apply-template`, `POST /me/tenants/create`
+    with `template_id`; `company_export` = `GET /company/export`; `company_import` = `POST
+    /company/import`; `company_versions` = `GET /company/versions` AND `POST /company/restore` —
+    there is deliberately no separate `company_restore`, since a snapshot and the rollback to it
+    ship together. `run_review` = `POST` and `GET /runs/{id}/review`, and `anchor`/`target` on
+    session annotations.
     """
 
 
@@ -17239,30 +17947,40 @@ class HealthzAliasResponse(Model):
     `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
     `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
     `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-    `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
-    COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
-    `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
-    `initiatives` = `/initiatives/*` (`/companies` is its deprecated old name);
-    `initiative_pause` = pausing an initiative; `mission_review` = objectives with
-    `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
-    /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
-    `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
-    `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
-    `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
-    /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
-    `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
-    `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
-    `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
-    `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
-    /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
-    `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
-    /company/versions` AND `POST /company/restore` — there is deliberately no separate
-    `company_restore`, since a snapshot and the rollback to it ship together.
+    `company_import`, `company_versions` (since 2026-10-12), `run_review` (since 2026-10-19). A
+    NAME ALONE DOES NOT SAY WHAT IT COVERS, so here is the coverage — added 2026-10-13 because a
+    client asked which name gates `POST /tenants/me/company/restore` and the answer existed only
+    in prose no client can read: `initiatives` = `/initiatives/*` (`/companies` is its
+    deprecated old name); `initiative_pause` = pausing an initiative; `mission_review` =
+    objectives with `review_required` and `POST /missions/{id}/objectives/{oid}/review`;
+    `run_revise` = `POST /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`;
+    `mission_schedules` = `/missions/schedules`; `mission_analytics` = `GET /analytics/missions`
+    and the inbox `reviews[]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and
+    `/company/changes`; `company_pause` = `POST /company/pause` and `/resume`;
+    `company_blueprint` = `GET /tenants/me/blueprint`; `company_pause_preview` = `GET
+    /company/pause-scope`; `company_proposals` = `/tenants/me/proposals` with apply and reject;
+    `company_launch` = `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET
+    /tenants/me/overview`; `company_fit` = `GET /tenants/me/fit` (template fit is
+    `company_templates`); `company_templates` = `/company-templates`,
+    `/company-templates/{id}/fit`, `POST /company/apply-template`, `POST /me/tenants/create`
+    with `template_id`; `company_export` = `GET /company/export`; `company_import` = `POST
+    /company/import`; `company_versions` = `GET /company/versions` AND `POST /company/restore` —
+    there is deliberately no separate `company_restore`, since a snapshot and the rollback to it
+    ship together. `run_review` = `POST` and `GET /runs/{id}/review`, and `anchor`/`target` on
+    session annotations.
     """
 
     runs_queued: Optional[int] = None
     """Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
     falls as they are picked up — but it is a queue depth, not a count of recoveries.
+    """
+
+    runs_active: Optional[int] = None
+    """Runs in flight in THIS process right now — the scheduler's own live count, the same field
+    that answers `degraded` at 90% of its ceiling. This is the number to read when you want to
+    know whether work is happening: `runs_queued` is zero whenever everything is running rather
+    than waiting, and `pending_resumes` is a constant zero. It counts runs, not users — one run
+    may serve many turns.
     """
 
 
@@ -17331,6 +18049,20 @@ class HireConnect(Model):
 
 
 @_dataclass(kw_only=True)
+class HiredAgentPermissionRequest(Model):
+    """`HiredAgentPermissionRequest` model."""
+
+    tool_name: Optional[str] = None
+    """The tool Claude Code wants to use, e.g. `Bash`."""
+
+    tool_input: Optional[JsonObject] = None
+    """Its arguments, shown to the person as stored (up to 2 000 characters)."""
+
+    additional_properties: Dict[str, Any] = _field(default_factory=dict, metadata={"additional": True})
+    """Members the server sent that the document does not name, as sent."""
+
+
+@_dataclass(kw_only=True)
 class HostDroplet(Model):
     """`HostDroplet` model."""
 
@@ -17355,6 +18087,25 @@ class HostDroplet(Model):
     disk_gb: int
 
     created_at: str
+
+
+@_dataclass(kw_only=True)
+class ImageAnchor(Model):
+    """A point (`x`, `y`) or a box (`x`, `y` its top-left corner, plus `w`, `h`) on an image, every
+    value a fraction of the image's width or height, 0–1, from the top-left. `w` and `h` come
+    together or not at all, and the box must stay inside the image: `x + w <= 1`, `y + h <= 1`
+    (`422` otherwise).
+    """
+
+    kind: ImageAnchorKind
+
+    x: float
+
+    y: float
+
+    w: Optional[float] = None
+
+    h: Optional[float] = None
 
 
 @_dataclass(kw_only=True)
@@ -18614,6 +19365,31 @@ class ListAgentScorersResponse(Model):
 
 
 @_dataclass(kw_only=True)
+class ListAgentSessionsResponse(Model):
+    """`ListAgentSessionsResponse` model."""
+
+    items: Optional[List[Session]] = None
+
+    days: Optional[List[ListAgentSessionsResponseDay]] = None
+
+    cursor: Optional[str]
+
+    has_more: bool
+
+
+@_dataclass(kw_only=True)
+class ListAgentSessionsResponseDay(Model):
+    """`ListAgentSessionsResponseDay` model."""
+
+    date: str
+
+    tz: str
+    """IANA zone the date is read in."""
+
+    sessions: List[Session]
+
+
+@_dataclass(kw_only=True)
 class ListAgentsResponse(Model):
     """`ListAgentsResponse` model."""
 
@@ -18782,6 +19558,12 @@ class ListBillingPlansResponsePlan(Model):
     current: Optional[bool] = None
 
     checkout_available: Optional[bool] = None
+
+    app_store_product_id: Optional[ListBillingPlansResponsePlanAppStoreProductId] = None
+    """The App Store auto-renewable product that buys this plan in the iOS app. Present on starter
+    and pro only. Its App Store price is the web price grossed up for Apple's commission (web
+    net / (1 − Apple rate)).
+    """
 
     price_amount_cents: Optional[int] = None
 
@@ -19668,6 +20450,10 @@ class ListSessionAnnotationsResponseItem(Model):
 
     resolved: Optional[bool] = None
 
+    anchor: JsonValue = None
+
+    target: Optional[AnchorTarget] = None
+
 
 @_dataclass(kw_only=True)
 class ListSessionArtifactsResponse(Model):
@@ -19741,6 +20527,21 @@ class ListSessionsResponseItem(Model):
 
     pinned_at: Optional[str] = None
     """When it was pinned; order the pinned group by it."""
+
+    title: Optional[str] = None
+    """The chat's name: the stored title, else the `metadata.title` clients wrote before the field
+    existed (2026-10-19), else `null`. A title the person cleared stays `null` even if that
+    legacy key is still there. At most 80 characters when a person sets it; a generated one is
+    at most 60, in the language of the first message. Present on every read — the list, the
+    detail, create and update.
+    """
+
+    title_source: Optional[SessionTitleSource] = None
+    """`user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
+    generated title never replaces it; `generated` when the platform named the chat after its
+    first completed run. Absent when no title was ever stored as a field (none, or only the
+    legacy `metadata.title`).
+    """
 
     created_by: Optional[str] = None
 
@@ -20222,6 +21023,11 @@ class LLMSynthesizeSpeechRequest(Model):
     input: str
 
     voice: Optional[str] = None
+
+    agent_id: Optional[str] = None
+    """The agent being spoken for. The head agent's id selects the person's `chief_voice` when
+    `model` and `voice` are absent.
+    """
 
     language: Optional[str] = None
     """The spoken language as a tag (`uk`, `en`, `pt-BR`; the first two letters are sent). Absent:
@@ -21028,7 +21834,9 @@ class Mission(Model):
     `all_objectives_verified` (details `verified`), `objectives_failed` (`failed`, `total`),
     `planning_failed`, `aborted_by_signal`, `aborted_by_operator` (the operator's reason, when
     given, is the summary), `watchdog_stuck` (`stuck_status`, `stuck_minutes`),
-    `paused_by_operator`, `resumed_by_operator`, `authorized_by_operator`.
+    `paused_by_operator`, `queued_walk_ceiling` (planned, then paused because the tenant was
+    already running its maximum concurrent missions — resumable with `POST
+    /missions/{id}/resume`), `resumed_by_operator`, `authorized_by_operator`.
     """
 
     result_details: Optional[JsonObject] = None
@@ -21221,6 +22029,17 @@ class NotificationPreferences(Model):
     channels.
     """
 
+    push_from: Optional[NotificationPreferencesInputPushFrom] = None
+    """Whose notifications are pushed to a phone or browser (`push` and `web_push`). `all` (the
+    default; an omitted field on PUT stores `all`) pushes every agent's; `chief_only` pushes
+    only those raised by the tenant's head agent (the Chief of Staff, `head_agent_id` on the
+    tenant). Other notifications still land in the in-app list, and email and webhooks are
+    unaffected; a notification no agent raised (budget, security, billing) keeps its push.
+    Anything else is `422`.
+
+    Server default: `"all"`.
+    """
+
     quiet_hours: Optional[NotificationPreferencesQuietHours] = None
     """Window during which non-critical messages are suppressed; critical always bypasses. Set both
     start_local and end_local to enable, empty disables.
@@ -21253,6 +22072,17 @@ class NotificationPreferencesInput(Model):
     """Event types muted for OUTBOUND delivery (email/webhook/push). The in-app bell still receives
     them — muting does not hide an event from the bell drawer, it only stops the outbound
     channels.
+    """
+
+    push_from: Optional[NotificationPreferencesInputPushFrom] = None
+    """Whose notifications are pushed to a phone or browser (`push` and `web_push`). `all` (the
+    default; an omitted field on PUT stores `all`) pushes every agent's; `chief_only` pushes
+    only those raised by the tenant's head agent (the Chief of Staff, `head_agent_id` on the
+    tenant). Other notifications still land in the in-app list, and email and webhooks are
+    unaffected; a notification no agent raised (budget, security, billing) keeps its push.
+    Anything else is `422`.
+
+    Server default: `"all"`.
     """
 
     quiet_hours: Optional[NotificationPreferencesInputQuietHours] = None
@@ -21359,9 +22189,9 @@ class NotificationSource(Model):
 @_dataclass(kw_only=True)
 class NotificationTarget(Model):
     """Where outbound notifications go. **Secrets never leave the server**: a webhook's signing
-    secret is reported only as `has_signing_secret`, a device token only by its last four
-    characters, and a Web Push endpoint only by host — the path carries a subscription
-    identifier.
+    secret is reported only as `has_signing_secret`, a device token (or a Live Activity token)
+    only by its last four characters, and a Web Push endpoint only by host — the path carries a
+    subscription identifier.
     """
 
     id: str
@@ -21436,6 +22266,26 @@ class NotificationTargetConfigVariant4(Model):
 
     expiration_time: Optional[int]
     """Browser-supplied expiry, ms since epoch."""
+
+
+@_dataclass(kw_only=True)
+class NotificationTargetConfigVariant5(Model):
+    """An iOS Live Activity push token (channel `live_activity`). The token itself is never
+    returned.
+    """
+
+    kind: NotificationTargetConfigVariant5kind
+
+    activity_type: str
+    """The ActivityAttributes type name, e.g. `RunActivityAttributes`."""
+
+    run_id: Optional[str]
+    """The run whose progress drives the activity; null when none was given."""
+
+    device_label: Optional[str] = None
+
+    token_suffix: str
+    """Last four characters of the token, for visual identification only."""
 
 
 @_dataclass(kw_only=True)
@@ -21580,6 +22430,9 @@ class OAuthLoginProvidersList(Model):
     providers: List[OAuthLoginProviderItem]
 
     google_one_tap_client_id: Optional[str] = None
+    """Null until the operator configures Google One Tap; the login page reads it to decide whether
+    to render the one-tap prompt at all.
+    """
 
 
 @_dataclass(kw_only=True)
@@ -21917,9 +22770,19 @@ class OpenPublicVideoOrderCheckoutResponse(Model):
 class PatchMeRequest(Model):
     """`PatchMeRequest` model."""
 
-    avatar_url: Optional[str]
+    avatar_url: Optional[str] = None
     """`/api/v1/files/<file_id>/content` of an image uploaded with `POST /files`, or `null` to
     clear.
+    """
+
+    interface_language: Optional[str] = None
+    """BCP-47 tag with a 2–3 letter primary language (`uk`, `en-US`); stored canonicalised. `null`
+    clears.
+    """
+
+    chief_voice: Optional[ChiefVoice] = None
+    """An entry of `GET /voices`, as `{model, voice: <entry id>}`. `null` clears (the deployment
+    default applies).
     """
 
 
@@ -21947,6 +22810,65 @@ class PatchMeResponseUser(Model):
     status: str
 
     avatar_url: Optional[str]
+
+    interface_language: Optional[str]
+
+    chief_voice: Optional[ChiefVoice]
+
+
+@_dataclass(kw_only=True)
+class PatchSessionRequest(Model):
+    """`PatchSessionRequest` model."""
+
+    metadata: Optional[JsonObject] = None
+    """MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key
+    it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
+    `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
+    `project_id` files the chat under a project: it must name a project that exists and that the
+    caller may edit — otherwise 404 (403 for a private project shared with the caller
+    view-only); `null` takes the chat out. Because it merges, the limits are measured on the
+    RESULT and so accumulate across calls: at most 100 keys, at most 64 KiB of JSON, and at most
+    8 levels of nesting. Past any of them the request is refused with 422 and a `detail` naming
+    the number reached. Remove keys you no longer need; this is a label bag, not content.
+    """
+
+    archived: Optional[bool] = None
+    """true archives the session: `GET /sessions` leaves it out unless `?archived=true|all`, it
+    stays readable by id, and the next message sent to it unarchives it. false unarchives.
+    """
+
+    pinned: Optional[bool] = None
+    """true pins the session for every client (`GET /sessions?pinned=true`); pinning again keeps
+    the first `pinned_at`. false unpins.
+    """
+
+    title: Optional[str] = None
+    """The chat's name. Trimmed, then 1–80 characters (`422` otherwise); `null` clears it. Either
+    way `title_source` becomes `user`, and a generated title never replaces it. Stored on the
+    session, never in `metadata`; `updated_at` is left alone.
+    """
+
+    model_override: Optional[PatchSessionRequestModelOverride] = None
+    """Per-conversation model override. Send null to clear (revert to agent default), or {
+    provider, model_ref, endpoint_url?, capabilities? } to set. The runtime governance allowlist
+    is still enforced at run time.
+    """
+
+
+@_dataclass(kw_only=True)
+class PatchSessionRequestModelOverride(Model):
+    """Per-conversation model override. Send null to clear (revert to agent default), or {
+    provider, model_ref, endpoint_url?, capabilities? } to set. The runtime governance allowlist
+    is still enforced at run time.
+    """
+
+    provider: str
+
+    model_ref: str
+
+    endpoint_url: Optional[str] = None
+
+    capabilities: Optional[JsonObject] = None
 
 
 @_dataclass(kw_only=True)
@@ -22652,7 +23574,7 @@ class PlatformLLMDefaults(Model):
     default_model: Optional[str] = None
     """Stored model half. May be bare (`minimax-m3`) or already provider-qualified
     (`ollama/glm-5.2`) — production holds both shapes. Dial `default_model_ref` instead of
-    joining this yourself.
+    joining this yourself. Null until the operator sets a platform default.
     """
 
     default_provider: Optional[str] = None
@@ -22708,6 +23630,18 @@ class PlaygroundTemplate(Model):
     nodes: List[CanvasNode]
 
     edges: List[CanvasEdge]
+
+
+@_dataclass(kw_only=True)
+class PostQualificationUsageCorrectionRequest(Model):
+    """`PostQualificationUsageCorrectionRequest` model."""
+
+    run_id: str
+
+    tenant_id: Optional[str] = None
+    """The candidate's company. Optional: found from the run's grant."""
+
+    dry_run: bool
 
 
 @_dataclass(kw_only=True)
@@ -23569,11 +24503,16 @@ class PublicPlanOverage(Model):
     requires_cap: Optional[bool] = None
 
     price_per_million_usd: Optional[PublicPlanOveragePricePerMillionUsd] = None
+    """Per-million prices; null when the default model's price or the markup multiplier is not
+    resolvable — the handler sends null rather than inventing a number.
+    """
 
 
 @_dataclass(kw_only=True)
 class PublicPlanOveragePricePerMillionUsd(Model):
-    """`PublicPlanOveragePricePerMillionUsd` model."""
+    """Per-million prices; null when the default model's price or the markup multiplier is not
+    resolvable — the handler sends null rather than inventing a number.
+    """
 
     input: Optional[float] = None
 
@@ -23971,6 +24910,17 @@ class PutQualificationSponsorKeyRequest(Model):
 
 
 @_dataclass(kw_only=True)
+class PutQualificationSponsorKeyResponse(Model):
+    """`PutQualificationSponsorKeyResponse` model."""
+
+    key_id: str
+
+    tenant_id: str
+
+    programs: List[str]
+
+
+@_dataclass(kw_only=True)
 class QualificationAssessmentInputMessage(Model):
     """Prepared Nestor message only. No files or attachments. Source is untrusted data and must not
     become instructions.
@@ -24318,6 +25268,12 @@ class QualificationIncompletePolicyResponse(Model):
 class QualificationManagedEvaluator(Model):
     """One private managed binding per tenant/purpose; immutable applied version and template,
     independent of personal agent/version caps. Readback with candidate credential required.
+    Template revision 3 (2026-10-19) tells the model that every citation's location is exactly
+    `source` or `explanation`; whatever the prompt says, a qualification run whose final answer
+    carries a citation (any array named `citations`, at any depth) with a `location` — or
+    `field` — outside that enum, or none, fails with `error_code: OUTPUT_CONTRACT_VIOLATION` and
+    no output: the answer is refused, never rewritten, and the sponsor is charged what the calls
+    measured.
     """
 
     agent_id: str
@@ -24366,6 +25322,21 @@ class QualificationMissingPolicyResponse(Model):
     readiness: QualificationIncompletePolicyResponseReadiness
 
     blockers: List[QualificationConfirmedPolicyResponseBlocker]
+
+
+@_dataclass(kw_only=True)
+class QualificationPricingRevision(Model):
+    """`QualificationPricingRevision` model."""
+
+    pricing_revision: str
+
+    provider: str
+
+    model: str
+
+    input_microusd_per_million_tokens: str
+
+    output_microusd_per_million_tokens: str
 
 
 @_dataclass(kw_only=True)
@@ -24591,6 +25562,15 @@ class QualificationSponsoredLimits(Model):
     max_tool_calls: JsonValue
 
     max_tokens_per_run: JsonValue
+    """Input + output tokens summed over every model call of the run (since 2026-10-19 enforced
+    before each call, not only between steps): each call's `max_tokens` is what the cap leaves
+    after the tokens measured or still reserved in the run's attempt ledger and an estimate of
+    the call's own input, and a call with nothing left is refused unsent (`error_code:
+    QUALIFICATION_BUDGET_STOP`, `error_details.max_tokens_per_run`). The input estimate counts
+    the conversation already measured at its measured tokens and only bytes added since at the
+    densest tokens-per-byte the run has shown (never below one per three bytes), so a tokenizer
+    denser than that on new text is the one way past the cap.
+    """
 
     max_cost_usd: float
     """Legacy run DTO unit. Must convert exactly to integer micro-USD and be <= grant cap. No
@@ -24746,6 +25726,77 @@ class QualificationUnverifiableExecutionReceiptV2(Model):
     reason_codes: List[QualificationVerifiedExecutionReceiptV2reasonCode]
 
     observations: Optional[QualificationSafetyObservations]
+
+
+@_dataclass(kw_only=True)
+class QualificationUsageCorrection(Model):
+    """`QualificationUsageCorrection` model."""
+
+    status: QualificationUsageCorrectionStatus
+
+    dry_run: bool
+
+    correction_id: Optional[str]
+    """Null for a dry run and for `nothing_recorded`; the same on every call once applied."""
+
+    run_id: str
+
+    candidate_tenant_id: str
+
+    grant_id: str
+
+    settlement_id: Optional[str]
+
+    basis: Optional[JsonObject]
+    """When and where the run's usage was booked: `completed_at`, the UTC `period` (YYYY-MM) and
+    `date`, `agent_id`, `model_key`.
+    """
+
+    reversal: Optional[JsonObject]
+    """The amounts taken back: `input_tokens`, `output_tokens`, `thinking_tokens`, `runs_count`,
+    `tool_calls_count`, `storage_bytes`, `total_cost_usd`, `provider_cost_usd`, `budget_usd`.
+    """
+
+    not_reversed: List[str]
+    """What the run touched that this correction leaves as it is, and why."""
+
+    before: Optional[QualificationUsageCorrectionBeforeVariant1]
+
+    after: Optional[QualificationUsageCorrectionAfterVariant1]
+
+    applied_at: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class QualificationUsageCorrectionAfterVariant1(Model):
+    """The candidate's counters for the day and period the run ended in."""
+
+    monthly: Optional[JsonObject] = None
+
+    daily: Optional[JsonObject] = None
+    """`remaining` is the daily share left that day (`limit` − input − output tokens), null without
+    a daily cap.
+    """
+
+    budget: Optional[JsonObject] = None
+
+    workspaces_counted: Optional[int] = None
+
+
+@_dataclass(kw_only=True)
+class QualificationUsageCorrectionBeforeVariant1(Model):
+    """The candidate's counters for the day and period the run ended in."""
+
+    monthly: Optional[JsonObject] = None
+
+    daily: Optional[JsonObject] = None
+    """`remaining` is the daily share left that day (`limit` − input − output tokens), null without
+    a daily cap.
+    """
+
+    budget: Optional[JsonObject] = None
+
+    workspaces_counted: Optional[int] = None
 
 
 @_dataclass(kw_only=True)
@@ -25528,6 +26579,24 @@ class ReplaceConstitutionRequest(Model):
 
 
 @_dataclass(kw_only=True)
+class ReplaceMyRailAgentsRequest(Model):
+    """`ReplaceMyRailAgentsRequest` model."""
+
+    agent_ids: List[str]
+
+
+@_dataclass(kw_only=True)
+class ReplaceMyRailAgentsResponse(Model):
+    """`ReplaceMyRailAgentsResponse` model."""
+
+    agent_ids: Optional[List[str]] = None
+
+    updated_at: Optional[str] = None
+
+    dropped: Optional[List[str]] = None
+
+
+@_dataclass(kw_only=True)
 class ReplayResult(Model):
     """runtime/execution/replay-executor.ts ReplayResult. camelCase on the wire, unlike the rest of
     the API; `divergencePoint`, `divergenceReason` and `stepComparisons` (execute mode only) are
@@ -25883,6 +26952,108 @@ class ResumeRunResponse(Model):
 
 
 @_dataclass(kw_only=True)
+class RetirePlatformAgentsRequest(Model):
+    """`RetirePlatformAgentsRequest` model."""
+
+    dry_run: Optional[bool] = None
+    """Server default: `true`."""
+
+    new_head_agent_id: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class RetirePlatformAgentsResponse(Model):
+    """`RetirePlatformAgentsResponse` model."""
+
+    dry_run: bool
+
+    super_admin_tenant_id: Optional[str]
+
+    agents: List[RetirePlatformAgentsResponseAgent]
+
+    registry_keys: List[RetirePlatformAgentsResponseRegistryKey]
+
+    head: RetirePlatformAgentsResponseHead
+
+    untouched: List[str]
+
+    applied: Optional[RetirePlatformAgentsResponseApplied]
+
+    errors: List[RetirePlatformAgentsResponseError]
+
+
+@_dataclass(kw_only=True)
+class RetirePlatformAgentsResponseAgent(Model):
+    """`RetirePlatformAgentsResponseAgent` model."""
+
+    tenant_id: str
+
+    agent_id: str
+
+    name: Optional[str]
+
+    kind: RetirePlatformAgentsResponseAgentKind
+
+    found_by: List[RetirePlatformAgentsResponseAgentFoundByItem]
+
+    record: bool
+
+    schedule: bool
+
+    permission_set: bool
+
+    is_head: bool
+
+
+@_dataclass(kw_only=True)
+class RetirePlatformAgentsResponseApplied(Model):
+    """`RetirePlatformAgentsResponseApplied` model."""
+
+    agents_deleted: Optional[int] = None
+
+    schedules_removed: Optional[int] = None
+
+    permission_sets_deleted: Optional[int] = None
+
+    registry_keys_deleted: Optional[int] = None
+
+    head_agent_id: Optional[str] = None
+
+    audit_entry_ids: Optional[List[str]] = None
+
+
+@_dataclass(kw_only=True)
+class RetirePlatformAgentsResponseError(Model):
+    """`RetirePlatformAgentsResponseError` model."""
+
+    agent_id: Optional[str] = None
+
+    error: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class RetirePlatformAgentsResponseHead(Model):
+    """`RetirePlatformAgentsResponseHead` model."""
+
+    head_agent_id: Optional[str]
+
+    is_platform_agent: bool
+
+    action: RetirePlatformAgentsResponseHeadAction
+
+    new_head_agent_id: Optional[str]
+
+
+@_dataclass(kw_only=True)
+class RetirePlatformAgentsResponseRegistryKey(Model):
+    """`RetirePlatformAgentsResponseRegistryKey` model."""
+
+    key: List[str]
+
+    value: str
+
+
+@_dataclass(kw_only=True)
 class RetryPublicVideoOrderResponse(Model):
     """`RetryPublicVideoOrderResponse` model."""
 
@@ -25995,6 +27166,42 @@ class RetryPublicVideoOrderResponseVideo(Model):
 
 
 @_dataclass(kw_only=True)
+class ReviewCodeAnchor(Model):
+    """`CodeAnchor` plus `target` and `note`."""
+
+    kind: CodeAnchorKind
+
+    path: Optional[str] = None
+
+    line_start: int
+
+    line_end: int
+
+    target: Optional[AnchorTarget] = None
+
+    note: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class ReviewImageAnchor(Model):
+    """`ImageAnchor` plus `target` and `note`."""
+
+    kind: ImageAnchorKind
+
+    x: float
+
+    y: float
+
+    w: Optional[float] = None
+
+    h: Optional[float] = None
+
+    target: Optional[AnchorTarget] = None
+
+    note: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
 class ReviewMissionObjectiveRequest(Model):
     """`ReviewMissionObjectiveRequest` model."""
 
@@ -26002,6 +27209,38 @@ class ReviewMissionObjectiveRequest(Model):
 
     feedback: Optional[str] = None
     """What to change (required for `revise`), or why not."""
+
+
+@_dataclass(kw_only=True)
+class ReviewRunRequest(Model):
+    """`ReviewRunRequest` model."""
+
+    verdict: RunReviewVerdict
+
+    comment: Optional[str] = None
+    """What the person says about the result. On `redo`, what to change; required unless `anchors`
+    says it.
+    """
+
+    anchors: Optional[List[JsonValue]] = None
+    """The places in the result the comment is about."""
+
+
+@_dataclass(kw_only=True)
+class ReviewTextAnchor(Model):
+    """`TextAnchor` plus `target` and `note`."""
+
+    kind: TextAnchorKind
+
+    quote: str
+
+    start: int
+
+    end: int
+
+    target: Optional[AnchorTarget] = None
+
+    note: Optional[str] = None
 
 
 @_dataclass(kw_only=True)
@@ -26196,6 +27435,12 @@ class Run(Model):
     """Every human decision on a tool approval this run waited for, oldest first. Absent when the
     run never waited for one. Recorded since 2026-09-22; before that an approved call left no
     trace on the run.
+    """
+
+    review: Optional[RunReview2] = None
+    """The latest person's verdict on this run's RESULT (`POST /runs/{runId}/review`, since
+    2026-10-19) — not a tool approval, which is `approvals`. Absent until the result is
+    reviewed. The full record, with the comment and anchors, is `GET /runs/{runId}/review`.
     """
 
     created_at: str
@@ -26592,7 +27837,18 @@ class RunMetrics(Model):
     memory_extractions: Optional[int] = None
 
     total_cost_usd: Optional[float] = None
-    """Estimated total cost in USD"""
+    """Estimated total cost in USD — the tenant's bill, except when `cost_attribution` says
+    otherwise.
+    """
+
+    cost_attribution: Optional[RunMetricsCostAttribution] = None
+    """Present only on a sponsored qualification run (since 2026-10-19). `total_cost_usd` is then
+    execution telemetry at the platform's catalog rate: never billed to the company the run
+    executed in, and never counted in its usage, quotas, daily share, run count, spend budget or
+    overage. The sponsor's debit is the grant's `charged_microusd`, accounted at the program's
+    frozen pricing revision, and the two differ (production run 01a151cf…: telemetry $0.010312,
+    sponsor debit 5414 micro-USD). Absent on every other run.
+    """
 
 
 @_dataclass(kw_only=True)
@@ -26694,6 +27950,13 @@ class RunResourceLimits(Model):
     max_tool_calls: Optional[int] = None
 
     max_tokens_per_run: Optional[int] = None
+    """Input + output tokens summed over every model call of the run. Since 2026-10-19 it is held
+    before each call, not only after: each call is sent with `max_tokens` no more than the cap
+    minus what the run has spent minus the last call's input (which the next call resends), and
+    once that is nothing the run stops before sending, failing with `MAX_TOKENS_EXCEEDED` and
+    `used_tokens` at or under the limit. Before, the last call could spend past the cap by up to
+    a whole step.
+    """
 
     max_cost_usd: Optional[float] = None
     """In-run cost ceiling in USD; 0 or absent means no cap from this field. A run that crosses it
@@ -26701,6 +27964,60 @@ class RunResourceLimits(Model):
     Accepted on POST /runs and on the agent's resource_limits (POST/PUT/PATCH /agents); negative
     or non-numeric is 422.
     """
+
+
+@_dataclass(kw_only=True)
+class RunReview(Model):
+    """routes/run-review.ts reviewView — the answer of both `POST` and `GET /runs/{runId}/review`.
+    Every field is always present; one without a value is `null` (`anchors` is `[]`), so an
+    unreviewed run answers `reviewed: false` with nulls rather than a `404`.
+    """
+
+    run_id: str
+
+    reviewed: bool
+    """Whether the result has a verdict."""
+
+    review_id: Optional[str]
+
+    verdict: Optional[str]
+
+    approved: bool
+    """True when the latest verdict is `approve`."""
+
+    comment: Optional[str]
+
+    anchors: List[JsonValue]
+
+    follow_up_run_id: Optional[str]
+    """On `redo`: the run started in the same session for the same agent. Follow it with `GET
+    /runs/{runId}` or the session's events.
+    """
+
+    decided_by: Optional[str]
+    """User id of the person who decided; the credential id when no person stands behind it."""
+
+    decided_at: Optional[str]
+
+
+@_dataclass(kw_only=True)
+class RunReview2(Model):
+    """The latest person's verdict on this run's RESULT (`POST /runs/{runId}/review`, since
+    2026-10-19) — not a tool approval, which is `approvals`. Absent until the result is
+    reviewed. The full record, with the comment and anchors, is `GET /runs/{runId}/review`.
+    """
+
+    review_id: str
+
+    verdict: RunReviewVerdict
+
+    decided_at: str
+
+    decided_by: Optional[str] = None
+    """User id of the person who decided; the credential id when no person stands behind it."""
+
+    follow_up_run_id: Optional[str] = None
+    """On `redo`: the run started to do the work again."""
 
 
 @_dataclass(kw_only=True)
@@ -27340,6 +28657,21 @@ class Session(Model):
     pinned_at: Optional[str] = None
     """When it was pinned; order the pinned group by it."""
 
+    title: Optional[str] = None
+    """The chat's name: the stored title, else the `metadata.title` clients wrote before the field
+    existed (2026-10-19), else `null`. A title the person cleared stays `null` even if that
+    legacy key is still there. At most 80 characters when a person sets it; a generated one is
+    at most 60, in the language of the first message. Present on every read — the list, the
+    detail, create and update.
+    """
+
+    title_source: Optional[SessionTitleSource] = None
+    """`user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
+    generated title never replaces it; `generated` when the platform named the chat after its
+    first completed run. Absent when no title was ever stored as a field (none, or only the
+    legacy `metadata.title`).
+    """
+
     created_by: Optional[str] = None
 
     session_id: str
@@ -27387,8 +28719,9 @@ class Session(Model):
 
 @_dataclass(kw_only=True)
 class SessionAnnotation(Model):
-    """sessions.ts AnnotationRecord — the six-field projection create, list and PATCH all answer
-    with.
+    """sessions.ts AnnotationRecord — the projection create, list and PATCH all answer with: six
+    fields always, plus `anchor` and `target` only on a note that was created with them (since
+    2026-10-19).
     """
 
     id: str
@@ -27402,6 +28735,10 @@ class SessionAnnotation(Model):
     created_at: str
 
     resolved: bool
+
+    anchor: JsonValue = None
+
+    target: Optional[AnchorTarget] = None
 
 
 @_dataclass(kw_only=True)
@@ -29049,6 +30386,20 @@ class TenantBilling(Model):
 
     current_period_end_ms: Optional[int] = None
 
+    plan_source: Optional[TenantBillingPlanSource] = None
+    """Which system owns the paid plan. Absent means stripe. While the plan is paid, only that
+    system's plan writes land; other writers are refused (an admin grant answers 409).
+    """
+
+    app_store_original_transaction_id: Optional[str] = None
+    """StoreKit originalTransactionId of the App Store subscription."""
+
+    app_store_product_id: Optional[str] = None
+    """App Store product id of that subscription."""
+
+    app_store_expires_ms: Optional[int] = None
+    """Unix ms the App Store subscription is paid up to."""
+
 
 @_dataclass(kw_only=True)
 class TenantBranding(Model):
@@ -29115,9 +30466,10 @@ class TenantInbox(Model):
     generated_at: str
 
     counts: TenantInboxCounts
-    """Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
-    them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
-    true these are a floor, not a total.
+    """Counted over the page's scan window, NOT over `items` — so `limit` truncating the list does
+    not move them. The window is capped at 500 runs, though, and that cap they cannot see past:
+    when `truncated` is true these are a floor, not a total. On a continuation page (`?cursor=`)
+    they cover that page's span only, and `review`/`proposal` are 0.
     """
 
     items: List[InboxItem]
@@ -29136,20 +30488,31 @@ class TenantInbox(Model):
     """
 
     scanned: int
-    """Run records inspected; the scan is capped."""
+    """Run records inspected by this page — at most 500 for a first page, at most 2 000 for a
+    continuation page that read past empty windows.
+    """
 
     truncated: Optional[bool] = None
-    """The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot
-    tell you this — the number only means something to a caller who already knows what the cap
-    is.
+    """Older runs exist past the ones this page read, so `counts` is a floor rather than a total.
+    `scanned` alone cannot tell you this — the number only means something to a caller who
+    already knows what the cap is. Follow `cursor` to read them.
+    """
+
+    has_more: Optional[bool] = None
+    """More waiting runs may follow: the rest of this window, or older windows. Since 2026-10-19."""
+
+    cursor: Optional[str] = None
+    """Present exactly when `has_more` is true: pass it as `?cursor=` for the next page. Opaque.
+    Since 2026-10-19.
     """
 
 
 @_dataclass(kw_only=True)
 class TenantInboxCounts(Model):
-    """Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
-    them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
-    true these are a floor, not a total.
+    """Counted over the page's scan window, NOT over `items` — so `limit` truncating the list does
+    not move them. The window is capped at 500 runs, though, and that cap they cannot see past:
+    when `truncated` is true these are a floor, not a total. On a continuation page (`?cursor=`)
+    they cover that page's span only, and `review`/`proposal` are 0.
     """
 
     total: int
@@ -29788,6 +31151,23 @@ class TenantUser(Model):
 
     avatar_url: Optional[str] = None
 
+    interface_language: Optional[str] = None
+    """Canonical BCP-47 tag; absent when the person has not set one."""
+
+    chief_voice: JsonValue = None
+    """Absent when the person has not chosen one. Normally a `ChiefVoice`; read it through `GET
+    /me`, which reports any other stored shape as null.
+    """
+
+    presence: Optional[TenantUserPresence] = None
+    """Present on `GET /users` items only. Derived, never written: `last_seen_at` is the newest
+    `last_used_at` over the member's non-revoked login-session rows in THIS tenant — stamped by
+    every authenticated request already — or their `last_login_at` when it is newer or no
+    session row exists; `online` is true when that moment is within the last 5 minutes. A member
+    working here through `X-Active-Tenant` from a session minted in another tenant reads as last
+    seen at their last login; operator API keys never make a person look online.
+    """
+
     last_login_at: Optional[str] = None
 
     created_at: Optional[str] = None
@@ -29805,6 +31185,21 @@ class TenantUser(Model):
     tenant_id: Optional[str] = None
 
     updated_at: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class TenantUserPresence(Model):
+    """Present on `GET /users` items only. Derived, never written: `last_seen_at` is the newest
+    `last_used_at` over the member's non-revoked login-session rows in THIS tenant — stamped by
+    every authenticated request already — or their `last_login_at` when it is newer or no
+    session row exists; `online` is true when that moment is within the last 5 minutes. A member
+    working here through `X-Active-Tenant` from a session minted in another tenant reads as last
+    seen at their last login; operator API keys never make a person look online.
+    """
+
+    online: bool
+
+    last_seen_at: Optional[str]
 
 
 @_dataclass(kw_only=True)
@@ -29933,6 +31328,10 @@ class TestNotificationTargetResponse(Model):
 
     message: str
 
+    notification_id: str
+
+    target_id: str
+
 
 @_dataclass(kw_only=True)
 class TestWebhookResponse(Model):
@@ -29944,6 +31343,23 @@ class TestWebhookResponse(Model):
 
     event_type: str
     """The subscription's first configured event, or `run.completed` when it has none."""
+
+
+@_dataclass(kw_only=True)
+class TextAnchor(Model):
+    """A character range in a text result. Offsets are half-open: `start` is the first character,
+    `end` is one past the last, so `end` must be greater than `start` (`422` otherwise). For a
+    paragraph, send the paragraph's range. `quote` is the text the person saw — it is what the
+    agent is shown on a redo.
+    """
+
+    kind: TextAnchorKind
+
+    quote: str
+
+    start: int
+
+    end: int
 
 
 @_dataclass(kw_only=True)
@@ -30275,7 +31691,7 @@ class UpdateAdminAgentMemoryConfigResponseAgentMemory(Model):
 
     extraction_max_tokens: int
 
-    extraction_model: str
+    extraction_model: Optional[str] = None
     """The model memory extraction calls after a run. On PUT, `null` clears the stored override so
     the platform default applies again; GET then omits the field. Added 2026-09-23.
     """
@@ -30284,11 +31700,11 @@ class UpdateAdminAgentMemoryConfigResponseAgentMemory(Model):
 
     embedding_dimensions: int
 
-    embedding_provider: str
+    embedding_provider: Optional[str] = None
 
-    embedding_model: str
+    embedding_model: Optional[str] = None
 
-    compression_model: str
+    compression_model: Optional[str] = None
     """On PUT, `null` clears the stored override; GET then omits the field. Added 2026-09-23."""
 
 
@@ -31742,6 +33158,11 @@ class UpdateMCPServerRequest(Model):
     env: Optional[JsonObject] = None
     """Re-encrypted on write. `{}` clears it."""
 
+    auth: Optional[MCPServerAuth] = None
+    """Optional replacement authentication (none or api_key). Omit to preserve the stored grant,
+    including broker-owned OAuth. Client-supplied OAuth is refused.
+    """
+
     enabled: Optional[bool] = None
 
     capabilities: Optional[JsonObject] = None
@@ -31981,6 +33402,8 @@ class UpdateRuntimeConfigRequest(Model):
 
     cost_per_video_second_usd: Optional[float] = None
 
+    memory_retrieve_timeout_ms: Optional[int] = None
+
     vision_max_tokens: Optional[int] = None
 
     media_endpoint: Optional[str] = None
@@ -32099,6 +33522,12 @@ class UpdateSessionRequest(Model):
     pinned: Optional[bool] = None
     """true pins the session for every client (`GET /sessions?pinned=true`); pinning again keeps
     the first `pinned_at`. false unpins.
+    """
+
+    title: Optional[str] = None
+    """The chat's name. Trimmed, then 1–80 characters (`422` otherwise); `null` clears it. Either
+    way `title_source` becomes `user`, and a generated title never replaces it. Stored on the
+    session, never in `metadata`; `updated_at` is left alone.
     """
 
     model_override: Optional[UpdateSessionRequestModelOverride] = None
@@ -32329,6 +33758,16 @@ class UploadFileResponse(Model):
 
     created_at: str
 
+    agent_id: Optional[str] = None
+    """The agent whose run wrote this file (since 2026-10-19). Absent for a person's or an API
+    caller's upload and for every older record, which is not attributed after the fact.
+    """
+
+    run_id: Optional[str] = None
+    """The run that wrote it; present only with `agent_id`, and only when the write happened inside
+    a run.
+    """
+
     url: str
 
 
@@ -32439,6 +33878,24 @@ class UpsertNotificationTargetRequestConfigVariant4keys(Model):
     p256dh: str
 
     auth: str
+
+
+@_dataclass(kw_only=True)
+class UpsertNotificationTargetRequestConfigVariant5(Model):
+    """An iOS Live Activity push token — see the operation description."""
+
+    kind: NotificationTargetConfigVariant5kind
+
+    token: str
+    """Hex APNs token for this one activity (16–512 hex characters)."""
+
+    activity_type: str
+    """The ActivityAttributes type name, e.g. `RunActivityAttributes`."""
+
+    run_id: Optional[str] = None
+    """The run whose progress drives this activity."""
+
+    device_label: Optional[str] = None
 
 
 @_dataclass(kw_only=True)
@@ -33226,6 +34683,44 @@ class VideoTemplateTitle(Model):
 
 
 @_dataclass(kw_only=True)
+class VoiceCatalog(Model):
+    """`VoiceCatalog` model."""
+
+    items: List[VoiceCatalogItem]
+
+    source: VoiceCatalogSource
+    """`live`: fetched now; `cache`: from the 24-hour cache; `stale`: the refresh failed and this
+    is the last good catalog; `default`: nothing has been fetched yet, so only the configured
+    default voice is listed.
+    """
+
+    fetched_at: Optional[str]
+
+
+@_dataclass(kw_only=True)
+class VoiceCatalogItem(Model):
+    """`VoiceCatalogItem` model."""
+
+    id: str
+    """The provider's voice id (its name when the provider lists none). `(model, id)` identifies
+    the entry; send `id` as `voice`.
+    """
+
+    model: str
+
+    name: str
+    """Display name."""
+
+    language: Optional[str] = None
+    """When the provider says."""
+
+    gender: Optional[str] = None
+    """When the provider says."""
+
+    quality_tier: VoiceCatalogItemQualityTier
+
+
+@_dataclass(kw_only=True)
 class VoiceConfig(Model):
     """`VoiceConfig` model."""
 
@@ -33477,6 +34972,12 @@ class WorkspaceFileVersion(Model):
 
     created_at: str
 
+#: A place in a result (2026-10-19): a text range, a point or box on an image, or lines of
+#: code. `kind` says which. Every kind is a closed object: an unknown key inside an anchor is
+#: refused with `422`, never dropped — a dropped coordinate would turn "this corner" into "the
+#: whole picture". The same shape is used by session annotations and by `POST
+#: /runs/{runId}/review`.
+Anchor: TypeAlias = JsonValue
 #: Numeric counters from the machine's last capability report — e.g. `events_sent`,
 #: `events_failed`, `reconnects`, `heartbeat_failures`, `ws_handshakes`. Keys are client-chosen
 #: `[a-z0-9_]{1,64}`, at most 32, finite numbers only; absent when the client sent none.
@@ -33494,6 +34995,11 @@ QualificationRetentionRule: TypeAlias = JsonValue
 #: Exact canonical metadata is hashed. No credentials, raw code or security authority in
 #: metadata.
 QualificationRunMetadata: TypeAlias = Dict[str, JsonValue]
+#: An `Anchor` with two optional fields more: `target`, what the place is on (default: the
+#: reviewed run's own answer), and `note`, what to change there. The same rules as `Anchor`
+#: apply — every kind is a closed object and a coordinate that does not fit is refused with
+#: `422`.
+ReviewAnchor: TypeAlias = JsonValue
 #: A cron in a shape clients localize; null when the cron is not one of these — show the cron.
 #: Weekdays are ISO (1 = Monday … 7 = Sunday).
 ScheduleShape: TypeAlias = JsonValue
@@ -33788,6 +35294,9 @@ __all__ = [
     "AmendConstitutionRequest",
     "AnalyticsTimeseriesPoint",
     "AnalyticsTopValue",
+    "Anchor",
+    "AnchorTarget",
+    "AnchorTargetType",
     "AndroidTester",
     "AndroidTesterSignupResult",
     "AnthropicCountTokensResponse",
@@ -33817,6 +35326,11 @@ __all__ = [
     "AppleNativeAuthResponse",
     "ApplicationCv",
     "ApplicationCvMimeType",
+    "ApplyAppStoreTransactionRequest",
+    "ApplyAppStoreTransactionRequestEnvironment",
+    "ApplyAppStoreTransactionResponse",
+    "ApplyAppStoreTransactionResponsePlan",
+    "ApplyAppStoreTransactionResponsePlanSource",
     "ApplyProgramRequest",
     "ApplyProgramResponse",
     "ApplyTenantCompanyTemplateRequest",
@@ -33833,6 +35347,9 @@ __all__ = [
     "AuthProvider",
     "AuthVerifyCodeRequest",
     "AuthVerifyCodeResponse",
+    "BackfillSessionTitlesRequest",
+    "BackfillSessionTitlesResponse",
+    "BackfillSessionTitlesResponseError",
     "Ballot",
     "BallotVote",
     "BlogConfig",
@@ -33899,14 +35416,21 @@ __all__ = [
     "ChatMessageToolCall",
     "CheckGovernanceRequest",
     "CheckSpawnPermissionRequest",
+    "ChiefVoice",
     "ClearBillingBudgetResponse",
     "CloseSessionResponse",
+    "CodeAnchor",
+    "CodeAnchorKind",
     "Company",
     "CompanyActivityEntry",
     "CompanyChange",
     "CompanyChangeSource",
     "CompanyCreate",
     "CompanyCreateBudget",
+    "CompanyCreateConfig",
+    "CompanyCreateConfigEscalationOnItem",
+    "CompanyCreateStrategicGoal",
+    "CompanyCreateStrategicGoalKpisItem",
     "CompanyExport",
     "CompanyExportAgent",
     "CompanyExportAgentMCP",
@@ -33943,6 +35467,11 @@ __all__ = [
     "CompanyTemplateRole",
     "CompanyTestRun",
     "CompanyUpdate",
+    "CompanyUpdateBudget",
+    "CompanyUpdateConfig",
+    "CompanyUpdateStatus",
+    "CompanyUpdateStrategicGoal",
+    "CompanyUpdateStrategicGoalKpisItem",
     "CompanyVersionRow",
     "CompleteMcpoAuthRequest",
     "CompleteOAuthLoginFormPostProvider",
@@ -33979,6 +35508,8 @@ __all__ = [
     "ConversationEntryContentVariant2item",
     "ConversationEntryContentVariant2itemMedia",
     "ConversationEntryImportance",
+    "ConversationEntryMetadata",
+    "ConversationEntryMetadataKind",
     "ConversationEntryRunMetrics",
     "ConversationEntryToolCall",
     "ConversationEntryToolCallStatus",
@@ -34266,6 +35797,9 @@ __all__ = [
     "GetAgentActivityStatsResponseTopErrorMessage2",
     "GetAgentIdentityResponse",
     "GetAgentObligationsResponse",
+    "GetAgentsOverviewResponse",
+    "GetAgentsOverviewResponseItem",
+    "GetAgentsOverviewResponseItemRing",
     "GetAgentSystemCardFormat",
     "GetAgentTrafficResponse",
     "GetAgentTrafficResponseEntry",
@@ -34336,6 +35870,7 @@ __all__ = [
     "GetMyHeadAgentTemplateResponseTierTierAutoInjectOverrides",
     "GetMyHeadAgentTemplateResponseTierTierRequiredPlan",
     "GetMyHeadAgentTemplateResponseTierTierResourceLimits",
+    "GetMyRailAgentsResponse",
     "GetPromoStateResponse",
     "GetPromoStateResponseAppliedCode",
     "GetPromoStateResponseOwnedCode",
@@ -34359,6 +35894,7 @@ __all__ = [
     "GetRunResponseApproval",
     "GetRunResponsePendingInput",
     "GetRunResponseResourceLimits",
+    "GetRunResponseReview",
     "GetRunSourcesResponse",
     "GetRunSourcesResponseSource",
     "GetRunSourcesResponseSourceKind",
@@ -34408,6 +35944,8 @@ __all__ = [
     "GetTenantCompanyOverviewResponseProblems",
     "GetTenantCompanyOverviewResponseProblemsMission",
     "GetTenantCompanyOverviewResponseProblemsMissionStatus",
+    "GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedules",
+    "GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedulesByAgentItem",
     "GetTenantCompanyOverviewResponseProblemsRecentItem",
     "GetTenantCompanyOverviewResponseResult",
     "GetTenantCompanyOverviewResponseSpend",
@@ -34433,6 +35971,9 @@ __all__ = [
     "GuardrailConfigItemDefaultAction",
     "GuardrailConfigItemPhase",
     "GuardrailConfigItemSource",
+    "HandleAppStoreNotificationRequest",
+    "HandleAppStoreNotificationResponse",
+    "HandleAppStoreNotificationResponseAction",
     "HandleStripeWebhookRequest",
     "HandleStripeWebhookResponse",
     "HealthCheckV1aliasResponse",
@@ -34444,7 +35985,10 @@ __all__ = [
     "HireCatalogItemPlatform",
     "HireCatalogItemStep",
     "HireConnect",
+    "HiredAgentPermissionRequest",
     "HostDroplet",
+    "ImageAnchor",
+    "ImageAnchorKind",
     "ImageProviderList",
     "ImmutableAuditEvent",
     "ImmutableAuditEventEventType",
@@ -34540,6 +36084,9 @@ __all__ = [
     "ListAgentMailResponse",
     "ListAgentMCPServersResponse",
     "ListAgentScorersResponse",
+    "ListAgentSessionsGroupBy",
+    "ListAgentSessionsResponse",
+    "ListAgentSessionsResponseDay",
     "ListAgentsResponse",
     "ListAgentVersionsFields",
     "ListAgentVersionsResponse",
@@ -34556,6 +36103,7 @@ __all__ = [
     "ListBallotsResponse",
     "ListBillingPlansResponse",
     "ListBillingPlansResponsePlan",
+    "ListBillingPlansResponsePlanAppStoreProductId",
     "ListBillingSpecPackagesResponse",
     "ListBuilderRequestsResponse",
     "ListCompaniesResponse",
@@ -34737,6 +36285,7 @@ __all__ = [
     "NotificationPreferences",
     "NotificationPreferencesInput",
     "NotificationPreferencesInputPriorityChannels",
+    "NotificationPreferencesInputPushFrom",
     "NotificationPreferencesInputQuietHours",
     "NotificationPreferencesPriorityChannels",
     "NotificationPreferencesQuietHours",
@@ -34754,6 +36303,8 @@ __all__ = [
     "NotificationTargetConfigVariant3platform",
     "NotificationTargetConfigVariant4",
     "NotificationTargetConfigVariant4kind",
+    "NotificationTargetConfigVariant5",
+    "NotificationTargetConfigVariant5kind",
     "NotificationType",
     "OAuthAppExchangeRequest",
     "OAuthAppExchangeResponse",
@@ -34794,6 +36345,8 @@ __all__ = [
     "PatchMeRequest",
     "PatchMeResponse",
     "PatchMeResponseUser",
+    "PatchSessionRequest",
+    "PatchSessionRequestModelOverride",
     "PatchTenantRequest",
     "PatchTenantRequestCustomDomain",
     "PatchTenantRequestMarketplaceListing",
@@ -34831,6 +36384,7 @@ __all__ = [
     "PlatformLLMDefaults",
     "PlaygroundAgentState",
     "PlaygroundTemplate",
+    "PostQualificationUsageCorrectionRequest",
     "PreviewTenantCompanyPauseResponse",
     "PreviewTenantCompanyPauseResponsePauseScope",
     "PreviewTenantCompanyPauseResponsePauseScopeItem",
@@ -34927,6 +36481,7 @@ __all__ = [
     "PutCareersConfigResponse",
     "PutQualificationPricingRevisionRequest",
     "PutQualificationSponsorKeyRequest",
+    "PutQualificationSponsorKeyResponse",
     "QualificationAssessmentInputMessage",
     "QualificationConfirmedPolicyResponse",
     "QualificationConfirmedPolicyResponseBlocker",
@@ -34960,6 +36515,7 @@ __all__ = [
     "QualificationMicrousd",
     "QualificationMissingPolicyResponse",
     "QualificationPositiveMicrousd",
+    "QualificationPricingRevision",
     "QualificationProcessingPolicy",
     "QualificationProcessingPolicyLLMTrainingUse",
     "QualificationProcessingPolicyResponse",
@@ -34982,6 +36538,10 @@ __all__ = [
     "QualificationStoragePolicy",
     "QualificationUnverifiableExecutionReceiptV2",
     "QualificationUnverifiableExecutionReceiptV2executionOrigin",
+    "QualificationUsageCorrection",
+    "QualificationUsageCorrectionAfterVariant1",
+    "QualificationUsageCorrectionBeforeVariant1",
+    "QualificationUsageCorrectionStatus",
     "QualificationVerifiedExecutionReceiptV2",
     "QualificationVerifiedExecutionReceiptV2reasonCode",
     "QualificationVerifiedExecutionReceiptV2runStatus",
@@ -35041,6 +36601,8 @@ __all__ = [
     "RepairAgentRecordsResponseInitialVersions",
     "RepairAgentRecordsResponseOrphanSchedules",
     "ReplaceConstitutionRequest",
+    "ReplaceMyRailAgentsRequest",
+    "ReplaceMyRailAgentsResponse",
     "ReplayResult",
     "ReplayResultMode",
     "ReplayResultStepComparison",
@@ -35074,6 +36636,16 @@ __all__ = [
     "ResumeRunRequest",
     "ResumeRunRequestInput",
     "ResumeRunResponse",
+    "RetirePlatformAgentsRequest",
+    "RetirePlatformAgentsResponse",
+    "RetirePlatformAgentsResponseAgent",
+    "RetirePlatformAgentsResponseAgentFoundByItem",
+    "RetirePlatformAgentsResponseAgentKind",
+    "RetirePlatformAgentsResponseApplied",
+    "RetirePlatformAgentsResponseError",
+    "RetirePlatformAgentsResponseHead",
+    "RetirePlatformAgentsResponseHeadAction",
+    "RetirePlatformAgentsResponseRegistryKey",
     "RetryPublicVideoOrderResponse",
     "RetryPublicVideoOrderResponseFailure",
     "RetryPublicVideoOrderResponseProgress",
@@ -35082,7 +36654,12 @@ __all__ = [
     "RetryPublicVideoOrderResponseTemplate",
     "RetryPublicVideoOrderResponseTemplateTitle",
     "RetryPublicVideoOrderResponseVideo",
+    "ReviewAnchor",
+    "ReviewCodeAnchor",
+    "ReviewImageAnchor",
     "ReviewMissionObjectiveRequest",
+    "ReviewRunRequest",
+    "ReviewTextAnchor",
     "ReviseRunRequest",
     "ReviseRunResponse",
     "RevokeAPIKeyResponse",
@@ -35123,12 +36700,16 @@ __all__ = [
     "RunFeedbackOne",
     "RunFeedbackSet",
     "RunMetrics",
+    "RunMetricsCostAttribution",
     "RunMissionResponse",
     "RunOutput",
     "RunPlaygroundRequest",
     "RunPlaygroundRequestResourceLimits",
     "RunReconciliationResponse",
     "RunResourceLimits",
+    "RunReview",
+    "RunReview2",
+    "RunReviewVerdict",
     "RunStatus",
     "RunStep",
     "RunStepMetrics",
@@ -35190,6 +36771,7 @@ __all__ = [
     "SessionExportMessageToolCall",
     "SessionModelOverride",
     "SessionQueueMode",
+    "SessionTitleSource",
     "SetAdminIntegrationOAuthProviderRequest",
     "SetAdminIntegrationOAuthProviderResponse",
     "SetAdminLLMDefaultRequest",
@@ -35315,6 +36897,7 @@ __all__ = [
     "TeamWorkerPermissions",
     "Tenant",
     "TenantBilling",
+    "TenantBillingPlanSource",
     "TenantBillingStatus",
     "TenantBranding",
     "TenantCustomDomain",
@@ -35354,6 +36937,7 @@ __all__ = [
     "TenantStatus",
     "TenantTrial",
     "TenantUser",
+    "TenantUserPresence",
     "TerminateAgentResponse",
     "TestAdminSmtpConfigRequest",
     "TestAdminSmtpConfigRequestProfile",
@@ -35365,6 +36949,8 @@ __all__ = [
     "TestLLMProviderKeyResponse",
     "TestNotificationTargetResponse",
     "TestWebhookResponse",
+    "TextAnchor",
+    "TextAnchorKind",
     "Todo",
     "TodoDelivery",
     "TodoDeliveryChannel",
@@ -35550,6 +37136,7 @@ __all__ = [
     "UpsertNotificationTargetRequestConfigVariant3",
     "UpsertNotificationTargetRequestConfigVariant4",
     "UpsertNotificationTargetRequestConfigVariant4keys",
+    "UpsertNotificationTargetRequestConfigVariant5",
     "UpsertPromoCodeResponse",
     "UsageMarginSummary",
     "UsageQuota",
@@ -35610,6 +37197,10 @@ __all__ = [
     "VideoTemplateTextSlot",
     "VideoTemplateTextSlotLabel",
     "VideoTemplateTitle",
+    "VoiceCatalog",
+    "VoiceCatalogItem",
+    "VoiceCatalogItemQualityTier",
+    "VoiceCatalogSource",
     "VoiceConfig",
     "VoiceConfigStt",
     "VoiceConfigTts",

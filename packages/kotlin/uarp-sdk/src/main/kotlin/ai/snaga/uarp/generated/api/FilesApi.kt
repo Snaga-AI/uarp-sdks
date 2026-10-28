@@ -106,15 +106,24 @@ public class FilesApi internal constructor(private val client: UarpClient) {
      * current page rather than the whole collection — a page can come back empty while later pages
      * still hold matches. Metadata only; no bytes.
      *
+     * `agent_id` lists the files that agent's runs wrote, newest first (since 2026-10-19). Only
+     * records stamped with `agent_id` match — an upload, or a file written before the stamp
+     * existed, belongs to no agent and none is guessed for it. There is no index behind this
+     * filter: one request reads at most 2,000 file records and answers the matches it found with a
+     * cursor to continue, so a page can be short or empty while `has_more` is true; follow the
+     * cursor. `mime_prefix` combines with it and is then applied during the scan, not per page.
+     * `agent_id` that is not a UUID is `400`.
+     *
      * `GET /api/v1/files`
      *
      * Required scopes: `files:read`.
      */
-    public suspend fun list(mimePrefix: String? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): ListFilesResponse {
+    public suspend fun list(mimePrefix: String? = null, limit: Long? = null, cursor: String? = null, agentId: String? = null, options: RequestOptions = RequestOptions()): ListFilesResponse {
         val query = buildList {
             if (mimePrefix != null) add("mime_prefix" to mimePrefix)
             if (limit != null) add("limit" to limit.toString())
             if (cursor != null) add("cursor" to cursor)
+            if (agentId != null) add("agent_id" to agentId)
         }
         return client.request<ListFilesResponse>(
             RequestSpec(
@@ -130,8 +139,8 @@ public class FilesApi internal constructor(private val client: UarpClient) {
      * Stream every item returned by `listFiles`, following the `cursor` cursor until the server
      * reports no further pages.
      */
-    public fun listAll(mimePrefix: String? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<FileEntry> = autoPaginate(
-        fetch = { pageCursor -> list(mimePrefix = mimePrefix, limit = limit, cursor = pageCursor, options = options) },
+    public fun listAll(mimePrefix: String? = null, limit: Long? = null, cursor: String? = null, agentId: String? = null, options: RequestOptions = RequestOptions()): Flow<FileEntry> = autoPaginate(
+        fetch = { pageCursor -> list(mimePrefix = mimePrefix, limit = limit, cursor = pageCursor, agentId = agentId, options = options) },
         items = { it.items ?: emptyList() },
         cursor = { it.cursor },
         hasMore = { it.hasMore },

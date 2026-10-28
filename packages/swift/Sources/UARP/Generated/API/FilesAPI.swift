@@ -77,10 +77,18 @@ public struct FilesAPI: Sendable {
     /// current page rather than the whole collection — a page can come back empty while later pages
     /// still hold matches. Metadata only; no bytes.
     ///
+    /// `agent_id` lists the files that agent's runs wrote, newest first (since 2026-10-19). Only
+    /// records stamped with `agent_id` match — an upload, or a file written before the stamp
+    /// existed, belongs to no agent and none is guessed for it. There is no index behind this
+    /// filter: one request reads at most 2,000 file records and answers the matches it found with a
+    /// cursor to continue, so a page can be short or empty while `has_more` is true; follow the
+    /// cursor. `mime_prefix` combines with it and is then applied during the scan, not per page.
+    /// `agent_id` that is not a UUID is `400`.
+    ///
     /// `GET /api/v1/files`
     ///
     /// Required scopes: `files:read`.
-    public func list(mimePrefix: String? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListFilesResponse {
+    public func list(mimePrefix: String? = nil, limit: Int? = nil, cursor: String? = nil, agentId: String? = nil, options: RequestOptions = .init()) async throws -> ListFilesResponse {
         var query: [URLQueryItem] = []
         if let mimePrefix {
             query.append(URLQueryItem(name: "mime_prefix", value: mimePrefix))
@@ -90,6 +98,9 @@ public struct FilesAPI: Sendable {
         }
         if let cursor {
             query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
+        if let agentId {
+            query.append(URLQueryItem(name: "agent_id", value: agentId))
         }
         return try await client.send(RequestSpec(
             method: "GET",
@@ -101,9 +112,9 @@ public struct FilesAPI: Sendable {
 
     /// Stream every item returned by `listFiles`, following the `cursor` cursor until the server
     /// reports no further pages.
-    public func listAll(mimePrefix: String? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<FileEntry, Error> {
+    public func listAll(mimePrefix: String? = nil, limit: Int? = nil, cursor: String? = nil, agentId: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<FileEntry, Error> {
         autoPaginate(
-            fetch: { cursor in try await self.list(mimePrefix: mimePrefix, limit: limit, cursor: cursor, options: options) },
+            fetch: { cursor in try await self.list(mimePrefix: mimePrefix, limit: limit, cursor: cursor, agentId: agentId, options: options) },
             items: { $0.items ?? [] },
             cursor: { $0.cursor },
             hasMore: { $0.hasMore }

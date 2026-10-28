@@ -429,6 +429,11 @@ public data class AarObjectiveOutcome(
      */
     @SerialName("abort_reason")
     public val abortReason: String? = null,
+    /**
+     * The failed objective's recorded result: the verifier or execution reason.
+     */
+    @SerialName("failure_reason")
+    public val failureReason: String? = null,
     @SerialName("final_agent_id")
     public val finalAgentId: String? = null,
     @SerialName("final_model")
@@ -496,9 +501,11 @@ public data class AarRootCause(
     @SerialName("objective_id")
     public val objectiveId: String,
     /**
-     * Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
-     * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed`, `not_dispatchable`
-     * and `verifier_error` → `external_error`. Branch on `code` for the precise reason.
+     * Coarse and closed. `exhausted_strikes_<n>` → `verification_failed`; `budget_exhausted` →
+     * `unknown`; `dependency_failed`, `not_dispatchable` and `verifier_error` → `external_error`.
+     * Only an explicit duration cause yields `max_duration_exceeded`. `code` preserves the precise
+     * abort reason and `details` includes the recorded failure reason. Existing finalized AARs are
+     * presented with corrected diagnostics without rewriting their stored audit record.
      */
     public val category: AarRootCauseCategory,
     public val details: String,
@@ -510,9 +517,11 @@ public data class AarRootCause(
 )
 
 /**
- * Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
- * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed`, `not_dispatchable`
- * and `verifier_error` → `external_error`. Branch on `code` for the precise reason.
+ * Coarse and closed. `exhausted_strikes_<n>` → `verification_failed`; `budget_exhausted` →
+ * `unknown`; `dependency_failed`, `not_dispatchable` and `verifier_error` → `external_error`.
+ * Only an explicit duration cause yields `max_duration_exceeded`. `code` preserves the precise
+ * abort reason and `details` includes the recorded failure reason. Existing finalized AARs are
+ * presented with corrected diagnostics without rewriting their stored audit record.
  */
 ///
 /**
@@ -898,6 +907,9 @@ public data class AdminAnalyticsOverviewResponse(
  */
 @Serializable
 public data class AdminAnalyticsOverviewResponseProductCohorts(
+    /**
+     * When tracking began; null before the first cohort row exists.
+     */
     @SerialName("tracking_since")
     public val trackingSince: String? = null,
     @SerialName("as_of")
@@ -1045,20 +1057,20 @@ public data class AdminConfigAgentMemoryConfigAgentMemory(
      * the platform default applies again; GET then omits the field. Added 2026-09-23.
      */
     @SerialName("extraction_model")
-    public val extractionModel: String,
+    public val extractionModel: String? = null,
     @SerialName("eviction_threshold")
     public val evictionThreshold: Long,
     @SerialName("embedding_dimensions")
     public val embeddingDimensions: Long,
     @SerialName("embedding_provider")
-    public val embeddingProvider: String,
+    public val embeddingProvider: String? = null,
     @SerialName("embedding_model")
-    public val embeddingModel: String,
+    public val embeddingModel: String? = null,
     /**
      * On PUT, `null` clears the stored override; GET then omits the field. Added 2026-09-23.
      */
     @SerialName("compression_model")
-    public val compressionModel: String,
+    public val compressionModel: String? = null,
 )
 
 /**
@@ -3974,7 +3986,10 @@ public data class AgentHire(
     /**
      * `pending`: a command was issued and nothing has connected with it; `connected`: the agent
      * connected with its current command; `disconnected`: the person disconnected it — POST
-     * /agents/{agentId}/hire/command brings it back.
+     * /agents/{agentId}/hire/command brings it back. A one-way record of what happened, not
+     * presence: it is written on the first authenticated request and never cleared, so it still
+     * reads `connected` after the agent's process has stopped. Show `online` for "is it working
+     * now".
      */
     public val status: AgentHireStatus,
     @SerialName("connected_at")
@@ -3984,12 +3999,30 @@ public data class AgentHire(
      */
     @SerialName("expires_at")
     public val expiresAt: String? = null,
+    /**
+     * Whether the agent is polling right now: a bridge connection with a heartbeat in the last two
+     * minutes. Derived on every read and always agrees with the agent's `bridge_status`. Added
+     * 2026-10-20 — before it, a client had only `status` and kept calling a stopped agent
+     * "connected".
+     */
+    public val online: Boolean,
+    /**
+     * The agent's most recent heartbeat, read from its bridge connection; `null` when it has never
+     * been seen, or when that connection record was deregistered or swept. While the record exists
+     * it keeps the time of the last sighting, so a screen can say when the agent was last alive.
+     * Added 2026-10-20.
+     */
+    @SerialName("last_seen_at")
+    public val lastSeenAt: String? = null,
 )
 
 /**
  * `pending`: a command was issued and nothing has connected with it; `connected`: the agent
  * connected with its current command; `disconnected`: the person disconnected it — POST
- * /agents/{agentId}/hire/command brings it back.
+ * /agents/{agentId}/hire/command brings it back. A one-way record of what happened, not
+ * presence: it is written on the first authenticated request and never cleared, so it still
+ * reads `connected` after the agent's process has stopped. Show `online` for "is it working
+ * now".
  */
 ///
 /**
@@ -5596,14 +5629,14 @@ public data class AgentVersion(
      * (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to
      * canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
      * provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
-     * detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
-     * provisioned`, `Platform agent config migrated on boot`, `Qualification evaluator template
-     * revision N` (N = the template revision), `Hired`, `Registered from a local app`, `Token cap
-     * removed (platform budget applies)`, `Head Agent renamed to Chief of Staff`, `Token cap
-     * removed and Head Agent renamed to Chief of Staff`, `Rollback to version N` (N = the version
-     * rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement
-     * loop: the first N is a count, the second is one of errors, ratings or feedback — words, not
-     * a number). A reason code beside the prose is the owner's decision (DEC 11).
+     * detached`, `Workspace tools enabled`, `Tool trust override updated`, `Qualification
+     * evaluator template revision N` (N = the template revision), `Hired`, `Registered from a
+     * local app`, `Token cap removed (platform budget applies)`, `Head Agent renamed to Chief of
+     * Staff`, `Token cap removed and Head Agent renamed to Chief of Staff`, `Destructive tools
+     * removed from auto-approval (template v2)`, `Rollback to version N` (N = the version rolled
+     * back to), `Self-improvement: N changes based on N analysis` (the self-improvement loop: the
+     * first N is a count, the second is one of errors, ratings or feedback — words, not a number).
+     * A reason code beside the prose is the owner's decision (DEC 11).
      */
     public val changelog: String? = null,
     @SerialName("created_at")
@@ -5881,6 +5914,56 @@ public data class AnalyticsTopValue(
     public val `value`: String,
     public val count: Long,
 )
+
+/**
+ * A place in a result (2026-10-19): a text range, a point or box on an image, or lines of
+ * code. `kind` says which. Every kind is a closed object: an unknown key inside an anchor is
+ * refused with `422`, never dropped — a dropped coordinate would turn "this corner" into "the
+ * whole picture". The same shape is used by session annotations and by `POST
+ * /runs/{runId}/review`.
+ */
+public typealias Anchor = JsonElement
+
+/**
+ * What an annotation or anchor is on: a chat `message` (the id `GET
+ * /sessions/{sessionId}/messages` serves), an `artifact`, a `file` (a file id), or a run's
+ * output (`run_output`, the run id). Stored as sent; the id is not looked up.
+ */
+@Serializable
+public data class AnchorTarget(
+    public val type: AnchorTargetType,
+    public val id: String,
+)
+
+/**
+ * `AnchorTargetType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AnchorTargetTypeSerializer::class)
+@JvmInline
+public value class AnchorTargetType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val MESSAGE: AnchorTargetType = AnchorTargetType("message")
+        public val ARTIFACT: AnchorTargetType = AnchorTargetType("artifact")
+        public val FILE: AnchorTargetType = AnchorTargetType("file")
+        public val RUN_OUTPUT: AnchorTargetType = AnchorTargetType("run_output")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AnchorTargetType> = listOf(MESSAGE, ARTIFACT, FILE, RUN_OUTPUT)
+    }
+}
+
+public object AnchorTargetTypeSerializer : KSerializer<AnchorTargetType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AnchorTargetType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AnchorTargetType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AnchorTargetType = AnchorTargetType(decoder.decodeString())
+}
 
 /**
  * `AndroidTester` model.
@@ -6495,6 +6578,125 @@ public object ApplicationCvMimeTypeSerializer : KSerializer<ApplicationCvMimeTyp
 }
 
 /**
+ * `ApplyAppStoreTransactionRequest` model.
+ */
+@Serializable
+public data class ApplyAppStoreTransactionRequest(
+    /**
+     * `Transaction.jwsRepresentation` — a compact JWS.
+     */
+    @SerialName("signed_transaction")
+    public val signedTransaction: String,
+    /**
+     * Where StoreKit says the transaction came from; must match the signed payload. `Xcode` is
+     * refused in production.
+     */
+    public val environment: ApplyAppStoreTransactionRequestEnvironment,
+)
+
+/**
+ * Where StoreKit says the transaction came from; must match the signed payload. `Xcode` is
+ * refused in production.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ApplyAppStoreTransactionRequestEnvironmentSerializer::class)
+@JvmInline
+public value class ApplyAppStoreTransactionRequestEnvironment(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val PRODUCTION: ApplyAppStoreTransactionRequestEnvironment = ApplyAppStoreTransactionRequestEnvironment("Production")
+        public val SANDBOX: ApplyAppStoreTransactionRequestEnvironment = ApplyAppStoreTransactionRequestEnvironment("Sandbox")
+        public val XCODE: ApplyAppStoreTransactionRequestEnvironment = ApplyAppStoreTransactionRequestEnvironment("Xcode")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ApplyAppStoreTransactionRequestEnvironment> = listOf(PRODUCTION, SANDBOX, XCODE)
+    }
+}
+
+public object ApplyAppStoreTransactionRequestEnvironmentSerializer : KSerializer<ApplyAppStoreTransactionRequestEnvironment> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ApplyAppStoreTransactionRequestEnvironment", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ApplyAppStoreTransactionRequestEnvironment): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ApplyAppStoreTransactionRequestEnvironment = ApplyAppStoreTransactionRequestEnvironment(decoder.decodeString())
+}
+
+/**
+ * `ApplyAppStoreTransactionResponse` model.
+ */
+@Serializable
+public data class ApplyAppStoreTransactionResponse(
+    public val plan: ApplyAppStoreTransactionResponsePlan,
+    @SerialName("plan_source")
+    public val planSource: ApplyAppStoreTransactionResponsePlanSource,
+    /**
+     * Paid up to: the latest verified `expiresDate`.
+     */
+    @SerialName("expires_at")
+    public val expiresAt: String,
+    @SerialName("original_transaction_id")
+    public val originalTransactionId: String,
+)
+
+/**
+ * `ApplyAppStoreTransactionResponsePlan` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ApplyAppStoreTransactionResponsePlanSerializer::class)
+@JvmInline
+public value class ApplyAppStoreTransactionResponsePlan(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val STARTER: ApplyAppStoreTransactionResponsePlan = ApplyAppStoreTransactionResponsePlan("starter")
+        public val PRO: ApplyAppStoreTransactionResponsePlan = ApplyAppStoreTransactionResponsePlan("pro")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ApplyAppStoreTransactionResponsePlan> = listOf(STARTER, PRO)
+    }
+}
+
+public object ApplyAppStoreTransactionResponsePlanSerializer : KSerializer<ApplyAppStoreTransactionResponsePlan> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ApplyAppStoreTransactionResponsePlan", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ApplyAppStoreTransactionResponsePlan): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ApplyAppStoreTransactionResponsePlan = ApplyAppStoreTransactionResponsePlan(decoder.decodeString())
+}
+
+/**
+ * `ApplyAppStoreTransactionResponsePlanSource` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ApplyAppStoreTransactionResponsePlanSourceSerializer::class)
+@JvmInline
+public value class ApplyAppStoreTransactionResponsePlanSource(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val APP_STORE: ApplyAppStoreTransactionResponsePlanSource = ApplyAppStoreTransactionResponsePlanSource("app_store")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ApplyAppStoreTransactionResponsePlanSource> = listOf(APP_STORE)
+    }
+}
+
+public object ApplyAppStoreTransactionResponsePlanSourceSerializer : KSerializer<ApplyAppStoreTransactionResponsePlanSource> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ApplyAppStoreTransactionResponsePlanSource", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ApplyAppStoreTransactionResponsePlanSource): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ApplyAppStoreTransactionResponsePlanSource = ApplyAppStoreTransactionResponsePlanSource(decoder.decodeString())
+}
+
+/**
  * `ApplyProgramRequest` model.
  */
 @Serializable
@@ -6767,6 +6969,59 @@ public data class AuthVerifyCodeResponse(
      */
     @SerialName("api_key")
     public val apiKey: String,
+)
+
+/**
+ * `BackfillSessionTitlesRequest` model.
+ */
+@Serializable
+public data class BackfillSessionTitlesRequest(
+    @SerialName("dry_run")
+    public val dryRun: Boolean? = null,
+    public val limit: Long? = null,
+)
+
+/**
+ * `BackfillSessionTitlesResponse` model.
+ */
+@Serializable
+public data class BackfillSessionTitlesResponse(
+    @SerialName("dry_run")
+    public val dryRun: Boolean,
+    /**
+     * Tenants scanned.
+     */
+    public val tenants: Long,
+    /**
+     * Sessions still without a title, across all tenants.
+     */
+    public val candidates: Long,
+    /**
+     * Candidates this pass reached: the newest, at most `limit`.
+     */
+    public val attempted: Long,
+    /**
+     * Titles written. Always 0 with `dry_run`.
+     */
+    public val titled: Long,
+    /**
+     * Attempted but not titled: no platform model or key, the model failed or answered nothing
+     * usable, or the session was renamed meanwhile.
+     */
+    public val skipped: Long,
+    public val errors: List<BackfillSessionTitlesResponseError>,
+)
+
+/**
+ * `BackfillSessionTitlesResponseError` model.
+ */
+@Serializable
+public data class BackfillSessionTitlesResponseError(
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val error: String? = null,
 )
 
 /**
@@ -8117,6 +8372,21 @@ public data class CheckSpawnPermissionRequest(
 )
 
 /**
+ * A voice for the Chief of Staff: a TTS model and one of its voices from `GET /voices`.
+ */
+@Serializable
+public data class ChiefVoice(
+    /**
+     * The catalog entry's `model`, e.g. `cartesia/sonic-3`.
+     */
+    public val model: String,
+    /**
+     * The catalog entry's `id` — what TTS takes as `voice`.
+     */
+    public val voice: String,
+)
+
+/**
  * `ClearBillingBudgetResponse` model.
  */
 @Serializable
@@ -8134,6 +8404,47 @@ public data class CloseSessionResponse(
     @SerialName("session_id")
     public val sessionId: String,
 )
+
+/**
+ * Lines of code, 1-based and inclusive: `line_end` must not be before `line_start` (`422`
+ * otherwise). `path` names the file when the result has more than one.
+ */
+@Serializable
+public data class CodeAnchor(
+    public val kind: CodeAnchorKind,
+    public val path: String? = null,
+    @SerialName("line_start")
+    public val lineStart: Long,
+    @SerialName("line_end")
+    public val lineEnd: Long,
+)
+
+/**
+ * `CodeAnchorKind` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = CodeAnchorKindSerializer::class)
+@JvmInline
+public value class CodeAnchorKind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val CODE: CodeAnchorKind = CodeAnchorKind("code")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<CodeAnchorKind> = listOf(CODE)
+    }
+}
+
+public object CodeAnchorKindSerializer : KSerializer<CodeAnchorKind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CodeAnchorKind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: CodeAnchorKind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): CodeAnchorKind = CodeAnchorKind(decoder.decodeString())
+}
 
 /**
  * An **initiative** (`/initiatives`; until 2026-10-12 called a company): a long-running goal
@@ -8261,24 +8572,20 @@ public object CompanyChangeSourceSerializer : KSerializer<CompanyChangeSource> {
 @Serializable
 public data class CompanyCreate(
     public val name: String,
-    /**
-     * What the company exists to do.
-     */
     public val mission: String,
-    /**
-     * Spend ceiling and pacing for the company.
-     */
-    public val budget: CompanyCreateBudget,
     public val description: String? = null,
     @SerialName("strategic_goals")
-    public val strategicGoals: List<String>? = null,
-    public val config: JsonObject? = null,
+    public val strategicGoals: List<CompanyCreateStrategicGoal>? = null,
+    public val budget: CompanyCreateBudget,
+    public val config: CompanyCreateConfig? = null,
+    @SerialName("strategist_model")
+    public val strategistModel: String? = null,
     @SerialName("workspace_id")
     public val workspaceId: String? = null,
 )
 
 /**
- * Spend ceiling and pacing for the company.
+ * `CompanyCreateBudget` model.
  */
 @Serializable
 public data class CompanyCreateBudget(
@@ -8289,10 +8596,76 @@ public data class CompanyCreateBudget(
     @SerialName("alert_threshold_pct")
     public val alertThresholdPct: Double,
     /**
-     * Metered by the platform. Ignored on create (set to 0) and on update.
+     * Metered by the platform. Ignored on create and update.
      */
     @SerialName("spent_usd")
     public val spentUsd: Double? = null,
+)
+
+/**
+ * `CompanyCreateConfig` model.
+ */
+@Serializable
+public data class CompanyCreateConfig(
+    @SerialName("review_interval_ms")
+    public val reviewIntervalMs: Double? = null,
+    @SerialName("escalation_on")
+    public val escalationOn: List<CompanyCreateConfigEscalationOnItem>? = null,
+)
+
+/**
+ * `CompanyCreateConfigEscalationOnItem` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = CompanyCreateConfigEscalationOnItemSerializer::class)
+@JvmInline
+public value class CompanyCreateConfigEscalationOnItem(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val BUDGET_80PCT: CompanyCreateConfigEscalationOnItem = CompanyCreateConfigEscalationOnItem("budget_80pct")
+        public val OBJECTIVE_FAILED: CompanyCreateConfigEscalationOnItem = CompanyCreateConfigEscalationOnItem("objective_failed")
+        public val GOAL_COMPLETED: CompanyCreateConfigEscalationOnItem = CompanyCreateConfigEscalationOnItem("goal_completed")
+        public val STUCK: CompanyCreateConfigEscalationOnItem = CompanyCreateConfigEscalationOnItem("stuck")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<CompanyCreateConfigEscalationOnItem> = listOf(BUDGET_80PCT, OBJECTIVE_FAILED, GOAL_COMPLETED, STUCK)
+    }
+}
+
+public object CompanyCreateConfigEscalationOnItemSerializer : KSerializer<CompanyCreateConfigEscalationOnItem> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CompanyCreateConfigEscalationOnItem", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: CompanyCreateConfigEscalationOnItem): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): CompanyCreateConfigEscalationOnItem = CompanyCreateConfigEscalationOnItem(decoder.decodeString())
+}
+
+/**
+ * `CompanyCreateStrategicGoal` model.
+ */
+@Serializable
+public data class CompanyCreateStrategicGoal(
+    @SerialName("goal_id")
+    public val goalId: String? = null,
+    public val title: String,
+    public val description: String? = null,
+    public val kpis: List<CompanyCreateStrategicGoalKpisItem>? = null,
+    @SerialName("root_objective_id")
+    public val rootObjectiveId: String? = null,
+    public val deadline: String? = null,
+)
+
+/**
+ * `CompanyCreateStrategicGoalKpisItem` model.
+ */
+@Serializable
+public data class CompanyCreateStrategicGoalKpisItem(
+    public val name: String? = null,
+    public val target: String? = null,
+    public val current: JsonElement? = null,
 )
 
 /**
@@ -9057,11 +9430,96 @@ public data class CompanyTestRun(
 public data class CompanyUpdate(
     public val name: String? = null,
     public val mission: String? = null,
-    public val budget: Double? = null,
     public val description: String? = null,
+    public val status: CompanyUpdateStatus? = null,
     @SerialName("strategic_goals")
-    public val strategicGoals: List<String>? = null,
-    public val config: JsonObject? = null,
+    public val strategicGoals: List<CompanyUpdateStrategicGoal>? = null,
+    public val budget: CompanyUpdateBudget? = null,
+    public val config: CompanyUpdateConfig? = null,
+)
+
+/**
+ * `CompanyUpdateBudget` model.
+ */
+@Serializable
+public data class CompanyUpdateBudget(
+    @SerialName("total_usd")
+    public val totalUsd: Double,
+    @SerialName("daily_limit_usd")
+    public val dailyLimitUsd: Double,
+    @SerialName("alert_threshold_pct")
+    public val alertThresholdPct: Double,
+    /**
+     * Metered by the platform. Ignored on create and update.
+     */
+    @SerialName("spent_usd")
+    public val spentUsd: Double? = null,
+)
+
+/**
+ * `CompanyUpdateConfig` model.
+ */
+@Serializable
+public data class CompanyUpdateConfig(
+    @SerialName("review_interval_ms")
+    public val reviewIntervalMs: Double? = null,
+    @SerialName("escalation_on")
+    public val escalationOn: List<CompanyCreateConfigEscalationOnItem>? = null,
+)
+
+/**
+ * `CompanyUpdateStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = CompanyUpdateStatusSerializer::class)
+@JvmInline
+public value class CompanyUpdateStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ACTIVE: CompanyUpdateStatus = CompanyUpdateStatus("active")
+        public val PAUSED: CompanyUpdateStatus = CompanyUpdateStatus("paused")
+        public val COMPLETED: CompanyUpdateStatus = CompanyUpdateStatus("completed")
+        public val ARCHIVED: CompanyUpdateStatus = CompanyUpdateStatus("archived")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<CompanyUpdateStatus> = listOf(ACTIVE, PAUSED, COMPLETED, ARCHIVED)
+    }
+}
+
+public object CompanyUpdateStatusSerializer : KSerializer<CompanyUpdateStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CompanyUpdateStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: CompanyUpdateStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): CompanyUpdateStatus = CompanyUpdateStatus(decoder.decodeString())
+}
+
+/**
+ * `CompanyUpdateStrategicGoal` model.
+ */
+@Serializable
+public data class CompanyUpdateStrategicGoal(
+    @SerialName("goal_id")
+    public val goalId: String? = null,
+    public val title: String,
+    public val description: String? = null,
+    public val kpis: List<CompanyUpdateStrategicGoalKpisItem>? = null,
+    @SerialName("root_objective_id")
+    public val rootObjectiveId: String? = null,
+    public val deadline: String? = null,
+)
+
+/**
+ * `CompanyUpdateStrategicGoalKpisItem` model.
+ */
+@Serializable
+public data class CompanyUpdateStrategicGoalKpisItem(
+    public val name: String? = null,
+    public val target: String? = null,
+    public val current: JsonElement? = null,
 )
 
 /**
@@ -9794,6 +10252,13 @@ public data class ConversationEntry(
     public val importance: ConversationEntryImportance? = null,
     public val attachments: List<ConversationEntryAttachment>? = null,
     /**
+     * Present only on an entry that is not an ordinary turn. Today: the morning summary — an
+     * assistant entry the head agent posts at 08:00 tenant-local time (since 2026-10-19) with
+     * `kind: "daily_summary"` and the local `date` it summarises from; no run produced it, so its
+     * `run_id` is `morning-summary-<date>`.
+     */
+    public val metadata: ConversationEntryMetadata? = null,
+    /**
      * On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
      * publicRunMetrics).
      */
@@ -9905,6 +10370,45 @@ public object ConversationEntryImportanceSerializer : KSerializer<ConversationEn
 }
 
 /**
+ * Present only on an entry that is not an ordinary turn. Today: the morning summary — an
+ * assistant entry the head agent posts at 08:00 tenant-local time (since 2026-10-19) with
+ * `kind: "daily_summary"` and the local `date` it summarises from; no run produced it, so its
+ * `run_id` is `morning-summary-<date>`.
+ */
+@Serializable
+public data class ConversationEntryMetadata(
+    public val kind: ConversationEntryMetadataKind,
+    public val date: String,
+)
+
+/**
+ * `ConversationEntryMetadataKind` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ConversationEntryMetadataKindSerializer::class)
+@JvmInline
+public value class ConversationEntryMetadataKind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val DAILY_SUMMARY: ConversationEntryMetadataKind = ConversationEntryMetadataKind("daily_summary")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ConversationEntryMetadataKind> = listOf(DAILY_SUMMARY)
+    }
+}
+
+public object ConversationEntryMetadataKindSerializer : KSerializer<ConversationEntryMetadataKind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ConversationEntryMetadataKind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ConversationEntryMetadataKind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ConversationEntryMetadataKind = ConversationEntryMetadataKind(decoder.decodeString())
+}
+
+/**
  * On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
  * publicRunMetrics).
  */
@@ -9960,10 +10464,21 @@ public data class ConversationEntryRunMetrics(
     @SerialName("memory_extractions")
     public val memoryExtractions: Long? = null,
     /**
-     * Estimated total cost in USD
+     * Estimated total cost in USD — the tenant's bill, except when `cost_attribution` says
+     * otherwise.
      */
     @SerialName("total_cost_usd")
     public val totalCostUsd: Double? = null,
+    /**
+     * Present only on a sponsored qualification run (since 2026-10-19). `total_cost_usd` is then
+     * execution telemetry at the platform's catalog rate: never billed to the company the run
+     * executed in, and never counted in its usage, quotas, daily share, run count, spend budget or
+     * overage. The sponsor's debit is the grant's `charged_microusd`, accounted at the program's
+     * frozen pricing revision, and the two differ (production run 01a151cf…: telemetry $0.010312,
+     * sponsor debit 5414 micro-USD). Absent on every other run.
+     */
+    @SerialName("cost_attribution")
+    public val costAttribution: RunMetricsCostAttribution? = null,
 )
 
 /**
@@ -11260,6 +11775,8 @@ public data class CreateSessionAnnotationRequest(
     @SerialName("message_id")
     public val messageId: String,
     public val content: String,
+    public val anchor: Anchor? = null,
+    public val target: AnchorTarget? = null,
 )
 
 /**
@@ -11275,6 +11792,8 @@ public data class CreateSessionAnnotationResponse(
     @SerialName("created_at")
     public val createdAt: String? = null,
     public val resolved: Boolean? = null,
+    public val anchor: Anchor? = null,
+    public val target: AnchorTarget? = null,
 )
 
 /**
@@ -12508,6 +13027,13 @@ public data class DeploymentFeatures(
      */
     @SerialName("marketplace_invoke")
     public val marketplaceInvoke: Boolean,
+    /**
+     * App Store in-app purchases are accepted: the app's bundle id is configured
+     * (`apple_bundle_id` / `APPLE_BUNDLE_ID`), which every signed transaction and notification is
+     * checked against.
+     */
+    @SerialName("app_store")
+    public val appStore: Boolean,
 )
 
 /**
@@ -13784,6 +14310,7 @@ public value class ErrorCode(public val value: String) {
         public val NOT_YANKED: ErrorCode = ErrorCode("NOT_YANKED")
         public val NO_RUNNABLE_TARGET: ErrorCode = ErrorCode("NO_RUNNABLE_TARGET")
         public val OAUTH_FAILED: ErrorCode = ErrorCode("OAUTH_FAILED")
+        public val OUTPUT_CONTRACT_VIOLATION: ErrorCode = ErrorCode("OUTPUT_CONTRACT_VIOLATION")
         public val OUTPUT_TOO_LARGE: ErrorCode = ErrorCode("OUTPUT_TOO_LARGE")
         public val PAYLOAD_TOO_LARGE: ErrorCode = ErrorCode("PAYLOAD_TOO_LARGE")
         public val PERSISTENCE_ERROR: ErrorCode = ErrorCode("PERSISTENCE_ERROR")
@@ -13835,11 +14362,16 @@ public value class ErrorCode(public val value: String) {
         public val SPONSORSHIP_SCOPE_REQUIRED: ErrorCode = ErrorCode("SPONSORSHIP_SCOPE_REQUIRED")
         public val STARTED_BY_ANOTHER_USER: ErrorCode = ErrorCode("STARTED_BY_ANOTHER_USER")
         public val STRATEGIST_MODEL_UNCONFIGURED: ErrorCode = ErrorCode("STRATEGIST_MODEL_UNCONFIGURED")
+        public val SUPER_ADMIN_REQUIRED: ErrorCode = ErrorCode("SUPER_ADMIN_REQUIRED")
         public val TASK_GRAPH_FAILED: ErrorCode = ErrorCode("TASK_GRAPH_FAILED")
         public val TEAM_ABORT: ErrorCode = ErrorCode("TEAM_ABORT")
         public val TERMS_NOT_ACCEPTED: ErrorCode = ErrorCode("TERMS_NOT_ACCEPTED")
         public val TEXT_EXTRACTION_FAILED: ErrorCode = ErrorCode("TEXT_EXTRACTION_FAILED")
         public val UNAUTHENTICATED: ErrorCode = ErrorCode("UNAUTHENTICATED")
+        public val USAGE_CORRECTION_EXCEEDS_COUNTERS: ErrorCode = ErrorCode("USAGE_CORRECTION_EXCEEDS_COUNTERS")
+        public val USAGE_CORRECTION_IN_PROGRESS: ErrorCode = ErrorCode("USAGE_CORRECTION_IN_PROGRESS")
+        public val USAGE_CORRECTION_NOT_SETTLED: ErrorCode = ErrorCode("USAGE_CORRECTION_NOT_SETTLED")
+        public val USAGE_CORRECTION_NOT_SPONSORED: ErrorCode = ErrorCode("USAGE_CORRECTION_NOT_SPONSORED")
         public val USER_REQUIRED: ErrorCode = ErrorCode("USER_REQUIRED")
         public val VALIDATION_ERROR: ErrorCode = ErrorCode("VALIDATION_ERROR")
         public val VERIFICATION_FAILED: ErrorCode = ErrorCode("VERIFICATION_FAILED")
@@ -13883,6 +14415,7 @@ public value class ErrorCode(public val value: String) {
         public val QUOTA_EXCEEDED_: ErrorCode = ErrorCode("quota_exceeded")
         public val RATE_LIMITED_: ErrorCode = ErrorCode("rate_limited")
         public val RESOURCE_LIMIT_REACHED: ErrorCode = ErrorCode("resource_limit_reached")
+        public val RUN_AGENT_STOPPED: ErrorCode = ErrorCode("run_agent_stopped")
         public val RUN_APPROVAL_EXPIRED: ErrorCode = ErrorCode("run_approval_expired")
         public val RUN_INPUT_TIMEOUT: ErrorCode = ErrorCode("run_input_timeout")
         public val RUN_NEVER_CLAIMED: ErrorCode = ErrorCode("run_never_claimed")
@@ -13898,7 +14431,7 @@ public value class ErrorCode(public val value: String) {
         public val VIDEO_SLOT_INVALID: ErrorCode = ErrorCode("video_slot_invalid")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, ASSESSMENT_ISOLATION_REQUIRED, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CLIENT_REQUEST_CONFLICT, COMPANY_NOT_READY, COMPANY_PAUSED, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXECUTION_PROFILE_UNVERIFIABLE, EXECUTION_RECEIPT_PENDING, EXTERNAL_SERVICE_ERROR, FEATURED_SET_CONTENDED, FEATURE_DISABLED, FILE_NOT_FOUND, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_CONFLICT, IDEMPOTENCY_KEY_REUSED, INITIATIVE_BUDGET_EXHAUSTED, INITIATIVE_PAUSED, INTERNAL_ERROR, INVALID_ARCHIVE, INVALID_BODY, INVALID_CURSOR, INVALID_MANIFEST, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, ISOLATION_VIOLATION, LLM_ERROR, MANAGED_AGENT, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, METHOD_NOT_ALLOWED, MIGRATION_CONFLICT, MISSING_FIELD, MISSING_SCOPE, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, OUTPUT_TOO_LARGE, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROCESSING_POLICY_CHANGED, PROCESSING_POLICY_NOT_READY, PROMO_REDEMPTION_FAILED, PROPOSAL_EXPIRED, QUALIFICATION_BUDGET_STOP, QUALIFICATION_ROUTE_MISMATCH, QUALIFICATION_VERSION_UNAVAILABLE, QUOTA_EXCEEDED, RATE_LIMITED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SECURITY_SCAN_FAILED, SESSION_NOT_ACTIVE, SHARE_LIST_CONFLICT, SIGNING_NOT_CONFIGURED, SIZE_LIMIT, SPEC_NOT_FOUND, SPONSORSHIP_BUDGET_BELOW_COMMITTED, SPONSORSHIP_BUDGET_EXHAUSTED, SPONSORSHIP_CANDIDATE_LIMIT, SPONSORSHIP_CONCURRENCY_LIMIT, SPONSORSHIP_FUNDING_UNAVAILABLE, SPONSORSHIP_GRANT_CONFLICT, SPONSORSHIP_GRANT_IN_USE, SPONSORSHIP_GRANT_MISMATCH, SPONSORSHIP_GRANT_UNAVAILABLE, SPONSORSHIP_OUTCOME_UNKNOWN, SPONSORSHIP_PROGRAM_IMMUTABLE, SPONSORSHIP_PROGRAM_INACTIVE, SPONSORSHIP_PROGRAM_REVISION_CONFLICT, SPONSORSHIP_REQUIRED, SPONSORSHIP_SCOPE_REQUIRED, STARTED_BY_ANOTHER_USER, STRATEGIST_MODEL_UNCONFIGURED, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, UNAUTHENTICATED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, HIRE_CATALOG_UNKNOWN, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, NOT_HIRED, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED_, RESOURCE_LIMIT_REACHED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
+        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, ASSESSMENT_ISOLATION_REQUIRED, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CLIENT_REQUEST_CONFLICT, COMPANY_NOT_READY, COMPANY_PAUSED, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXECUTION_PROFILE_UNVERIFIABLE, EXECUTION_RECEIPT_PENDING, EXTERNAL_SERVICE_ERROR, FEATURED_SET_CONTENDED, FEATURE_DISABLED, FILE_NOT_FOUND, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_CONFLICT, IDEMPOTENCY_KEY_REUSED, INITIATIVE_BUDGET_EXHAUSTED, INITIATIVE_PAUSED, INTERNAL_ERROR, INVALID_ARCHIVE, INVALID_BODY, INVALID_CURSOR, INVALID_MANIFEST, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, ISOLATION_VIOLATION, LLM_ERROR, MANAGED_AGENT, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, METHOD_NOT_ALLOWED, MIGRATION_CONFLICT, MISSING_FIELD, MISSING_SCOPE, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, OUTPUT_CONTRACT_VIOLATION, OUTPUT_TOO_LARGE, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROCESSING_POLICY_CHANGED, PROCESSING_POLICY_NOT_READY, PROMO_REDEMPTION_FAILED, PROPOSAL_EXPIRED, QUALIFICATION_BUDGET_STOP, QUALIFICATION_ROUTE_MISMATCH, QUALIFICATION_VERSION_UNAVAILABLE, QUOTA_EXCEEDED, RATE_LIMITED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SECURITY_SCAN_FAILED, SESSION_NOT_ACTIVE, SHARE_LIST_CONFLICT, SIGNING_NOT_CONFIGURED, SIZE_LIMIT, SPEC_NOT_FOUND, SPONSORSHIP_BUDGET_BELOW_COMMITTED, SPONSORSHIP_BUDGET_EXHAUSTED, SPONSORSHIP_CANDIDATE_LIMIT, SPONSORSHIP_CONCURRENCY_LIMIT, SPONSORSHIP_FUNDING_UNAVAILABLE, SPONSORSHIP_GRANT_CONFLICT, SPONSORSHIP_GRANT_IN_USE, SPONSORSHIP_GRANT_MISMATCH, SPONSORSHIP_GRANT_UNAVAILABLE, SPONSORSHIP_OUTCOME_UNKNOWN, SPONSORSHIP_PROGRAM_IMMUTABLE, SPONSORSHIP_PROGRAM_INACTIVE, SPONSORSHIP_PROGRAM_REVISION_CONFLICT, SPONSORSHIP_REQUIRED, SPONSORSHIP_SCOPE_REQUIRED, STARTED_BY_ANOTHER_USER, STRATEGIST_MODEL_UNCONFIGURED, SUPER_ADMIN_REQUIRED, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, UNAUTHENTICATED, USAGE_CORRECTION_EXCEEDS_COUNTERS, USAGE_CORRECTION_IN_PROGRESS, USAGE_CORRECTION_NOT_SETTLED, USAGE_CORRECTION_NOT_SPONSORED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, HIRE_CATALOG_UNKNOWN, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, NOT_HIRED, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED_, RESOURCE_LIMIT_REACHED, RUN_AGENT_STOPPED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
     }
 }
 
@@ -14606,6 +15139,18 @@ public data class FileEntry(
     public val sizeBytes: Long,
     @SerialName("tenant_id")
     public val tenantId: String,
+    /**
+     * The agent whose run wrote this file (since 2026-10-19). Absent for a person's or an API
+     * caller's upload and for every older record, which is not attributed after the fact.
+     */
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    /**
+     * The run that wrote it; present only with `agent_id`, and only when the write happened inside
+     * a run.
+     */
+    @SerialName("run_id")
+    public val runId: String? = null,
 )
 
 /**
@@ -14626,6 +15171,18 @@ public data class FileRecord(
     public val sha256: String,
     @SerialName("created_at")
     public val createdAt: String,
+    /**
+     * The agent whose run wrote this file (since 2026-10-19). Absent for a person's or an API
+     * caller's upload and for every older record, which is not attributed after the fact.
+     */
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    /**
+     * The run that wrote it; present only with `agent_id`, and only when the write happened inside
+     * a run.
+     */
+    @SerialName("run_id")
+    public val runId: String? = null,
 )
 
 /**
@@ -15038,6 +15595,9 @@ public data class GenerateAdminBlogPostResponse(
 @Serializable
 public data class GetActivityFeedResponse(
     public val entries: List<FeedEntry>? = null,
+    /**
+     * Cursor for the next page; null on the last page — which is what the handler sends.
+     */
     public val cursor: String? = null,
     public val total: Long? = null,
 )
@@ -15438,6 +15998,78 @@ public data class GetAgentObligationsResponse(
     public val rules: List<ConstitutionRule>? = null,
     public val count: Long? = null,
 )
+
+/**
+ * `GetAgentsOverviewResponse` model.
+ */
+@Serializable
+public data class GetAgentsOverviewResponse(
+    public val items: List<GetAgentsOverviewResponseItem>,
+)
+
+/**
+ * `GetAgentsOverviewResponseItem` model.
+ */
+@Serializable
+public data class GetAgentsOverviewResponseItem(
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val name: String,
+    /**
+     * A hired agent's catalog icon, else `metadata.avatar_url` when it is a string, else null —
+     * draw the agent from `metadata.ui.avatar` then.
+     */
+    @SerialName("avatar_url")
+    public val avatarURL: String? = null,
+    public val ring: GetAgentsOverviewResponseItemRing,
+    /**
+     * The last run failed; `ring` is then `needs_you`.
+     */
+    public val failed: Boolean,
+    @SerialName("pending_count")
+    public val pendingCount: Long,
+    /**
+     * The last run's `completed_at`, else `started_at`, else `created_at`; null when no run is in
+     * the window.
+     */
+    @SerialName("last_activity_at")
+    public val lastActivityAt: String? = null,
+    /**
+     * When the newest completed run in the window completed.
+     */
+    @SerialName("last_completed_at")
+    public val lastCompletedAt: String? = null,
+)
+
+/**
+ * `GetAgentsOverviewResponseItemRing` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = GetAgentsOverviewResponseItemRingSerializer::class)
+@JvmInline
+public value class GetAgentsOverviewResponseItemRing(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val NEEDS_YOU: GetAgentsOverviewResponseItemRing = GetAgentsOverviewResponseItemRing("needs_you")
+        public val WORKING: GetAgentsOverviewResponseItemRing = GetAgentsOverviewResponseItemRing("working")
+        public val DONE: GetAgentsOverviewResponseItemRing = GetAgentsOverviewResponseItemRing("done")
+        public val IDLE: GetAgentsOverviewResponseItemRing = GetAgentsOverviewResponseItemRing("idle")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<GetAgentsOverviewResponseItemRing> = listOf(NEEDS_YOU, WORKING, DONE, IDLE)
+    }
+}
+
+public object GetAgentsOverviewResponseItemRingSerializer : KSerializer<GetAgentsOverviewResponseItemRing> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetAgentsOverviewResponseItemRing", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: GetAgentsOverviewResponseItemRing): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): GetAgentsOverviewResponseItemRing = GetAgentsOverviewResponseItemRing(decoder.decodeString())
+}
 
 /**
  * `GetAgentSystemCardFormat` values.
@@ -15884,7 +16516,10 @@ public data class GetDataExplorerValueResponse(
 @Serializable
 public data class GetGovernanceLedgerResponse(
     public val entries: List<GovernanceLedgerEntry>,
-    public val head: GovernanceLedgerHead,
+    /**
+     * Newest entry of the global ledger; null when the ledger is empty.
+     */
+    public val head: GovernanceLedgerHead? = null,
     /**
      * Number of entries IN THIS RESPONSE, not the size of the ledger. Measured 2026-08-20: `total`
      * was 16 while `GET /governance/ledger/verify` reported `entries_checked: 6698` against the
@@ -15955,25 +16590,27 @@ public data class GetHealthResponse(
      * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
      * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
      * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-     * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
-     * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
-     * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
-     * `initiatives` = `/initiatives&#47;*` (`/companies` is its deprecated old name);
-     * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
-     * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
-     * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
-     * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
-     * `reviews\[\]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
-     * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
-     * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
-     * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
-     * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
-     * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
-     * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
-     * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
-     * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
-     * /company/versions` AND `POST /company/restore` — there is deliberately no separate
-     * `company_restore`, since a snapshot and the rollback to it ship together.
+     * `company_import`, `company_versions` (since 2026-10-12), `run_review` (since 2026-10-19). A
+     * NAME ALONE DOES NOT SAY WHAT IT COVERS, so here is the coverage — added 2026-10-13 because a
+     * client asked which name gates `POST /tenants/me/company/restore` and the answer existed only
+     * in prose no client can read: `initiatives` = `/initiatives&#47;*` (`/companies` is its
+     * deprecated old name); `initiative_pause` = pausing an initiative; `mission_review` =
+     * objectives with `review_required` and `POST /missions/{id}/objectives/{oid}/review`;
+     * `run_revise` = `POST /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`;
+     * `mission_schedules` = `/missions/schedules`; `mission_analytics` = `GET /analytics/missions`
+     * and the inbox `reviews\[\]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and
+     * `/company/changes`; `company_pause` = `POST /company/pause` and `/resume`;
+     * `company_blueprint` = `GET /tenants/me/blueprint`; `company_pause_preview` = `GET
+     * /company/pause-scope`; `company_proposals` = `/tenants/me/proposals` with apply and reject;
+     * `company_launch` = `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET
+     * /tenants/me/overview`; `company_fit` = `GET /tenants/me/fit` (template fit is
+     * `company_templates`); `company_templates` = `/company-templates`,
+     * `/company-templates/{id}/fit`, `POST /company/apply-template`, `POST /me/tenants/create`
+     * with `template_id`; `company_export` = `GET /company/export`; `company_import` = `POST
+     * /company/import`; `company_versions` = `GET /company/versions` AND `POST /company/restore` —
+     * there is deliberately no separate `company_restore`, since a snapshot and the rollback to it
+     * ship together. `run_review` = `POST` and `GET /runs/{id}/review`, and `anchor`/`target` on
+     * session annotations.
      */
     public val capabilities: List<String>? = null,
     /**
@@ -15982,6 +16619,15 @@ public data class GetHealthResponse(
      */
     @SerialName("runs_queued")
     public val runsQueued: Long? = null,
+    /**
+     * Runs in flight in THIS process right now — the scheduler's own live count, the same field
+     * that answers `degraded` at 90% of its ceiling. This is the number to read when you want to
+     * know whether work is happening: `runs_queued` is zero whenever everything is running rather
+     * than waiting, and `pending_resumes` is a constant zero. It counts runs, not users — one run
+     * may serve many turns.
+     */
+    @SerialName("runs_active")
+    public val runsActive: Long? = null,
 )
 
 /**
@@ -16287,6 +16933,17 @@ public data class GetMeResponseUser(
     public val status: String? = null,
     @SerialName("avatar_url")
     public val avatarURL: String? = null,
+    /**
+     * The person's interface language (canonical BCP-47), null when unset — set with `PATCH /me`.
+     */
+    @SerialName("interface_language")
+    public val interfaceLanguage: String? = null,
+    /**
+     * The person's Chief of Staff voice, null when unset — set with `PATCH /me`. A value stored in
+     * an older shape reads as null.
+     */
+    @SerialName("chief_voice")
+    public val chiefVoice: ChiefVoice? = null,
     @SerialName("last_login_at")
     public val lastLoginAt: String? = null,
     @SerialName("created_at")
@@ -16641,6 +17298,17 @@ public data class GetMyHeadAgentTemplateResponseTierTierResourceLimits(
     public val maxTokensPerRun: Long? = null,
     @SerialName("thinking_budget_tokens")
     public val thinkingBudgetTokens: Long? = null,
+)
+
+/**
+ * `GetMyRailAgentsResponse` model.
+ */
+@Serializable
+public data class GetMyRailAgentsResponse(
+    @SerialName("agent_ids")
+    public val agentIds: List<String>,
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
 )
 
 /**
@@ -17028,6 +17696,12 @@ public data class GetRunResponse(
      * trace on the run.
      */
     public val approvals: List<GetRunResponseApproval>? = null,
+    /**
+     * The latest person's verdict on this run's RESULT (`POST /runs/{runId}/review`, since
+     * 2026-10-19) — not a tool approval, which is `approvals`. Absent until the result is
+     * reviewed. The full record, with the comment and anchors, is `GET /runs/{runId}/review`.
+     */
+    public val review: GetRunResponseReview? = null,
     @SerialName("created_at")
     public val createdAt: String,
     @SerialName("started_at")
@@ -17142,6 +17816,14 @@ public data class GetRunResponseResourceLimits(
     public val maxSteps: Long? = null,
     @SerialName("max_tool_calls")
     public val maxToolCalls: Long? = null,
+    /**
+     * Input + output tokens summed over every model call of the run. Since 2026-10-19 it is held
+     * before each call, not only after: each call is sent with `max_tokens` no more than the cap
+     * minus what the run has spent minus the last call's input (which the next call resends), and
+     * once that is nothing the run stops before sending, failing with `MAX_TOKENS_EXCEEDED` and
+     * `used_tokens` at or under the limit. Before, the last call could spend past the cap by up to
+     * a whole step.
+     */
     @SerialName("max_tokens_per_run")
     public val maxTokensPerRun: Long? = null,
     /**
@@ -17152,6 +17834,30 @@ public data class GetRunResponseResourceLimits(
      */
     @SerialName("max_cost_usd")
     public val maxCostUsd: Double? = null,
+)
+
+/**
+ * The latest person's verdict on this run's RESULT (`POST /runs/{runId}/review`, since
+ * 2026-10-19) — not a tool approval, which is `approvals`. Absent until the result is
+ * reviewed. The full record, with the comment and anchors, is `GET /runs/{runId}/review`.
+ */
+@Serializable
+public data class GetRunResponseReview(
+    @SerialName("review_id")
+    public val reviewId: String,
+    public val verdict: RunReviewVerdict,
+    @SerialName("decided_at")
+    public val decidedAt: String,
+    /**
+     * User id of the person who decided; the credential id when no person stands behind it.
+     */
+    @SerialName("decided_by")
+    public val decidedBy: String? = null,
+    /**
+     * On `redo`: the run started to do the work again.
+     */
+    @SerialName("follow_up_run_id")
+    public val followUpRunId: String? = null,
 )
 
 /**
@@ -17348,6 +18054,22 @@ public data class GetSessionResponse(
      */
     @SerialName("pinned_at")
     public val pinnedAt: String? = null,
+    /**
+     * The chat's name: the stored title, else the `metadata.title` clients wrote before the field
+     * existed (2026-10-19), else `null`. A title the person cleared stays `null` even if that
+     * legacy key is still there. At most 80 characters when a person sets it; a generated one is
+     * at most 60, in the language of the first message. Present on every read — the list, the
+     * detail, create and update.
+     */
+    public val title: String? = null,
+    /**
+     * `user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
+     * generated title never replaces it; `generated` when the platform named the chat after its
+     * first completed run. Absent when no title was ever stored as a field (none, or only the
+     * legacy `metadata.title`).
+     */
+    @SerialName("title_source")
+    public val titleSource: SessionTitleSource? = null,
     @SerialName("created_by")
     public val createdBy: String? = null,
     @SerialName("session_id")
@@ -18143,6 +18865,14 @@ public data class GetTenantCompanyOverviewResponseProblems(
     @SerialName("stopped_missions")
     public val stoppedMissions: Long? = null,
     /**
+     * Schedules the quota gate refused to fire, since 2026-10-24. A scheduled agent that does not
+     * run because its tenant is over quota left no trace on any product surface before this field;
+     * the count leads, the list names the agents. `next_fire_at` is when the schedule would next
+     * be due.
+     */
+    @SerialName("quota_gated_schedules")
+    public val quotaGatedSchedules: GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedules? = null,
+    /**
      * The newest 5 of them.
      */
     public val missions: List<GetTenantCompanyOverviewResponseProblemsMission>? = null,
@@ -18194,6 +18924,35 @@ public object GetTenantCompanyOverviewResponseProblemsMissionStatusSerializer : 
     override fun serialize(encoder: Encoder, value: GetTenantCompanyOverviewResponseProblemsMissionStatus): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): GetTenantCompanyOverviewResponseProblemsMissionStatus = GetTenantCompanyOverviewResponseProblemsMissionStatus(decoder.decodeString())
 }
+
+/**
+ * Schedules the quota gate refused to fire, since 2026-10-24. A scheduled agent that does not
+ * run because its tenant is over quota left no trace on any product surface before this field;
+ * the count leads, the list names the agents. `next_fire_at` is when the schedule would next
+ * be due.
+ */
+@Serializable
+public data class GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedules(
+    public val count: Long? = null,
+    @SerialName("by_agent")
+    public val byAgent: List<GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedulesByAgentItem>? = null,
+)
+
+/**
+ * `GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedulesByAgentItem` model.
+ */
+@Serializable
+public data class GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedulesByAgentItem(
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    @SerialName("agent_name")
+    public val agentName: String? = null,
+    public val reason: String? = null,
+    @SerialName("skipped_at")
+    public val skippedAt: String? = null,
+    @SerialName("next_fire_at")
+    public val nextFireAt: String? = null,
+)
 
 /**
  * `GetTenantCompanyOverviewResponseProblemsRecentItem` model.
@@ -18774,6 +19533,69 @@ public object GuardrailConfigItemSourceSerializer : KSerializer<GuardrailConfigI
 }
 
 /**
+ * `HandleAppStoreNotificationRequest` model.
+ */
+@Serializable
+public data class HandleAppStoreNotificationRequest(
+    /**
+     * The notification, as Apple sends it: a compact JWS.
+     */
+    public val signedPayload: String,
+)
+
+/**
+ * `HandleAppStoreNotificationResponse` model.
+ */
+@Serializable
+public data class HandleAppStoreNotificationResponse(
+    public val received: Boolean,
+    public val handled: Boolean,
+    public val action: HandleAppStoreNotificationResponseAction? = null,
+    public val duplicate: Boolean? = null,
+)
+
+/**
+ * `HandleAppStoreNotificationResponseAction` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = HandleAppStoreNotificationResponseActionSerializer::class)
+@JvmInline
+public value class HandleAppStoreNotificationResponseAction(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val PLAN_APPLIED: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("plan_applied")
+        public val UNCHANGED: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("unchanged")
+        public val STRIPE_ACTIVE: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("stripe_active")
+        public val REFUSED: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("refused")
+        public val DOWNGRADED_TO_FREE: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("downgraded_to_free")
+        public val NOT_APP_STORE_PLAN: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("not_app_store_plan")
+        public val SUPERSEDED_SUBSCRIPTION: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("superseded_subscription")
+        public val PLAN_WRITE_REFUSED: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("plan_write_refused")
+        public val GRACE_PERIOD: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("grace_period")
+        public val UNKNOWN_PRODUCT: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("unknown_product")
+        public val REVOKED_TRANSACTION: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("revoked_transaction")
+        public val NO_TRANSACTION: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("no_transaction")
+        public val ORPHAN_NO_TENANT: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("orphan_no_tenant")
+        public val MISSING: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("missing")
+        public val IGNORED: HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction("ignored")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<HandleAppStoreNotificationResponseAction> = listOf(PLAN_APPLIED, UNCHANGED, STRIPE_ACTIVE, REFUSED, DOWNGRADED_TO_FREE, NOT_APP_STORE_PLAN, SUPERSEDED_SUBSCRIPTION, PLAN_WRITE_REFUSED, GRACE_PERIOD, UNKNOWN_PRODUCT, REVOKED_TRANSACTION, NO_TRANSACTION, ORPHAN_NO_TENANT, MISSING, IGNORED)
+    }
+}
+
+public object HandleAppStoreNotificationResponseActionSerializer : KSerializer<HandleAppStoreNotificationResponseAction> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.HandleAppStoreNotificationResponseAction", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: HandleAppStoreNotificationResponseAction): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): HandleAppStoreNotificationResponseAction = HandleAppStoreNotificationResponseAction(decoder.decodeString())
+}
+
+/**
  * `HandleStripeWebhookRequest` model.
  */
 @Serializable
@@ -18819,25 +19641,27 @@ public data class HealthCheckV1aliasResponse(
      * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
      * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
      * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-     * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
-     * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
-     * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
-     * `initiatives` = `/initiatives&#47;*` (`/companies` is its deprecated old name);
-     * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
-     * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
-     * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
-     * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
-     * `reviews\[\]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
-     * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
-     * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
-     * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
-     * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
-     * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
-     * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
-     * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
-     * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
-     * /company/versions` AND `POST /company/restore` — there is deliberately no separate
-     * `company_restore`, since a snapshot and the rollback to it ship together.
+     * `company_import`, `company_versions` (since 2026-10-12), `run_review` (since 2026-10-19). A
+     * NAME ALONE DOES NOT SAY WHAT IT COVERS, so here is the coverage — added 2026-10-13 because a
+     * client asked which name gates `POST /tenants/me/company/restore` and the answer existed only
+     * in prose no client can read: `initiatives` = `/initiatives&#47;*` (`/companies` is its
+     * deprecated old name); `initiative_pause` = pausing an initiative; `mission_review` =
+     * objectives with `review_required` and `POST /missions/{id}/objectives/{oid}/review`;
+     * `run_revise` = `POST /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`;
+     * `mission_schedules` = `/missions/schedules`; `mission_analytics` = `GET /analytics/missions`
+     * and the inbox `reviews\[\]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and
+     * `/company/changes`; `company_pause` = `POST /company/pause` and `/resume`;
+     * `company_blueprint` = `GET /tenants/me/blueprint`; `company_pause_preview` = `GET
+     * /company/pause-scope`; `company_proposals` = `/tenants/me/proposals` with apply and reject;
+     * `company_launch` = `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET
+     * /tenants/me/overview`; `company_fit` = `GET /tenants/me/fit` (template fit is
+     * `company_templates`); `company_templates` = `/company-templates`,
+     * `/company-templates/{id}/fit`, `POST /company/apply-template`, `POST /me/tenants/create`
+     * with `template_id`; `company_export` = `GET /company/export`; `company_import` = `POST
+     * /company/import`; `company_versions` = `GET /company/versions` AND `POST /company/restore` —
+     * there is deliberately no separate `company_restore`, since a snapshot and the rollback to it
+     * ship together. `run_review` = `POST` and `GET /runs/{id}/review`, and `anchor`/`target` on
+     * session annotations.
      */
     public val capabilities: List<String>? = null,
 )
@@ -18904,25 +19728,27 @@ public data class HealthzAliasResponse(
      * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
      * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
      * `company_launch`, `company_overview`, `company_fit`, `company_templates`, `company_export`,
-     * `company_import`, `company_versions` (since 2026-10-12). A NAME ALONE DOES NOT SAY WHAT IT
-     * COVERS, so here is the coverage — added 2026-10-13 because a client asked which name gates
-     * `POST /tenants/me/company/restore` and the answer existed only in prose no client can read:
-     * `initiatives` = `/initiatives&#47;*` (`/companies` is its deprecated old name);
-     * `initiative_pause` = pausing an initiative; `mission_review` = objectives with
-     * `review_required` and `POST /missions/{id}/objectives/{oid}/review`; `run_revise` = `POST
-     * /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`; `mission_schedules` =
-     * `/missions/schedules`; `mission_analytics` = `GET /analytics/missions` and the inbox
-     * `reviews\[\]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and `/company/changes`;
-     * `company_pause` = `POST /company/pause` and `/resume`; `company_blueprint` = `GET
-     * /tenants/me/blueprint`; `company_pause_preview` = `GET /company/pause-scope`;
-     * `company_proposals` = `/tenants/me/proposals` with apply and reject; `company_launch` =
-     * `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET /tenants/me/overview`;
-     * `company_fit` = `GET /tenants/me/fit` (template fit is `company_templates`);
-     * `company_templates` = `/company-templates`, `/company-templates/{id}/fit`, `POST
-     * /company/apply-template`, `POST /me/tenants/create` with `template_id`; `company_export` =
-     * `GET /company/export`; `company_import` = `POST /company/import`; `company_versions` = `GET
-     * /company/versions` AND `POST /company/restore` — there is deliberately no separate
-     * `company_restore`, since a snapshot and the rollback to it ship together.
+     * `company_import`, `company_versions` (since 2026-10-12), `run_review` (since 2026-10-19). A
+     * NAME ALONE DOES NOT SAY WHAT IT COVERS, so here is the coverage — added 2026-10-13 because a
+     * client asked which name gates `POST /tenants/me/company/restore` and the answer existed only
+     * in prose no client can read: `initiatives` = `/initiatives&#47;*` (`/companies` is its
+     * deprecated old name); `initiative_pause` = pausing an initiative; `mission_review` =
+     * objectives with `review_required` and `POST /missions/{id}/objectives/{oid}/review`;
+     * `run_revise` = `POST /runs/{id}/revise`; `run_sources` = `GET /runs/{id}/sources`;
+     * `mission_schedules` = `/missions/schedules`; `mission_analytics` = `GET /analytics/missions`
+     * and the inbox `reviews\[\]`; `company_profile` = `GET`/`PATCH /tenants/me/company` and
+     * `/company/changes`; `company_pause` = `POST /company/pause` and `/resume`;
+     * `company_blueprint` = `GET /tenants/me/blueprint`; `company_pause_preview` = `GET
+     * /company/pause-scope`; `company_proposals` = `/tenants/me/proposals` with apply and reject;
+     * `company_launch` = `/readiness`, `/test-run`, `/launch`; `company_overview` = `GET
+     * /tenants/me/overview`; `company_fit` = `GET /tenants/me/fit` (template fit is
+     * `company_templates`); `company_templates` = `/company-templates`,
+     * `/company-templates/{id}/fit`, `POST /company/apply-template`, `POST /me/tenants/create`
+     * with `template_id`; `company_export` = `GET /company/export`; `company_import` = `POST
+     * /company/import`; `company_versions` = `GET /company/versions` AND `POST /company/restore` —
+     * there is deliberately no separate `company_restore`, since a snapshot and the rollback to it
+     * ship together. `run_review` = `POST` and `GET /runs/{id}/review`, and `anchor`/`target` on
+     * session annotations.
      */
     public val capabilities: List<String>? = null,
     /**
@@ -18931,6 +19757,15 @@ public data class HealthzAliasResponse(
      */
     @SerialName("runs_queued")
     public val runsQueued: Long? = null,
+    /**
+     * Runs in flight in THIS process right now — the scheduler's own live count, the same field
+     * that answers `degraded` at 90% of its ceiling. This is the number to read when you want to
+     * know whether work is happening: `runs_queued` is zero whenever everything is running rather
+     * than waiting, and `pending_resumes` is a constant zero. It counts runs, not users — one run
+     * may serve many turns.
+     */
+    @SerialName("runs_active")
+    public val runsActive: Long? = null,
 )
 
 /**
@@ -19030,6 +19865,74 @@ public data class HireConnect(
 )
 
 /**
+ * `HiredAgentPermissionRequest` model.
+ */
+@Serializable(with = HiredAgentPermissionRequestSerializer::class)
+public data class HiredAgentPermissionRequest(
+    /**
+     * The tool Claude Code wants to use, e.g. `Bash`.
+     */
+    @SerialName("tool_name")
+    public val toolName: String? = null,
+    /**
+     * Its arguments, shown to the person as stored (up to 2 000 characters).
+     */
+    @SerialName("tool_input")
+    public val toolInput: JsonObject? = null,
+    /**
+     * Properties the server returned that this SDK does not model.
+     */
+    public val additionalProperties: JsonObject = JsonObject(emptyMap()),
+)
+
+/**
+ * Serializer for \[HiredAgentPermissionRequest\] that preserves unmodelled properties.
+ */
+public object HiredAgentPermissionRequestSerializer : KSerializer<HiredAgentPermissionRequest> {
+    @Serializable
+    @SerialName("HiredAgentPermissionRequest")
+    private data class Surrogate(
+        /**
+         * The tool Claude Code wants to use, e.g. `Bash`.
+         */
+        @SerialName("tool_name")
+        val toolName: String? = null,
+        /**
+         * Its arguments, shown to the person as stored (up to 2 000 characters).
+         */
+        @SerialName("tool_input")
+        val toolInput: JsonObject? = null,
+    )
+
+    private val declaredNames: Set<String> = setOf("tool_name", "tool_input")
+
+    override val descriptor: SerialDescriptor = Surrogate.serializer().descriptor
+
+    override fun deserialize(decoder: Decoder): HiredAgentPermissionRequest {
+        val input = decoder as? JsonDecoder
+            ?: throw SerializationException("HiredAgentPermissionRequest can only be read from JSON")
+        val node = input.decodeJsonElement().jsonObject
+        val declared = input.json.decodeFromJsonElement(Surrogate.serializer(), node)
+        return HiredAgentPermissionRequest(
+            toolName = declared.toolName,
+            toolInput = declared.toolInput,
+            additionalProperties = JsonObject(node.filterKeys { it !in declaredNames }),
+        )
+    }
+
+    override fun serialize(encoder: Encoder, value: HiredAgentPermissionRequest) {
+        val output = encoder as? JsonEncoder
+            ?: throw SerializationException("HiredAgentPermissionRequest can only be written as JSON")
+        val declared = Surrogate(
+            toolName = value.toolName,
+            toolInput = value.toolInput,
+        )
+        val rendered = output.json.encodeToJsonElement(Surrogate.serializer(), declared).jsonObject
+        output.encodeJsonElement(JsonObject(rendered + value.additionalProperties))
+    }
+}
+
+/**
  * `HostDroplet` model.
  */
 @Serializable
@@ -19052,6 +19955,48 @@ public data class HostDroplet(
     @SerialName("created_at")
     public val createdAt: String,
 )
+
+/**
+ * A point (`x`, `y`) or a box (`x`, `y` its top-left corner, plus `w`, `h`) on an image, every
+ * value a fraction of the image's width or height, 0–1, from the top-left. `w` and `h` come
+ * together or not at all, and the box must stay inside the image: `x + w <= 1`, `y + h <= 1`
+ * (`422` otherwise).
+ */
+@Serializable
+public data class ImageAnchor(
+    public val kind: ImageAnchorKind,
+    public val x: Double,
+    public val y: Double,
+    public val w: Double? = null,
+    public val h: Double? = null,
+)
+
+/**
+ * `ImageAnchorKind` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ImageAnchorKindSerializer::class)
+@JvmInline
+public value class ImageAnchorKind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val IMAGE: ImageAnchorKind = ImageAnchorKind("image")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ImageAnchorKind> = listOf(IMAGE)
+    }
+}
+
+public object ImageAnchorKindSerializer : KSerializer<ImageAnchorKind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ImageAnchorKind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ImageAnchorKind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ImageAnchorKind = ImageAnchorKind(decoder.decodeString())
+}
 
 /**
  * `ImageProviderList` model.
@@ -21138,6 +22083,58 @@ public data class ListAgentScorersResponse(
 )
 
 /**
+ * `ListAgentSessionsGroupBy` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ListAgentSessionsGroupBySerializer::class)
+@JvmInline
+public value class ListAgentSessionsGroupBy(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val DAY: ListAgentSessionsGroupBy = ListAgentSessionsGroupBy("day")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ListAgentSessionsGroupBy> = listOf(DAY)
+    }
+}
+
+public object ListAgentSessionsGroupBySerializer : KSerializer<ListAgentSessionsGroupBy> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ListAgentSessionsGroupBy", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ListAgentSessionsGroupBy): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ListAgentSessionsGroupBy = ListAgentSessionsGroupBy(decoder.decodeString())
+}
+
+/**
+ * `ListAgentSessionsResponse` model.
+ */
+@Serializable
+public data class ListAgentSessionsResponse(
+    public val items: List<Session>? = null,
+    public val days: List<ListAgentSessionsResponseDay>? = null,
+    public val cursor: String? = null,
+    @SerialName("has_more")
+    public val hasMore: Boolean,
+)
+
+/**
+ * `ListAgentSessionsResponseDay` model.
+ */
+@Serializable
+public data class ListAgentSessionsResponseDay(
+    public val date: String,
+    /**
+     * IANA zone the date is read in.
+     */
+    public val tz: String,
+    public val sessions: List<Session>,
+)
+
+/**
  * `ListAgentsResponse` model.
  */
 @Serializable
@@ -21363,6 +22360,13 @@ public data class ListBillingPlansResponsePlan(
     public val current: Boolean? = null,
     @SerialName("checkout_available")
     public val checkoutAvailable: Boolean? = null,
+    /**
+     * The App Store auto-renewable product that buys this plan in the iOS app. Present on starter
+     * and pro only. Its App Store price is the web price grossed up for Apple's commission (web
+     * net / (1 − Apple rate)).
+     */
+    @SerialName("app_store_product_id")
+    public val appStoreProductId: ListBillingPlansResponsePlanAppStoreProductId? = null,
     @SerialName("price_amount_cents")
     public val priceAmountCents: Long? = null,
     @SerialName("price_currency")
@@ -21382,6 +22386,36 @@ public data class ListBillingPlansResponsePlan(
     @SerialName("price_interval_count")
     public val priceIntervalCount: Long? = null,
 )
+
+/**
+ * The App Store auto-renewable product that buys this plan in the iOS app. Present on starter
+ * and pro only. Its App Store price is the web price grossed up for Apple's commission (web
+ * net / (1 − Apple rate)).
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ListBillingPlansResponsePlanAppStoreProductIdSerializer::class)
+@JvmInline
+public value class ListBillingPlansResponsePlanAppStoreProductId(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val AI_SNAGA_STARTER_MONTHLY: ListBillingPlansResponsePlanAppStoreProductId = ListBillingPlansResponsePlanAppStoreProductId("ai.snaga.starter.monthly")
+        public val AI_SNAGA_PRO_MONTHLY: ListBillingPlansResponsePlanAppStoreProductId = ListBillingPlansResponsePlanAppStoreProductId("ai.snaga.pro.monthly")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ListBillingPlansResponsePlanAppStoreProductId> = listOf(AI_SNAGA_STARTER_MONTHLY, AI_SNAGA_PRO_MONTHLY)
+    }
+}
+
+public object ListBillingPlansResponsePlanAppStoreProductIdSerializer : KSerializer<ListBillingPlansResponsePlanAppStoreProductId> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ListBillingPlansResponsePlanAppStoreProductId", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ListBillingPlansResponsePlanAppStoreProductId): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ListBillingPlansResponsePlanAppStoreProductId = ListBillingPlansResponsePlanAppStoreProductId(decoder.decodeString())
+}
 
 /**
  * `ListBillingSpecPackagesResponse` model.
@@ -22382,6 +23416,8 @@ public data class ListSessionAnnotationsResponseItem(
     @SerialName("created_at")
     public val createdAt: String? = null,
     public val resolved: Boolean? = null,
+    public val anchor: Anchor? = null,
+    public val target: AnchorTarget? = null,
 )
 
 /**
@@ -22519,6 +23555,22 @@ public data class ListSessionsResponseItem(
      */
     @SerialName("pinned_at")
     public val pinnedAt: String? = null,
+    /**
+     * The chat's name: the stored title, else the `metadata.title` clients wrote before the field
+     * existed (2026-10-19), else `null`. A title the person cleared stays `null` even if that
+     * legacy key is still there. At most 80 characters when a person sets it; a generated one is
+     * at most 60, in the language of the first message. Present on every read — the list, the
+     * detail, create and update.
+     */
+    public val title: String? = null,
+    /**
+     * `user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
+     * generated title never replaces it; `generated` when the platform named the chat after its
+     * first completed run. Absent when no title was ever stored as a field (none, or only the
+     * legacy `metadata.title`).
+     */
+    @SerialName("title_source")
+    public val titleSource: SessionTitleSource? = null,
     @SerialName("created_by")
     public val createdBy: String? = null,
     @SerialName("session_id")
@@ -23083,6 +24135,12 @@ public data class LLMSynthesizeSpeechRequest(
     public val model: String? = null,
     public val input: String,
     public val voice: String? = null,
+    /**
+     * The agent being spoken for. The head agent's id selects the person's `chief_voice` when
+     * `model` and `voice` are absent.
+     */
+    @SerialName("agent_id")
+    public val agentId: String? = null,
     /**
      * The spoken language as a tag (`uk`, `en`, `pt-BR`; the first two letters are sent). Absent:
      * read from `input` — Ukrainian by its own letters (і ї є ґ), Russian by its own (ы э ъ ё),
@@ -24456,7 +25514,9 @@ public data class Mission(
      * `all_objectives_verified` (details `verified`), `objectives_failed` (`failed`, `total`),
      * `planning_failed`, `aborted_by_signal`, `aborted_by_operator` (the operator's reason, when
      * given, is the summary), `watchdog_stuck` (`stuck_status`, `stuck_minutes`),
-     * `paused_by_operator`, `resumed_by_operator`, `authorized_by_operator`.
+     * `paused_by_operator`, `queued_walk_ceiling` (planned, then paused because the tenant was
+     * already running its maximum concurrent missions — resumable with `POST
+     * /missions/{id}/resume`), `resumed_by_operator`, `authorized_by_operator`.
      */
     @SerialName("result_code")
     public val resultCode: MissionResultCode? = null,
@@ -24577,7 +25637,9 @@ public object MissionOutcomeSerializer : KSerializer<MissionOutcome> {
  * `all_objectives_verified` (details `verified`), `objectives_failed` (`failed`, `total`),
  * `planning_failed`, `aborted_by_signal`, `aborted_by_operator` (the operator's reason, when
  * given, is the summary), `watchdog_stuck` (`stuck_status`, `stuck_minutes`),
- * `paused_by_operator`, `resumed_by_operator`, `authorized_by_operator`.
+ * `paused_by_operator`, `queued_walk_ceiling` (planned, then paused because the tenant was
+ * already running its maximum concurrent missions — resumable with `POST
+ * /missions/{id}/resume`), `resumed_by_operator`, `authorized_by_operator`.
  */
 ///
 /**
@@ -24597,11 +25659,12 @@ public value class MissionResultCode(public val value: String) {
         public val ABORTED_BY_OPERATOR: MissionResultCode = MissionResultCode("aborted_by_operator")
         public val WATCHDOG_STUCK: MissionResultCode = MissionResultCode("watchdog_stuck")
         public val PAUSED_BY_OPERATOR: MissionResultCode = MissionResultCode("paused_by_operator")
+        public val QUEUED_WALK_CEILING: MissionResultCode = MissionResultCode("queued_walk_ceiling")
         public val RESUMED_BY_OPERATOR: MissionResultCode = MissionResultCode("resumed_by_operator")
         public val AUTHORIZED_BY_OPERATOR: MissionResultCode = MissionResultCode("authorized_by_operator")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<MissionResultCode> = listOf(ALL_OBJECTIVES_VERIFIED, OBJECTIVES_FAILED, PLANNING_FAILED, ABORTED_BY_SIGNAL, ABORTED_BY_OPERATOR, WATCHDOG_STUCK, PAUSED_BY_OPERATOR, RESUMED_BY_OPERATOR, AUTHORIZED_BY_OPERATOR)
+        public val knownValues: List<MissionResultCode> = listOf(ALL_OBJECTIVES_VERIFIED, OBJECTIVES_FAILED, PLANNING_FAILED, ABORTED_BY_SIGNAL, ABORTED_BY_OPERATOR, WATCHDOG_STUCK, PAUSED_BY_OPERATOR, QUEUED_WALK_CEILING, RESUMED_BY_OPERATOR, AUTHORIZED_BY_OPERATOR)
     }
 }
 
@@ -24779,7 +25842,9 @@ public data class Notification(
 
 /**
  * Delivery channel. `in_app` is always-on (bell drawer + SSE) and cannot be opted out of;
- * `telegram`/`whatsapp` are reserved and have no adapter yet.
+ * `telegram`/`whatsapp` are reserved and have no adapter yet. `live_activity` holds iOS Live
+ * Activity push tokens: it is never a fan-out destination (naming it in preferences delivers
+ * nothing), only the run a token is registered for moves it.
  */
 ///
 /**
@@ -24797,11 +25862,12 @@ public value class NotificationChannel(public val value: String) {
         public val WEBHOOK: NotificationChannel = NotificationChannel("webhook")
         public val PUSH: NotificationChannel = NotificationChannel("push")
         public val WEB_PUSH: NotificationChannel = NotificationChannel("web_push")
+        public val LIVE_ACTIVITY: NotificationChannel = NotificationChannel("live_activity")
         public val TELEGRAM: NotificationChannel = NotificationChannel("telegram")
         public val WHATSAPP: NotificationChannel = NotificationChannel("whatsapp")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<NotificationChannel> = listOf(IN_APP, EMAIL, WEBHOOK, PUSH, WEB_PUSH, TELEGRAM, WHATSAPP)
+        public val knownValues: List<NotificationChannel> = listOf(IN_APP, EMAIL, WEBHOOK, PUSH, WEB_PUSH, LIVE_ACTIVITY, TELEGRAM, WHATSAPP)
     }
 }
 
@@ -24835,6 +25901,16 @@ public data class NotificationPreferences(
      */
     @SerialName("muted_types")
     public val mutedTypes: List<NotificationType>? = null,
+    /**
+     * Whose notifications are pushed to a phone or browser (`push` and `web_push`). `all` (the
+     * default; an omitted field on PUT stores `all`) pushes every agent's; `chief_only` pushes
+     * only those raised by the tenant's head agent (the Chief of Staff, `head_agent_id` on the
+     * tenant). Other notifications still land in the in-app list, and email and webhooks are
+     * unaffected; a notification no agent raised (budget, security, billing) keeps its push.
+     * Anything else is `422`.
+     */
+    @SerialName("push_from")
+    public val pushFrom: NotificationPreferencesInputPushFrom? = null,
     /**
      * Window during which non-critical messages are suppressed; critical always bypasses. Set both
      * start_local and end_local to enable, empty disables.
@@ -24875,6 +25951,16 @@ public data class NotificationPreferencesInput(
     @SerialName("muted_types")
     public val mutedTypes: List<NotificationType>? = null,
     /**
+     * Whose notifications are pushed to a phone or browser (`push` and `web_push`). `all` (the
+     * default; an omitted field on PUT stores `all`) pushes every agent's; `chief_only` pushes
+     * only those raised by the tenant's head agent (the Chief of Staff, `head_agent_id` on the
+     * tenant). Other notifications still land in the in-app list, and email and webhooks are
+     * unaffected; a notification no agent raised (budget, security, billing) keeps its push.
+     * Anything else is `422`.
+     */
+    @SerialName("push_from")
+    public val pushFrom: NotificationPreferencesInputPushFrom? = null,
+    /**
      * Window during which non-critical messages are suppressed; critical always bypasses. Set both
      * start_local and end_local to enable, empty disables.
      */
@@ -24893,6 +25979,39 @@ public data class NotificationPreferencesInputPriorityChannels(
     public val info: List<NotificationChannel>? = null,
     public val success: List<NotificationChannel>? = null,
 )
+
+/**
+ * Whose notifications are pushed to a phone or browser (`push` and `web_push`). `all` (the
+ * default; an omitted field on PUT stores `all`) pushes every agent's; `chief_only` pushes
+ * only those raised by the tenant's head agent (the Chief of Staff, `head_agent_id` on the
+ * tenant). Other notifications still land in the in-app list, and email and webhooks are
+ * unaffected; a notification no agent raised (budget, security, billing) keeps its push.
+ * Anything else is `422`.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = NotificationPreferencesInputPushFromSerializer::class)
+@JvmInline
+public value class NotificationPreferencesInputPushFrom(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val CHIEF_ONLY: NotificationPreferencesInputPushFrom = NotificationPreferencesInputPushFrom("chief_only")
+        public val ALL: NotificationPreferencesInputPushFrom = NotificationPreferencesInputPushFrom("all")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<NotificationPreferencesInputPushFrom> = listOf(CHIEF_ONLY, ALL)
+    }
+}
+
+public object NotificationPreferencesInputPushFromSerializer : KSerializer<NotificationPreferencesInputPushFrom> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.NotificationPreferencesInputPushFrom", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: NotificationPreferencesInputPushFrom): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): NotificationPreferencesInputPushFrom = NotificationPreferencesInputPushFrom(decoder.decodeString())
+}
 
 /**
  * Window during which non-critical messages are suppressed; critical always bypasses. Set both
@@ -25043,9 +26162,9 @@ public object NotificationSourceKindSerializer : KSerializer<NotificationSourceK
 
 /**
  * Where outbound notifications go. **Secrets never leave the server**: a webhook's signing
- * secret is reported only as `has_signing_secret`, a device token only by its last four
- * characters, and a Web Push endpoint only by host — the path carries a subscription
- * identifier.
+ * secret is reported only as `has_signing_secret`, a device token (or a Live Activity token)
+ * only by its last four characters, and a Web Push endpoint only by host — the path carries a
+ * subscription identifier.
  */
 @Serializable
 public data class NotificationTarget(
@@ -25091,9 +26210,10 @@ public value class NotificationTargetChannel(public val value: String) {
         public val WEBHOOK: NotificationTargetChannel = NotificationTargetChannel("webhook")
         public val PUSH: NotificationTargetChannel = NotificationTargetChannel("push")
         public val WEB_PUSH: NotificationTargetChannel = NotificationTargetChannel("web_push")
+        public val LIVE_ACTIVITY: NotificationTargetChannel = NotificationTargetChannel("live_activity")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<NotificationTargetChannel> = listOf(EMAIL, WEBHOOK, PUSH, WEB_PUSH)
+        public val knownValues: List<NotificationTargetChannel> = listOf(EMAIL, WEBHOOK, PUSH, WEB_PUSH, LIVE_ACTIVITY)
     }
 }
 
@@ -25299,6 +26419,59 @@ public object NotificationTargetConfigVariant4kindSerializer : KSerializer<Notif
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.NotificationTargetConfigVariant4kind", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: NotificationTargetConfigVariant4kind): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): NotificationTargetConfigVariant4kind = NotificationTargetConfigVariant4kind(decoder.decodeString())
+}
+
+/**
+ * An iOS Live Activity push token (channel `live_activity`). The token itself is never
+ * returned.
+ */
+@Serializable
+public data class NotificationTargetConfigVariant5(
+    public val kind: NotificationTargetConfigVariant5kind,
+    /**
+     * The ActivityAttributes type name, e.g. `RunActivityAttributes`.
+     */
+    @SerialName("activity_type")
+    public val activityType: String,
+    /**
+     * The run whose progress drives the activity; null when none was given.
+     */
+    @SerialName("run_id")
+    public val runId: String? = null,
+    @SerialName("device_label")
+    public val deviceLabel: String? = null,
+    /**
+     * Last four characters of the token, for visual identification only.
+     */
+    @SerialName("token_suffix")
+    public val tokenSuffix: String,
+)
+
+/**
+ * `NotificationTargetConfigVariant5kind` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = NotificationTargetConfigVariant5kindSerializer::class)
+@JvmInline
+public value class NotificationTargetConfigVariant5kind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val APNS_LIVEACTIVITY: NotificationTargetConfigVariant5kind = NotificationTargetConfigVariant5kind("apns_liveactivity")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<NotificationTargetConfigVariant5kind> = listOf(APNS_LIVEACTIVITY)
+    }
+}
+
+public object NotificationTargetConfigVariant5kindSerializer : KSerializer<NotificationTargetConfigVariant5kind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.NotificationTargetConfigVariant5kind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: NotificationTargetConfigVariant5kind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): NotificationTargetConfigVariant5kind = NotificationTargetConfigVariant5kind(decoder.decodeString())
 }
 
 /**
@@ -25574,6 +26747,10 @@ public object OAuthLoginProviderItemIdSerializer : KSerializer<OAuthLoginProvide
 @Serializable
 public data class OAuthLoginProvidersList(
     public val providers: List<OAuthLoginProviderItem>,
+    /**
+     * Null until the operator configures Google One Tap; the login page reads it to decide whether
+     * to render the one-tap prompt at all.
+     */
     @SerialName("google_one_tap_client_id")
     public val googleOneTapClientId: String? = null,
 )
@@ -26339,6 +27516,18 @@ public data class PatchMeRequest(
      */
     @SerialName("avatar_url")
     public val avatarURL: String? = null,
+    /**
+     * BCP-47 tag with a 2–3 letter primary language (`uk`, `en-US`); stored canonicalised. `null`
+     * clears.
+     */
+    @SerialName("interface_language")
+    public val interfaceLanguage: String? = null,
+    /**
+     * An entry of `GET /voices`, as `{model, voice: <entry id>}`. `null` clears (the deployment
+     * default applies).
+     */
+    @SerialName("chief_voice")
+    public val chiefVoice: ChiefVoice? = null,
 )
 
 /**
@@ -26364,6 +27553,67 @@ public data class PatchMeResponseUser(
     public val status: String,
     @SerialName("avatar_url")
     public val avatarURL: String? = null,
+    @SerialName("interface_language")
+    public val interfaceLanguage: String? = null,
+    @SerialName("chief_voice")
+    public val chiefVoice: ChiefVoice? = null,
+)
+
+/**
+ * `PatchSessionRequest` model.
+ */
+@Serializable
+public data class PatchSessionRequest(
+    /**
+     * MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key
+     * it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
+     * `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
+     * `project_id` files the chat under a project: it must name a project that exists and that the
+     * caller may edit — otherwise 404 (403 for a private project shared with the caller
+     * view-only); `null` takes the chat out. Because it merges, the limits are measured on the
+     * RESULT and so accumulate across calls: at most 100 keys, at most 64 KiB of JSON, and at most
+     * 8 levels of nesting. Past any of them the request is refused with 422 and a `detail` naming
+     * the number reached. Remove keys you no longer need; this is a label bag, not content.
+     */
+    public val metadata: JsonObject? = null,
+    /**
+     * true archives the session: `GET /sessions` leaves it out unless `?archived=true|all`, it
+     * stays readable by id, and the next message sent to it unarchives it. false unarchives.
+     */
+    public val archived: Boolean? = null,
+    /**
+     * true pins the session for every client (`GET /sessions?pinned=true`); pinning again keeps
+     * the first `pinned_at`. false unpins.
+     */
+    public val pinned: Boolean? = null,
+    /**
+     * The chat's name. Trimmed, then 1–80 characters (`422` otherwise); `null` clears it. Either
+     * way `title_source` becomes `user`, and a generated title never replaces it. Stored on the
+     * session, never in `metadata`; `updated_at` is left alone.
+     */
+    public val title: String? = null,
+    /**
+     * Per-conversation model override. Send null to clear (revert to agent default), or {
+     * provider, model_ref, endpoint_url?, capabilities? } to set. The runtime governance allowlist
+     * is still enforced at run time.
+     */
+    @SerialName("model_override")
+    public val modelOverride: PatchSessionRequestModelOverride? = null,
+)
+
+/**
+ * Per-conversation model override. Send null to clear (revert to agent default), or {
+ * provider, model_ref, endpoint_url?, capabilities? } to set. The runtime governance allowlist
+ * is still enforced at run time.
+ */
+@Serializable
+public data class PatchSessionRequestModelOverride(
+    public val provider: String,
+    @SerialName("model_ref")
+    public val modelRef: String,
+    @SerialName("endpoint_url")
+    public val endpointURL: String? = null,
+    public val capabilities: JsonObject? = null,
 )
 
 /**
@@ -27392,7 +28642,7 @@ public data class PlatformLLMDefaults(
     /**
      * Stored model half. May be bare (`minimax-m3`) or already provider-qualified
      * (`ollama/glm-5.2`) — production holds both shapes. Dial `default_model_ref` instead of
-     * joining this yourself.
+     * joining this yourself. Null until the operator sets a platform default.
      */
     @SerialName("default_model")
     public val defaultModel: String? = null,
@@ -27448,6 +28698,22 @@ public data class PlaygroundTemplate(
     public val category: String,
     public val nodes: List<CanvasNode>,
     public val edges: List<CanvasEdge>,
+)
+
+/**
+ * `PostQualificationUsageCorrectionRequest` model.
+ */
+@Serializable
+public data class PostQualificationUsageCorrectionRequest(
+    @SerialName("run_id")
+    public val runId: String,
+    /**
+     * The candidate's company. Optional: found from the run's grant.
+     */
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+    @SerialName("dry_run")
+    public val dryRun: Boolean,
 )
 
 /**
@@ -28818,12 +30084,17 @@ public data class PublicPlanOverage(
     public val available: Boolean? = null,
     @SerialName("requires_cap")
     public val requiresCap: Boolean? = null,
+    /**
+     * Per-million prices; null when the default model's price or the markup multiplier is not
+     * resolvable — the handler sends null rather than inventing a number.
+     */
     @SerialName("price_per_million_usd")
     public val pricePerMillionUsd: PublicPlanOveragePricePerMillionUsd? = null,
 )
 
 /**
- * `PublicPlanOveragePricePerMillionUsd` model.
+ * Per-million prices; null when the default model's price or the markup multiplier is not
+ * resolvable — the handler sends null rather than inventing a number.
  */
 @Serializable
 public data class PublicPlanOveragePricePerMillionUsd(
@@ -29402,6 +30673,18 @@ public data class PutQualificationPricingRevisionRequest(
  */
 @Serializable
 public data class PutQualificationSponsorKeyRequest(
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val programs: List<String>,
+)
+
+/**
+ * `PutQualificationSponsorKeyResponse` model.
+ */
+@Serializable
+public data class PutQualificationSponsorKeyResponse(
+    @SerialName("key_id")
+    public val keyId: String,
     @SerialName("tenant_id")
     public val tenantId: String,
     public val programs: List<String>,
@@ -29991,6 +31274,12 @@ public object QualificationIncompletePolicyResponseReadinessSerializer : KSerial
 /**
  * One private managed binding per tenant/purpose; immutable applied version and template,
  * independent of personal agent/version caps. Readback with candidate credential required.
+ * Template revision 3 (2026-10-19) tells the model that every citation's location is exactly
+ * `source` or `explanation`; whatever the prompt says, a qualification run whose final answer
+ * carries a citation (any array named `citations`, at any depth) with a `location` — or
+ * `field` — outside that enum, or none, fails with `error_code: OUTPUT_CONTRACT_VIOLATION` and
+ * no output: the answer is refused, never rewritten, and the sponsor is charged what the calls
+ * measured.
  */
 @Serializable
 public data class QualificationManagedEvaluator(
@@ -30045,6 +31334,21 @@ public data class QualificationMissingPolicyResponse(
 )
 
 public typealias QualificationPositiveMicrousd = String
+
+/**
+ * `QualificationPricingRevision` model.
+ */
+@Serializable
+public data class QualificationPricingRevision(
+    @SerialName("pricing_revision")
+    public val pricingRevision: String,
+    public val provider: String,
+    public val model: String,
+    @SerialName("input_microusd_per_million_tokens")
+    public val inputMicrousdPerMillionTokens: QualificationPositiveMicrousd,
+    @SerialName("output_microusd_per_million_tokens")
+    public val outputMicrousdPerMillionTokens: QualificationPositiveMicrousd,
+)
 
 /**
  * Immutable operator-confirmed policy snapshot. Expiry must be after observation and at most
@@ -30325,6 +31629,16 @@ public data class QualificationSponsoredLimits(
     public val maxSteps: JsonElement,
     @SerialName("max_tool_calls")
     public val maxToolCalls: JsonElement,
+    /**
+     * Input + output tokens summed over every model call of the run (since 2026-10-19 enforced
+     * before each call, not only between steps): each call's `max_tokens` is what the cap leaves
+     * after the tokens measured or still reserved in the run's attempt ledger and an estimate of
+     * the call's own input, and a call with nothing left is refused unsent (`error_code:
+     * QUALIFICATION_BUDGET_STOP`, `error_details.max_tokens_per_run`). The input estimate counts
+     * the conversation already measured at its measured tokens and only bytes added since at the
+     * densest tokens-per-byte the run has shown (never below one per three bytes), so a tokenizer
+     * denser than that on new text is the one way past the cap.
+     */
     @SerialName("max_tokens_per_run")
     public val maxTokensPerRun: JsonElement,
     /**
@@ -30565,6 +31879,110 @@ public object QualificationUnverifiableExecutionReceiptV2executionOriginSerializ
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationUnverifiableExecutionReceiptV2executionOrigin", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: QualificationUnverifiableExecutionReceiptV2executionOrigin): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): QualificationUnverifiableExecutionReceiptV2executionOrigin = QualificationUnverifiableExecutionReceiptV2executionOrigin(decoder.decodeString())
+}
+
+/**
+ * `QualificationUsageCorrection` model.
+ */
+@Serializable
+public data class QualificationUsageCorrection(
+    public val status: QualificationUsageCorrectionStatus,
+    @SerialName("dry_run")
+    public val dryRun: Boolean,
+    /**
+     * Null for a dry run and for `nothing_recorded`; the same on every call once applied.
+     */
+    @SerialName("correction_id")
+    public val correctionId: String? = null,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("candidate_tenant_id")
+    public val candidateTenantId: String,
+    @SerialName("grant_id")
+    public val grantId: String,
+    @SerialName("settlement_id")
+    public val settlementId: String? = null,
+    /**
+     * When and where the run's usage was booked: `completed_at`, the UTC `period` (YYYY-MM) and
+     * `date`, `agent_id`, `model_key`.
+     */
+    public val basis: JsonObject? = null,
+    /**
+     * The amounts taken back: `input_tokens`, `output_tokens`, `thinking_tokens`, `runs_count`,
+     * `tool_calls_count`, `storage_bytes`, `total_cost_usd`, `provider_cost_usd`, `budget_usd`.
+     */
+    public val reversal: JsonObject? = null,
+    /**
+     * What the run touched that this correction leaves as it is, and why.
+     */
+    @SerialName("not_reversed")
+    public val notReversed: List<String>,
+    public val before: QualificationUsageCorrectionBeforeVariant1? = null,
+    public val after: QualificationUsageCorrectionAfterVariant1? = null,
+    @SerialName("applied_at")
+    public val appliedAt: String? = null,
+)
+
+/**
+ * The candidate's counters for the day and period the run ended in.
+ */
+@Serializable
+public data class QualificationUsageCorrectionAfterVariant1(
+    public val monthly: JsonObject? = null,
+    /**
+     * `remaining` is the daily share left that day (`limit` − input − output tokens), null without
+     * a daily cap.
+     */
+    public val daily: JsonObject? = null,
+    public val budget: JsonObject? = null,
+    @SerialName("workspaces_counted")
+    public val workspacesCounted: Long? = null,
+)
+
+/**
+ * The candidate's counters for the day and period the run ended in.
+ */
+@Serializable
+public data class QualificationUsageCorrectionBeforeVariant1(
+    public val monthly: JsonObject? = null,
+    /**
+     * `remaining` is the daily share left that day (`limit` − input − output tokens), null without
+     * a daily cap.
+     */
+    public val daily: JsonObject? = null,
+    public val budget: JsonObject? = null,
+    @SerialName("workspaces_counted")
+    public val workspacesCounted: Long? = null,
+)
+
+/**
+ * `QualificationUsageCorrectionStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = QualificationUsageCorrectionStatusSerializer::class)
+@JvmInline
+public value class QualificationUsageCorrectionStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val PLANNED: QualificationUsageCorrectionStatus = QualificationUsageCorrectionStatus("planned")
+        public val APPLIED: QualificationUsageCorrectionStatus = QualificationUsageCorrectionStatus("applied")
+        public val ALREADY_APPLIED: QualificationUsageCorrectionStatus = QualificationUsageCorrectionStatus("already_applied")
+        public val NOTHING_RECORDED: QualificationUsageCorrectionStatus = QualificationUsageCorrectionStatus("nothing_recorded")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<QualificationUsageCorrectionStatus> = listOf(PLANNED, APPLIED, ALREADY_APPLIED, NOTHING_RECORDED)
+    }
+}
+
+public object QualificationUsageCorrectionStatusSerializer : KSerializer<QualificationUsageCorrectionStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.QualificationUsageCorrectionStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: QualificationUsageCorrectionStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): QualificationUsageCorrectionStatus = QualificationUsageCorrectionStatus(decoder.decodeString())
 }
 
 /**
@@ -31588,6 +33006,27 @@ public data class ReplaceConstitutionRequest(
 )
 
 /**
+ * `ReplaceMyRailAgentsRequest` model.
+ */
+@Serializable
+public data class ReplaceMyRailAgentsRequest(
+    @SerialName("agent_ids")
+    public val agentIds: List<String>,
+)
+
+/**
+ * `ReplaceMyRailAgentsResponse` model.
+ */
+@Serializable
+public data class ReplaceMyRailAgentsResponse(
+    @SerialName("agent_ids")
+    public val agentIds: List<String>? = null,
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
+    public val dropped: List<String>? = null,
+)
+
+/**
  * runtime/execution/replay-executor.ts ReplayResult. camelCase on the wire, unlike the rest of
  * the API; `divergencePoint`, `divergenceReason` and `stepComparisons` (execute mode only) are
  * conditional.
@@ -32115,6 +33554,193 @@ public data class ResumeRunResponse(
 )
 
 /**
+ * `RetirePlatformAgentsRequest` model.
+ */
+@Serializable
+public data class RetirePlatformAgentsRequest(
+    @SerialName("dry_run")
+    public val dryRun: Boolean? = null,
+    @SerialName("new_head_agent_id")
+    public val newHeadAgentId: String? = null,
+)
+
+/**
+ * `RetirePlatformAgentsResponse` model.
+ */
+@Serializable
+public data class RetirePlatformAgentsResponse(
+    @SerialName("dry_run")
+    public val dryRun: Boolean,
+    @SerialName("super_admin_tenant_id")
+    public val superAdminTenantId: String? = null,
+    public val agents: List<RetirePlatformAgentsResponseAgent>,
+    @SerialName("registry_keys")
+    public val registryKeys: List<RetirePlatformAgentsResponseRegistryKey>,
+    public val head: RetirePlatformAgentsResponseHead,
+    public val untouched: List<String>,
+    public val applied: RetirePlatformAgentsResponseApplied? = null,
+    public val errors: List<RetirePlatformAgentsResponseError>,
+)
+
+/**
+ * `RetirePlatformAgentsResponseAgent` model.
+ */
+@Serializable
+public data class RetirePlatformAgentsResponseAgent(
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val name: String? = null,
+    public val kind: RetirePlatformAgentsResponseAgentKind,
+    @SerialName("found_by")
+    public val foundBy: List<RetirePlatformAgentsResponseAgentFoundByItem>,
+    public val record: Boolean,
+    public val schedule: Boolean,
+    @SerialName("permission_set")
+    public val permissionSet: Boolean,
+    @SerialName("is_head")
+    public val isHead: Boolean,
+)
+
+/**
+ * `RetirePlatformAgentsResponseAgentFoundByItem` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RetirePlatformAgentsResponseAgentFoundByItemSerializer::class)
+@JvmInline
+public value class RetirePlatformAgentsResponseAgentFoundByItem(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val REGISTRY_POINTER: RetirePlatformAgentsResponseAgentFoundByItem = RetirePlatformAgentsResponseAgentFoundByItem("registry_pointer")
+        public val METADATA_MARKER: RetirePlatformAgentsResponseAgentFoundByItem = RetirePlatformAgentsResponseAgentFoundByItem("metadata_marker")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RetirePlatformAgentsResponseAgentFoundByItem> = listOf(REGISTRY_POINTER, METADATA_MARKER)
+    }
+}
+
+public object RetirePlatformAgentsResponseAgentFoundByItemSerializer : KSerializer<RetirePlatformAgentsResponseAgentFoundByItem> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RetirePlatformAgentsResponseAgentFoundByItem", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RetirePlatformAgentsResponseAgentFoundByItem): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RetirePlatformAgentsResponseAgentFoundByItem = RetirePlatformAgentsResponseAgentFoundByItem(decoder.decodeString())
+}
+
+/**
+ * `RetirePlatformAgentsResponseAgentKind` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RetirePlatformAgentsResponseAgentKindSerializer::class)
+@JvmInline
+public value class RetirePlatformAgentsResponseAgentKind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val SUPER_AGENT: RetirePlatformAgentsResponseAgentKind = RetirePlatformAgentsResponseAgentKind("super_agent")
+        public val SERVER_AGENT: RetirePlatformAgentsResponseAgentKind = RetirePlatformAgentsResponseAgentKind("server_agent")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RetirePlatformAgentsResponseAgentKind> = listOf(SUPER_AGENT, SERVER_AGENT)
+    }
+}
+
+public object RetirePlatformAgentsResponseAgentKindSerializer : KSerializer<RetirePlatformAgentsResponseAgentKind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RetirePlatformAgentsResponseAgentKind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RetirePlatformAgentsResponseAgentKind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RetirePlatformAgentsResponseAgentKind = RetirePlatformAgentsResponseAgentKind(decoder.decodeString())
+}
+
+/**
+ * `RetirePlatformAgentsResponseApplied` model.
+ */
+@Serializable
+public data class RetirePlatformAgentsResponseApplied(
+    @SerialName("agents_deleted")
+    public val agentsDeleted: Long? = null,
+    @SerialName("schedules_removed")
+    public val schedulesRemoved: Long? = null,
+    @SerialName("permission_sets_deleted")
+    public val permissionSetsDeleted: Long? = null,
+    @SerialName("registry_keys_deleted")
+    public val registryKeysDeleted: Long? = null,
+    @SerialName("head_agent_id")
+    public val headAgentId: String? = null,
+    @SerialName("audit_entry_ids")
+    public val auditEntryIds: List<String>? = null,
+)
+
+/**
+ * `RetirePlatformAgentsResponseError` model.
+ */
+@Serializable
+public data class RetirePlatformAgentsResponseError(
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    public val error: String? = null,
+)
+
+/**
+ * `RetirePlatformAgentsResponseHead` model.
+ */
+@Serializable
+public data class RetirePlatformAgentsResponseHead(
+    @SerialName("head_agent_id")
+    public val headAgentId: String? = null,
+    @SerialName("is_platform_agent")
+    public val isPlatformAgent: Boolean,
+    public val action: RetirePlatformAgentsResponseHeadAction,
+    @SerialName("new_head_agent_id")
+    public val newHeadAgentId: String? = null,
+)
+
+/**
+ * `RetirePlatformAgentsResponseHeadAction` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RetirePlatformAgentsResponseHeadActionSerializer::class)
+@JvmInline
+public value class RetirePlatformAgentsResponseHeadAction(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val KEEP: RetirePlatformAgentsResponseHeadAction = RetirePlatformAgentsResponseHeadAction("keep")
+        public val REBIND: RetirePlatformAgentsResponseHeadAction = RetirePlatformAgentsResponseHeadAction("rebind")
+        public val PROVISION_CHIEF: RetirePlatformAgentsResponseHeadAction = RetirePlatformAgentsResponseHeadAction("provision_chief")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RetirePlatformAgentsResponseHeadAction> = listOf(KEEP, REBIND, PROVISION_CHIEF)
+    }
+}
+
+public object RetirePlatformAgentsResponseHeadActionSerializer : KSerializer<RetirePlatformAgentsResponseHeadAction> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RetirePlatformAgentsResponseHeadAction", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RetirePlatformAgentsResponseHeadAction): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RetirePlatformAgentsResponseHeadAction = RetirePlatformAgentsResponseHeadAction(decoder.decodeString())
+}
+
+/**
+ * `RetirePlatformAgentsResponseRegistryKey` model.
+ */
+@Serializable
+public data class RetirePlatformAgentsResponseRegistryKey(
+    public val key: List<String>,
+    public val `value`: String,
+)
+
+/**
  * `RetryPublicVideoOrderResponse` model.
  */
 @Serializable
@@ -32227,6 +33853,43 @@ public data class RetryPublicVideoOrderResponseVideo(
 )
 
 /**
+ * An `Anchor` with two optional fields more: `target`, what the place is on (default: the
+ * reviewed run's own answer), and `note`, what to change there. The same rules as `Anchor`
+ * apply — every kind is a closed object and a coordinate that does not fit is refused with
+ * `422`.
+ */
+public typealias ReviewAnchor = JsonElement
+
+/**
+ * `CodeAnchor` plus `target` and `note`.
+ */
+@Serializable
+public data class ReviewCodeAnchor(
+    public val kind: CodeAnchorKind,
+    public val path: String? = null,
+    @SerialName("line_start")
+    public val lineStart: Long,
+    @SerialName("line_end")
+    public val lineEnd: Long,
+    public val target: AnchorTarget? = null,
+    public val note: String? = null,
+)
+
+/**
+ * `ImageAnchor` plus `target` and `note`.
+ */
+@Serializable
+public data class ReviewImageAnchor(
+    public val kind: ImageAnchorKind,
+    public val x: Double,
+    public val y: Double,
+    public val w: Double? = null,
+    public val h: Double? = null,
+    public val target: AnchorTarget? = null,
+    public val note: String? = null,
+)
+
+/**
  * `ReviewMissionObjectiveRequest` model.
  */
 @Serializable
@@ -32236,6 +33899,36 @@ public data class ReviewMissionObjectiveRequest(
      * What to change (required for `revise`), or why not.
      */
     public val feedback: String? = null,
+)
+
+/**
+ * `ReviewRunRequest` model.
+ */
+@Serializable
+public data class ReviewRunRequest(
+    public val verdict: RunReviewVerdict,
+    /**
+     * What the person says about the result. On `redo`, what to change; required unless `anchors`
+     * says it.
+     */
+    public val comment: String? = null,
+    /**
+     * The places in the result the comment is about.
+     */
+    public val anchors: List<ReviewAnchor>? = null,
+)
+
+/**
+ * `TextAnchor` plus `target` and `note`.
+ */
+@Serializable
+public data class ReviewTextAnchor(
+    public val kind: TextAnchorKind,
+    public val quote: String,
+    public val start: Long,
+    public val end: Long,
+    public val target: AnchorTarget? = null,
+    public val note: String? = null,
 )
 
 /**
@@ -32520,6 +34213,12 @@ public data class Run(
      * trace on the run.
      */
     public val approvals: List<RunApproval>? = null,
+    /**
+     * The latest person's verdict on this run's RESULT (`POST /runs/{runId}/review`, since
+     * 2026-10-19) — not a tool approval, which is `approvals`. Absent until the result is
+     * reviewed. The full record, with the comment and anchors, is `GET /runs/{runId}/review`.
+     */
+    public val review: RunReview2? = null,
     @SerialName("created_at")
     public val createdAt: String,
     @SerialName("started_at")
@@ -33401,11 +35100,54 @@ public data class RunMetrics(
     @SerialName("memory_extractions")
     public val memoryExtractions: Long? = null,
     /**
-     * Estimated total cost in USD
+     * Estimated total cost in USD — the tenant's bill, except when `cost_attribution` says
+     * otherwise.
      */
     @SerialName("total_cost_usd")
     public val totalCostUsd: Double? = null,
+    /**
+     * Present only on a sponsored qualification run (since 2026-10-19). `total_cost_usd` is then
+     * execution telemetry at the platform's catalog rate: never billed to the company the run
+     * executed in, and never counted in its usage, quotas, daily share, run count, spend budget or
+     * overage. The sponsor's debit is the grant's `charged_microusd`, accounted at the program's
+     * frozen pricing revision, and the two differ (production run 01a151cf…: telemetry $0.010312,
+     * sponsor debit 5414 micro-USD). Absent on every other run.
+     */
+    @SerialName("cost_attribution")
+    public val costAttribution: RunMetricsCostAttribution? = null,
 )
+
+/**
+ * Present only on a sponsored qualification run (since 2026-10-19). `total_cost_usd` is then
+ * execution telemetry at the platform's catalog rate: never billed to the company the run
+ * executed in, and never counted in its usage, quotas, daily share, run count, spend budget or
+ * overage. The sponsor's debit is the grant's `charged_microusd`, accounted at the program's
+ * frozen pricing revision, and the two differ (production run 01a151cf…: telemetry $0.010312,
+ * sponsor debit 5414 micro-USD). Absent on every other run.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunMetricsCostAttributionSerializer::class)
+@JvmInline
+public value class RunMetricsCostAttribution(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val SPONSORED_TELEMETRY: RunMetricsCostAttribution = RunMetricsCostAttribution("sponsored_telemetry")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunMetricsCostAttribution> = listOf(SPONSORED_TELEMETRY)
+    }
+}
+
+public object RunMetricsCostAttributionSerializer : KSerializer<RunMetricsCostAttribution> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunMetricsCostAttribution", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunMetricsCostAttribution): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunMetricsCostAttribution = RunMetricsCostAttribution(decoder.decodeString())
+}
 
 /**
  * `RunMissionResponse` model.
@@ -33590,6 +35332,14 @@ public data class RunResourceLimits(
     public val maxSteps: Long? = null,
     @SerialName("max_tool_calls")
     public val maxToolCalls: Long? = null,
+    /**
+     * Input + output tokens summed over every model call of the run. Since 2026-10-19 it is held
+     * before each call, not only after: each call is sent with `max_tokens` no more than the cap
+     * minus what the run has spent minus the last call's input (which the next call resends), and
+     * once that is nothing the run stops before sending, failing with `MAX_TOKENS_EXCEEDED` and
+     * `used_tokens` at or under the limit. Before, the last call could spend past the cap by up to
+     * a whole step.
+     */
     @SerialName("max_tokens_per_run")
     public val maxTokensPerRun: Long? = null,
     /**
@@ -33601,6 +35351,95 @@ public data class RunResourceLimits(
     @SerialName("max_cost_usd")
     public val maxCostUsd: Double? = null,
 )
+
+/**
+ * routes/run-review.ts reviewView — the answer of both `POST` and `GET /runs/{runId}/review`.
+ * Every field is always present; one without a value is `null` (`anchors` is `\[\]`), so an
+ * unreviewed run answers `reviewed: false` with nulls rather than a `404`.
+ */
+@Serializable
+public data class RunReview(
+    @SerialName("run_id")
+    public val runId: String,
+    /**
+     * Whether the result has a verdict.
+     */
+    public val reviewed: Boolean,
+    @SerialName("review_id")
+    public val reviewId: String? = null,
+    public val verdict: String? = null,
+    /**
+     * True when the latest verdict is `approve`.
+     */
+    public val approved: Boolean,
+    public val comment: String? = null,
+    public val anchors: List<ReviewAnchor>,
+    /**
+     * On `redo`: the run started in the same session for the same agent. Follow it with `GET
+     * /runs/{runId}` or the session's events.
+     */
+    @SerialName("follow_up_run_id")
+    public val followUpRunId: String? = null,
+    /**
+     * User id of the person who decided; the credential id when no person stands behind it.
+     */
+    @SerialName("decided_by")
+    public val decidedBy: String? = null,
+    @SerialName("decided_at")
+    public val decidedAt: String? = null,
+)
+
+/**
+ * The latest person's verdict on this run's RESULT (`POST /runs/{runId}/review`, since
+ * 2026-10-19) — not a tool approval, which is `approvals`. Absent until the result is
+ * reviewed. The full record, with the comment and anchors, is `GET /runs/{runId}/review`.
+ */
+@Serializable
+public data class RunReview2(
+    @SerialName("review_id")
+    public val reviewId: String,
+    public val verdict: RunReviewVerdict,
+    @SerialName("decided_at")
+    public val decidedAt: String,
+    /**
+     * User id of the person who decided; the credential id when no person stands behind it.
+     */
+    @SerialName("decided_by")
+    public val decidedBy: String? = null,
+    /**
+     * On `redo`: the run started to do the work again.
+     */
+    @SerialName("follow_up_run_id")
+    public val followUpRunId: String? = null,
+)
+
+/**
+ * `RunReviewVerdict` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunReviewVerdictSerializer::class)
+@JvmInline
+public value class RunReviewVerdict(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val APPROVE: RunReviewVerdict = RunReviewVerdict("approve")
+        public val REDO: RunReviewVerdict = RunReviewVerdict("redo")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunReviewVerdict> = listOf(APPROVE, REDO)
+    }
+}
+
+public object RunReviewVerdictSerializer : KSerializer<RunReviewVerdict> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunReviewVerdict", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunReviewVerdict): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunReviewVerdict = RunReviewVerdict(decoder.decodeString())
+}
 
 /**
  * `RunStatus` values.
@@ -34591,6 +36430,22 @@ public data class Session(
      */
     @SerialName("pinned_at")
     public val pinnedAt: String? = null,
+    /**
+     * The chat's name: the stored title, else the `metadata.title` clients wrote before the field
+     * existed (2026-10-19), else `null`. A title the person cleared stays `null` even if that
+     * legacy key is still there. At most 80 characters when a person sets it; a generated one is
+     * at most 60, in the language of the first message. Present on every read — the list, the
+     * detail, create and update.
+     */
+    public val title: String? = null,
+    /**
+     * `user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
+     * generated title never replaces it; `generated` when the platform named the chat after its
+     * first completed run. Absent when no title was ever stored as a field (none, or only the
+     * legacy `metadata.title`).
+     */
+    @SerialName("title_source")
+    public val titleSource: SessionTitleSource? = null,
     @SerialName("created_by")
     public val createdBy: String? = null,
     @SerialName("session_id")
@@ -34644,8 +36499,9 @@ public data class Session(
 )
 
 /**
- * sessions.ts AnnotationRecord — the six-field projection create, list and PATCH all answer
- * with.
+ * sessions.ts AnnotationRecord — the projection create, list and PATCH all answer with: six
+ * fields always, plus `anchor` and `target` only on a note that was created with them (since
+ * 2026-10-19).
  */
 @Serializable
 public data class SessionAnnotation(
@@ -34657,6 +36513,8 @@ public data class SessionAnnotation(
     @SerialName("created_at")
     public val createdAt: String,
     public val resolved: Boolean,
+    public val anchor: Anchor? = null,
+    public val target: AnchorTarget? = null,
 )
 
 /**
@@ -34860,6 +36718,37 @@ public object SessionQueueModeSerializer : KSerializer<SessionQueueMode> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SessionQueueMode", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: SessionQueueMode): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): SessionQueueMode = SessionQueueMode(decoder.decodeString())
+}
+
+/**
+ * `user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
+ * generated title never replaces it; `generated` when the platform named the chat after its
+ * first completed run. Absent when no title was ever stored as a field (none, or only the
+ * legacy `metadata.title`).
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = SessionTitleSourceSerializer::class)
+@JvmInline
+public value class SessionTitleSource(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val GENERATED: SessionTitleSource = SessionTitleSource("generated")
+        public val USER: SessionTitleSource = SessionTitleSource("user")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<SessionTitleSource> = listOf(GENERATED, USER)
+    }
+}
+
+public object SessionTitleSourceSerializer : KSerializer<SessionTitleSource> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SessionTitleSource", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: SessionTitleSource): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): SessionTitleSource = SessionTitleSource(decoder.decodeString())
 }
 
 /**
@@ -37166,7 +39055,58 @@ public data class TenantBilling(
     public val cancelAtPeriodEnd: Boolean? = null,
     @SerialName("current_period_end_ms")
     public val currentPeriodEndMs: Long? = null,
+    /**
+     * Which system owns the paid plan. Absent means stripe. While the plan is paid, only that
+     * system's plan writes land; other writers are refused (an admin grant answers 409).
+     */
+    @SerialName("plan_source")
+    public val planSource: TenantBillingPlanSource? = null,
+    /**
+     * StoreKit originalTransactionId of the App Store subscription.
+     */
+    @SerialName("app_store_original_transaction_id")
+    public val appStoreOriginalTransactionId: String? = null,
+    /**
+     * App Store product id of that subscription.
+     */
+    @SerialName("app_store_product_id")
+    public val appStoreProductId: String? = null,
+    /**
+     * Unix ms the App Store subscription is paid up to.
+     */
+    @SerialName("app_store_expires_ms")
+    public val appStoreExpiresMs: Long? = null,
 )
+
+/**
+ * Which system owns the paid plan. Absent means stripe. While the plan is paid, only that
+ * system's plan writes land; other writers are refused (an admin grant answers 409).
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TenantBillingPlanSourceSerializer::class)
+@JvmInline
+public value class TenantBillingPlanSource(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val STRIPE: TenantBillingPlanSource = TenantBillingPlanSource("stripe")
+        public val APP_STORE: TenantBillingPlanSource = TenantBillingPlanSource("app_store")
+        public val OPERATOR: TenantBillingPlanSource = TenantBillingPlanSource("operator")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TenantBillingPlanSource> = listOf(STRIPE, APP_STORE, OPERATOR)
+    }
+}
+
+public object TenantBillingPlanSourceSerializer : KSerializer<TenantBillingPlanSource> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TenantBillingPlanSource", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TenantBillingPlanSource): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TenantBillingPlanSource = TenantBillingPlanSource(decoder.decodeString())
+}
 
 /**
  * `TenantBillingStatus` values.
@@ -37320,9 +39260,10 @@ public data class TenantInbox(
     @SerialName("generated_at")
     public val generatedAt: String,
     /**
-     * Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
-     * them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
-     * true these are a floor, not a total.
+     * Counted over the page's scan window, NOT over `items` — so `limit` truncating the list does
+     * not move them. The window is capped at 500 runs, though, and that cap they cannot see past:
+     * when `truncated` is true these are a floor, not a total. On a continuation page (`?cursor=`)
+     * they cover that page's span only, and `review`/`proposal` are 0.
      */
     public val counts: TenantInboxCounts,
     public val items: List<InboxItem>,
@@ -37340,21 +39281,33 @@ public data class TenantInbox(
      */
     public val proposals: List<TenantInboxProposal>? = null,
     /**
-     * Run records inspected; the scan is capped.
+     * Run records inspected by this page — at most 500 for a first page, at most 2 000 for a
+     * continuation page that read past empty windows.
      */
     public val scanned: Long,
     /**
-     * The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot
-     * tell you this — the number only means something to a caller who already knows what the cap
-     * is.
+     * Older runs exist past the ones this page read, so `counts` is a floor rather than a total.
+     * `scanned` alone cannot tell you this — the number only means something to a caller who
+     * already knows what the cap is. Follow `cursor` to read them.
      */
     public val truncated: Boolean? = null,
+    /**
+     * More waiting runs may follow: the rest of this window, or older windows. Since 2026-10-19.
+     */
+    @SerialName("has_more")
+    public val hasMore: Boolean? = null,
+    /**
+     * Present exactly when `has_more` is true: pass it as `?cursor=` for the next page. Opaque.
+     * Since 2026-10-19.
+     */
+    public val cursor: String? = null,
 )
 
 /**
- * Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
- * them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
- * true these are a floor, not a total.
+ * Counted over the page's scan window, NOT over `items` — so `limit` truncating the list does
+ * not move them. The window is capped at 500 runs, though, and that cap they cannot see past:
+ * when `truncated` is true these are a floor, not a total. On a continuation page (`?cursor=`)
+ * they cover that page's span only, and `review`/`proposal` are 0.
  */
 @Serializable
 public data class TenantInboxCounts(
@@ -38035,6 +39988,26 @@ public data class TenantTrial(
 public data class TenantUser(
     @SerialName("avatar_url")
     public val avatarURL: String? = null,
+    /**
+     * Canonical BCP-47 tag; absent when the person has not set one.
+     */
+    @SerialName("interface_language")
+    public val interfaceLanguage: String? = null,
+    /**
+     * Absent when the person has not chosen one. Normally a `ChiefVoice`; read it through `GET
+     * /me`, which reports any other stored shape as null.
+     */
+    @SerialName("chief_voice")
+    public val chiefVoice: JsonElement? = null,
+    /**
+     * Present on `GET /users` items only. Derived, never written: `last_seen_at` is the newest
+     * `last_used_at` over the member's non-revoked login-session rows in THIS tenant — stamped by
+     * every authenticated request already — or their `last_login_at` when it is newer or no
+     * session row exists; `online` is true when that moment is within the last 5 minutes. A member
+     * working here through `X-Active-Tenant` from a session minted in another tenant reads as last
+     * seen at their last login; operator API keys never make a person look online.
+     */
+    public val presence: TenantUserPresence? = null,
     @SerialName("last_login_at")
     public val lastLoginAt: String? = null,
     @SerialName("created_at")
@@ -38048,6 +40021,21 @@ public data class TenantUser(
     public val tenantId: String? = null,
     @SerialName("updated_at")
     public val updatedAt: String? = null,
+)
+
+/**
+ * Present on `GET /users` items only. Derived, never written: `last_seen_at` is the newest
+ * `last_used_at` over the member's non-revoked login-session rows in THIS tenant — stamped by
+ * every authenticated request already — or their `last_login_at` when it is newer or no
+ * session row exists; `online` is true when that moment is within the last 5 minutes. A member
+ * working here through `X-Active-Tenant` from a session minted in another tenant reads as last
+ * seen at their last login; operator API keys never make a person look online.
+ */
+@Serializable
+public data class TenantUserPresence(
+    public val online: Boolean,
+    @SerialName("last_seen_at")
+    public val lastSeenAt: String? = null,
 )
 
 /**
@@ -38216,6 +40204,10 @@ public data class TestLLMProviderKeyResponse(
 public data class TestNotificationTargetResponse(
     public val ok: Boolean,
     public val message: String,
+    @SerialName("notification_id")
+    public val notificationId: String,
+    @SerialName("target_id")
+    public val targetId: String,
 )
 
 /**
@@ -38233,6 +40225,47 @@ public data class TestWebhookResponse(
     @SerialName("event_type")
     public val eventType: String,
 )
+
+/**
+ * A character range in a text result. Offsets are half-open: `start` is the first character,
+ * `end` is one past the last, so `end` must be greater than `start` (`422` otherwise). For a
+ * paragraph, send the paragraph's range. `quote` is the text the person saw — it is what the
+ * agent is shown on a redo.
+ */
+@Serializable
+public data class TextAnchor(
+    public val kind: TextAnchorKind,
+    public val quote: String,
+    public val start: Long,
+    public val end: Long,
+)
+
+/**
+ * `TextAnchorKind` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TextAnchorKindSerializer::class)
+@JvmInline
+public value class TextAnchorKind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val TEXT: TextAnchorKind = TextAnchorKind("text")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TextAnchorKind> = listOf(TEXT)
+    }
+}
+
+public object TextAnchorKindSerializer : KSerializer<TextAnchorKind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TextAnchorKind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TextAnchorKind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TextAnchorKind = TextAnchorKind(decoder.decodeString())
+}
 
 /**
  * `Todo` model.
@@ -38697,20 +40730,20 @@ public data class UpdateAdminAgentMemoryConfigResponseAgentMemory(
      * the platform default applies again; GET then omits the field. Added 2026-09-23.
      */
     @SerialName("extraction_model")
-    public val extractionModel: String,
+    public val extractionModel: String? = null,
     @SerialName("eviction_threshold")
     public val evictionThreshold: Long,
     @SerialName("embedding_dimensions")
     public val embeddingDimensions: Long,
     @SerialName("embedding_provider")
-    public val embeddingProvider: String,
+    public val embeddingProvider: String? = null,
     @SerialName("embedding_model")
-    public val embeddingModel: String,
+    public val embeddingModel: String? = null,
     /**
      * On PUT, `null` clears the stored override; GET then omits the field. Added 2026-09-23.
      */
     @SerialName("compression_model")
-    public val compressionModel: String,
+    public val compressionModel: String? = null,
 )
 
 /**
@@ -40498,6 +42531,11 @@ public data class UpdateMCPServerRequest(
      * Re-encrypted on write. `{}` clears it.
      */
     public val env: JsonObject? = null,
+    /**
+     * Optional replacement authentication (none or api_key). Omit to preserve the stored grant,
+     * including broker-owned OAuth. Client-supplied OAuth is refused.
+     */
+    public val auth: MCPServerAuth? = null,
     public val enabled: Boolean? = null,
     public val capabilities: JsonObject? = null,
     public val status: MCPServerStatus? = null,
@@ -40756,6 +42794,8 @@ public data class UpdateRuntimeConfigRequest(
     public val costPerImageUsd: Double? = null,
     @SerialName("cost_per_video_second_usd")
     public val costPerVideoSecondUsd: Double? = null,
+    @SerialName("memory_retrieve_timeout_ms")
+    public val memoryRetrieveTimeoutMs: Long? = null,
     @SerialName("vision_max_tokens")
     public val visionMaxTokens: Long? = null,
     @SerialName("media_endpoint")
@@ -40886,6 +42926,12 @@ public data class UpdateSessionRequest(
      * the first `pinned_at`. false unpins.
      */
     public val pinned: Boolean? = null,
+    /**
+     * The chat's name. Trimmed, then 1–80 characters (`422` otherwise); `null` clears it. Either
+     * way `title_source` becomes `user`, and a generated title never replaces it. Stored on the
+     * session, never in `metadata`; `updated_at` is left alone.
+     */
+    public val title: String? = null,
     /**
      * Per-conversation model override. Send null to clear (revert to agent default), or {
      * provider, model_ref, endpoint_url?, capabilities? } to set. The runtime governance allowlist
@@ -41126,6 +43172,18 @@ public data class UploadFileResponse(
     public val sha256: String,
     @SerialName("created_at")
     public val createdAt: String,
+    /**
+     * The agent whose run wrote this file (since 2026-10-19). Absent for a person's or an API
+     * caller's upload and for every older record, which is not attributed after the fact.
+     */
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    /**
+     * The run that wrote it; present only with `agent_id`, and only when the write happened inside
+     * a run.
+     */
+    @SerialName("run_id")
+    public val runId: String? = null,
     public val url: String,
 )
 
@@ -41274,6 +43332,30 @@ public data class UpsertNotificationTargetRequestConfigVariant4(
 public data class UpsertNotificationTargetRequestConfigVariant4keys(
     public val p256dh: String,
     public val auth: String,
+)
+
+/**
+ * An iOS Live Activity push token — see the operation description.
+ */
+@Serializable
+public data class UpsertNotificationTargetRequestConfigVariant5(
+    public val kind: NotificationTargetConfigVariant5kind,
+    /**
+     * Hex APNs token for this one activity (16–512 hex characters).
+     */
+    public val token: String,
+    /**
+     * The ActivityAttributes type name, e.g. `RunActivityAttributes`.
+     */
+    @SerialName("activity_type")
+    public val activityType: String,
+    /**
+     * The run whose progress drives this activity.
+     */
+    @SerialName("run_id")
+    public val runId: String? = null,
+    @SerialName("device_label")
+    public val deviceLabel: String? = null,
 )
 
 /**
@@ -42383,6 +44465,109 @@ public data class VideoTemplateTitle(
     public val en: String,
     public val uk: String,
 )
+
+/**
+ * `VoiceCatalog` model.
+ */
+@Serializable
+public data class VoiceCatalog(
+    public val items: List<VoiceCatalogItem>,
+    /**
+     * `live`: fetched now; `cache`: from the 24-hour cache; `stale`: the refresh failed and this
+     * is the last good catalog; `default`: nothing has been fetched yet, so only the configured
+     * default voice is listed.
+     */
+    public val source: VoiceCatalogSource,
+    @SerialName("fetched_at")
+    public val fetchedAt: String? = null,
+)
+
+/**
+ * `VoiceCatalogItem` model.
+ */
+@Serializable
+public data class VoiceCatalogItem(
+    /**
+     * The provider's voice id (its name when the provider lists none). `(model, id)` identifies
+     * the entry; send `id` as `voice`.
+     */
+    public val id: String,
+    public val model: String,
+    /**
+     * Display name.
+     */
+    public val name: String,
+    /**
+     * When the provider says.
+     */
+    public val language: String? = null,
+    /**
+     * When the provider says.
+     */
+    public val gender: String? = null,
+    @SerialName("quality_tier")
+    public val qualityTier: VoiceCatalogItemQualityTier,
+)
+
+/**
+ * `VoiceCatalogItemQualityTier` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = VoiceCatalogItemQualityTierSerializer::class)
+@JvmInline
+public value class VoiceCatalogItemQualityTier(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val PREMIUM: VoiceCatalogItemQualityTier = VoiceCatalogItemQualityTier("premium")
+        public val STANDARD: VoiceCatalogItemQualityTier = VoiceCatalogItemQualityTier("standard")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<VoiceCatalogItemQualityTier> = listOf(PREMIUM, STANDARD)
+    }
+}
+
+public object VoiceCatalogItemQualityTierSerializer : KSerializer<VoiceCatalogItemQualityTier> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.VoiceCatalogItemQualityTier", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: VoiceCatalogItemQualityTier): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): VoiceCatalogItemQualityTier = VoiceCatalogItemQualityTier(decoder.decodeString())
+}
+
+/**
+ * `live`: fetched now; `cache`: from the 24-hour cache; `stale`: the refresh failed and this
+ * is the last good catalog; `default`: nothing has been fetched yet, so only the configured
+ * default voice is listed.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = VoiceCatalogSourceSerializer::class)
+@JvmInline
+public value class VoiceCatalogSource(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val LIVE: VoiceCatalogSource = VoiceCatalogSource("live")
+        public val CACHE: VoiceCatalogSource = VoiceCatalogSource("cache")
+        public val STALE: VoiceCatalogSource = VoiceCatalogSource("stale")
+        public val DEFAULT: VoiceCatalogSource = VoiceCatalogSource("default")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<VoiceCatalogSource> = listOf(LIVE, CACHE, STALE, DEFAULT)
+    }
+}
+
+public object VoiceCatalogSourceSerializer : KSerializer<VoiceCatalogSource> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.VoiceCatalogSource", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: VoiceCatalogSource): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): VoiceCatalogSource = VoiceCatalogSource(decoder.decodeString())
+}
 
 /**
  * `VoiceConfig` model.

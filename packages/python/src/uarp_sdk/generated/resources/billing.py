@@ -35,6 +35,39 @@ class BillingResource:
     def __init__(self, client: SyncTransport) -> None:
         self._client = client
 
+    def apply_app_store_transaction(self, body: Union[_m.ApplyAppStoreTransactionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.ApplyAppStoreTransactionResponse:
+        """Apply a StoreKit 2 purchase to the tenant's plan
+
+        The iOS app posts the `jwsRepresentation` of a StoreKit 2 transaction after a purchase (and
+        may again on launch, for the current entitlement). The JWS is verified offline — x5c chain
+        to Apple Root CA - G3, each link's signature, CA flags, validity and Apple's marker
+        extensions, ES256 under the leaf key, the bundle id (`apple_bundle_id` / `APPLE_BUNDLE_ID`),
+        and that it was signed for `environment`. No call to Apple. `Xcode` is accepted only outside
+        production, against a configured StoreKit test certificate.
+
+        A verified, unexpired, unrevoked transaction for a product the platform sells
+        (`app_store_product_id` on `GET /billing/plans`) sets the plan with `plan_source:
+        app_store`, records the subscription on the tenant's billing, and ends a running trial. The
+        subscription is bound to the first tenant that posts it. Idempotent per
+        `original_transaction_id`: re-posting, or posting an older transaction of the same
+        subscription, changes nothing and answers the stored state.
+
+        `appAccountToken`, when the app set one, must be the tenant id. Requires the `billing:write`
+        permission and scope.
+
+        `POST /api/v1/billing/app-store/transactions`
+
+        Required scopes: `billing:read`.
+        """
+        return _cast("_m.ApplyAppStoreTransactionResponse", self._client._request(
+            "POST",
+            "/api/v1/billing/app-store/transactions",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.ApplyAppStoreTransactionResponse),
+            request_options=request_options,
+        ))
+
     def check_quota(self, *, request_options: Optional[RequestOptions] = None) -> _m.UsageQuota:
         """Check tenant quota status
 
@@ -288,6 +321,43 @@ class BillingResource:
             request_options=request_options,
         ))
 
+    def handle_app_store_notification(self, body: Union[_m.HandleAppStoreNotificationRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.HandleAppStoreNotificationResponse:
+        """Handle App Store Server Notifications V2
+
+        The App Store Server Notifications V2 endpoint (app-store.ts). `signedPayload` is verified
+        offline — x5c chain to Apple Root CA - G3 (embedded), each link's signature, CA flags,
+        validity and Apple's marker extensions, the ES256 signature, the bundle id
+        (`apple_bundle_id` / `APPLE_BUNDLE_ID`) — and so is the `signedTransactionInfo` and
+        `signedRenewalInfo` it carries. No call to Apple. Deduplicated on `notificationUUID` for ten
+        days: a replay answers `duplicate: true` and changes nothing; a handler failure releases the
+        claim and answers 500 so Apple retries.
+
+        The tenant is the one the subscription's `originalTransactionId` is bound to (by `POST
+        /billing/app-store/transactions`), else the tenant the transaction's `appAccountToken`
+        names. Handled types:
+
+        - `SUBSCRIBED`, `DID_RENEW`: set the plan the product buys and extend `app_store_expires_ms`
+        (`action: plan_applied`; `unchanged` for an older transaction; `stripe_active` / `refused`
+        when Stripe or an operator owns the plan, which is left as it is).
+        - `EXPIRED`, `REFUND`, `REVOKE`, `DID_FAIL_TO_RENEW` (without the `GRACE_PERIOD` subtype),
+        `GRACE_PERIOD_EXPIRED`: drop the plan to free — only when `plan_source` is `app_store` and
+        the record holds this subscription (`action: downgraded_to_free`, else `not_app_store_plan`
+        / `superseded_subscription`).
+        - `DID_FAIL_TO_RENEW` with subtype `GRACE_PERIOD`: the plan stays; `app_store_expires_ms`
+        moves to the grace end (`action: grace_period`).
+        - Every other type is logged and acknowledged (`handled: false`, `action: ignored`).
+
+        `POST /api/v1/webhooks/app-store`
+        """
+        return _cast("_m.HandleAppStoreNotificationResponse", self._client._request(
+            "POST",
+            "/api/v1/webhooks/app-store",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.HandleAppStoreNotificationResponse),
+            request_options=request_options,
+        ))
+
     def handle_stripe_webhook(self, body: Union[_m.HandleStripeWebhookRequest, Dict[str, Any]], *, stripe_signature: str, request_options: Optional[RequestOptions] = None) -> _m.HandleStripeWebhookResponse:
         """Handle Stripe webhook events
 
@@ -418,6 +488,39 @@ class AsyncBillingResource:
 
     def __init__(self, client: AsyncTransport) -> None:
         self._client = client
+
+    async def apply_app_store_transaction(self, body: Union[_m.ApplyAppStoreTransactionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.ApplyAppStoreTransactionResponse:
+        """Apply a StoreKit 2 purchase to the tenant's plan
+
+        The iOS app posts the `jwsRepresentation` of a StoreKit 2 transaction after a purchase (and
+        may again on launch, for the current entitlement). The JWS is verified offline — x5c chain
+        to Apple Root CA - G3, each link's signature, CA flags, validity and Apple's marker
+        extensions, ES256 under the leaf key, the bundle id (`apple_bundle_id` / `APPLE_BUNDLE_ID`),
+        and that it was signed for `environment`. No call to Apple. `Xcode` is accepted only outside
+        production, against a configured StoreKit test certificate.
+
+        A verified, unexpired, unrevoked transaction for a product the platform sells
+        (`app_store_product_id` on `GET /billing/plans`) sets the plan with `plan_source:
+        app_store`, records the subscription on the tenant's billing, and ends a running trial. The
+        subscription is bound to the first tenant that posts it. Idempotent per
+        `original_transaction_id`: re-posting, or posting an older transaction of the same
+        subscription, changes nothing and answers the stored state.
+
+        `appAccountToken`, when the app set one, must be the tenant id. Requires the `billing:write`
+        permission and scope.
+
+        `POST /api/v1/billing/app-store/transactions`
+
+        Required scopes: `billing:read`.
+        """
+        return _cast("_m.ApplyAppStoreTransactionResponse", await self._client._request(
+            "POST",
+            "/api/v1/billing/app-store/transactions",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.ApplyAppStoreTransactionResponse),
+            request_options=request_options,
+        ))
 
     async def check_quota(self, *, request_options: Optional[RequestOptions] = None) -> _m.UsageQuota:
         """Check tenant quota status
@@ -669,6 +772,43 @@ class AsyncBillingResource:
             "/api/v1/usage/timeseries",
             query=[("metric", metric), ("days", days), ("agent_id", agent_id)],
             response=_Response(type=_m.GetUsageTimeseriesResponse),
+            request_options=request_options,
+        ))
+
+    async def handle_app_store_notification(self, body: Union[_m.HandleAppStoreNotificationRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.HandleAppStoreNotificationResponse:
+        """Handle App Store Server Notifications V2
+
+        The App Store Server Notifications V2 endpoint (app-store.ts). `signedPayload` is verified
+        offline — x5c chain to Apple Root CA - G3 (embedded), each link's signature, CA flags,
+        validity and Apple's marker extensions, the ES256 signature, the bundle id
+        (`apple_bundle_id` / `APPLE_BUNDLE_ID`) — and so is the `signedTransactionInfo` and
+        `signedRenewalInfo` it carries. No call to Apple. Deduplicated on `notificationUUID` for ten
+        days: a replay answers `duplicate: true` and changes nothing; a handler failure releases the
+        claim and answers 500 so Apple retries.
+
+        The tenant is the one the subscription's `originalTransactionId` is bound to (by `POST
+        /billing/app-store/transactions`), else the tenant the transaction's `appAccountToken`
+        names. Handled types:
+
+        - `SUBSCRIBED`, `DID_RENEW`: set the plan the product buys and extend `app_store_expires_ms`
+        (`action: plan_applied`; `unchanged` for an older transaction; `stripe_active` / `refused`
+        when Stripe or an operator owns the plan, which is left as it is).
+        - `EXPIRED`, `REFUND`, `REVOKE`, `DID_FAIL_TO_RENEW` (without the `GRACE_PERIOD` subtype),
+        `GRACE_PERIOD_EXPIRED`: drop the plan to free — only when `plan_source` is `app_store` and
+        the record holds this subscription (`action: downgraded_to_free`, else `not_app_store_plan`
+        / `superseded_subscription`).
+        - `DID_FAIL_TO_RENEW` with subtype `GRACE_PERIOD`: the plan stays; `app_store_expires_ms`
+        moves to the grace end (`action: grace_period`).
+        - Every other type is logged and acknowledged (`handled: false`, `action: ignored`).
+
+        `POST /api/v1/webhooks/app-store`
+        """
+        return _cast("_m.HandleAppStoreNotificationResponse", await self._client._request(
+            "POST",
+            "/api/v1/webhooks/app-store",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.HandleAppStoreNotificationResponse),
             request_options=request_options,
         ))
 

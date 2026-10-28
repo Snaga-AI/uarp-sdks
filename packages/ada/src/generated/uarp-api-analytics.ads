@@ -29,9 +29,13 @@ package UARP.API.Analytics is
 
    --  Query and header parameters for `getTenantInbox`.
    type Get_Tenant_Inbox_Params is record
-      --  Maximum items returned. Does not affect `counts`.
+      --  Maximum items returned, clamped to 1-200. Does not affect `counts`; the rest of the window
+      --  is reached with `cursor`.
       Has_Limit : Boolean := False;
       Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of a previous answer, unchanged. Opaque. Absent: the first page.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    No_Get_Tenant_Inbox_Params : constant Get_Tenant_Inbox_Params := (others => <>);
@@ -99,8 +103,25 @@ package UARP.API.Analytics is
    --  being asked - and, in `reviews`, mission results waiting for a person's verdict - tool
    --  names, the question, or the error.
    --
-   --  `counts` is computed over the whole scan while `items` honours `limit`, so a truncated list
-   --  still reports the true backlog.
+   --  **Limits.** One page reads one SCAN WINDOW of the tenant's 500 newest run records (newest
+   --  first), sorts every waiting run in it by urgency (approval, input, paused, failed; newest
+   --  first inside each) and returns at most `limit` of them (1-200, default 50). `counts` is
+   --  computed over the window, not over `items`, so a short page still reports the window's
+   --  backlog. Failed runs count only for 24 hours after they were created.
+   --
+   --  **Paging** (since 2026-10-19). When the window held more waiting runs than `limit`, or older
+   --  runs exist past it (`truncated`), the answer carries `has_more: true` and a `cursor`. Pass
+   --  it back unchanged as `?cursor=` (with any `limit`) to continue: first through the rest of
+   --  the same window, then into the next 500 runs, and so on - every waiting run is reached
+   --  exactly once, however old. A continuation page whose window holds nothing to show reads on,
+   --  up to 4 windows (2 000 runs) per request, before answering. On a continuation page `counts`
+   --  and `scanned` describe that page's span only, and `reviews`/`proposals` - complete lists,
+   --  not windowed - are empty: read them from the first page. A run that changes status between
+   --  pages can be seen twice or not at all, and a run created between pages can shift the first
+   --  window by one. A cursor this endpoint did not issue is 400.
+   --
+   --  Without `cursor` the answer is the first window, exactly as before paging existed;
+   --  `has_more`/`cursor` are additive.
    --
    --  GET /api/v1/analytics/inbox
    --
@@ -110,6 +131,15 @@ package UARP.API.Analytics is
       Params : Get_Tenant_Inbox_Params := No_Get_Tenant_Inbox_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Tenant_Inbox;
+
+   --  Collect every item `getTenantInbox` returns, following the `cursor` cursor. Stops early when
+   --  Max_Items is reached (0 means no limit).
+   function Get_Tenant_Inbox_All
+     (Self : Client_Type;
+      Params : Get_Tenant_Inbox_Params := No_Get_Tenant_Inbox_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Inbox_Item_Vectors.Vector;
 
    --  Mission Control overview
    --
