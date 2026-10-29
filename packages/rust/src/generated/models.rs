@@ -12419,6 +12419,11 @@ pub struct DeleteMeResponse {
     pub deleted: bool,
     pub tenants: Vec<DeleteMeResponseTenant>,
     pub sessions_revoked: i64,
+    /// Additional account data removed across all memberships. Legacy devices without ownership
+    /// evidence retain their original tokens and expiry, but delivery is disabled until an active
+    /// member re-registers them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub account_cleanup: Option<DeleteMeResponseAccountCleanup>,
     /// Sign in with Apple refresh tokens revoked at Apple (App Store 5.1.1(v)). Tokens exist only
     /// for sign-ins that sent `authorization_code`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12431,6 +12436,23 @@ pub struct DeleteMeResponse {
     /// Record families the sweep cannot reach, named rather than left to be assumed. Same list as
     /// `/data-subject/erasure`.
     pub not_erased: Vec<String>,
+}
+
+/// Additional account data removed across all memberships. Legacy devices without ownership
+/// evidence retain their original tokens and expiry, but delivery is disabled until an active
+/// member re-registers them.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeleteMeResponseAccountCleanup {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notifications: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub device_targets: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub legacy_device_targets_disabled: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider_keys: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_keys: Option<i64>,
 }
 
 /// What the data sweep actually removed, summed across every membership. Present since
@@ -14193,6 +14215,8 @@ pub enum ErrorCode {
     SearchUpstreamTimeout,
     #[serde(rename = "SECURITY_SCAN_FAILED")]
     SecurityScanFailed,
+    #[serde(rename = "SERVICE_UNAVAILABLE")]
+    ServiceUnavailable,
     #[serde(rename = "SESSION_NOT_ACTIVE")]
     SessionNotActive,
     #[serde(rename = "SHARE_LIST_CONFLICT")]
@@ -14478,6 +14502,7 @@ impl ErrorCode {
             Self::SearchUpstreamFailed => "SEARCH_UPSTREAM_FAILED",
             Self::SearchUpstreamTimeout => "SEARCH_UPSTREAM_TIMEOUT",
             Self::SecurityScanFailed => "SECURITY_SCAN_FAILED",
+            Self::ServiceUnavailable => "SERVICE_UNAVAILABLE",
             Self::SessionNotActive => "SESSION_NOT_ACTIVE",
             Self::ShareListConflict => "SHARE_LIST_CONFLICT",
             Self::SigningNotConfigured => "SIGNING_NOT_CONFIGURED",
@@ -14679,6 +14704,7 @@ impl From<&str> for ErrorCode {
             "SEARCH_UPSTREAM_FAILED" => Self::SearchUpstreamFailed,
             "SEARCH_UPSTREAM_TIMEOUT" => Self::SearchUpstreamTimeout,
             "SECURITY_SCAN_FAILED" => Self::SecurityScanFailed,
+            "SERVICE_UNAVAILABLE" => Self::ServiceUnavailable,
             "SESSION_NOT_ACTIVE" => Self::SessionNotActive,
             "SHARE_LIST_CONFLICT" => Self::ShareListConflict,
             "SIGNING_NOT_CONFIGURED" => Self::SigningNotConfigured,
@@ -23456,6 +23482,10 @@ pub struct ListNotificationsResponse {
 /// `ListNotificationTargetsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListNotificationTargetsResponse {
+    /// Server capability only. This does not acknowledge a device; ownership is acknowledged by a
+    /// successful POST target response.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub device_ownership_version: Option<i64>,
     pub targets: Vec<NotificationTarget>,
 }
 
@@ -26615,10 +26645,23 @@ impl From<&str> for NotificationSourceKind {
 pub struct NotificationTarget {
     pub id: String,
     pub tenant_id: String,
+    /// Company membership that registered this personal device. Derived from authentication, never
+    /// from the request body; absent on shared email/webhook destinations and legacy unowned
+    /// registrations.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub owner_user_id: Option<String>,
+    /// Returned with owner_user_id only after the server has persisted a device's membership
+    /// binding. Clients must re-register cached subscriptions until a successful response
+    /// acknowledges version 1; older servers omit this field.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ownership_version: Option<i64>,
     pub channel: NotificationTargetChannel,
     /// Operator's own label — “Slack #ops”, “iPhone 15”.
     pub label: String,
-    /// A disabled target is kept for audit and skipped at fan-out.
+    /// Whether delivery is enabled and membership remains eligible. Legacy device registrations
+    /// without an identifiable owner are preserved but disabled after a member is removed or
+    /// suspended; sign in and re-register the existing token or endpoint to restore delivery.
+    /// Shared email/webhook destinations are unaffected.
     pub enabled: bool,
     pub created_at: String,
     /// Last success — the field that tells a dead webhook from a quiet one.
@@ -43161,6 +43204,14 @@ pub struct UpsertCustomPlanResponse {
 /// `UpsertNotificationTargetRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpsertNotificationTargetRequest {
+    /// Bind an existing device token/endpoint without changing its label, enabled state, creation
+    /// or delivery history. Missing matching registrations return 404; this never replaces a
+    /// removed destination. Read device_ownership_version before migration, since older servers
+    /// ignore this flag.
+    ///
+    /// Server default: `false`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub registration_only: Option<bool>,
     /// Rewrites this target when it exists.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,

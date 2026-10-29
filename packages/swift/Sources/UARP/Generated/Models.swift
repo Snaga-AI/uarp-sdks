@@ -16808,6 +16808,10 @@ public struct DeleteMeResponse: Codable, Hashable, Sendable {
     public var deleted: Bool
     public var tenants: [DeleteMeResponseTenant]
     public var sessionsRevoked: Int
+    /// Additional account data removed across all memberships. Legacy devices without ownership
+    /// evidence retain their original tokens and expiry, but delivery is disabled until an active
+    /// member re-registers them.
+    public var accountCleanup: DeleteMeResponseAccountCleanup?
     /// Sign in with Apple refresh tokens revoked at Apple (App Store 5.1.1(v)). Tokens exist only
     /// for sign-ins that sent `authorization_code`.
     public var appleTokensRevoked: Int?
@@ -16820,10 +16824,11 @@ public struct DeleteMeResponse: Codable, Hashable, Sendable {
     /// `/data-subject/erasure`.
     public var notErased: [String]
 
-    public init(deleted: Bool, tenants: [DeleteMeResponseTenant], sessionsRevoked: Int, appleTokensRevoked: Int? = nil, erased: DeleteMeResponseErased, notErased: [String]) {
+    public init(deleted: Bool, tenants: [DeleteMeResponseTenant], sessionsRevoked: Int, accountCleanup: DeleteMeResponseAccountCleanup? = nil, appleTokensRevoked: Int? = nil, erased: DeleteMeResponseErased, notErased: [String]) {
         self.deleted = deleted
         self.tenants = tenants
         self.sessionsRevoked = sessionsRevoked
+        self.accountCleanup = accountCleanup
         self.appleTokensRevoked = appleTokensRevoked
         self.erased = erased
         self.notErased = notErased
@@ -16833,9 +16838,37 @@ public struct DeleteMeResponse: Codable, Hashable, Sendable {
         case deleted = "deleted"
         case tenants = "tenants"
         case sessionsRevoked = "sessions_revoked"
+        case accountCleanup = "account_cleanup"
         case appleTokensRevoked = "apple_tokens_revoked"
         case erased = "erased"
         case notErased = "not_erased"
+    }
+}
+
+/// Additional account data removed across all memberships. Legacy devices without ownership
+/// evidence retain their original tokens and expiry, but delivery is disabled until an active
+/// member re-registers them.
+public struct DeleteMeResponseAccountCleanup: Codable, Hashable, Sendable {
+    public var notifications: Int?
+    public var deviceTargets: Int?
+    public var legacyDeviceTargetsDisabled: Int?
+    public var providerKeys: Int?
+    public var apiKeys: Int?
+
+    public init(notifications: Int? = nil, deviceTargets: Int? = nil, legacyDeviceTargetsDisabled: Int? = nil, providerKeys: Int? = nil, apiKeys: Int? = nil) {
+        self.notifications = notifications
+        self.deviceTargets = deviceTargets
+        self.legacyDeviceTargetsDisabled = legacyDeviceTargetsDisabled
+        self.providerKeys = providerKeys
+        self.apiKeys = apiKeys
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case notifications = "notifications"
+        case deviceTargets = "device_targets"
+        case legacyDeviceTargetsDisabled = "legacy_device_targets_disabled"
+        case providerKeys = "provider_keys"
+        case apiKeys = "api_keys"
     }
 }
 
@@ -18877,6 +18910,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let searchUpstreamFailed = ErrorCode(rawValue: "SEARCH_UPSTREAM_FAILED")
     public static let searchUpstreamTimeout = ErrorCode(rawValue: "SEARCH_UPSTREAM_TIMEOUT")
     public static let securityScanFailed = ErrorCode(rawValue: "SECURITY_SCAN_FAILED")
+    public static let serviceUnavailable = ErrorCode(rawValue: "SERVICE_UNAVAILABLE")
     public static let sessionNotActive = ErrorCode(rawValue: "SESSION_NOT_ACTIVE")
     public static let shareListConflict = ErrorCode(rawValue: "SHARE_LIST_CONFLICT")
     public static let signingNotConfigured = ErrorCode(rawValue: "SIGNING_NOT_CONFIGURED")
@@ -18968,7 +19002,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let videoSlotInvalid = ErrorCode(rawValue: "video_slot_invalid")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .activeTenantNotSupported, .alreadyExists, .anonBusy, .artifactIntegrityError, .assessmentIsolationRequired, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .clientRequestConflict, .companyNotReady, .companyPaused, .concurrencyLimit, .concurrentModification, .configurationError, .confirmationRequired, .conflict, .contextLengthExceeded, .countLimitReached, .dailyLimit, .dependencyExists, .eventStoreError, .executionProfileUnverifiable, .executionReceiptPending, .externalServiceError, .featuredSetContended, .featureDisabled, .fileNotFound, .fileTypeNotAllowed, .forbidden, .guardrailViolation, .idempotencyConflict, .idempotencyKeyReused, .initiativeBudgetExhausted, .initiativePaused, .internalError, .invalidArchive, .invalidBody, .invalidCursor, .invalidManifest, .invalidQuery, .invalidRequest, .invalidShareList, .invalidShareTarget, .invalidStateTransition, .isolationViolation, .llmError, .managedAgent, .maxDurationExceeded, .maxTokensExceeded, .methodNotAllowed, .migrationConflict, .missingField, .missingScope, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notBridgeAgent, .notFound, .notYanked, .noRunnableTarget, .oauthFailed, .outputContractViolation, .outputTooLarge, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .prerequisiteMissing, .pricingUnavailable, .privateNotShared, .processingPolicyChanged, .processingPolicyNotReady, .promoRedemptionFailed, .proposalExpired, .qualificationBudgetStop, .qualificationRouteMismatch, .qualificationVersionUnavailable, .quotaExceeded, .rateLimited, .rateLimitExceeded, .referenceNotFound, .reservedScope, .runActive, .runCancelled, .scopeMismatch, .scopeTaken, .searchProviderNotConfigured, .searchUpstreamFailed, .searchUpstreamTimeout, .securityScanFailed, .sessionNotActive, .shareListConflict, .signingNotConfigured, .sizeLimit, .specNotFound, .sponsorshipBudgetBelowCommitted, .sponsorshipBudgetExhausted, .sponsorshipCandidateLimit, .sponsorshipConcurrencyLimit, .sponsorshipFundingUnavailable, .sponsorshipGrantConflict, .sponsorshipGrantInUse, .sponsorshipGrantMismatch, .sponsorshipGrantUnavailable, .sponsorshipOutcomeUnknown, .sponsorshipProgramImmutable, .sponsorshipProgramInactive, .sponsorshipProgramRevisionConflict, .sponsorshipRequired, .sponsorshipScopeRequired, .startedByAnotherUser, .strategistModelUnconfigured, .superAdminRequired, .taskGraphFailed, .teamAbort, .termsNotAccepted, .textExtractionFailed, .unauthenticated, .usageCorrectionExceedsCounters, .usageCorrectionInProgress, .usageCorrectionNotSettled, .usageCorrectionNotSponsored, .userRequired, .validationError, .verificationFailed, .versionConflict, .versionNotFound, .workspaceStorageLimit, .wouldOrphan, .yankConflict, .agentDeleted, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .consentRequired, .cvInvalid, .cvTooLarge, .duplicateApplication, .governanceNotEnabled, .hireCatalogUnknown, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .jobApplyElsewhere, .jobClosed, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbEmbeddingFailed, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .mfaRequired, .noEligibleArbiter, .notHired, .planUpgradeRequired, .proposalRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited_, .resourceLimitReached, .runAgentStopped, .runApprovalExpired, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded, .runStalled, .secretWouldMove, .videoConsentRequired, .videoOrderState, .videoPhotoInvalid, .videoPhotoRejected, .videoRegenUnavailable, .videoSlotInvalid]
+    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .activeTenantNotSupported, .alreadyExists, .anonBusy, .artifactIntegrityError, .assessmentIsolationRequired, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .clientRequestConflict, .companyNotReady, .companyPaused, .concurrencyLimit, .concurrentModification, .configurationError, .confirmationRequired, .conflict, .contextLengthExceeded, .countLimitReached, .dailyLimit, .dependencyExists, .eventStoreError, .executionProfileUnverifiable, .executionReceiptPending, .externalServiceError, .featuredSetContended, .featureDisabled, .fileNotFound, .fileTypeNotAllowed, .forbidden, .guardrailViolation, .idempotencyConflict, .idempotencyKeyReused, .initiativeBudgetExhausted, .initiativePaused, .internalError, .invalidArchive, .invalidBody, .invalidCursor, .invalidManifest, .invalidQuery, .invalidRequest, .invalidShareList, .invalidShareTarget, .invalidStateTransition, .isolationViolation, .llmError, .managedAgent, .maxDurationExceeded, .maxTokensExceeded, .methodNotAllowed, .migrationConflict, .missingField, .missingScope, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notBridgeAgent, .notFound, .notYanked, .noRunnableTarget, .oauthFailed, .outputContractViolation, .outputTooLarge, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .prerequisiteMissing, .pricingUnavailable, .privateNotShared, .processingPolicyChanged, .processingPolicyNotReady, .promoRedemptionFailed, .proposalExpired, .qualificationBudgetStop, .qualificationRouteMismatch, .qualificationVersionUnavailable, .quotaExceeded, .rateLimited, .rateLimitExceeded, .referenceNotFound, .reservedScope, .runActive, .runCancelled, .scopeMismatch, .scopeTaken, .searchProviderNotConfigured, .searchUpstreamFailed, .searchUpstreamTimeout, .securityScanFailed, .serviceUnavailable, .sessionNotActive, .shareListConflict, .signingNotConfigured, .sizeLimit, .specNotFound, .sponsorshipBudgetBelowCommitted, .sponsorshipBudgetExhausted, .sponsorshipCandidateLimit, .sponsorshipConcurrencyLimit, .sponsorshipFundingUnavailable, .sponsorshipGrantConflict, .sponsorshipGrantInUse, .sponsorshipGrantMismatch, .sponsorshipGrantUnavailable, .sponsorshipOutcomeUnknown, .sponsorshipProgramImmutable, .sponsorshipProgramInactive, .sponsorshipProgramRevisionConflict, .sponsorshipRequired, .sponsorshipScopeRequired, .startedByAnotherUser, .strategistModelUnconfigured, .superAdminRequired, .taskGraphFailed, .teamAbort, .termsNotAccepted, .textExtractionFailed, .unauthenticated, .usageCorrectionExceedsCounters, .usageCorrectionInProgress, .usageCorrectionNotSettled, .usageCorrectionNotSponsored, .userRequired, .validationError, .verificationFailed, .versionConflict, .versionNotFound, .workspaceStorageLimit, .wouldOrphan, .yankConflict, .agentDeleted, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .consentRequired, .cvInvalid, .cvTooLarge, .duplicateApplication, .governanceNotEnabled, .hireCatalogUnknown, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .jobApplyElsewhere, .jobClosed, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbEmbeddingFailed, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .mfaRequired, .noEligibleArbiter, .notHired, .planUpgradeRequired, .proposalRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited_, .resourceLimitReached, .runAgentStopped, .runApprovalExpired, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded, .runStalled, .secretWouldMove, .videoConsentRequired, .videoOrderState, .videoPhotoInvalid, .videoPhotoRejected, .videoRegenUnavailable, .videoSlotInvalid]
 }
 
 /// `ErrorError` model.
@@ -30180,13 +30214,18 @@ public struct ListNotificationsResponse: Codable, Hashable, Sendable {
 
 /// `ListNotificationTargetsResponse` model.
 public struct ListNotificationTargetsResponse: Codable, Hashable, Sendable {
+    /// Server capability only. This does not acknowledge a device; ownership is acknowledged by a
+    /// successful POST target response.
+    public var deviceOwnershipVersion: Int?
     public var targets: [NotificationTarget]
 
-    public init(targets: [NotificationTarget]) {
+    public init(deviceOwnershipVersion: Int? = nil, targets: [NotificationTarget]) {
+        self.deviceOwnershipVersion = deviceOwnershipVersion
         self.targets = targets
     }
 
     private enum CodingKeys: String, CodingKey {
+        case deviceOwnershipVersion = "device_ownership_version"
         case targets = "targets"
     }
 }
@@ -34119,10 +34158,21 @@ public struct NotificationSourceKind: RawRepresentable, Codable, Hashable, Senda
 public struct NotificationTarget: Codable, Hashable, Sendable {
     public var id: String
     public var tenantId: String
+    /// Company membership that registered this personal device. Derived from authentication, never
+    /// from the request body; absent on shared email/webhook destinations and legacy unowned
+    /// registrations.
+    public var ownerUserId: String?
+    /// Returned with owner_user_id only after the server has persisted a device's membership
+    /// binding. Clients must re-register cached subscriptions until a successful response
+    /// acknowledges version 1; older servers omit this field.
+    public var ownershipVersion: Int?
     public var channel: NotificationTargetChannel
     /// Operator's own label — “Slack #ops”, “iPhone 15”.
     public var label: String
-    /// A disabled target is kept for audit and skipped at fan-out.
+    /// Whether delivery is enabled and membership remains eligible. Legacy device registrations
+    /// without an identifiable owner are preserved but disabled after a member is removed or
+    /// suspended; sign in and re-register the existing token or endpoint to restore delivery.
+    /// Shared email/webhook destinations are unaffected.
     public var enabled: Bool
     public var createdAt: String
     /// Last success — the field that tells a dead webhook from a quiet one.
@@ -34130,9 +34180,11 @@ public struct NotificationTarget: Codable, Hashable, Sendable {
     public var lastError: String?
     public var config: JSONValue
 
-    public init(id: String, tenantId: String, channel: NotificationTargetChannel, label: String, enabled: Bool, createdAt: String, lastDeliveredAt: String? = nil, lastError: String? = nil, config: JSONValue) {
+    public init(id: String, tenantId: String, ownerUserId: String? = nil, ownershipVersion: Int? = nil, channel: NotificationTargetChannel, label: String, enabled: Bool, createdAt: String, lastDeliveredAt: String? = nil, lastError: String? = nil, config: JSONValue) {
         self.id = id
         self.tenantId = tenantId
+        self.ownerUserId = ownerUserId
+        self.ownershipVersion = ownershipVersion
         self.channel = channel
         self.label = label
         self.enabled = enabled
@@ -34145,6 +34197,8 @@ public struct NotificationTarget: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case id = "id"
         case tenantId = "tenant_id"
+        case ownerUserId = "owner_user_id"
+        case ownershipVersion = "ownership_version"
         case channel = "channel"
         case label = "label"
         case enabled = "enabled"
@@ -55962,6 +56016,11 @@ public struct UpsertCustomPlanResponse: Codable, Hashable, Sendable {
 
 /// `UpsertNotificationTargetRequest` model.
 public struct UpsertNotificationTargetRequest: Codable, Hashable, Sendable {
+    /// Bind an existing device token/endpoint without changing its label, enabled state, creation
+    /// or delivery history. Missing matching registrations return 404; this never replaces a
+    /// removed destination. Read device_ownership_version before migration, since older servers
+    /// ignore this flag.
+    public var registrationOnly: Bool?
     /// Rewrites this target when it exists.
     public var id: String?
     /// Defaults to something channel-specific when omitted.
@@ -55970,7 +56029,8 @@ public struct UpsertNotificationTargetRequest: Codable, Hashable, Sendable {
     public var enabled: Bool?
     public var config: JSONValue
 
-    public init(id: String? = nil, label: String? = nil, enabled: Bool? = nil, config: JSONValue) {
+    public init(registrationOnly: Bool? = nil, id: String? = nil, label: String? = nil, enabled: Bool? = nil, config: JSONValue) {
+        self.registrationOnly = registrationOnly
         self.id = id
         self.label = label
         self.enabled = enabled
@@ -55978,6 +56038,7 @@ public struct UpsertNotificationTargetRequest: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case registrationOnly = "registration_only"
         case id = "id"
         case label = "label"
         case enabled = "enabled"

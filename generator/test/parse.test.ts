@@ -763,7 +763,9 @@ test('parses the production document into the expected shape', () => {
   // bodies, and what typed inline bodies gained: the company's goals, budget
   // and config stopped being free-form, a live-activity notification target,
   // and App Store fields on billing.
-  assert.equal(spec.types.length, 2214);
+  // 2214 -> 2215 on 2026-10-29 (build f9e27e23): the account cleanup counts
+  // that DELETE /me now reports, hoisted as their own type.
+  assert.equal(spec.types.length, 2215);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);

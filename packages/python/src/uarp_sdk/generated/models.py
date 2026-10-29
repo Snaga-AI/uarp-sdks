@@ -1198,6 +1198,7 @@ class ErrorCode(UarpEnum):
     SEARCH_UPSTREAM_FAILED = "SEARCH_UPSTREAM_FAILED"
     SEARCH_UPSTREAM_TIMEOUT = "SEARCH_UPSTREAM_TIMEOUT"
     SECURITY_SCAN_FAILED = "SECURITY_SCAN_FAILED"
+    SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
     SESSION_NOT_ACTIVE = "SESSION_NOT_ACTIVE"
     SHARE_LIST_CONFLICT = "SHARE_LIST_CONFLICT"
     SIGNING_NOT_CONFIGURED = "SIGNING_NOT_CONFIGURED"
@@ -13011,6 +13012,12 @@ class DeleteMeResponse(Model):
 
     sessions_revoked: int
 
+    account_cleanup: Optional[DeleteMeResponseAccountCleanup] = None
+    """Additional account data removed across all memberships. Legacy devices without ownership
+    evidence retain their original tokens and expiry, but delivery is disabled until an active
+    member re-registers them.
+    """
+
     apple_tokens_revoked: Optional[int] = None
     """Sign in with Apple refresh tokens revoked at Apple (App Store 5.1.1(v)). Tokens exist only
     for sign-ins that sent `authorization_code`.
@@ -13027,6 +13034,24 @@ class DeleteMeResponse(Model):
     """Record families the sweep cannot reach, named rather than left to be assumed. Same list as
     `/data-subject/erasure`.
     """
+
+
+@_dataclass(kw_only=True)
+class DeleteMeResponseAccountCleanup(Model):
+    """Additional account data removed across all memberships. Legacy devices without ownership
+    evidence retain their original tokens and expiry, but delivery is disabled until an active
+    member re-registers them.
+    """
+
+    notifications: Optional[int] = None
+
+    device_targets: Optional[int] = None
+
+    legacy_device_targets_disabled: Optional[int] = None
+
+    provider_keys: Optional[int] = None
+
+    api_keys: Optional[int] = None
 
 
 @_dataclass(kw_only=True)
@@ -20105,6 +20130,11 @@ class ListNotificationsResponse(Model):
 class ListNotificationTargetsResponse(Model):
     """`ListNotificationTargetsResponse` model."""
 
+    device_ownership_version: Optional[int] = None
+    """Server capability only. This does not acknowledge a device; ownership is acknowledged by a
+    successful POST target response.
+    """
+
     targets: List[NotificationTarget]
 
 
@@ -22198,13 +22228,29 @@ class NotificationTarget(Model):
 
     tenant_id: str
 
+    owner_user_id: Optional[str] = None
+    """Company membership that registered this personal device. Derived from authentication, never
+    from the request body; absent on shared email/webhook destinations and legacy unowned
+    registrations.
+    """
+
+    ownership_version: Optional[int] = None
+    """Returned with owner_user_id only after the server has persisted a device's membership
+    binding. Clients must re-register cached subscriptions until a successful response
+    acknowledges version 1; older servers omit this field.
+    """
+
     channel: NotificationTargetChannel
 
     label: str
     """Operator's own label — “Slack #ops”, “iPhone 15”."""
 
     enabled: bool
-    """A disabled target is kept for audit and skipped at fan-out."""
+    """Whether delivery is enabled and membership remains eligible. Legacy device registrations
+    without an identifiable owner are preserved but disabled after a member is removed or
+    suspended; sign in and re-register the existing token or endpoint to restore delivery.
+    Shared email/webhook destinations are unaffected.
+    """
 
     created_at: str
 
@@ -33808,6 +33854,15 @@ class UpsertCustomPlanResponse(Model):
 class UpsertNotificationTargetRequest(Model):
     """`UpsertNotificationTargetRequest` model."""
 
+    registration_only: Optional[bool] = None
+    """Bind an existing device token/endpoint without changing its label, enabled state, creation
+    or delivery history. Missing matching registrations return 404; this never replaces a
+    removed destination. Read device_ownership_version before migration, since older servers
+    ignore this flag.
+
+    Server default: `false`.
+    """
+
     id: Optional[str] = None
     """Rewrites this target when it exists."""
 
@@ -35642,6 +35697,7 @@ __all__ = [
     "DeleteMCPServerResponse",
     "DeleteMCPServerResponseCascade",
     "DeleteMeResponse",
+    "DeleteMeResponseAccountCleanup",
     "DeleteMeResponseErased",
     "DeleteMeResponseTenant",
     "DeleteModelPricingOverrideResponse",

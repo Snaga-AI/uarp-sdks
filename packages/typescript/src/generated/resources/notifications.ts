@@ -104,9 +104,9 @@ export class NotificationsResource extends APIResource {
    * Remove a target
    *
    * Removes a configured delivery target, so notifications stop being fanned out to that email
-   * address, webhook, browser or device. Requires `notifications:write`. The delete is
-   * unconditional — no existence check — so it is idempotent and answers 200 `{ok: true}`
-   * whether or not the id was there. Existing notification records are untouched.
+   * address, webhook, browser or device. Requires `notifications:write`. A missing target
+   * returns 404; a removed target returns 200 `{ok: true}`. Its registration-quarantine marker
+   * is also removed. Existing notification records are untouched.
    *
    * `DELETE /api/v1/notifications/targets/{targetId}`
    *
@@ -317,6 +317,16 @@ export class NotificationsResource extends APIResource {
 
   /**
    * Create or update a target
+   *
+   * Personal phone, browser and Live Activity registrations are bound to the authenticated
+   * company membership; `owner_user_id` cannot be supplied by the client. A successful response
+   * acknowledges the persisted binding with `owner_user_id` and `ownership_version: 1`. Clients
+   * with cached subscriptions must re-register once until they receive this acknowledgment;
+   * older servers omit both fields. A user-bound session is required when authentication is
+   * enabled (422 `USER_REQUIRED` otherwise). Removed or suspended members cannot receive device
+   * deliveries, including cached Live Activities. On membership removal, legacy devices without
+   * ownership evidence are retained but disabled until re-registration; other identified members
+   * and shared email/webhook destinations remain unaffected.
    *
    * Upsert, not insert: sending an `id` rewrites that target. A device target (push, web push or
    * Live Activity) additionally reuses the id of an existing entry for the same device token or

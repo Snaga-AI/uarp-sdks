@@ -34903,6 +34903,53 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Delete_Me_Response_Account_Cleanup) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Notifications then
+         JS.Set (Result, "notifications", JS.JSON.Create (Model.Notifications));
+      end if;
+      if Model.Has_Device_Targets then
+         JS.Set (Result, "device_targets", JS.JSON.Create (Model.Device_Targets));
+      end if;
+      if Model.Has_Legacy_Device_Targets_Disabled then
+         JS.Set (Result, "legacy_device_targets_disabled", JS.JSON.Create (Model.Legacy_Device_Targets_Disabled));
+      end if;
+      if Model.Has_Provider_Keys then
+         JS.Set (Result, "provider_keys", JS.JSON.Create (Model.Provider_Keys));
+      end if;
+      if Model.Has_API_Keys then
+         JS.Set (Result, "api_keys", JS.JSON.Create (Model.API_Keys));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Me_Response_Account_Cleanup is
+      Result : Delete_Me_Response_Account_Cleanup;
+   begin
+      if JS.Present (Node, "notifications") then
+         Result.Has_Notifications := True;
+         Result.Notifications := JS.As_Integer (JS.Get_Value (Node, "notifications"));
+      end if;
+      if JS.Present (Node, "device_targets") then
+         Result.Has_Device_Targets := True;
+         Result.Device_Targets := JS.As_Integer (JS.Get_Value (Node, "device_targets"));
+      end if;
+      if JS.Present (Node, "legacy_device_targets_disabled") then
+         Result.Has_Legacy_Device_Targets_Disabled := True;
+         Result.Legacy_Device_Targets_Disabled := JS.As_Integer (JS.Get_Value (Node, "legacy_device_targets_disabled"));
+      end if;
+      if JS.Present (Node, "provider_keys") then
+         Result.Has_Provider_Keys := True;
+         Result.Provider_Keys := JS.As_Integer (JS.Get_Value (Node, "provider_keys"));
+      end if;
+      if JS.Present (Node, "api_keys") then
+         Result.Has_API_Keys := True;
+         Result.API_Keys := JS.As_Integer (JS.Get_Value (Node, "api_keys"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Delete_Me_Response_Erased) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -34952,6 +34999,9 @@ package body UARP.Models is
          JS.Set (Result, "tenants", Items);
       end;
       JS.Set (Result, "sessions_revoked", JS.JSON.Create (Model.Sessions_Revoked));
+      if Model.Has_Account_Cleanup then
+         JS.Set (Result, "account_cleanup", To_JSON (Model.Account_Cleanup));
+      end if;
       if Model.Has_Apple_Tokens_Revoked then
          JS.Set (Result, "apple_tokens_revoked", JS.JSON.Create (Model.Apple_Tokens_Revoked));
       end if;
@@ -34984,6 +35034,10 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "sessions_revoked") then
          Result.Sessions_Revoked := JS.As_Integer (JS.Get_Value (Node, "sessions_revoked"));
+      end if;
+      if JS.Present (Node, "account_cleanup") then
+         Result.Has_Account_Cleanup := True;
+         Result.Account_Cleanup := From_JSON (JS.Get_Value (Node, "account_cleanup"));
       end if;
       if JS.Present (Node, "apple_tokens_revoked") then
          Result.Has_Apple_Tokens_Revoked := True;
@@ -37116,6 +37170,8 @@ package body UARP.Models is
          return (Kind => Error_Code_Search_Upstream_Timeout, Raw => UARP.Types."+" (Value));
       elsif Value = "SECURITY_SCAN_FAILED" then
          return (Kind => Error_Code_Security_Scan_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "SERVICE_UNAVAILABLE" then
+         return (Kind => Error_Code_Service_Unavailable, Raw => UARP.Types."+" (Value));
       elsif Value = "SESSION_NOT_ACTIVE" then
          return (Kind => Error_Code_Session_Not_Active, Raw => UARP.Types."+" (Value));
       elsif Value = "SHARE_LIST_CONFLICT" then
@@ -37498,6 +37554,8 @@ package body UARP.Models is
             return (Kind => Kind, Raw => UARP.Types."+" ("SEARCH_UPSTREAM_TIMEOUT"));
          when Error_Code_Security_Scan_Failed =>
             return (Kind => Kind, Raw => UARP.Types."+" ("SECURITY_SCAN_FAILED"));
+         when Error_Code_Service_Unavailable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SERVICE_UNAVAILABLE"));
          when Error_Code_Session_Not_Active =>
             return (Kind => Kind, Raw => UARP.Types."+" ("SESSION_NOT_ACTIVE"));
          when Error_Code_Share_List_Conflict =>
@@ -60382,6 +60440,12 @@ package body UARP.Models is
    begin
       JS.Set (Result, "id", JS.JSON.Create (Model.Id));
       JS.Set (Result, "tenant_id", JS.JSON.Create (Model.Tenant_Id));
+      if Model.Has_Owner_User_Id then
+         JS.Set (Result, "owner_user_id", JS.JSON.Create (Model.Owner_User_Id));
+      end if;
+      if Model.Has_Ownership_Version then
+         JS.Set (Result, "ownership_version", JS.JSON.Create (Model.Ownership_Version));
+      end if;
       JS.Set (Result, "channel", To_JSON (Model.Channel));
       JS.Set (Result, "label", JS.JSON.Create (Model.Label));
       JS.Set (Result, "enabled", JS.JSON.Create (Model.Enabled));
@@ -60404,6 +60468,14 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "tenant_id") then
          Result.Tenant_Id := JS.As_Text (JS.Get_Value (Node, "tenant_id"));
+      end if;
+      if JS.Present (Node, "owner_user_id") then
+         Result.Has_Owner_User_Id := True;
+         Result.Owner_User_Id := JS.As_Text (JS.Get_Value (Node, "owner_user_id"));
+      end if;
+      if JS.Present (Node, "ownership_version") then
+         Result.Has_Ownership_Version := True;
+         Result.Ownership_Version := JS.As_Integer (JS.Get_Value (Node, "ownership_version"));
       end if;
       if JS.Present (Node, "channel") then
          Result.Channel := From_JSON (JS.Get_Value (Node, "channel"));
@@ -60434,6 +60506,9 @@ package body UARP.Models is
    function To_JSON (Model : List_Notification_Targets_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
+      if Model.Has_Device_Ownership_Version then
+         JS.Set (Result, "device_ownership_version", JS.JSON.Create (Model.Device_Ownership_Version));
+      end if;
       declare
          Items : JS.JSON_Array := JS.JSON.Empty_Array;
       begin
@@ -60448,6 +60523,10 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Notification_Targets_Response is
       Result : List_Notification_Targets_Response;
    begin
+      if JS.Present (Node, "device_ownership_version") then
+         Result.Has_Device_Ownership_Version := True;
+         Result.Device_Ownership_Version := JS.As_Integer (JS.Get_Value (Node, "device_ownership_version"));
+      end if;
       if JS.Present (Node, "targets") then
          declare
             Items : constant JS.JSON_Array := JS.Get_Array (Node, "targets");
@@ -96020,6 +96099,9 @@ package body UARP.Models is
    function To_JSON (Model : Upsert_Notification_Target_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
+      if Model.Has_Registration_Only then
+         JS.Set (Result, "registration_only", JS.JSON.Create (Model.Registration_Only));
+      end if;
       if Model.Has_Id then
          JS.Set (Result, "id", JS.JSON.Create (Model.Id));
       end if;
@@ -96036,6 +96118,10 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Upsert_Notification_Target_Request is
       Result : Upsert_Notification_Target_Request;
    begin
+      if JS.Present (Node, "registration_only") then
+         Result.Has_Registration_Only := True;
+         Result.Registration_Only := JS.As_Boolean (JS.Get_Value (Node, "registration_only"));
+      end if;
       if JS.Present (Node, "id") then
          Result.Has_Id := True;
          Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
