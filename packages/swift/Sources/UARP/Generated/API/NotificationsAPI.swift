@@ -188,8 +188,9 @@ public struct NotificationsAPI: Sendable {
     /// Replace the tenant's notification routing preferences
     ///
     /// WRITE SEMANTICS: replaces. An omitted field is stored as omitted (the only way to clear
-    /// muted_types or drop quiet_hours). `tenant_id` and `updated_at` are ignored — the server
-    /// derives them.
+    /// muted_types or drop quiet_hours); an omitted `push_from` is stored as its default, `all`.
+    /// `tenant_id` and `updated_at` are ignored — the server derives them. A `push_from` outside
+    /// its enum is `422`.
     ///
     /// `PUT /api/v1/notifications/prefs`
     ///
@@ -236,9 +237,15 @@ public struct NotificationsAPI: Sendable {
 
     /// Send a test notification
     ///
-    /// Queues one notification through the real fan-out, so it proves the whole path rather than
-    /// the stored configuration. **200 means queued, not delivered** — read `last_delivered_at` and
-    /// `last_error` on the target afterwards for the outcome.
+    /// Queues one stored notification through the normal dispatcher, with outbound delivery
+    /// restricted to the selected enabled target in the authenticated company. Other outbound
+    /// targets and fallback recipients are excluded. The audit record has `read: true` and
+    /// `data.notification_target_test: true` from its first write, appears in the company feed on
+    /// refresh, and is not broadcast through company SSE; other clients must not generate local
+    /// alerts for it. Company channel routing, quiet hours and muted types still apply; a disabled
+    /// target or suppressed channel returns 422. **200 means queued, not delivered** — use
+    /// `notification_id` to correlate the test and read `last_delivered_at` and `last_error` on the
+    /// selected target afterwards for the outcome.
     ///
     /// `POST /api/v1/notifications/targets/{targetId}/test`
     ///
@@ -254,12 +261,40 @@ public struct NotificationsAPI: Sendable {
 
     /// Create or update a target
     ///
-    /// Upsert, not insert: sending an `id` rewrites that target. A device target (push or web push)
-    /// additionally reuses the id of an existing entry for the same device, so a client that
-    /// re-registers on every launch does not accumulate duplicates.
+    /// Upsert, not insert: sending an `id` rewrites that target. A device target (push, web push or
+    /// Live Activity) additionally reuses the id of an existing entry for the same device token or
+    /// endpoint, so a client that re-registers on every launch does not accumulate duplicates.
     ///
     /// The answer is the REDACTED target — the signing secret or device token you just sent is not
     /// echoed back.
+    ///
+    /// **Live Activity tokens** (`config.kind = "apns_liveactivity"`, stored on channel
+    /// `live_activity`): register the per-activity APNs token ActivityKit hands the app
+    /// (`pushTokenUpdates`), the ActivityAttributes type name, and the `run_id` the activity shows.
+    /// Such a target never receives notifications. Instead the run's own events drive it over APNs
+    /// (`apns-push-type: liveactivity`, topic `<bundle id>.push-type.liveactivity`, body `{"aps":
+    /// {"timestamp", "event": "update"|"end", "content-state"}}`):
+    ///
+    /// - a status change (`run.started`/`resumed`/`approved`/`input_received` → *Running*,
+    ///   `run.awaiting_approval` → *Awaiting approval*, `run.awaiting_input` → *Awaiting input*,
+    ///   `run.paused` → *Paused*) is sent at once with `apns-priority: 10`;
+    /// - step progress (each `llm.request` → *Thinking* / `Step N`, each `tool.call` → *Running
+    ///   tool* / tool name) is sent with `apns-priority: 5`, at most once per 5 seconds per run
+    ///   (pushes inside the window are dropped; the next one carries the latest counts);
+    /// - the terminal event
+    ///   (`run.completed`/`failed`/`cancelled`/`timeout`/`guardrail_blocked`/`rejected`) sends
+    ///   `event: "end"` and DELETES the target, since an ended activity's token is useless. A token
+    ///   APNs answers 410 for is deleted too.
+    ///
+    /// `content-state` is `{status: string, detail: string, awaitingApproval: boolean, finished:
+    /// boolean, step: integer, toolCalls: integer}` — the first four are the iOS
+    /// `RunActivityAttributes.ContentState`. The row and its run index carry a 12-hour KV lifetime
+    /// (8 h active + 4 h on the Lock Screen is ActivityKit's ceiling). Sends are fire-and-forget
+    /// and bounded (1 024 tracked runs, 32 queued updates process-wide; beyond that an update is
+    /// dropped, an `end` never is). Nothing is sent while the deployment has no APNs credentials.
+    /// Without `run_id` the token is stored but nothing moves it until it is re-registered with
+    /// one. `POST /notifications/targets/{targetId}/test` answers 400 for such a target: the
+    /// channel has no notification adapter.
     ///
     /// `POST /api/v1/notifications/targets`
     ///

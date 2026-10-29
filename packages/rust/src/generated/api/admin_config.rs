@@ -1177,6 +1177,39 @@ impl AdminConfigApi {
             .await
     }
 
+    /// Reverse a sponsored run's usage booked to the candidate
+    ///
+    /// WRITE SEMANTICS: idempotent per run. Super-admin only (since 2026-10-19). For a settled
+    /// sponsored qualification run whose usage the run-end accounting of before 2026-10-19 booked
+    /// to the candidate's own company: recomputes from the run record what that run added — tokens,
+    /// the run, tool calls, storage, cost and provider cost in the month, day, agent-day and model
+    /// shards, and the tenant and agent spend counters (monthly, weekly, daily) — for the UTC day
+    /// and month the run ended in, and writes the same amounts back as compensating entries.
+    /// Nothing is deleted; the run, its receipt, the grant and the sponsor's settlement are not
+    /// touched, and none of the candidate's other usage. `dry_run: true` answers the plan (`status:
+    /// planned`, `before` and the projected `after`) and writes nothing. The first apply answers
+    /// 201 `applied` with a `correction_id` and writes a `usage.corrected` audit entry; every later
+    /// call answers 200 `already_applied` with the same `correction_id` and writes nothing. A run
+    /// ended after the fix carries `metrics.cost_attribution: sponsored_telemetry`, had nothing
+    /// booked, and answers 200 `nothing_recorded`. The evaluator's workspace is not deleted: it is
+    /// no longer counted against the plan.
+    ///
+    /// `POST /api/v1/admin/qualification/usage-corrections`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn post_qualification_usage_correction(&self, body: &models::PostQualificationUsageCorrectionRequest) -> Result<models::QualificationUsageCorrection> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/admin/qualification/usage-corrections".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Pin an accounting rate
     ///
     /// WRITE SEMANTICS: replaces, once — the first body is stored and never changed. Super-admin
@@ -1189,7 +1222,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/qualification/pricing-revisions/{pricing_revision}`
     ///
     /// Required scopes: `admin`.
-    pub async fn put_qualification_pricing_revision(&self, pricing_revision: &str, body: &models::PutQualificationPricingRevisionRequest) -> Result<serde_json::Value> {
+    pub async fn put_qualification_pricing_revision(&self, pricing_revision: &str, body: &models::PutQualificationPricingRevisionRequest) -> Result<models::QualificationPricingRevision> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1212,7 +1245,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/qualification/sponsor-keys/{key_id}`
     ///
     /// Required scopes: `admin`.
-    pub async fn put_qualification_sponsor_key(&self, key_id: &str, body: &models::PutQualificationSponsorKeyRequest) -> Result<serde_json::Value> {
+    pub async fn put_qualification_sponsor_key(&self, key_id: &str, body: &models::PutQualificationSponsorKeyRequest) -> Result<models::PutQualificationSponsorKeyResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

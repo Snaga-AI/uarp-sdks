@@ -44,11 +44,15 @@ export class Writer {
         out.push('');
         continue;
       }
+      // A wrapped list item continues under its text, not under its marker:
+      // Markdown reads a flush continuation as a new paragraph, and clippy's
+      // `doc_lazy_continuation` refuses it.
+      const hang = ' '.repeat(para.match(/^([-*+]|\d+\.) /)?.[0].length ?? 0);
       let current = '';
       for (const word of para.split(/\s+/)) {
         if (current && current.length + word.length + 1 > 92) {
           out.push(current);
-          current = word;
+          current = hang + word;
         } else {
           current = current ? current + ' ' + word : word;
         }

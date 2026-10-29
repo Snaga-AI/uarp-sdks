@@ -156,8 +156,9 @@ public class UsersApi internal constructor(private val client: UarpClient) {
      * List users
      *
      * Lists every user of the caller's tenant. The array is returned twice — as the canonical
-     * `items` and as the legacy `users` key — with `total` as its length. Requires the
-     * `users:read` scope; no role beyond that is checked.
+     * `items` and as the legacy `users` key — with `total` as its length. Each item carries
+     * `presence: {online, last_seen_at}` — see `TenantUser.presence` for what it is computed from.
+     * Requires the `users:read` scope; no role beyond that is checked.
      *
      * `GET /api/v1/users`
      *

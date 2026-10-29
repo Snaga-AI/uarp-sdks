@@ -6,11 +6,13 @@
 
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
+use futures_core::Stream;
 
 use crate::client::{Client, Request, NO_BODY, NO_QUERY};
 use crate::error::Result;
 use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
+use crate::pagination::CursorGuard;
 use crate::util::encode_path;
 
 /// Query and header parameters for `getMissionPerformance`.
@@ -31,9 +33,13 @@ pub struct GetPublicChatAnalyticsParams {
 /// Query and header parameters for `getTenantInbox`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetTenantInboxParams {
-    /// Maximum items returned. Does not affect `counts`.
+    /// Maximum items returned, clamped to 1–200. Does not affect `counts`; the rest of the window
+    /// is reached with `cursor`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    /// The `cursor` of a previous answer, unchanged. Opaque. Absent: the first page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
 }
 
 /// Query and header parameters for `getTenantOverview`.
@@ -125,8 +131,25 @@ impl AnalyticsApi {
     /// being asked — and, in `reviews`, mission results waiting for a person's verdict — tool
     /// names, the question, or the error.
     ///
-    /// `counts` is computed over the whole scan while `items` honours `limit`, so a truncated list
-    /// still reports the true backlog.
+    /// **Limits.** One page reads one SCAN WINDOW of the tenant's 500 newest run records (newest
+    /// first), sorts every waiting run in it by urgency (approval, input, paused, failed; newest
+    /// first inside each) and returns at most `limit` of them (1–200, default 50). `counts` is
+    /// computed over the window, not over `items`, so a short page still reports the window's
+    /// backlog. Failed runs count only for 24 hours after they were created.
+    ///
+    /// **Paging** (since 2026-10-19). When the window held more waiting runs than `limit`, or older
+    /// runs exist past it (`truncated`), the answer carries `has_more: true` and a `cursor`. Pass
+    /// it back unchanged as `?cursor=` (with any `limit`) to continue: first through the rest of
+    /// the same window, then into the next 500 runs, and so on — every waiting run is reached
+    /// exactly once, however old. A continuation page whose window holds nothing to show reads on,
+    /// up to 4 windows (2 000 runs) per request, before answering. On a continuation page `counts`
+    /// and `scanned` describe that page's span only, and `reviews`/`proposals` — complete lists,
+    /// not windowed — are empty: read them from the first page. A run that changes status between
+    /// pages can be seen twice or not at all, and a run created between pages can shift the first
+    /// window by one. A cursor this endpoint did not issue is 400.
+    ///
+    /// Without `cursor` the answer is the first window, exactly as before paging existed;
+    /// `has_more`/`cursor` are additive.
     ///
     /// `GET /api/v1/analytics/inbox`
     ///
@@ -142,6 +165,29 @@ impl AnalyticsApi {
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `getTenantInbox`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn get_tenant_inbox_all<'a>(&'a self, params: &'a GetTenantInboxParams) -> impl Stream<Item = Result<models::InboxItem>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.get_tenant_inbox(&page_params).await?;
+                let items = page.items;
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// Mission Control overview

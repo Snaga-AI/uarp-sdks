@@ -88,20 +88,102 @@ public struct MeAPI: Sendable {
         ))
     }
 
-    /// Set or clear your avatar
+    /// Read the agents pinned to this person's rail
     ///
-    /// The one field a person may change about themselves here: `avatar_url`. It must name a file
-    /// this tenant owns — `/api/v1/files/<file_id>/content`, absolute or relative — whose
-    /// `mime_type` is `image/*`; `null` clears it. The change is written to the caller's user row
-    /// in every tenant they belong to (`updated_rows` says how many). Anything else in the body is
-    /// ignored; a body without `avatar_url` is 400. WRITE SEMANTICS: replaces — `avatar_url` is the
-    /// whole writable surface and must be present; there is nothing to merge.
+    /// Which agents stand in the caller's side panel, top to bottom — the array IS the order, and
+    /// the client renders what it is given. Scoped to (`user`, `tenant`): the same person in two
+    /// companies keeps two lists. Ids that no longer resolve in this tenant (deleted, or
+    /// terminated) are filtered out of the answer, so a panel never carries a face that opens
+    /// nothing. Requires a credential bound to a person: an API key with no user identity is
+    /// refused with 403. Never 404 — a person who has pinned nothing answers 200 with `agent_ids:
+    /// []` and `updated_at: null`, which must be read as "nothing pinned", not "this endpoint is
+    /// missing"; the web client relies on that distinction to fall back to its local list while the
+    /// endpoint is absent.
+    ///
+    /// `GET /api/v1/me/rail-agents`
+    public func getMyRailAgents(options: RequestOptions = .init()) async throws -> GetMyRailAgentsResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/me/rail-agents",
+            options: options
+        ))
+    }
+
+    /// Voices for the Chief of Staff
+    ///
+    /// The voices a person may pick as `chief_voice` (`PATCH /me`), from the platform's TTS
+    /// provider, Together (`GET /v1/voices?model=…`), for a curated set of quality models:
+    /// `cartesia/sonic-3`, `rime-labs/rime-arcana-v3`, `minimax/speech-2.8-turbo`. The
+    /// admin-configured TTS model is listed first, and the admin-configured default voice is always
+    /// an entry. A model the provider lists no voices for contributes none.
+    ///
+    /// The list is the same for every tenant and is fetched with the platform's own provider key,
+    /// which never appears in the answer. It is cached for 24 hours; when a refresh fails, the last
+    /// good list is served (`source: "stale"`) and the next attempt waits 5 minutes; with nothing
+    /// ever fetched, only the default voice is listed (`source: "default"`). Nothing is fetched
+    /// when the configured TTS provider is not Together. Same authentication as `GET /me`; no scope
+    /// beyond it. Any method other than GET is 405.
+    ///
+    /// `GET /api/v1/voices`
+    public func listVoices(options: RequestOptions = .init()) async throws -> VoiceCatalog {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/voices",
+            options: options
+        ))
+    }
+
+    /// Edit your own profile (avatar, interface language, Chief voice)
+    ///
+    /// The fields a person may change about themselves here — `avatar_url`, `interface_language`,
+    /// `chief_voice`. Send any subset, at least one; `null` clears a field.
+    ///
+    /// - `avatar_url` must name a file this tenant owns — `/api/v1/files/<file_id>/content`,
+    ///   absolute or relative — whose `mime_type` is `image/*`.
+    /// - `interface_language` is a BCP-47 language tag with a 2–3 letter primary language, at most
+    ///   16 characters (`uk`, `en-US`, `zh-Hant-TW`). It is stored in canonical case (`en-us` is
+    ///   stored and returned as `en-US`); a malformed tag (`en_US`, `english`) is 400.
+    /// - `chief_voice` is the voice the Chief of Staff speaks in: `{model, voice}` naming an entry
+    ///   of `GET /voices` (`voice` is the entry's `id`). Anything else — including a bare voice
+    ///   name — is 400. `POST /llm/audio/speech` with the head agent's `agent_id` then speaks in
+    ///   it.
+    ///
+    /// The values belong to the person, not to one organisation: the change is written to the
+    /// caller's user row in every tenant they belong to (`updated_rows` says how many). Anything
+    /// else in the body is ignored; a body with none of the three fields is 400, and an invalid
+    /// value refuses the whole request with nothing written.
+    ///
+    /// WRITE SEMANTICS: merges — a field that is absent from the body is kept, a field sent as
+    /// `null` is removed.
     ///
     /// `PATCH /api/v1/me`
     public func patch(body: PatchMeRequest, options: RequestOptions = .init()) async throws -> PatchMeResponse {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/me",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Replace the agents pinned to this person's rail
+    ///
+    /// WRITE SEMANTICS: replaces. Unlike `/me/preferences`, which merges field by field, this call
+    /// stores exactly the list it is given — a merge could never remove the last agent, and removal
+    /// is half of what the panel is for. Order is the content. Duplicate ids collapse to their
+    /// first occurrence. Ids the caller cannot see in this request's tenant (deleted, terminated,
+    /// or belonging to another company) are dropped and named in `dropped`, so the client can
+    /// reconcile instead of drawing a face that opens nothing; the rest are stored. At most 20 ids:
+    /// more is 400 with the limit named in `limit`, and a body that is not an array of strings is
+    /// 400 too. Re-sending the list that is already stored is not a write — `updated_at` does not
+    /// move.
+    ///
+    /// `PUT /api/v1/me/rail-agents`
+    public func replaceMyRailAgents(body: ReplaceMyRailAgentsRequest, options: RequestOptions = .init()) async throws -> ReplaceMyRailAgentsResponse {
+        return try await client.send(RequestSpec(
+            method: "PUT",
+            path: "/api/v1/me/rail-agents",
             body: try client.encode(body),
             idempotent: true,
             options: options

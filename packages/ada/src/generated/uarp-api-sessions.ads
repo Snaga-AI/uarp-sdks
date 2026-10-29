@@ -88,6 +88,22 @@ package UARP.API.Sessions is
 
    No_List_Sessions_Params : constant List_Sessions_Params := (others => <>);
 
+   --  Query and header parameters for `listAgentSessions`.
+   type List_Agent_Sessions_Params is record
+      Has_Group_By : Boolean := False;
+      Group_By : UARP.Models.List_Agent_Sessions_Group_By;
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Archived : Boolean := False;
+      Archived : UARP.Models.List_Sessions_Archived;
+      Has_Pinned : Boolean := False;
+      Pinned : UARP.Models.List_Sessions_Pinned;
+   end record;
+
+   No_List_Agent_Sessions_Params : constant List_Agent_Sessions_Params := (others => <>);
+
    --  Query and header parameters for `listSessionAnnotations`.
    type List_Session_Annotations_Params is record
       --  Page size, counted back from the newest annotation; oldest first within a page. ABSENT means
@@ -240,6 +256,14 @@ package UARP.API.Sessions is
    --  them - but cannot be matched back to the transcript, and each such arrival is counted per
    --  day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
    --
+   --  Since 2026-10-19 a note can say WHERE in the result it points: `anchor` is a text range, a
+   --  point or box on an image, or lines of code (`Anchor`), and `target` says what it is on when
+   --  that is not the message itself - an artifact, a file or a run's output (`AnchorTarget`).
+   --  Both are optional and stored as sent; they come back on create, list and PATCH only when
+   --  set, so a note without them is answered with the same six fields as before. An anchor or
+   --  target that does not fit its schema is refused with `422` - not dropped, as unknown keys at
+   --  the top level of this body are.
+   --
    --  POST /api/v1/sessions/{sessionId}/annotations
    --
    --  Required scopes: runs:create, sessions:write.
@@ -293,15 +317,14 @@ package UARP.API.Sessions is
    --  Create a todo in session
    --
    --  Creates a todo in the session and returns it with `201`. `assign_agent_id` and
-   --  `assign_team_id` default to the session's own agent and team; assigning a platform agent is
-   --  refused unless the caller is the super-admin, because the scheduler later dispatches it with
-   --  no caller present. `due_at` decides whether it will run by itself: omitted with an assignee
-   --  means now (or, with a `recurrence` cron, the next occurrence of that cron), an explicit
-   --  `null` keeps it an unscheduled backlog item, and a string is used verbatim. When there is an
-   --  assignee, a due time no more than five minutes in the past, and a status of `pending` or
-   --  `pending_confirmation`, a schedule row is written for the background tick to fire. A
-   --  `delivery.channels` entry of `telegram` or `whatsapp` is refused `422` unless its feature
-   --  flag is enabled. `404` when the session does not exist.
+   --  `assign_team_id` default to the session's own agent and team; assigning a retired platform
+   --  agent (the removed super agent or server agent) is refused. `due_at` decides whether it will
+   --  run by itself: omitted with an assignee means now (or, with a `recurrence` cron, the next
+   --  occurrence of that cron), an explicit `null` keeps it an unscheduled backlog item, and a
+   --  string is used verbatim. When there is an assignee, a due time no more than five minutes in
+   --  the past, and a status of `pending` or `pending_confirmation`, a schedule row is written for
+   --  the background tick to fire. A `delivery.channels` entry of `telegram` or `whatsapp` is
+   --  refused `422` unless its feature flag is enabled. `404` when the session does not exist.
    --
    --  POST /api/v1/sessions/{sessionId}/todos
    --
@@ -582,12 +605,47 @@ package UARP.API.Sessions is
       Max_Items : Natural := 0)
       return UARP.Models.List_Sessions_Response_Item_Vectors.Vector;
 
+   --  This agent's chats, optionally grouped by day
+   --
+   --  `GET /sessions?agent_id={agentId}` under the agent: the same rows, filters (`archived`,
+   --  `pinned`), paging (`limit` default 50, clamped to 1-100; `cursor`/`has_more`) and permission
+   --  (`sessions:read`), and `404` for an agent that does not exist. Without `group_by` the answer
+   --  is the list's own `{items, cursor, has_more}`.
+   --
+   --  `group_by=day` answers `{days, cursor, has_more}` instead: the page's chats cut into
+   --  calendar days, newest first, by each chat's `created_at` (the order the list pages in), read
+   --  in the tenant's time zone - the company profile's `timezone` (`PATCH /tenants/me/company`),
+   --  or `UTC` when the tenant has none or `Intl` does not know it. Each day names its `tz`. Days
+   --  are cut from one page, so a day can continue on the next page; append a page's first day to
+   --  your last when the dates match. Any other `group_by` is `422`.
+   --
+   --  GET /api/v1/agents/{agentId}/sessions
+   --
+   --  Required scopes: sessions:read.
+   function List_Agent_Sessions
+     (Self : Client_Type;
+      Agent_Id : String;
+      Params : List_Agent_Sessions_Params := No_List_Agent_Sessions_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Agent_Sessions_Response;
+
+   --  Collect every item `listAgentSessions` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function List_Agent_Sessions_All
+     (Self : Client_Type;
+      Agent_Id : String;
+      Params : List_Agent_Sessions_Params := No_List_Agent_Sessions_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Session_Vectors.Vector;
+
    --  List session annotations
    --
    --  Lists the comment annotations left on this session's messages, up to 500, each with the
-   --  `message_id` it is anchored to, its author and whether it has been resolved. `404` when the
-   --  session does not exist. Message ids are the derived, stable ids that reactions and bookmarks
-   --  also key on.
+   --  `message_id` it is anchored to, its author and whether it has been resolved - and, on a note
+   --  created with them, the `anchor` (the place in the result) and `target` (what it is on).
+   --  `404` when the session does not exist. Message ids are the derived, stable ids that
+   --  reactions and bookmarks also key on.
    --
    --  GET /api/v1/sessions/{sessionId}/annotations
    --
@@ -683,6 +741,29 @@ package UARP.API.Sessions is
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Todos_Response;
+
+   --  Update session metadata (PATCH)
+   --
+   --  The same handler as `PUT` on this path, with identical behaviour; iOS writes with PATCH.
+   --
+   --  WRITE SEMANTICS: merges. `metadata` merges one level into what is stored; `title`,
+   --  `archived` and `pinned` are set only when sent, and an omitted one keeps its value. In
+   --  `metadata` keys the body omits survive and keys accumulate across calls; the merged result
+   --  is checked against the key-count, nesting-depth and byte ceilings and `422` if it would
+   --  exceed one. `model_override` is accepted and deliberately ignored - the runtime always uses
+   --  the platform default model - so old clients that still send it keep working. Malformed JSON
+   --  is `400` and an unknown session is `404`; the write is a read-modify-write under optimistic
+   --  concurrency, retried on conflict so a concurrent branch switch cannot be clobbered.
+   --
+   --  PATCH /api/v1/sessions/{sessionId}
+   --
+   --  Required scopes: sessions:write.
+   function Patch
+     (Self : Client_Type;
+      Session_Id : String;
+      Payload : UARP.Models.Patch_Session_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Session;
 
    --  Resolve shared session (no auth)
    --
@@ -804,8 +885,9 @@ package UARP.API.Sessions is
 
    --  Update session metadata
    --
-   --  WRITE SEMANTICS: merges. Only `metadata` is writable and it merges one level into what is
-   --  stored, so keys the body omits survive and keys accumulate across calls; the merged result
+   --  WRITE SEMANTICS: merges. `metadata` merges one level into what is stored; `title`,
+   --  `archived` and `pinned` are set only when sent, and an omitted one keeps its value. In
+   --  `metadata` keys the body omits survive and keys accumulate across calls; the merged result
    --  is checked against the key-count, nesting-depth and byte ceilings and `422` if it would
    --  exceed one. `model_override` is accepted and deliberately ignored - the runtime always uses
    --  the platform default model - so old clients that still send it keep working. Malformed JSON

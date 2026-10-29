@@ -19,6 +19,11 @@ export interface ListFilesParams {
   mime_prefix?: string;
   limit?: number;
   cursor?: string;
+  /**
+   * Only the files this agent's runs wrote. Not a UUID: `400`. At most 2,000 records are read
+   * per request; follow `cursor`.
+   */
+  agent_id?: string;
 }
 
 /**
@@ -103,6 +108,14 @@ export class FilesResource extends APIResource {
    * current page rather than the whole collection — a page can come back empty while later pages
    * still hold matches. Metadata only; no bytes.
    *
+   * `agent_id` lists the files that agent's runs wrote, newest first (since 2026-10-19). Only
+   * records stamped with `agent_id` match — an upload, or a file written before the stamp
+   * existed, belongs to no agent and none is guessed for it. There is no index behind this
+   * filter: one request reads at most 2,000 file records and answers the matches it found with a
+   * cursor to continue, so a page can be short or empty while `has_more` is true; follow the
+   * cursor. `mime_prefix` combines with it and is then applied during the scan, not per page.
+   * `agent_id` that is not a UUID is `400`.
+   *
    * `GET /api/v1/files`
    *
    * Required scopes: `files:read`.
@@ -111,7 +124,7 @@ export class FilesResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/files',
-      query: pick(params, ['mime_prefix', 'limit', 'cursor']),
+      query: pick(params, ['mime_prefix', 'limit', 'cursor', 'agent_id']),
       options,
     });
   }

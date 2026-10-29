@@ -774,6 +774,34 @@ class AdminResource:
             request_options=request_options,
         ))
 
+    def backfill_session_titles(self, body: Optional[Union[_m.BackfillSessionTitlesRequest, Dict[str, Any]]] = None, *, request_options: Optional[RequestOptions] = None) -> _m.BackfillSessionTitlesResponse:
+        """Title untitled sessions (one-off backfill)
+
+        Names the chats that were never titled. Until 2026-10-19 the titler looked for the platform
+        key only in `llm_defaults.platform_api_keys`, which production leaves empty (the key lives
+        in the provider key store), so no session was ever titled; new chats are titled again since
+        then, and this drains the backlog. **Super-admin only.** Newest first across all tenants, at
+        most `limit` model calls per request (default 50, at most 500), so a large backlog is
+        drained in bounded passes. A candidate is a session with no title of any kind: never one a
+        person set or cleared, never one with a legacy `metadata.title`, never a qualification run's
+        or a bridge agent's. A written title carries `title_source: "generated"`, and the write
+        re-checks the fresh record, so a person who renames the chat meanwhile keeps their name.
+        Idempotent: a titled session is never a candidate again. `dry_run: true` counts candidates
+        without calling the model or writing. Since 2026-10-19.
+
+        `POST /api/v1/admin/maintenance/session-titles`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.BackfillSessionTitlesResponse", self._client._request(
+            "POST",
+            "/api/v1/admin/maintenance/session-titles",
+            body=None if body is None else _Body(body),
+            idempotent=True,
+            response=_Response(type=_m.BackfillSessionTitlesResponse),
+            request_options=request_options,
+        ))
+
     def create_admin_blog_post(self, body: Union[_m.CreateAdminBlogPostRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.CreateAdminBlogPostResponse:
         """Write a post by hand
 
@@ -1770,6 +1798,36 @@ class AdminResource:
             body=None if body is None else _Body(body),
             idempotent=True,
             response=_Response(type=_m.RepairAgentRecordsResponse),
+            request_options=request_options,
+        ))
+
+    def retire_platform_agents(self, body: Optional[Union[_m.RetirePlatformAgentsRequest, Dict[str, Any]]] = None, *, request_options: Optional[RequestOptions] = None) -> _m.RetirePlatformAgentsResponse:
+        """Remove the retired platform agents' leftovers
+
+        The platform super agent and the server agent Hura were retired on 2026-10-19; the
+        super-admin tool package belongs to the super-admin tenant's Chief. This removes what they
+        left: every agent record a registry pointer (`super_agent_id`, `server_agent_id`) names,
+        every agent in those tenants (and `__admin__`) still marked `metadata.super_agent` /
+        `metadata.server_agent`, their cron schedules and permission sets, and the four registry
+        pointers. Runs, sessions, events, memory and agent versions are never touched — this is not
+        `DELETE /agents/{id}`. One `agent.deleted` audit entry (`details.via:
+        platform_agent_retirement`) per removed agent. **Super-admin only.** `dry_run` defaults to
+        `true`: with no body it only reports. When the super-admin tenant's head is one of them, the
+        apply first rebinds the head to `new_head_agent_id` (an existing, non-platform agent of that
+        tenant) or, without it, provisions a new Chief of Staff. Idempotent: a second apply finds
+        nothing and writes nothing. The runtime refuses a retired platform agent whether or not this
+        has run.
+
+        `POST /api/v1/admin/maintenance/platform-agents`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.RetirePlatformAgentsResponse", self._client._request(
+            "POST",
+            "/api/v1/admin/maintenance/platform-agents",
+            body=None if body is None else _Body(body),
+            idempotent=True,
+            response=_Response(type=_m.RetirePlatformAgentsResponse),
             request_options=request_options,
         ))
 
@@ -2960,6 +3018,34 @@ class AsyncAdminResource:
             request_options=request_options,
         ))
 
+    async def backfill_session_titles(self, body: Optional[Union[_m.BackfillSessionTitlesRequest, Dict[str, Any]]] = None, *, request_options: Optional[RequestOptions] = None) -> _m.BackfillSessionTitlesResponse:
+        """Title untitled sessions (one-off backfill)
+
+        Names the chats that were never titled. Until 2026-10-19 the titler looked for the platform
+        key only in `llm_defaults.platform_api_keys`, which production leaves empty (the key lives
+        in the provider key store), so no session was ever titled; new chats are titled again since
+        then, and this drains the backlog. **Super-admin only.** Newest first across all tenants, at
+        most `limit` model calls per request (default 50, at most 500), so a large backlog is
+        drained in bounded passes. A candidate is a session with no title of any kind: never one a
+        person set or cleared, never one with a legacy `metadata.title`, never a qualification run's
+        or a bridge agent's. A written title carries `title_source: "generated"`, and the write
+        re-checks the fresh record, so a person who renames the chat meanwhile keeps their name.
+        Idempotent: a titled session is never a candidate again. `dry_run: true` counts candidates
+        without calling the model or writing. Since 2026-10-19.
+
+        `POST /api/v1/admin/maintenance/session-titles`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.BackfillSessionTitlesResponse", await self._client._request(
+            "POST",
+            "/api/v1/admin/maintenance/session-titles",
+            body=None if body is None else _Body(body),
+            idempotent=True,
+            response=_Response(type=_m.BackfillSessionTitlesResponse),
+            request_options=request_options,
+        ))
+
     async def create_admin_blog_post(self, body: Union[_m.CreateAdminBlogPostRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.CreateAdminBlogPostResponse:
         """Write a post by hand
 
@@ -3960,6 +4046,36 @@ class AsyncAdminResource:
             body=None if body is None else _Body(body),
             idempotent=True,
             response=_Response(type=_m.RepairAgentRecordsResponse),
+            request_options=request_options,
+        ))
+
+    async def retire_platform_agents(self, body: Optional[Union[_m.RetirePlatformAgentsRequest, Dict[str, Any]]] = None, *, request_options: Optional[RequestOptions] = None) -> _m.RetirePlatformAgentsResponse:
+        """Remove the retired platform agents' leftovers
+
+        The platform super agent and the server agent Hura were retired on 2026-10-19; the
+        super-admin tool package belongs to the super-admin tenant's Chief. This removes what they
+        left: every agent record a registry pointer (`super_agent_id`, `server_agent_id`) names,
+        every agent in those tenants (and `__admin__`) still marked `metadata.super_agent` /
+        `metadata.server_agent`, their cron schedules and permission sets, and the four registry
+        pointers. Runs, sessions, events, memory and agent versions are never touched — this is not
+        `DELETE /agents/{id}`. One `agent.deleted` audit entry (`details.via:
+        platform_agent_retirement`) per removed agent. **Super-admin only.** `dry_run` defaults to
+        `true`: with no body it only reports. When the super-admin tenant's head is one of them, the
+        apply first rebinds the head to `new_head_agent_id` (an existing, non-platform agent of that
+        tenant) or, without it, provisions a new Chief of Staff. Idempotent: a second apply finds
+        nothing and writes nothing. The runtime refuses a retired platform agent whether or not this
+        has run.
+
+        `POST /api/v1/admin/maintenance/platform-agents`
+
+        Required scopes: `admin`.
+        """
+        return _cast("_m.RetirePlatformAgentsResponse", await self._client._request(
+            "POST",
+            "/api/v1/admin/maintenance/platform-agents",
+            body=None if body is None else _Body(body),
+            idempotent=True,
+            response=_Response(type=_m.RetirePlatformAgentsResponse),
             request_options=request_options,
         ))
 

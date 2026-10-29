@@ -167,6 +167,14 @@ class SessionsResource:
         them — but cannot be matched back to the transcript, and each such arrival is counted per
         day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
 
+        Since 2026-10-19 a note can say WHERE in the result it points: `anchor` is a text range, a
+        point or box on an image, or lines of code (`Anchor`), and `target` says what it is on when
+        that is not the message itself — an artifact, a file or a run's output (`AnchorTarget`).
+        Both are optional and stored as sent; they come back on create, list and PATCH only when
+        set, so a note without them is answered with the same six fields as before. An anchor or
+        target that does not fit its schema is refused with `422` — not dropped, as unknown keys at
+        the top level of this body are.
+
         `POST /api/v1/sessions/{sessionId}/annotations`
 
         Required scopes: `runs:create`, `sessions:write`.
@@ -231,15 +239,14 @@ class SessionsResource:
         """Create a todo in session
 
         Creates a todo in the session and returns it with `201`. `assign_agent_id` and
-        `assign_team_id` default to the session's own agent and team; assigning a platform agent is
-        refused unless the caller is the super-admin, because the scheduler later dispatches it with
-        no caller present. `due_at` decides whether it will run by itself: omitted with an assignee
-        means now (or, with a `recurrence` cron, the next occurrence of that cron), an explicit
-        `null` keeps it an unscheduled backlog item, and a string is used verbatim. When there is an
-        assignee, a due time no more than five minutes in the past, and a status of `pending` or
-        `pending_confirmation`, a schedule row is written for the background tick to fire. A
-        `delivery.channels` entry of `telegram` or `whatsapp` is refused `422` unless its feature
-        flag is enabled. `404` when the session does not exist.
+        `assign_team_id` default to the session's own agent and team; assigning a retired platform
+        agent (the removed super agent or server agent) is refused. `due_at` decides whether it will
+        run by itself: omitted with an assignee means now (or, with a `recurrence` cron, the next
+        occurrence of that cron), an explicit `null` keeps it an unscheduled backlog item, and a
+        string is used verbatim. When there is an assignee, a due time no more than five minutes in
+        the past, and a status of `pending` or `pending_confirmation`, a schedule row is written for
+        the background tick to fire. A `delivery.channels` entry of `telegram` or `whatsapp` is
+        refused `422` unless its feature flag is enabled. `404` when the session does not exist.
 
         `POST /api/v1/sessions/{sessionId}/todos`
 
@@ -578,13 +585,54 @@ class SessionsResource:
             if cursor is None:
                 return
 
+    def list_agent_sessions(self, agent_id: str, *, group_by: Optional[_m.ListAgentSessionsGroupBy] = None, limit: Optional[int] = None, cursor: Optional[str] = None, archived: Optional[_m.ListSessionsArchived] = None, pinned: Optional[_m.ListSessionsPinned] = None, request_options: Optional[RequestOptions] = None) -> _m.ListAgentSessionsResponse:
+        """This agent's chats, optionally grouped by day
+
+        `GET /sessions?agent_id={agentId}` under the agent: the same rows, filters (`archived`,
+        `pinned`), paging (`limit` default 50, clamped to 1–100; `cursor`/`has_more`) and permission
+        (`sessions:read`), and `404` for an agent that does not exist. Without `group_by` the answer
+        is the list's own `{items, cursor, has_more}`.
+
+        `group_by=day` answers `{days, cursor, has_more}` instead: the page's chats cut into
+        calendar days, newest first, by each chat's `created_at` (the order the list pages in), read
+        in the tenant's time zone — the company profile's `timezone` (`PATCH /tenants/me/company`),
+        or `UTC` when the tenant has none or `Intl` does not know it. Each day names its `tz`. Days
+        are cut from one page, so a day can continue on the next page; append a page's first day to
+        your last when the dates match. Any other `group_by` is `422`.
+
+        `GET /api/v1/agents/{agentId}/sessions`
+
+        Required scopes: `sessions:read`.
+        """
+        return _cast("_m.ListAgentSessionsResponse", self._client._request(
+            "GET",
+            f"/api/v1/agents/{_segment(agent_id)}/sessions",
+            query=[("group_by", group_by), ("limit", limit), ("cursor", cursor), ("archived", archived), ("pinned", pinned)],
+            response=_Response(type=_m.ListAgentSessionsResponse),
+            request_options=request_options,
+        ))
+
+    def list_agent_sessions_all(self, agent_id: str, *, group_by: Optional[_m.ListAgentSessionsGroupBy] = None, limit: Optional[int] = None, cursor: Optional[str] = None, archived: Optional[_m.ListSessionsArchived] = None, pinned: Optional[_m.ListSessionsPinned] = None, request_options: Optional[RequestOptions] = None) -> Iterator[_m.Session]:
+        """Every item `list_agent_sessions` returns, following the `cursor` cursor until the server
+        reports no further pages. Starts at `cursor` when one is given.
+        """
+        guard = _CursorGuard()
+        while True:
+            page = self.list_agent_sessions(agent_id, group_by=group_by, limit=limit, cursor=cursor, archived=archived, pinned=pinned, request_options=request_options)
+            items = page.items or []
+            yield from items
+            cursor = guard.advance(page.cursor, page.has_more, not items)
+            if cursor is None:
+                return
+
     def list_session_annotations(self, session_id: str, *, limit: Optional[int] = None, cursor: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> _m.ListSessionAnnotationsResponse:
         """List session annotations
 
         Lists the comment annotations left on this session's messages, up to 500, each with the
-        `message_id` it is anchored to, its author and whether it has been resolved. `404` when the
-        session does not exist. Message ids are the derived, stable ids that reactions and bookmarks
-        also key on.
+        `message_id` it is anchored to, its author and whether it has been resolved — and, on a note
+        created with them, the `anchor` (the place in the result) and `target` (what it is on).
+        `404` when the session does not exist. Message ids are the derived, stable ids that
+        reactions and bookmarks also key on.
 
         `GET /api/v1/sessions/{sessionId}/annotations`
 
@@ -696,6 +744,33 @@ class SessionsResource:
             "GET",
             "/api/v1/todos",
             response=_Response(type=_m.ListTodosResponse),
+            request_options=request_options,
+        ))
+
+    def patch(self, session_id: str, body: Union[_m.PatchSessionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.Session:
+        """Update session metadata (PATCH)
+
+        The same handler as `PUT` on this path, with identical behaviour; iOS writes with PATCH.
+
+        WRITE SEMANTICS: merges. `metadata` merges one level into what is stored; `title`,
+        `archived` and `pinned` are set only when sent, and an omitted one keeps its value. In
+        `metadata` keys the body omits survive and keys accumulate across calls; the merged result
+        is checked against the key-count, nesting-depth and byte ceilings and `422` if it would
+        exceed one. `model_override` is accepted and deliberately ignored — the runtime always uses
+        the platform default model — so old clients that still send it keep working. Malformed JSON
+        is `400` and an unknown session is `404`; the write is a read-modify-write under optimistic
+        concurrency, retried on conflict so a concurrent branch switch cannot be clobbered.
+
+        `PATCH /api/v1/sessions/{sessionId}`
+
+        Required scopes: `sessions:write`.
+        """
+        return _cast("_m.Session", self._client._request(
+            "PATCH",
+            f"/api/v1/sessions/{_segment(session_id)}",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.Session),
             request_options=request_options,
         ))
 
@@ -840,8 +915,9 @@ class SessionsResource:
     def update(self, session_id: str, body: Union[_m.UpdateSessionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.Session:
         """Update session metadata
 
-        WRITE SEMANTICS: merges. Only `metadata` is writable and it merges one level into what is
-        stored, so keys the body omits survive and keys accumulate across calls; the merged result
+        WRITE SEMANTICS: merges. `metadata` merges one level into what is stored; `title`,
+        `archived` and `pinned` are set only when sent, and an omitted one keeps its value. In
+        `metadata` keys the body omits survive and keys accumulate across calls; the merged result
         is checked against the key-count, nesting-depth and byte ceilings and `422` if it would
         exceed one. `model_override` is accepted and deliberately ignored — the runtime always uses
         the platform default model — so old clients that still send it keep working. Malformed JSON
@@ -1049,6 +1125,14 @@ class AsyncSessionsResource:
         them — but cannot be matched back to the transcript, and each such arrival is counted per
         day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
 
+        Since 2026-10-19 a note can say WHERE in the result it points: `anchor` is a text range, a
+        point or box on an image, or lines of code (`Anchor`), and `target` says what it is on when
+        that is not the message itself — an artifact, a file or a run's output (`AnchorTarget`).
+        Both are optional and stored as sent; they come back on create, list and PATCH only when
+        set, so a note without them is answered with the same six fields as before. An anchor or
+        target that does not fit its schema is refused with `422` — not dropped, as unknown keys at
+        the top level of this body are.
+
         `POST /api/v1/sessions/{sessionId}/annotations`
 
         Required scopes: `runs:create`, `sessions:write`.
@@ -1113,15 +1197,14 @@ class AsyncSessionsResource:
         """Create a todo in session
 
         Creates a todo in the session and returns it with `201`. `assign_agent_id` and
-        `assign_team_id` default to the session's own agent and team; assigning a platform agent is
-        refused unless the caller is the super-admin, because the scheduler later dispatches it with
-        no caller present. `due_at` decides whether it will run by itself: omitted with an assignee
-        means now (or, with a `recurrence` cron, the next occurrence of that cron), an explicit
-        `null` keeps it an unscheduled backlog item, and a string is used verbatim. When there is an
-        assignee, a due time no more than five minutes in the past, and a status of `pending` or
-        `pending_confirmation`, a schedule row is written for the background tick to fire. A
-        `delivery.channels` entry of `telegram` or `whatsapp` is refused `422` unless its feature
-        flag is enabled. `404` when the session does not exist.
+        `assign_team_id` default to the session's own agent and team; assigning a retired platform
+        agent (the removed super agent or server agent) is refused. `due_at` decides whether it will
+        run by itself: omitted with an assignee means now (or, with a `recurrence` cron, the next
+        occurrence of that cron), an explicit `null` keeps it an unscheduled backlog item, and a
+        string is used verbatim. When there is an assignee, a due time no more than five minutes in
+        the past, and a status of `pending` or `pending_confirmation`, a schedule row is written for
+        the background tick to fire. A `delivery.channels` entry of `telegram` or `whatsapp` is
+        refused `422` unless its feature flag is enabled. `404` when the session does not exist.
 
         `POST /api/v1/sessions/{sessionId}/todos`
 
@@ -1466,13 +1549,56 @@ class AsyncSessionsResource:
             if cursor is None:
                 return
 
+    async def list_agent_sessions(self, agent_id: str, *, group_by: Optional[_m.ListAgentSessionsGroupBy] = None, limit: Optional[int] = None, cursor: Optional[str] = None, archived: Optional[_m.ListSessionsArchived] = None, pinned: Optional[_m.ListSessionsPinned] = None, request_options: Optional[RequestOptions] = None) -> _m.ListAgentSessionsResponse:
+        """This agent's chats, optionally grouped by day
+
+        `GET /sessions?agent_id={agentId}` under the agent: the same rows, filters (`archived`,
+        `pinned`), paging (`limit` default 50, clamped to 1–100; `cursor`/`has_more`) and permission
+        (`sessions:read`), and `404` for an agent that does not exist. Without `group_by` the answer
+        is the list's own `{items, cursor, has_more}`.
+
+        `group_by=day` answers `{days, cursor, has_more}` instead: the page's chats cut into
+        calendar days, newest first, by each chat's `created_at` (the order the list pages in), read
+        in the tenant's time zone — the company profile's `timezone` (`PATCH /tenants/me/company`),
+        or `UTC` when the tenant has none or `Intl` does not know it. Each day names its `tz`. Days
+        are cut from one page, so a day can continue on the next page; append a page's first day to
+        your last when the dates match. Any other `group_by` is `422`.
+
+        `GET /api/v1/agents/{agentId}/sessions`
+
+        Required scopes: `sessions:read`.
+        """
+        return _cast("_m.ListAgentSessionsResponse", await self._client._request(
+            "GET",
+            f"/api/v1/agents/{_segment(agent_id)}/sessions",
+            query=[("group_by", group_by), ("limit", limit), ("cursor", cursor), ("archived", archived), ("pinned", pinned)],
+            response=_Response(type=_m.ListAgentSessionsResponse),
+            request_options=request_options,
+        ))
+
+    async def list_agent_sessions_all(self, agent_id: str, *, group_by: Optional[_m.ListAgentSessionsGroupBy] = None, limit: Optional[int] = None, cursor: Optional[str] = None, archived: Optional[_m.ListSessionsArchived] = None, pinned: Optional[_m.ListSessionsPinned] = None, request_options: Optional[RequestOptions] = None) -> AsyncIterator[_m.Session]:
+        """Every item `list_agent_sessions` returns, following the `cursor` cursor until the server
+        reports no further pages. Starts at `cursor` when one is given.
+        """
+        guard = _CursorGuard()
+        while True:
+            page = await self.list_agent_sessions(agent_id, group_by=group_by, limit=limit, cursor=cursor, archived=archived, pinned=pinned, request_options=request_options)
+            items = page.items or []
+            for item in items:
+                yield item
+
+            cursor = guard.advance(page.cursor, page.has_more, not items)
+            if cursor is None:
+                return
+
     async def list_session_annotations(self, session_id: str, *, limit: Optional[int] = None, cursor: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> _m.ListSessionAnnotationsResponse:
         """List session annotations
 
         Lists the comment annotations left on this session's messages, up to 500, each with the
-        `message_id` it is anchored to, its author and whether it has been resolved. `404` when the
-        session does not exist. Message ids are the derived, stable ids that reactions and bookmarks
-        also key on.
+        `message_id` it is anchored to, its author and whether it has been resolved — and, on a note
+        created with them, the `anchor` (the place in the result) and `target` (what it is on).
+        `404` when the session does not exist. Message ids are the derived, stable ids that
+        reactions and bookmarks also key on.
 
         `GET /api/v1/sessions/{sessionId}/annotations`
 
@@ -1586,6 +1712,33 @@ class AsyncSessionsResource:
             "GET",
             "/api/v1/todos",
             response=_Response(type=_m.ListTodosResponse),
+            request_options=request_options,
+        ))
+
+    async def patch(self, session_id: str, body: Union[_m.PatchSessionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.Session:
+        """Update session metadata (PATCH)
+
+        The same handler as `PUT` on this path, with identical behaviour; iOS writes with PATCH.
+
+        WRITE SEMANTICS: merges. `metadata` merges one level into what is stored; `title`,
+        `archived` and `pinned` are set only when sent, and an omitted one keeps its value. In
+        `metadata` keys the body omits survive and keys accumulate across calls; the merged result
+        is checked against the key-count, nesting-depth and byte ceilings and `422` if it would
+        exceed one. `model_override` is accepted and deliberately ignored — the runtime always uses
+        the platform default model — so old clients that still send it keep working. Malformed JSON
+        is `400` and an unknown session is `404`; the write is a read-modify-write under optimistic
+        concurrency, retried on conflict so a concurrent branch switch cannot be clobbered.
+
+        `PATCH /api/v1/sessions/{sessionId}`
+
+        Required scopes: `sessions:write`.
+        """
+        return _cast("_m.Session", await self._client._request(
+            "PATCH",
+            f"/api/v1/sessions/{_segment(session_id)}",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.Session),
             request_options=request_options,
         ))
 
@@ -1730,8 +1883,9 @@ class AsyncSessionsResource:
     async def update(self, session_id: str, body: Union[_m.UpdateSessionRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.Session:
         """Update session metadata
 
-        WRITE SEMANTICS: merges. Only `metadata` is writable and it merges one level into what is
-        stored, so keys the body omits survive and keys accumulate across calls; the merged result
+        WRITE SEMANTICS: merges. `metadata` merges one level into what is stored; `title`,
+        `archived` and `pinned` are set only when sent, and an omitted one keeps its value. In
+        `metadata` keys the body omits survive and keys accumulate across calls; the merged result
         is checked against the key-count, nesting-depth and byte ceilings and `422` if it would
         exceed one. `model_override` is accepted and deliberately ignored — the runtime always uses
         the platform default model — so old clients that still send it keep working. Malformed JSON

@@ -99,7 +99,7 @@ class FilesResource:
             request_options=request_options,
         ))
 
-    def list(self, *, mime_prefix: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> _m.ListFilesResponse:
+    def list(self, *, mime_prefix: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, agent_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> _m.ListFilesResponse:
         """List files
 
         Pages the tenant's uploaded file records. `limit` defaults to 50 and is clamped to 500;
@@ -108,6 +108,14 @@ class FilesResource:
         current page rather than the whole collection — a page can come back empty while later pages
         still hold matches. Metadata only; no bytes.
 
+        `agent_id` lists the files that agent's runs wrote, newest first (since 2026-10-19). Only
+        records stamped with `agent_id` match — an upload, or a file written before the stamp
+        existed, belongs to no agent and none is guessed for it. There is no index behind this
+        filter: one request reads at most 2,000 file records and answers the matches it found with a
+        cursor to continue, so a page can be short or empty while `has_more` is true; follow the
+        cursor. `mime_prefix` combines with it and is then applied during the scan, not per page.
+        `agent_id` that is not a UUID is `400`.
+
         `GET /api/v1/files`
 
         Required scopes: `files:read`.
@@ -115,18 +123,18 @@ class FilesResource:
         return _cast("_m.ListFilesResponse", self._client._request(
             "GET",
             "/api/v1/files",
-            query=[("mime_prefix", mime_prefix), ("limit", limit), ("cursor", cursor)],
+            query=[("mime_prefix", mime_prefix), ("limit", limit), ("cursor", cursor), ("agent_id", agent_id)],
             response=_Response(type=_m.ListFilesResponse),
             request_options=request_options,
         ))
 
-    def list_all(self, *, mime_prefix: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> Iterator[_m.FileEntry]:
+    def list_all(self, *, mime_prefix: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, agent_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> Iterator[_m.FileEntry]:
         """Every item `list` returns, following the `cursor` cursor until the server reports no further
         pages. Starts at `cursor` when one is given.
         """
         guard = _CursorGuard()
         while True:
-            page = self.list(mime_prefix=mime_prefix, limit=limit, cursor=cursor, request_options=request_options)
+            page = self.list(mime_prefix=mime_prefix, limit=limit, cursor=cursor, agent_id=agent_id, request_options=request_options)
             items = page.items or []
             yield from items
             cursor = guard.advance(page.cursor, page.has_more, not items)
@@ -223,7 +231,7 @@ class AsyncFilesResource:
             request_options=request_options,
         ))
 
-    async def list(self, *, mime_prefix: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> _m.ListFilesResponse:
+    async def list(self, *, mime_prefix: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, agent_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> _m.ListFilesResponse:
         """List files
 
         Pages the tenant's uploaded file records. `limit` defaults to 50 and is clamped to 500;
@@ -232,6 +240,14 @@ class AsyncFilesResource:
         current page rather than the whole collection — a page can come back empty while later pages
         still hold matches. Metadata only; no bytes.
 
+        `agent_id` lists the files that agent's runs wrote, newest first (since 2026-10-19). Only
+        records stamped with `agent_id` match — an upload, or a file written before the stamp
+        existed, belongs to no agent and none is guessed for it. There is no index behind this
+        filter: one request reads at most 2,000 file records and answers the matches it found with a
+        cursor to continue, so a page can be short or empty while `has_more` is true; follow the
+        cursor. `mime_prefix` combines with it and is then applied during the scan, not per page.
+        `agent_id` that is not a UUID is `400`.
+
         `GET /api/v1/files`
 
         Required scopes: `files:read`.
@@ -239,18 +255,18 @@ class AsyncFilesResource:
         return _cast("_m.ListFilesResponse", await self._client._request(
             "GET",
             "/api/v1/files",
-            query=[("mime_prefix", mime_prefix), ("limit", limit), ("cursor", cursor)],
+            query=[("mime_prefix", mime_prefix), ("limit", limit), ("cursor", cursor), ("agent_id", agent_id)],
             response=_Response(type=_m.ListFilesResponse),
             request_options=request_options,
         ))
 
-    async def list_all(self, *, mime_prefix: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> AsyncIterator[_m.FileEntry]:
+    async def list_all(self, *, mime_prefix: Optional[str] = None, limit: Optional[int] = None, cursor: Optional[str] = None, agent_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> AsyncIterator[_m.FileEntry]:
         """Every item `list` returns, following the `cursor` cursor until the server reports no further
         pages. Starts at `cursor` when one is given.
         """
         guard = _CursorGuard()
         while True:
-            page = await self.list(mime_prefix=mime_prefix, limit=limit, cursor=cursor, request_options=request_options)
+            page = await self.list(mime_prefix=mime_prefix, limit=limit, cursor=cursor, agent_id=agent_id, request_options=request_options)
             items = page.items or []
             for item in items:
                 yield item

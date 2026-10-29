@@ -55,16 +55,19 @@ import type {
   ImportAdminConfigRequest,
   ImportAdminConfigResponse,
   JsonObject,
-  JsonValue,
   ListCustomPlansResponse,
   ListPromoCodesResponse,
   ListPromoRewardsResponse,
   PlanLLMLimitsTierAccessItem,
+  PostQualificationUsageCorrectionRequest,
   PromoCodeInput,
   PutQualificationPricingRevisionRequest,
   PutQualificationSponsorKeyRequest,
+  PutQualificationSponsorKeyResponse,
+  QualificationPricingRevision,
   QualificationProgram,
   QualificationProgramPut,
+  QualificationUsageCorrection,
   RevokeDataProcessingPolicyResponse,
   RunReconciliationResponse,
   SetFeatureFlagsResponse,
@@ -1163,6 +1166,38 @@ export class AdminConfigResource extends APIResource {
   }
 
   /**
+   * Reverse a sponsored run's usage booked to the candidate
+   *
+   * WRITE SEMANTICS: idempotent per run. Super-admin only (since 2026-10-19). For a settled
+   * sponsored qualification run whose usage the run-end accounting of before 2026-10-19 booked
+   * to the candidate's own company: recomputes from the run record what that run added — tokens,
+   * the run, tool calls, storage, cost and provider cost in the month, day, agent-day and model
+   * shards, and the tenant and agent spend counters (monthly, weekly, daily) — for the UTC day
+   * and month the run ended in, and writes the same amounts back as compensating entries.
+   * Nothing is deleted; the run, its receipt, the grant and the sponsor's settlement are not
+   * touched, and none of the candidate's other usage. `dry_run: true` answers the plan (`status:
+   * planned`, `before` and the projected `after`) and writes nothing. The first apply answers
+   * 201 `applied` with a `correction_id` and writes a `usage.corrected` audit entry; every later
+   * call answers 200 `already_applied` with the same `correction_id` and writes nothing. A run
+   * ended after the fix carries `metrics.cost_attribution: sponsored_telemetry`, had nothing
+   * booked, and answers 200 `nothing_recorded`. The evaluator's workspace is not deleted: it is
+   * no longer counted against the plan.
+   *
+   * `POST /api/v1/admin/qualification/usage-corrections`
+   *
+   * Required scopes: `admin`.
+   */
+  postQualificationUsageCorrection(body: PostQualificationUsageCorrectionRequest, options?: RequestOptions): Promise<QualificationUsageCorrection> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/admin/qualification/usage-corrections',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Pin an accounting rate
    *
    * WRITE SEMANTICS: replaces, once — the first body is stored and never changed. Super-admin
@@ -1176,7 +1211,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  putQualificationPricingRevision(pricingRevision: string, body: PutQualificationPricingRevisionRequest, options?: RequestOptions): Promise<JsonValue> {
+  putQualificationPricingRevision(pricingRevision: string, body: PutQualificationPricingRevisionRequest, options?: RequestOptions): Promise<QualificationPricingRevision> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/admin/qualification/pricing-revisions/${encodeURIComponent(String(pricingRevision))}`,
@@ -1198,7 +1233,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  putQualificationSponsorKey(keyId: string, body: PutQualificationSponsorKeyRequest, options?: RequestOptions): Promise<JsonValue> {
+  putQualificationSponsorKey(keyId: string, body: PutQualificationSponsorKeyRequest, options?: RequestOptions): Promise<PutQualificationSponsorKeyResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/admin/qualification/sponsor-keys/${encodeURIComponent(String(keyId))}`,

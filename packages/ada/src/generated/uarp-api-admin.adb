@@ -648,6 +648,25 @@ package body UARP.API.Admin is
              Options => Options));
    end Admin_Unpublish_Video_Template;
 
+   function Backfill_Session_Titles
+     (Self : Client_Type;
+      Payload : UARP.Models.Backfill_Session_Titles_Request;
+      Include_Payload : Boolean := True;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Backfill_Session_Titles_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/maintenance/session-titles",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
+   end Backfill_Session_Titles;
+
    function Create_Admin_Blog_Post
      (Self : Client_Type;
       Payload : UARP.Models.Create_Admin_Blog_Post_Request;
@@ -1572,6 +1591,25 @@ package body UARP.API.Admin is
              Idempotent => True,
              Options => Options));
    end Repair_Agent_Records;
+
+   function Retire_Platform_Agents
+     (Self : Client_Type;
+      Payload : UARP.Models.Retire_Platform_Agents_Request;
+      Include_Payload : Boolean := True;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Retire_Platform_Agents_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/maintenance/platform-agents",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
+   end Retire_Platform_Agents;
 
    function Set_Admin_Integration_O_Auth_Provider
      (Self : Client_Type;

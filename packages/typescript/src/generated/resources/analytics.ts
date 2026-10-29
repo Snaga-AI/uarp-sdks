@@ -3,9 +3,11 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
+import { autoPaginate } from '../../core/pagination.js';
 import type {
   AgentAnalyticsSummary,
   GetMissionPerformanceResponse,
+  InboxItem,
   PublicChatAnalytics,
   TenantInbox,
   TenantOverview,
@@ -33,9 +35,14 @@ export interface GetPublicChatAnalyticsParams {
  */
 export interface GetTenantInboxParams {
   /**
-   * Maximum items returned. Does not affect `counts`.
+   * Maximum items returned, clamped to 1–200. Does not affect `counts`; the rest of the window
+   * is reached with `cursor`.
    */
   limit?: number;
+  /**
+   * The `cursor` of a previous answer, unchanged. Opaque. Absent: the first page.
+   */
+  cursor?: string;
 }
 
 /**
@@ -116,8 +123,25 @@ export class AnalyticsResource extends APIResource {
    * being asked — and, in `reviews`, mission results waiting for a person's verdict — tool
    * names, the question, or the error.
    *
-   * `counts` is computed over the whole scan while `items` honours `limit`, so a truncated list
-   * still reports the true backlog.
+   * **Limits.** One page reads one SCAN WINDOW of the tenant's 500 newest run records (newest
+   * first), sorts every waiting run in it by urgency (approval, input, paused, failed; newest
+   * first inside each) and returns at most `limit` of them (1–200, default 50). `counts` is
+   * computed over the window, not over `items`, so a short page still reports the window's
+   * backlog. Failed runs count only for 24 hours after they were created.
+   *
+   * **Paging** (since 2026-10-19). When the window held more waiting runs than `limit`, or older
+   * runs exist past it (`truncated`), the answer carries `has_more: true` and a `cursor`. Pass
+   * it back unchanged as `?cursor=` (with any `limit`) to continue: first through the rest of
+   * the same window, then into the next 500 runs, and so on — every waiting run is reached
+   * exactly once, however old. A continuation page whose window holds nothing to show reads on,
+   * up to 4 windows (2 000 runs) per request, before answering. On a continuation page `counts`
+   * and `scanned` describe that page's span only, and `reviews`/`proposals` — complete lists,
+   * not windowed — are empty: read them from the first page. A run that changes status between
+   * pages can be seen twice or not at all, and a run created between pages can shift the first
+   * window by one. A cursor this endpoint did not issue is 400.
+   *
+   * Without `cursor` the answer is the first window, exactly as before paging existed;
+   * `has_more`/`cursor` are additive.
    *
    * `GET /api/v1/analytics/inbox`
    *
@@ -127,9 +151,22 @@ export class AnalyticsResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/analytics/inbox',
-      query: pick(params, ['limit']),
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `getTenantInbox`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  getTenantInboxAll(params?: GetTenantInboxParams, options?: RequestOptions): AsyncIterableIterator<InboxItem> {
+    return autoPaginate<InboxItem>(
+      (cursor) => this.getTenantInbox({ ...params, cursor }, options),
+      'items',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**

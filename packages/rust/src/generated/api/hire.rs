@@ -149,6 +149,32 @@ impl HireApi {
             .await
     }
 
+    /// A hired agent asking a person to allow one tool call
+    ///
+    /// The endpoint behind the `PermissionRequest` hook the connect command installs
+    /// (`--settings`): Claude Code posts the tool call here when it would otherwise stop for a
+    /// prompt, and the reply is the decision. The request becomes the same bridge approval every
+    /// client already renders — the run goes `awaiting_approval`, the tenant gets the usual
+    /// critical notification, and `POST /runs/{runId}/approve` or `/reject` answers it — so an
+    /// agent in a background session never waits on a terminal nobody is looking at. Waits up to 8
+    /// minutes, then answers `deny` with a reason. Authenticated by `Authorization: Bearer` with
+    /// the hire secret; `401` for a missing, unknown, expired or revoked one. A request with no
+    /// open task is answered `deny` (nothing is raised for a person). Since 2026-10-20.
+    ///
+    /// `POST /api/v1/hire/permission`
+    pub async fn hired_agent_permission(&self, body: &models::HiredAgentPermissionRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/hire/permission".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// A new connect command for a hired agent
     ///
     /// Issues a new command and secret; the previous one stops working at once. The agent goes back

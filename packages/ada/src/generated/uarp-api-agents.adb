@@ -252,6 +252,20 @@ package body UARP.API.Agents is
              Options => Options));
    end Get_Agent_Risk_Classification;
 
+   function Get_Agents_Overview
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Agents_Overview_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/overview",
+             Options => Options));
+   end Get_Agents_Overview;
+
    function Get_Agent_Spec_Catalog
      (Self : Client_Type;
       Agent_Id : String;
