@@ -138,11 +138,16 @@ copied into its own repository and tagged there.
 
 ### Left to do
 
-- `SWIFT_MIRROR_TOKEN` — a fine-grained token with `contents: write` on
-  `Snaga-AI/uarp-swift`. Both tags there, 0.2.0 and 0.3.0, were pushed by hand;
-  without the secret the release job warns and skips the mirror, which leaves
-  Swift consumers on the previous version without failing the release.
 - Optionally list it on the Swift Package Index so it is findable.
+
+The mirror push is automated. Since 2026-09-23 the `swift-mirror` job pushes
+with `SWIFT_MIRROR_SSH_KEY`, a read-write deploy key on `Snaga-AI/uarp-swift`
+(PUBLISHING.md has the setup). If the key is unset or cannot write, the job
+**fails the run**. Until 0.7.0 the job used `SWIFT_MIRROR_TOKEN`, and without
+that token it warned and skipped. `github-release` does not wait for the mirror,
+so when only `swift-mirror` is red, every other registry has published and only
+Swift consumers are behind. Push the mirror by hand
+(`scripts/swift-mirror.sh`) rather than cutting the release again.
 
 ---
 
@@ -266,7 +271,8 @@ compile — and the platform had been ignoring that field anyway.
 The Swift mirror still has to be pushed by hand at each release, because
 `SWIFT_MIRROR_TOKEN` is not set. Without it the job warns and skips, so a
 release quietly leaves Swift consumers on the previous version — which is what
-happened here until it was noticed.
+happened here until it was noticed. (No longer true: the job now pushes with a
+deploy key and fails the run when it cannot. See Stage 3.)
 
 ---
 
