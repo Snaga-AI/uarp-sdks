@@ -14165,6 +14165,25 @@ package UARP.Models is
    package Delete_Me_Response_Tenant_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Delete_Me_Response_Tenant);
 
+   --  Additional account data removed across all memberships. Legacy devices without ownership
+   --  evidence retain their original tokens and expiry, but delivery is disabled until an active
+   --  member re-registers them.
+   type Delete_Me_Response_Account_Cleanup is record
+      Has_Notifications : Boolean := False;
+      Notifications : UARP.Types.Integer_Value := 0;
+      Has_Device_Targets : Boolean := False;
+      Device_Targets : UARP.Types.Integer_Value := 0;
+      Has_Legacy_Device_Targets_Disabled : Boolean := False;
+      Legacy_Device_Targets_Disabled : UARP.Types.Integer_Value := 0;
+      Has_Provider_Keys : Boolean := False;
+      Provider_Keys : UARP.Types.Integer_Value := 0;
+      Has_API_Keys : Boolean := False;
+      API_Keys : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Delete_Me_Response_Account_Cleanup) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Me_Response_Account_Cleanup;
+
    --  What the data sweep actually removed, summed across every membership. Present since
    --  2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
    --  real `sessions_revoked` number while the sweep itself matched a field nothing writes and
@@ -14186,6 +14205,11 @@ package UARP.Models is
       Deleted : Standard.Boolean := False;
       Tenants : UARP.Models.Delete_Me_Response_Tenant_Vectors.Vector;
       Sessions_Revoked : UARP.Types.Integer_Value := 0;
+      --  Additional account data removed across all memberships. Legacy devices without ownership
+      --  evidence retain their original tokens and expiry, but delivery is disabled until an active
+      --  member re-registers them.
+      Has_Account_Cleanup : Boolean := False;
+      Account_Cleanup : UARP.Models.Delete_Me_Response_Account_Cleanup;
       --  Sign in with Apple refresh tokens revoked at Apple (App Store 5.1.1(v)). Tokens exist only
       --  for sign-ins that sent `authorization_code`.
       Has_Apple_Tokens_Revoked : Boolean := False;
@@ -15117,6 +15141,7 @@ package UARP.Models is
    Error_Code_Search_Upstream_Failed,
    Error_Code_Search_Upstream_Timeout,
    Error_Code_Security_Scan_Failed,
+   Error_Code_Service_Unavailable,
    Error_Code_Session_Not_Active,
    Error_Code_Share_List_Conflict,
    Error_Code_Signing_Not_Configured,
@@ -24148,10 +24173,23 @@ package UARP.Models is
    type Notification_Target is record
       Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Company membership that registered this personal device. Derived from authentication, never
+      --  from the request body; absent on shared email/webhook destinations and legacy unowned
+      --  registrations.
+      Has_Owner_User_Id : Boolean := False;
+      Owner_User_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Returned with owner_user_id only after the server has persisted a device's membership
+      --  binding. Clients must re-register cached subscriptions until a successful response
+      --  acknowledges version 1; older servers omit this field.
+      Has_Ownership_Version : Boolean := False;
+      Ownership_Version : UARP.Types.Integer_Value := 0;
       Channel : UARP.Models.Notification_Target_Channel;
       --  Operator's own label - "Slack #ops", "iPhone 15".
       Label : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  A disabled target is kept for audit and skipped at fan-out.
+      --  Whether delivery is enabled and membership remains eligible. Legacy device registrations
+      --  without an identifiable owner are preserved but disabled after a member is removed or
+      --  suspended; sign in and re-register the existing token or endpoint to restore delivery.
+      --  Shared email/webhook destinations are unaffected.
       Enabled : Standard.Boolean := False;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
       --  Last success - the field that tells a dead webhook from a quiet one.
@@ -24170,6 +24208,10 @@ package UARP.Models is
 
    --  `ListNotificationTargetsResponse` model.
    type List_Notification_Targets_Response is record
+      --  Server capability only. This does not acknowledge a device; ownership is acknowledged by a
+      --  successful POST target response.
+      Has_Device_Ownership_Version : Boolean := False;
+      Device_Ownership_Version : UARP.Types.Integer_Value := 0;
       Targets : UARP.Models.Notification_Target_Vectors.Vector;
    end record;
 
@@ -38033,6 +38075,12 @@ package UARP.Models is
 
    --  `UpsertNotificationTargetRequest` model.
    type Upsert_Notification_Target_Request is record
+      --  Bind an existing device token/endpoint without changing its label, enabled state, creation
+      --  or delivery history. Missing matching registrations return 404; this never replaces a
+      --  removed destination. Read device_ownership_version before migration, since older servers
+      --  ignore this flag.
+      Has_Registration_Only : Boolean := False;
+      Registration_Only : Standard.Boolean := False;
       --  Rewrites this target when it exists.
       Has_Id : Boolean := False;
       Id : UARP.Types.Text := UARP.Types.Empty_Text;

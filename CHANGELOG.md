@@ -8,8 +8,8 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
-Build `9eadfc19`, canonical digest `30ee77a71a6c5006`. Against 0.12.0: 653
-paths (+11), 871 operations (+14), 467 schemas (+14), 2214 named types (+85);
+Build `f9e27e23`, canonical digest `d73bd97d9609b884`. Against 0.12.0: 653
+paths (+11), 871 operations (+14), 467 schemas (+14), 2215 named types (+86);
 nothing removed.
 
 ### Added
@@ -39,6 +39,12 @@ nothing removed.
   the tenant inbox, which gets a paging helper; `agent_id` and `run_id` on
   files; `cost_attribution` on run metrics; `failure_reason` on an AAR
   objective; a `queued_walk_ceiling` mission result code.
+- **Device ownership on notification targets**: a personal device target is
+  bound to the signed-in membership and answers with `owner_user_id` and
+  `ownership_version: 1`; `GET /notifications/targets` advertises
+  `device_ownership_version`, and `POST` takes `registration_only` to bind an
+  existing token without touching anything else. `DELETE /me` reports what it
+  removed in `account_cleanup`. `SERVICE_UNAVAILABLE` joins the error codes.
 
 ### Changed — may need a code change
 
@@ -53,6 +59,12 @@ nothing removed.
 - Now nullable: the governance ledger's `head`, the platform LLM defaults, the
   voice config's `stt`/`tts` model, provider and voice,
   `google_one_tap_client_id` and a public plan's overage price.
+
+- `DELETE /notifications/targets/{targetId}` answers 404 for an id that is
+  not there, where it used to answer 200 regardless — so the SDK call now
+  raises. `POST /notifications/targets` can answer 404 (`registration_only`
+  with no matching device), 409 `VERSION_CONFLICT`, and 422 `USER_REQUIRED`
+  for a device registered without a user-bound session.
 
 In the strictly-typed SDKs these members change type (`String` becomes
 `Option<String>` in Rust, `String?` in Swift and Kotlin).
