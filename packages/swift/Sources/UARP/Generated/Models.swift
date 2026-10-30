@@ -45492,13 +45492,20 @@ public struct RunEventV1RunAwaitingApprovalPayload: Codable, Hashable, Sendable 
 public struct RunEventV1RunAwaitingApprovalPayloadToolCall: Codable, Hashable, Sendable {
     public var id: String
     public var name: String
+    public var arguments: JSONObject
+    public var argumentsPreview: String?
+    /// The same value as `arguments`, kept for readers of the first v1. Read `arguments`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var args: JSONObject
     public var options: [String]?
     public var kind: String?
 
-    public init(id: String, name: String, args: JSONObject, options: [String]? = nil, kind: String? = nil) {
+    public init(id: String, name: String, arguments: JSONObject, argumentsPreview: String? = nil, args: JSONObject, options: [String]? = nil, kind: String? = nil) {
         self.id = id
         self.name = name
+        self.arguments = arguments
+        self.argumentsPreview = argumentsPreview
         self.args = args
         self.options = options
         self.kind = kind
@@ -45507,6 +45514,8 @@ public struct RunEventV1RunAwaitingApprovalPayloadToolCall: Codable, Hashable, S
     private enum CodingKeys: String, CodingKey {
         case id = "id"
         case name = "name"
+        case arguments = "arguments"
+        case argumentsPreview = "arguments_preview"
         case args = "args"
         case options = "options"
         case kind = "kind"
@@ -45680,7 +45689,12 @@ public struct RunEventV1RunCancelled: Codable, Hashable, Sendable {
 /// `RunEventV1RunCancelledPayload` model.
 public struct RunEventV1RunCancelledPayload: Codable, Hashable, Sendable {
     public var error: String?
-    public var errorCode: String?
+    /// Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+    /// beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+    /// stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+    /// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+    /// which one. Absent when the run carries none, or one this version does not list.
+    public var errorCode: ErrorCode?
     public var errorDetails: JSONObject?
     public var message: String?
     public var reason: String?
@@ -45691,7 +45705,7 @@ public struct RunEventV1RunCancelledPayload: Codable, Hashable, Sendable {
     public var teamRunId: String?
     public var was: String?
 
-    public init(error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil, previousStatus: String? = nil, teamRunId: String? = nil, was: String? = nil) {
+    public init(error: String? = nil, errorCode: ErrorCode? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil, previousStatus: String? = nil, teamRunId: String? = nil, was: String? = nil) {
         self.error = error
         self.errorCode = errorCode
         self.errorDetails = errorDetails
@@ -45992,7 +46006,12 @@ public struct RunEventV1RunFailed: Codable, Hashable, Sendable {
 /// `RunEventV1RunFailedPayload` model.
 public struct RunEventV1RunFailedPayload: Codable, Hashable, Sendable {
     public var error: String
-    public var errorCode: String?
+    /// Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+    /// beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+    /// stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+    /// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+    /// which one. Absent when the run carries none, or one this version does not list.
+    public var errorCode: ErrorCode?
     public var errorDetails: JSONObject?
     public var message: String?
     public var reason: String?
@@ -46000,7 +46019,7 @@ public struct RunEventV1RunFailedPayload: Codable, Hashable, Sendable {
     public var source: String?
     public var rejected: Bool?
 
-    public init(error: String, errorCode: String? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil) {
+    public init(error: String, errorCode: ErrorCode? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil) {
         self.error = error
         self.errorCode = errorCode
         self.errorDetails = errorDetails
@@ -46094,7 +46113,12 @@ public struct RunEventV1RunGuardrailBlocked: Codable, Hashable, Sendable {
 /// `RunEventV1RunGuardrailBlockedPayload` model.
 public struct RunEventV1RunGuardrailBlockedPayload: Codable, Hashable, Sendable {
     public var error: String
-    public var errorCode: String?
+    /// Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+    /// beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+    /// stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+    /// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+    /// which one. Absent when the run carries none, or one this version does not list.
+    public var errorCode: ErrorCode?
     public var errorDetails: JSONObject?
     public var message: String?
     public var reason: String?
@@ -46102,7 +46126,7 @@ public struct RunEventV1RunGuardrailBlockedPayload: Codable, Hashable, Sendable 
     public var source: String?
     public var rejected: Bool?
 
-    public init(error: String, errorCode: String? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil) {
+    public init(error: String, errorCode: ErrorCode? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil) {
         self.error = error
         self.errorCode = errorCode
         self.errorDetails = errorDetails

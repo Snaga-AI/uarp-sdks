@@ -35682,6 +35682,10 @@ pub struct RunEventV1RunAwaitingApprovalPayload {
 pub struct RunEventV1RunAwaitingApprovalPayloadToolCall {
     pub id: String,
     pub name: String,
+    pub arguments: serde_json::Map<String, serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arguments_preview: Option<String>,
+    /// The same value as `arguments`, kept for readers of the first v1. Read `arguments`.
     pub args: serde_json::Map<String, serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<Vec<String>>,
@@ -35826,8 +35830,13 @@ pub struct RunEventV1RunCancelled {
 pub struct RunEventV1RunCancelledPayload {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+    /// beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+    /// stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+    /// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+    /// which one. Absent when the run carries none, or one this version does not list.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<String>,
+    pub error_code: Option<ErrorCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -36104,8 +36113,13 @@ pub struct RunEventV1RunFailed {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RunEventV1RunFailedPayload {
     pub error: String,
+    /// Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+    /// beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+    /// stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+    /// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+    /// which one. Absent when the run carries none, or one this version does not list.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<String>,
+    pub error_code: Option<ErrorCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -36182,8 +36196,13 @@ pub struct RunEventV1RunGuardrailBlocked {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RunEventV1RunGuardrailBlockedPayload {
     pub error: String,
+    /// Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+    /// beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+    /// stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+    /// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+    /// which one. Absent when the run carries none, or one this version does not list.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<String>,
+    pub error_code: Option<ErrorCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

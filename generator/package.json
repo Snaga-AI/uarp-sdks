@@ -1,6 +1,6 @@
 {
   "name": "@uarp/codegen",
-  "version": "0.13.1",
+  "version": "0.13.2",
   "private": true,
   "type": "module",
   "description": "Generates the UARP (Snaga) SDKs for TypeScript, Rust, Swift, Kotlin, Ada and Python from spec/openapi.json",

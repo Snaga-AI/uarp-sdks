@@ -82,9 +82,13 @@ edit "s/^    version = \".*\"/    version = \"$version\"/" packages/kotlin/build
 # anchored `^version = ` pattern would hit every dependency in the file, which
 # is the same trap the lockfile comment above describes.
 python3 - "$version" <<'CARGOLOCK'
-import re, sys
+import os, re, sys
 version = sys.argv[1]
 path = "packages/rust/Cargo.lock"
+# Ignored by git, so a fresh checkout has none: nothing to keep in step, and
+# cargo writes it with this version on the first build. 0.13.2 stopped here.
+if not os.path.exists(path):
+    sys.exit(0)
 src = open(path).read()
 blocks = src.split("[[package]]")
 out, touched = [blocks[0]], 0

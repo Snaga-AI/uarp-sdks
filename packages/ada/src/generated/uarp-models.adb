@@ -82856,7 +82856,7 @@ package body UARP.Models is
    begin
       JS.Set (Result, "error", JS.JSON.Create (Model.Error));
       if Model.Has_Error_Code then
-         JS.Set (Result, "error_code", JS.JSON.Create (Model.Error_Code));
+         JS.Set (Result, "error_code", To_JSON (Model.Error_Code));
       end if;
       if Model.Has_Error_Details then
          JS.Set (Result, "error_details", Model.Error_Details);
@@ -82887,7 +82887,7 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "error_code") then
          Result.Has_Error_Code := True;
-         Result.Error_Code := JS.As_Text (JS.Get_Value (Node, "error_code"));
+         Result.Error_Code := From_JSON (JS.Get_Value (Node, "error_code"));
       end if;
       if JS.Present (Node, "error_details") then
          Result.Has_Error_Details := True;
@@ -83028,7 +83028,7 @@ package body UARP.Models is
          JS.Set (Result, "error", JS.JSON.Create (Model.Error));
       end if;
       if Model.Has_Error_Code then
-         JS.Set (Result, "error_code", JS.JSON.Create (Model.Error_Code));
+         JS.Set (Result, "error_code", To_JSON (Model.Error_Code));
       end if;
       if Model.Has_Error_Details then
          JS.Set (Result, "error_details", Model.Error_Details);
@@ -83069,7 +83069,7 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "error_code") then
          Result.Has_Error_Code := True;
-         Result.Error_Code := JS.As_Text (JS.Get_Value (Node, "error_code"));
+         Result.Error_Code := From_JSON (JS.Get_Value (Node, "error_code"));
       end if;
       if JS.Present (Node, "error_details") then
          Result.Has_Error_Details := True;
@@ -83220,7 +83220,7 @@ package body UARP.Models is
    begin
       JS.Set (Result, "error", JS.JSON.Create (Model.Error));
       if Model.Has_Error_Code then
-         JS.Set (Result, "error_code", JS.JSON.Create (Model.Error_Code));
+         JS.Set (Result, "error_code", To_JSON (Model.Error_Code));
       end if;
       if Model.Has_Error_Details then
          JS.Set (Result, "error_details", Model.Error_Details);
@@ -83251,7 +83251,7 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "error_code") then
          Result.Has_Error_Code := True;
-         Result.Error_Code := JS.As_Text (JS.Get_Value (Node, "error_code"));
+         Result.Error_Code := From_JSON (JS.Get_Value (Node, "error_code"));
       end if;
       if JS.Present (Node, "error_details") then
          Result.Has_Error_Details := True;
@@ -83532,6 +83532,10 @@ package body UARP.Models is
    begin
       JS.Set (Result, "id", JS.JSON.Create (Model.Id));
       JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      JS.Set (Result, "arguments", Model.Arguments);
+      if Model.Has_Arguments_Preview then
+         JS.Set (Result, "arguments_preview", JS.JSON.Create (Model.Arguments_Preview));
+      end if;
       JS.Set (Result, "args", Model.Args);
       if Model.Has_Options then
          declare
@@ -83557,6 +83561,13 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "name") then
          Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "arguments") then
+         Result.Arguments := JS.Get_Value (Node, "arguments");
+      end if;
+      if JS.Present (Node, "arguments_preview") then
+         Result.Has_Arguments_Preview := True;
+         Result.Arguments_Preview := JS.As_Text (JS.Get_Value (Node, "arguments_preview"));
       end if;
       if JS.Present (Node, "args") then
          Result.Args := JS.Get_Value (Node, "args");

@@ -19068,6 +19068,13 @@ export interface RunEventV1RunAwaitingApprovalPayload {
 export interface RunEventV1RunAwaitingApprovalPayloadToolCall {
   id: string;
   name: string;
+  arguments: JsonObject;
+  arguments_preview?: string;
+  /**
+   * The same value as `arguments`, kept for readers of the first v1. Read `arguments`.
+   *
+   * @deprecated
+   */
   args: JsonObject;
   options?: string[];
   kind?: string;
@@ -19122,7 +19129,14 @@ export interface RunEventV1RunCancelled {
 
 export interface RunEventV1RunCancelledPayload {
   error?: string;
-  error_code?: string;
+  /**
+   * Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+   * beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+   * stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+   * on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+   * which one. Absent when the run carries none, or one this version does not list.
+   */
+  error_code?: ErrorCode;
   error_details?: JsonObject;
   message?: string;
   reason?: string;
@@ -19210,7 +19224,14 @@ export interface RunEventV1RunFailed {
 
 export interface RunEventV1RunFailedPayload {
   error: string;
-  error_code?: string;
+  /**
+   * Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+   * beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+   * stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+   * on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+   * which one. Absent when the run carries none, or one this version does not list.
+   */
+  error_code?: ErrorCode;
   error_details?: JsonObject;
   message?: string;
   reason?: string;
@@ -19240,7 +19261,14 @@ export interface RunEventV1RunGuardrailBlocked {
 
 export interface RunEventV1RunGuardrailBlockedPayload {
   error: string;
-  error_code?: string;
+  /**
+   * Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+   * beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+   * stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+   * on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+   * which one. Absent when the run carries none, or one this version does not list.
+   */
+  error_code?: ErrorCode;
   error_details?: JsonObject;
   message?: string;
   reason?: string;
