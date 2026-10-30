@@ -32954,8 +32954,13 @@ package UARP.Models is
    --  `RunEventV1RunFailedPayload` model.
    type Run_Event_V1_Run_Failed_Payload is record
       Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+      --  beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+      --  stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+      --  on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+      --  which one. Absent when the run carries none, or one this version does not list.
       Has_Error_Code : Boolean := False;
-      Error_Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Error_Code : UARP.Models.Error_Code;
       Has_Error_Details : Boolean := False;
       Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Message : Boolean := False;
@@ -33019,8 +33024,13 @@ package UARP.Models is
    type Run_Event_V1_Run_Cancelled_Payload is record
       Has_Error : Boolean := False;
       Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+      --  beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+      --  stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+      --  on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+      --  which one. Absent when the run carries none, or one this version does not list.
       Has_Error_Code : Boolean := False;
-      Error_Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Error_Code : UARP.Models.Error_Code;
       Has_Error_Details : Boolean := False;
       Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Message : Boolean := False;
@@ -33089,8 +33099,13 @@ package UARP.Models is
    --  `RunEventV1RunGuardrailBlockedPayload` model.
    type Run_Event_V1_Run_Guardrail_Blocked_Payload is record
       Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+      --  beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+      --  stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+      --  on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+      --  which one. Absent when the run carries none, or one this version does not list.
       Has_Error_Code : Boolean := False;
-      Error_Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Error_Code : UARP.Models.Error_Code;
       Has_Error_Details : Boolean := False;
       Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Message : Boolean := False;
@@ -33210,6 +33225,10 @@ package UARP.Models is
    type Run_Event_V1_Run_Awaiting_Approval_Payload_Tool_Call is record
       Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Arguments : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Arguments_Preview : Boolean := False;
+      Arguments_Preview : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The same value as `arguments`, kept for readers of the first v1. Read `arguments`.
       Args : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Options : Boolean := False;
       Options : UARP.Types.Text_Vectors.Vector;

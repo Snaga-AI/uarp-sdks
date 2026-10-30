@@ -35338,6 +35338,13 @@ public data class RunEventV1RunAwaitingApprovalPayload(
 public data class RunEventV1RunAwaitingApprovalPayloadToolCall(
     public val id: String,
     public val name: String,
+    public val arguments: JsonObject,
+    @SerialName("arguments_preview")
+    public val argumentsPreview: String? = null,
+    /**
+     * The same value as `arguments`, kept for readers of the first v1. Read `arguments`.
+     * Deprecated by the API.
+     */
     public val args: JsonObject,
     public val options: List<String>? = null,
     public val kind: String? = null,
@@ -35472,8 +35479,15 @@ public data class RunEventV1RunCancelled(
 @Serializable
 public data class RunEventV1RunCancelledPayload(
     public val error: String? = null,
+    /**
+     * Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+     * beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+     * stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+     * on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+     * which one. Absent when the run carries none, or one this version does not list.
+     */
     @SerialName("error_code")
-    public val errorCode: String? = null,
+    public val errorCode: ErrorCode? = null,
     @SerialName("error_details")
     public val errorDetails: JsonObject? = null,
     public val message: String? = null,
@@ -35715,8 +35729,15 @@ public data class RunEventV1RunFailed(
 @Serializable
 public data class RunEventV1RunFailedPayload(
     public val error: String,
+    /**
+     * Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+     * beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+     * stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+     * on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+     * which one. Absent when the run carries none, or one this version does not list.
+     */
     @SerialName("error_code")
-    public val errorCode: String? = null,
+    public val errorCode: ErrorCode? = null,
     @SerialName("error_details")
     public val errorDetails: JsonObject? = null,
     public val message: String? = null,
@@ -35787,8 +35808,15 @@ public data class RunEventV1RunGuardrailBlocked(
 @Serializable
 public data class RunEventV1RunGuardrailBlockedPayload(
     public val error: String,
+    /**
+     * Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+     * beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+     * stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+     * on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+     * which one. Absent when the run carries none, or one this version does not list.
+     */
     @SerialName("error_code")
-    public val errorCode: String? = null,
+    public val errorCode: ErrorCode? = null,
     @SerialName("error_details")
     public val errorDetails: JsonObject? = null,
     public val message: String? = null,

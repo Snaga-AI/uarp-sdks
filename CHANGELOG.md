@@ -6,6 +6,25 @@ All six SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.13.2 — 2026-10-30
+
+Build `bd5dc091`, digest `c3fe74da6c53bef8`. Same 653 paths, 871 operations and
+502 schemas; two v1 event schemas changed in place.
+
+### Changed — the closed `event_schema=1` types follow the server
+
+The server changed two v1 shapes after 0.13.0 was cut, and a strict parser
+built from 0.13.0 or 0.13.1 refuses the frames it now sends:
+
+- `RunEventV1RunAwaitingApproval`: each `tool_calls[]` entry carries a required
+  `arguments` (an open object) and, when the preview was not JSON,
+  `arguments_preview`. `args` stays and is still required, marked deprecated:
+  read `arguments`.
+- `error_code` in the `run.failed`, `run.cancelled` and `run.guardrail_blocked`
+  payloads is a closed list of 188 codes, both casings as stored, and frozen for
+  v1: a code added later arrives as an absent field. The list is the same as
+  `ErrorCode`, so the SDKs reuse that type rather than declaring another.
+
 ## 0.13.1 — 2026-10-30
 
 Build `3d07d69d`, digest `fb3b20d469827b43` — the document 0.13.0 was cut from.

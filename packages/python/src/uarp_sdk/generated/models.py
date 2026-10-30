@@ -28228,7 +28228,15 @@ class RunEventV1RunAwaitingApprovalPayloadToolCall(Model):
 
     name: str
 
+    arguments: JsonObject
+
+    arguments_preview: Optional[str] = None
+
     args: JsonObject
+    """The same value as `arguments`, kept for readers of the first v1. Read `arguments`.
+
+    Deprecated.
+    """
 
     options: Optional[List[str]] = None
 
@@ -28316,7 +28324,13 @@ class RunEventV1RunCancelledPayload(Model):
 
     error: Optional[str] = None
 
-    error_code: Optional[str] = None
+    error_code: Optional[ErrorCode] = None
+    """Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+    beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+    stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+    on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+    which one. Absent when the run carries none, or one this version does not list.
+    """
 
     error_details: Optional[JsonObject] = None
 
@@ -28455,7 +28469,13 @@ class RunEventV1RunFailedPayload(Model):
 
     error: str
 
-    error_code: Optional[str] = None
+    error_code: Optional[ErrorCode] = None
+    """Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+    beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+    stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+    on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+    which one. Absent when the run carries none, or one this version does not list.
+    """
 
     error_details: Optional[JsonObject] = None
 
@@ -28505,7 +28525,13 @@ class RunEventV1RunGuardrailBlockedPayload(Model):
 
     error: str
 
-    error_code: Optional[str] = None
+    error_code: Optional[ErrorCode] = None
+    """Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+    beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+    stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+    on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+    which one. Absent when the run carries none, or one this version does not list.
+    """
 
     error_details: Optional[JsonObject] = None
 
