@@ -231,8 +231,8 @@ function IdempotencyBody(): ReactElement {
       <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-sm text-ink-soft">
         <dt className="font-medium text-ink">Retried</dt>
         <dd>
-          <Term>408 409 429 500 502 503 504</Term>, and dropped connections. Not every 5xx:{' '}
-          <Term>501</Term> is a permanent answer.
+          <Term>408 429 500 502 503 504</Term>, and dropped connections. Not every 5xx:{' '}
+          <Term>501</Term> is a permanent answer, and neither is <Term>409</Term>: a conflict meets the same state again.
         </dd>
         <dt className="font-medium text-ink">Header sent</dt>
         <dd>

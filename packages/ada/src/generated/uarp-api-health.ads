@@ -66,10 +66,10 @@ package UARP.API.Health is
    --  `/api/v1`; new callers should use `/health`.
    --
    --  GET /api/v1/health
-   function Health_Check_V1alias
+   function Health_Check_V1_Alias
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Health_Check_V1alias_Response;
+      return UARP.Models.Health_Check_V1_Alias_Response;
 
    --  Kubernetes liveness probe
    --

@@ -152,7 +152,9 @@ iterator: `async for agent in client.agents.list_all()`.
 
 An empty page does **not** end the walk. This API applies the page limit before
 filtering, so a page can come back with no items and more behind it. Three
-empty pages in a row do stop it.
+empty pages in a row do stop it, so a filter that matches rarely can end the
+walk before the last match. When every row matters, page by hand: call `list`
+with the `cursor` it returned until `has_more` is false.
 
 ## Errors
 
@@ -203,7 +205,7 @@ An omitted key raises `ConfigError`. An explicit `api_key=""` is a client with
 no credentials of its own: it sends no `Authorization` header at all. Pass
 `http_client=httpx.Client(...)` for proxies, custom TLS or instrumentation.
 
-Transient failures (`408`, `409`, `429`, `5xx`, dropped connections) are retried
+Transient failures (`408`, `429`, `5xx`, dropped connections) are retried
 with jittered backoff, honouring `Retry-After` and `X-Should-Retry: false`.
 Reads always retry; writes only when they carry an `Idempotency-Key`, which
 every mutating `/api/v1/*` call sends automatically.

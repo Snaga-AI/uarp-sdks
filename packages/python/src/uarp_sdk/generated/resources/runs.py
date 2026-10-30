@@ -711,7 +711,7 @@ class RunsResource:
             request_options=request_options,
         ))
 
-    def stream_run_events(self, run_id: str, *, token: Optional[str] = None, last_event_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> EventStream:
+    def stream_run_events(self, run_id: str, *, token: Optional[str] = None, event_schema: Optional[int] = None, last_event_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> EventStream:
         """Stream run events via SSE
 
         Real-time event stream for a run. Supports `Last-Event-ID` header (or `?last_event_id=`) for
@@ -733,7 +733,7 @@ class RunsResource:
         """
         return self._client._stream(
             f"/api/v1/runs/{_segment(run_id)}/events",
-            query=[("token", token)],
+            query=[("token", token), ("event_schema", event_schema)],
             headers=[("Last-Event-ID", last_event_id)],
             request_options=request_options,
         )
@@ -1446,7 +1446,7 @@ class AsyncRunsResource:
             request_options=request_options,
         ))
 
-    def stream_run_events(self, run_id: str, *, token: Optional[str] = None, last_event_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> AsyncEventStream:
+    def stream_run_events(self, run_id: str, *, token: Optional[str] = None, event_schema: Optional[int] = None, last_event_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> AsyncEventStream:
         """Stream run events via SSE
 
         Real-time event stream for a run. Supports `Last-Event-ID` header (or `?last_event_id=`) for
@@ -1468,7 +1468,7 @@ class AsyncRunsResource:
         """
         return self._client._stream(
             f"/api/v1/runs/{_segment(run_id)}/events",
-            query=[("token", token)],
+            query=[("token", token), ("event_schema", event_schema)],
             headers=[("Last-Event-ID", last_event_id)],
             request_options=request_options,
         )

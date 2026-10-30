@@ -1,7 +1,7 @@
 /** TypeScript emitter: models + one resource class per tag. */
 import { sdkVersion, type GeneratedFile } from '../index.ts';
 import { assertSupportedBody } from '../ir.ts';
-import type { Group, NamedType, Operation, Param, Spec, TypeRef } from '../ir.ts';
+import type { EventStream, Group, NamedType, Operation, Param, Spec, TypeRef } from '../ir.ts';
 import { camel, isPlainJsKey, kebab, pascal, tsIdent } from '../naming.ts';
 
 /** Body encodings this emitter can render. */
@@ -46,7 +46,30 @@ function emitModels(spec: Spec): string {
     emitType(w, type);
     w.line();
   }
+  for (const stream of spec.eventStreams) {
+    emitEventStream(w, stream);
+    w.line();
+  }
   return w.toString();
+}
+
+// The SSE `event:` name a frame arrives under picks its schema; the document
+// says so only in `x-event-stream`. A plain interface rather than a mapped type,
+// so a consumer can index it by the name it just read.
+function emitEventStream(w: Writer, stream: EventStream): void {
+  w.doc(
+    `The frame each SSE \`event:\` name carries on \`${stream.method} ${stream.path}\` with ` +
+      `\`event_schema=${stream.version}\`, from the document's \`x-event-stream\`.`,
+    ' * ',
+    '/**',
+    ' */',
+  );
+  w.block(`export interface ${stream.name} {`, () => {
+    for (const frame of stream.frames) {
+      const key = isPlainJsKey(frame.event) ? frame.event : `'${escapeString(frame.event)}'`;
+      w.line(`${key}: ${frame.type};`);
+    }
+  }, '}');
 }
 
 // A star-slash sequence inside a description would close the JSDoc block early.

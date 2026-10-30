@@ -74,7 +74,9 @@ export interface RequestSpec {
   options?: RequestOptions;
 }
 
-const RETRYABLE_STATUS = new Set([408, 409, 429, 500, 502, 503, 504]);
+// Not 409: a conflict is the server's answer about the state of the resource,
+// and sending the same request again meets the same state.
+const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
 
 export class Transport {
   readonly apiKey: string;

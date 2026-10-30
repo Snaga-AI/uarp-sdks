@@ -7,7 +7,13 @@ import pathlib
 
 from uarp_sdk._sse import Parser
 
-FIXTURES = pathlib.Path(__file__).resolve().parents[3] / "contract" / "sse-fixtures"
+#  In the repository the fixture sits at its root; an sdist carries a copy
+#  beside the tests.
+_HERE = pathlib.Path(__file__).resolve().parent
+FIXTURES = next(
+    (path for path in (_HERE / "sse-fixtures", _HERE.parents[2] / "contract" / "sse-fixtures") if path.is_dir()),
+    _HERE / "sse-fixtures",
+)
 
 
 def parse_all(*chunks: bytes) -> tuple:
@@ -70,3 +76,19 @@ def test_a_done_frame_with_only_an_id_emits_nothing() -> None:
 def test_a_type_member_names_the_event_even_with_escaped_quotes_around() -> None:
     events, _ = parse_all(b'data: {"msg":"she said \\"type\\"","type":"x"}\n\n')
     assert events[0].event == "x"
+
+
+def test_a_frame_without_an_event_line_is_named_by_its_top_level_type() -> None:
+    #  The first `"type"` in the text belongs to the payload; the frame's is the outer one.
+    events, _ = parse_all(b'data: {"payload":{"type":"inner"},"type":"run.completed","event_id":"e\\"1"}\n\n')
+    assert (events[0].event, events[0].id) == ("run.completed", None)
+    inline, _ = parse_all(b'{"payload":{"type":"inner"},"type":"run.completed","event_id":"e\\"1"}\n')
+    assert (inline[0].event, inline[0].id) == ("run.completed", 'e"1')
+
+
+def test_an_openai_compatible_chunk_is_a_message_not_a_function() -> None:
+    #  `/v1/chat/completions` sends `data:` only; its tool calls carry `type: "function"`.
+    chunk = b'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"type":"function"}]}}]}\n\n'
+    events, _ = parse_all(chunk)
+    assert events[0].event == "message"
+

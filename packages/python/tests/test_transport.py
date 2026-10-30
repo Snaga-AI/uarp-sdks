@@ -230,6 +230,19 @@ def test_maps_a_404_to_a_typed_error_without_retrying(server: Server) -> None:
     assert str(caught.value) == "404 Not Found — no such agent"
 
 
+def test_does_not_retry_a_conflict_even_with_an_idempotency_key(server: Server) -> None:
+    #  A conflict is the server's answer about the resource's state; the same
+    #  request meets the same state. It used to be sent three times.
+    server.route = lambda request: Reply.json(
+        {"title": "Conflict", "status": 409, "code": "CLIENT_REQUEST_CONFLICT"}, 409, (("Retry-After", "0"),)
+    )
+    with pytest.raises(APIError) as caught:
+        client_for(server, max_retries=2).agents.create(CreateAgentRequest(name="demo"))
+    assert caught.value.status == 409
+    assert not caught.value.is_retryable
+    assert len(server.received) == 1
+
+
 def test_honours_the_no_retry_hint(server: Server) -> None:
     server.route = lambda request: Reply.json({"status": 503}, 503, (("X-Should-Retry", "false"),))
     with pytest.raises(APIError):
@@ -268,6 +281,20 @@ def test_per_call_overrides_travel_on_a_copy(server: Server) -> None:
     assert first.query == "limit=1&debug=true"
     assert "x-trace" not in second.headers
     assert second.query == "limit=1"
+
+
+def test_a_copy_never_pins_one_idempotency_key_on_every_write(server: Server) -> None:
+    #  One key on every write through a copy made the server answer the second
+    #  create as a replay of the first.
+    server.route = lambda request: Reply.json(agent_json(), 201)
+    client = client_for(server)
+    with pytest.raises(TypeError):
+        client.with_options(idempotency_key="x")  # type: ignore[call-arg]
+    tagged = client.with_options(headers={"X-Trace": "t-1"})
+    tagged.agents.create(CreateAgentRequest(name="one"))
+    tagged.agents.create(CreateAgentRequest(name="two"))
+    first, second = server.received
+    assert first.headers["idempotency-key"] != second.headers["idempotency-key"]
 
 
 def test_a_copy_can_turn_retries_off(server: Server) -> None:
@@ -536,6 +563,49 @@ def test_a_401_surfaces_without_retrying(server: Server) -> None:
     assert len(server.received) == 1
 
 
+def test_a_404_stream_surfaces_at_once(server: Server) -> None:
+    #  A wrong run id used to reconnect five times and surface twenty seconds later.
+    server.route = lambda request: Reply.json({"title": "Not Found", "status": 404}, 404)
+    options = StreamOptions(base_retry=0.001, max_backoff=0.002)
+    with pytest.raises(NotFoundError):
+        list(client_for(server).runs.stream_run_events("nope", request_options=RequestOptions(stream=options)))
+    assert len(server.received) == 1
+
+
+def test_a_503_stream_reconnects(server: Server) -> None:
+    def route(request: Received) -> Reply:
+        if len(server.received) == 1:
+            return Reply.json({"title": "Unavailable", "status": 503}, 503)
+        return run_events(b"data: one\n\ndata: [DONE]\n\n")
+
+    server.route = route
+    options = StreamOptions(base_retry=0.001, max_backoff=0.002)
+    events = list(client_for(server).runs.stream_run_events("r1", request_options=RequestOptions(stream=options)))
+    assert [event.data for event in events] == ["one"]
+    assert len(server.received) == 2
+
+
+def test_a_token_in_the_query_is_minted_never_the_api_key(server: Server) -> None:
+    def route(request: Received) -> Reply:
+        if request.method == "POST":
+            return Reply.json({"token": f"sse_{len(server.received)}", "expires_at": "2026-10-30T00:01:00Z"}, 201)
+        if len(server.received) == 2:
+            return run_events(b"id: 1\ndata: one\n\n")
+        return run_events(b"data: two\n\ndata: [DONE]\n\n")
+
+    server.route = route
+    options = StreamOptions(base_retry=0.001, max_backoff=0.002)
+    client = client_for(server, sse_token_in_query=True)
+    events = list(client.runs.stream_run_events("r1", request_options=RequestOptions(stream=options)))
+    assert [event.data for event in events] == ["one", "two"]
+    mint, first, again, second = server.received
+    assert (mint.method, mint.path) == ("POST", "/api/v1/auth/sse-tokens")
+    assert first.query == "token=sse_1"
+    #  A reconnect mints its own: the first token may have expired.
+    assert (again.method, second.query) == ("POST", "token=sse_3")
+    assert all("uarp_test1234_secret" not in request.query for request in server.received)
+
+
 def test_on_state_reports_the_connection_lifecycle(server: Server) -> None:
     #  The first connection delivers and ends; the second delivers nothing,
     #  which spends the one reconnect the budget allows.
@@ -568,14 +638,6 @@ def test_the_inactivity_watchdog_reconnects_a_silent_socket_with_the_last_event_
     events = list(client_for(server).runs.stream_run_events("r1", request_options=RequestOptions(stream=options)))
     assert [event.data for event in events] == ["before", "after"]
     assert server.received[1].headers["last-event-id"] == "3"
-
-
-def test_can_carry_the_key_in_the_query_for_event_streams(server: Server) -> None:
-    server.route = lambda request: run_events(b"event: run.completed\ndata: {}\n\n")
-    stream = client_for(server, sse_token_in_query=True).runs.stream_run_events("r1")
-    next(stream)
-    stream.close()
-    assert server.received[0].query == "token=uarp_test1234_secret"
 
 
 def test_a_keyless_client_puts_no_token_in_the_sse_query(server: Server) -> None:

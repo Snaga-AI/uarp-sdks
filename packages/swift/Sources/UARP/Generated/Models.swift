@@ -25905,8 +25905,8 @@ public struct HandleStripeWebhookResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `HealthCheckV1aliasResponse` model.
-public struct HealthCheckV1aliasResponse: Codable, Hashable, Sendable {
+/// `HealthCheckV1AliasResponse` model.
+public struct HealthCheckV1AliasResponse: Codable, Hashable, Sendable {
     public var status: GetHealthResponseStatus?
     public var timestamp: String?
     public var kvConnected: Bool?
@@ -45029,6 +45029,2564 @@ public struct RunEventType: RawRepresentable, Codable, Hashable, Sendable, Expre
     public static let knownValues: [RunEventType] = [.runCreated, .runStarted, .runCompleted, .runFailed, .runCancelled, .runTimeout, .runGuardrailBlocked, .runAwaitingApproval, .runAwaitingInput, .runInputReceived, .runApproved, .runRejected, .runCheckpoint, .runPaused, .runResumed, .runRestored, .runAffect, .llmRequest, .llmResponse, .llmError, .llmThinking, .llmChunk, .llmTimeout, .llmFallback, .stepPlan, .stepAct, .stepEvaluate, .stepThinking, .toolCall, .toolResult, .toolError, .toolTimeout, .guardrailCheck, .guardrailViolation, .guardrailCustomCheck, .guardrailCustomViolation, .memoryRetrieval, .memoryExtraction, .memoryStored, .memoryEvicted, .sessionContextCompacted, .sessionContext, .sessionCreated, .sessionClosed, .teamMessage, .teamRoundStart, .teamRoundEnd, .teamDelegate, .teamBroadcast, .teamMerge, .teamHandoff, .childRunCompleted, .childRunFailed, .initiativeTickStart, .initiativeTickEnd, .initiativePaused, .initiativeResumed, .initiativeBudgetUpdated, .initiativeEscalation, .initiativeObjectiveUpdated, .circuitBreakerOpened, .circuitBreakerClosed, .circuitBreakerHalfOpen, .streamingStarted, .streamingCompleted, .streamingError, .streamingBufferTruncated, .runStepStarted, .runStepCompleted, .budgetSoftThresholdCrossed, .budgetHardLimitReached, .tenantCreated, .tenantSuspended, .tenantPurged, .configUpdated, .webhookDelivered, .webhookFailed, .cronFired, .agentVersionCreated, .agentRollback, .mcpServerLog, .orchestrationStarted, .orchestrationPlanned, .orchestrationReplanned, .orchestrationTaskStarted, .orchestrationTaskCompleted, .orchestrationTaskFailed, .orchestrationCheckpoint, .orchestrationPolicyViolation, .orchestrationQualityReport, .orchestrationCompleted, .orchestrationFailed, .graphAgentSpawned, .graphAgentTerminated, .graphTaskDelegated, .graphEdgeAdded, .graphEdgeRemoved, .planCreated, .planUpdated, .planSubGoalCompleted, .planSubGoalAbandoned, .mcpToolCalled, .mcpServerConnected, .mcpServerDisconnected, .a2aTaskSent, .a2aTaskReceived, .memoryCompressed, .capabilityBestAgentSelected, .identityCreated, .identityRotated, .messageSigned, .messageVerified, .messageReplayBlocked, .constitutionBootstrapped, .constitutionAmended, .constitutionCheckPassed, .constitutionCheckBlocked, .constitutionViolation, .ledgerAppended, .ledgerIntegrityChecked, .permissionChecked, .permissionDenied, .permissionSpawnBlocked, .attestationCreated, .attestationVerified, .attestationInvalid, .arbitrationCaseOpened, .arbitrationRulingSubmitted, .arbitrationAppealFiled, .votingProposalCreated, .votingBallotCast, .votingTallied, .votingVetoed, .resourceSpent, .resourceEarned, .resourceTransferred, .resourceInsufficient, .ambassadorVetoIssued, .ambassadorRequestSubmitted, .builderDesignSubmitted, .builderDesignApproved, .builderDesignSpawned, .emergencySafeModeActivated, .emergencySafeModeDeactivated, .emergencyDeadlockDetected, .goalSelfFormulated, .goalApproved, .improvementProposed, .improvementSandboxTested, .improvementApplied, .collectiveInsightPublished, .collectiveInsightsRetrieved, .collectiveReviewRequested, .collectivePollCreated, .collectiveAgentRated, .collectiveFeedbackRequested, .collectiveReflectionCompleted, .collectiveApproachesCompared, .collectiveLessonLogged, .collectiveTeamFormed, .collectiveTeamJoined, .collectiveTeamLeft, .collectiveTeamBroadcast, .collectiveSpecialistRequested, .collectiveBudgetRequested, .collectiveTokensTransferred, .collectiveTaskPosted, .collectiveBidPlaced, .collectiveBidAccepted, .collectiveCostReported, .sensorURLWatchCreated, .sensorRssWatchCreated, .sensorWebhookListenerCreated, .sensorCheckScheduled, .sensorEventSubscriptionCreated, .sensorTriggered, .collectiveReportPresented, .collectiveEscalation, .collectiveAnomalyReported, .collectiveHumanOverride, .collectiveCollectivePaused, .collectiveVerificationRequested, .strategyCreated, .strategyKpiUpdated, .documentEditStart, .documentEditChunk, .documentEditComplete]
 }
 
+/// A run event as `event_schema=1` sends it, on GET /runs/{runId}/events and GET
+/// /sessions/{sessionId}/events. Closed: a strict parser may refuse any field or value not
+/// declared here, because none is ever sent. A type this version does not list is not sent to a
+/// v1 client, and neither is an event whose discriminant value (`chunk_type`, `topology`, …)
+/// the version does not list. Bridge runs arrive in the native shape.
+public typealias RunEventV1 = JSONValue
+
+/// `RunEventV1ChildRunCompleted` model.
+public struct RunEventV1ChildRunCompleted: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1ChildRunCompletedType
+    public var seq: Int
+    public var payload: RunEventV1ChildRunCompletedPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1ChildRunCompletedType, seq: Int, payload: RunEventV1ChildRunCompletedPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1ChildRunCompletedPayload` model.
+public struct RunEventV1ChildRunCompletedPayload: Codable, Hashable, Sendable {
+    public var childRunId: String
+    public var agentId: String
+    public var agentName: String?
+    public var status: String
+    public var outputPreview: String?
+    public var durationMs: Int?
+    public var executionMode: String?
+    public var costUsd: Double?
+
+    public init(childRunId: String, agentId: String, agentName: String? = nil, status: String, outputPreview: String? = nil, durationMs: Int? = nil, executionMode: String? = nil, costUsd: Double? = nil) {
+        self.childRunId = childRunId
+        self.agentId = agentId
+        self.agentName = agentName
+        self.status = status
+        self.outputPreview = outputPreview
+        self.durationMs = durationMs
+        self.executionMode = executionMode
+        self.costUsd = costUsd
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case childRunId = "child_run_id"
+        case agentId = "agent_id"
+        case agentName = "agent_name"
+        case status = "status"
+        case outputPreview = "output_preview"
+        case durationMs = "duration_ms"
+        case executionMode = "execution_mode"
+        case costUsd = "cost_usd"
+    }
+}
+
+/// `RunEventV1ChildRunCompletedType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1ChildRunCompletedType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let childRunCompleted = RunEventV1ChildRunCompletedType(rawValue: "child_run.completed")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1ChildRunCompletedType] = [.childRunCompleted]
+}
+
+/// `RunEventV1ChildRunFailed` model.
+public struct RunEventV1ChildRunFailed: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1ChildRunFailedType
+    public var seq: Int
+    public var payload: RunEventV1ChildRunFailedPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1ChildRunFailedType, seq: Int, payload: RunEventV1ChildRunFailedPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1ChildRunFailedPayload` model.
+public struct RunEventV1ChildRunFailedPayload: Codable, Hashable, Sendable {
+    public var childRunId: String
+    public var agentId: String
+    public var agentName: String?
+    public var status: String
+    public var error: String?
+    public var executionMode: String?
+
+    public init(childRunId: String, agentId: String, agentName: String? = nil, status: String, error: String? = nil, executionMode: String? = nil) {
+        self.childRunId = childRunId
+        self.agentId = agentId
+        self.agentName = agentName
+        self.status = status
+        self.error = error
+        self.executionMode = executionMode
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case childRunId = "child_run_id"
+        case agentId = "agent_id"
+        case agentName = "agent_name"
+        case status = "status"
+        case error = "error"
+        case executionMode = "execution_mode"
+    }
+}
+
+/// `RunEventV1ChildRunFailedType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1ChildRunFailedType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let childRunFailed = RunEventV1ChildRunFailedType(rawValue: "child_run.failed")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1ChildRunFailedType] = [.childRunFailed]
+}
+
+/// `RunEventV1LLMChunk` model.
+public struct RunEventV1LLMChunk: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1LLMChunkType
+    public var seq: Int
+    public var payload: RunEventV1LLMChunkPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1LLMChunkType, seq: Int, payload: RunEventV1LLMChunkPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1LLMChunkPayload` model.
+public struct RunEventV1LLMChunkPayload: Codable, Hashable, Sendable {
+    public var chunkType: RunEventV1LLMChunkPayloadChunkType
+    public var delta: String
+    public var index: Int?
+
+    public init(chunkType: RunEventV1LLMChunkPayloadChunkType, delta: String, index: Int? = nil) {
+        self.chunkType = chunkType
+        self.delta = delta
+        self.index = index
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case chunkType = "chunk_type"
+        case delta = "delta"
+        case index = "index"
+    }
+}
+
+/// `RunEventV1LLMChunkPayloadChunkType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1LLMChunkPayloadChunkType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let content = RunEventV1LLMChunkPayloadChunkType(rawValue: "content")
+    public static let thinking = RunEventV1LLMChunkPayloadChunkType(rawValue: "thinking")
+    public static let toolCall = RunEventV1LLMChunkPayloadChunkType(rawValue: "tool_call")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1LLMChunkPayloadChunkType] = [.content, .thinking, .toolCall]
+}
+
+/// `RunEventV1LLMChunkType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1LLMChunkType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let llmChunk = RunEventV1LLMChunkType(rawValue: "llm.chunk")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1LLMChunkType] = [.llmChunk]
+}
+
+/// `RunEventV1LLMError` model.
+public struct RunEventV1LLMError: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1LLMErrorType
+    public var seq: Int
+    public var payload: RunEventV1LLMErrorPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1LLMErrorType, seq: Int, payload: RunEventV1LLMErrorPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1LLMErrorPayload` model.
+public struct RunEventV1LLMErrorPayload: Codable, Hashable, Sendable {
+    public var error: String
+    public var chunksBeforeError: Int?
+
+    public init(error: String, chunksBeforeError: Int? = nil) {
+        self.error = error
+        self.chunksBeforeError = chunksBeforeError
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case chunksBeforeError = "chunks_before_error"
+    }
+}
+
+/// `RunEventV1LLMErrorType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1LLMErrorType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let llmError = RunEventV1LLMErrorType(rawValue: "llm.error")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1LLMErrorType] = [.llmError]
+}
+
+/// `RunEventV1RunAwaitingApproval` model.
+public struct RunEventV1RunAwaitingApproval: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1RunAwaitingApprovalType
+    public var seq: Int
+    public var payload: RunEventV1RunAwaitingApprovalPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1RunAwaitingApprovalType, seq: Int, payload: RunEventV1RunAwaitingApprovalPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1RunAwaitingApprovalPayload` model.
+public struct RunEventV1RunAwaitingApprovalPayload: Codable, Hashable, Sendable {
+    public var toolCalls: [RunEventV1RunAwaitingApprovalPayloadToolCall]
+
+    public init(toolCalls: [RunEventV1RunAwaitingApprovalPayloadToolCall]) {
+        self.toolCalls = toolCalls
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case toolCalls = "tool_calls"
+    }
+}
+
+/// `RunEventV1RunAwaitingApprovalPayloadToolCall` model.
+public struct RunEventV1RunAwaitingApprovalPayloadToolCall: Codable, Hashable, Sendable {
+    public var id: String
+    public var name: String
+    public var args: JSONObject
+    public var options: [String]?
+    public var kind: String?
+
+    public init(id: String, name: String, args: JSONObject, options: [String]? = nil, kind: String? = nil) {
+        self.id = id
+        self.name = name
+        self.args = args
+        self.options = options
+        self.kind = kind
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case name = "name"
+        case args = "args"
+        case options = "options"
+        case kind = "kind"
+    }
+}
+
+/// `RunEventV1RunAwaitingApprovalType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunAwaitingApprovalType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runAwaitingApproval = RunEventV1RunAwaitingApprovalType(rawValue: "run.awaiting_approval")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunAwaitingApprovalType] = [.runAwaitingApproval]
+}
+
+/// `RunEventV1RunAwaitingInput` model.
+public struct RunEventV1RunAwaitingInput: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1RunAwaitingInputType
+    public var seq: Int
+    public var payload: RunEventV1RunAwaitingInputPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1RunAwaitingInputType, seq: Int, payload: RunEventV1RunAwaitingInputPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1RunAwaitingInputPayload` model.
+public struct RunEventV1RunAwaitingInputPayload: Codable, Hashable, Sendable {
+    public var toolCallId: String
+    public var question: String?
+    public var options: [String]?
+    public var context: String?
+    public var toolName: String?
+    public var arguments: JSONObject?
+
+    public init(toolCallId: String, question: String? = nil, options: [String]? = nil, context: String? = nil, toolName: String? = nil, arguments: JSONObject? = nil) {
+        self.toolCallId = toolCallId
+        self.question = question
+        self.options = options
+        self.context = context
+        self.toolName = toolName
+        self.arguments = arguments
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case toolCallId = "tool_call_id"
+        case question = "question"
+        case options = "options"
+        case context = "context"
+        case toolName = "tool_name"
+        case arguments = "arguments"
+    }
+}
+
+/// `RunEventV1RunAwaitingInputType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunAwaitingInputType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runAwaitingInput = RunEventV1RunAwaitingInputType(rawValue: "run.awaiting_input")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunAwaitingInputType] = [.runAwaitingInput]
+}
+
+/// `RunEventV1RunCancelled` model.
+public struct RunEventV1RunCancelled: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1RunCancelledType
+    public var seq: Int
+    public var payload: RunEventV1RunCancelledPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1RunCancelledType, seq: Int, payload: RunEventV1RunCancelledPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1RunCancelledPayload` model.
+public struct RunEventV1RunCancelledPayload: Codable, Hashable, Sendable {
+    public var error: String?
+    public var errorCode: String?
+    public var errorDetails: JSONObject?
+    public var message: String?
+    public var reason: String?
+    public var endReason: String?
+    public var source: String?
+    public var rejected: Bool?
+    public var previousStatus: String?
+    public var teamRunId: String?
+    public var was: String?
+
+    public init(error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil, previousStatus: String? = nil, teamRunId: String? = nil, was: String? = nil) {
+        self.error = error
+        self.errorCode = errorCode
+        self.errorDetails = errorDetails
+        self.message = message
+        self.reason = reason
+        self.endReason = endReason
+        self.source = source
+        self.rejected = rejected
+        self.previousStatus = previousStatus
+        self.teamRunId = teamRunId
+        self.was = was
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case errorCode = "error_code"
+        case errorDetails = "error_details"
+        case message = "message"
+        case reason = "reason"
+        case endReason = "end_reason"
+        case source = "source"
+        case rejected = "rejected"
+        case previousStatus = "previous_status"
+        case teamRunId = "team_run_id"
+        case was = "was"
+    }
+}
+
+/// `RunEventV1RunCancelledType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunCancelledType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runCancelled = RunEventV1RunCancelledType(rawValue: "run.cancelled")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunCancelledType] = [.runCancelled]
+}
+
+/// `RunEventV1RunCompleted` model.
+public struct RunEventV1RunCompleted: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1RunCompletedType
+    public var seq: Int
+    public var payload: RunEventV1RunCompletedPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1RunCompletedType, seq: Int, payload: RunEventV1RunCompletedPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1RunCompletedPayload` model.
+public struct RunEventV1RunCompletedPayload: Codable, Hashable, Sendable {
+    public var status: RunEventV1RunCompletedPayloadStatus
+    public var output: JSONObject
+    public var metrics: RunEventV1RunCompletedPayloadMetrics?
+    public var costUsd: Double?
+
+    public init(status: RunEventV1RunCompletedPayloadStatus, output: JSONObject, metrics: RunEventV1RunCompletedPayloadMetrics? = nil, costUsd: Double? = nil) {
+        self.status = status
+        self.output = output
+        self.metrics = metrics
+        self.costUsd = costUsd
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case status = "status"
+        case output = "output"
+        case metrics = "metrics"
+        case costUsd = "cost_usd"
+    }
+}
+
+/// `RunEventV1RunCompletedPayloadMetrics` model.
+public struct RunEventV1RunCompletedPayloadMetrics: Codable, Hashable, Sendable {
+    public var durationMs: Int?
+    public var stepsCount: Int?
+    public var inputTokens: Int?
+    public var outputTokens: Int?
+    public var thinkingTokens: Int?
+    public var cachedTokens: Int?
+    public var toolCallsCount: Int?
+    public var llmCallsCount: Int?
+    public var guardrailChecks: Int?
+    public var guardrailViolations: Int?
+    public var memoryRetrievals: Int?
+    public var memoryExtractions: Int?
+    public var totalCostUsd: Double?
+    public var fallbackUsed: Bool?
+    public var pricingConfidence: RunEventV1RunCompletedPayloadMetricsPricingConfidence?
+    public var costAttribution: RunMetricsCostAttribution?
+    public var filesModified: Int?
+    public var commandsExecuted: Int?
+
+    public init(durationMs: Int? = nil, stepsCount: Int? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, thinkingTokens: Int? = nil, cachedTokens: Int? = nil, toolCallsCount: Int? = nil, llmCallsCount: Int? = nil, guardrailChecks: Int? = nil, guardrailViolations: Int? = nil, memoryRetrievals: Int? = nil, memoryExtractions: Int? = nil, totalCostUsd: Double? = nil, fallbackUsed: Bool? = nil, pricingConfidence: RunEventV1RunCompletedPayloadMetricsPricingConfidence? = nil, costAttribution: RunMetricsCostAttribution? = nil, filesModified: Int? = nil, commandsExecuted: Int? = nil) {
+        self.durationMs = durationMs
+        self.stepsCount = stepsCount
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.thinkingTokens = thinkingTokens
+        self.cachedTokens = cachedTokens
+        self.toolCallsCount = toolCallsCount
+        self.llmCallsCount = llmCallsCount
+        self.guardrailChecks = guardrailChecks
+        self.guardrailViolations = guardrailViolations
+        self.memoryRetrievals = memoryRetrievals
+        self.memoryExtractions = memoryExtractions
+        self.totalCostUsd = totalCostUsd
+        self.fallbackUsed = fallbackUsed
+        self.pricingConfidence = pricingConfidence
+        self.costAttribution = costAttribution
+        self.filesModified = filesModified
+        self.commandsExecuted = commandsExecuted
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case durationMs = "duration_ms"
+        case stepsCount = "steps_count"
+        case inputTokens = "input_tokens"
+        case outputTokens = "output_tokens"
+        case thinkingTokens = "thinking_tokens"
+        case cachedTokens = "cached_tokens"
+        case toolCallsCount = "tool_calls_count"
+        case llmCallsCount = "llm_calls_count"
+        case guardrailChecks = "guardrail_checks"
+        case guardrailViolations = "guardrail_violations"
+        case memoryRetrievals = "memory_retrievals"
+        case memoryExtractions = "memory_extractions"
+        case totalCostUsd = "total_cost_usd"
+        case fallbackUsed = "fallback_used"
+        case pricingConfidence = "pricing_confidence"
+        case costAttribution = "cost_attribution"
+        case filesModified = "files_modified"
+        case commandsExecuted = "commands_executed"
+    }
+}
+
+/// `RunEventV1RunCompletedPayloadMetricsPricingConfidence` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunCompletedPayloadMetricsPricingConfidence: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let known = RunEventV1RunCompletedPayloadMetricsPricingConfidence(rawValue: "known")
+    public static let inferred = RunEventV1RunCompletedPayloadMetricsPricingConfidence(rawValue: "inferred")
+    public static let fallback = RunEventV1RunCompletedPayloadMetricsPricingConfidence(rawValue: "fallback")
+    public static let unknown = RunEventV1RunCompletedPayloadMetricsPricingConfidence(rawValue: "unknown")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunCompletedPayloadMetricsPricingConfidence] = [.known, .inferred, .fallback, .unknown]
+}
+
+/// `RunEventV1RunCompletedPayloadStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunCompletedPayloadStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let completed = RunEventV1RunCompletedPayloadStatus(rawValue: "completed")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunCompletedPayloadStatus] = [.completed]
+}
+
+/// `RunEventV1RunCompletedType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunCompletedType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runCompleted = RunEventV1RunCompletedType(rawValue: "run.completed")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunCompletedType] = [.runCompleted]
+}
+
+/// `RunEventV1RunFailed` model.
+public struct RunEventV1RunFailed: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1RunFailedType
+    public var seq: Int
+    public var payload: RunEventV1RunFailedPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1RunFailedType, seq: Int, payload: RunEventV1RunFailedPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1RunFailedPayload` model.
+public struct RunEventV1RunFailedPayload: Codable, Hashable, Sendable {
+    public var error: String
+    public var errorCode: String?
+    public var errorDetails: JSONObject?
+    public var message: String?
+    public var reason: String?
+    public var endReason: String?
+    public var source: String?
+    public var rejected: Bool?
+
+    public init(error: String, errorCode: String? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil) {
+        self.error = error
+        self.errorCode = errorCode
+        self.errorDetails = errorDetails
+        self.message = message
+        self.reason = reason
+        self.endReason = endReason
+        self.source = source
+        self.rejected = rejected
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case errorCode = "error_code"
+        case errorDetails = "error_details"
+        case message = "message"
+        case reason = "reason"
+        case endReason = "end_reason"
+        case source = "source"
+        case rejected = "rejected"
+    }
+}
+
+/// `RunEventV1RunFailedType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunFailedType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runFailed = RunEventV1RunFailedType(rawValue: "run.failed")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunFailedType] = [.runFailed]
+}
+
+/// `RunEventV1RunGuardrailBlocked` model.
+public struct RunEventV1RunGuardrailBlocked: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1RunGuardrailBlockedType
+    public var seq: Int
+    public var payload: RunEventV1RunGuardrailBlockedPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1RunGuardrailBlockedType, seq: Int, payload: RunEventV1RunGuardrailBlockedPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1RunGuardrailBlockedPayload` model.
+public struct RunEventV1RunGuardrailBlockedPayload: Codable, Hashable, Sendable {
+    public var error: String
+    public var errorCode: String?
+    public var errorDetails: JSONObject?
+    public var message: String?
+    public var reason: String?
+    public var endReason: String?
+    public var source: String?
+    public var rejected: Bool?
+
+    public init(error: String, errorCode: String? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil) {
+        self.error = error
+        self.errorCode = errorCode
+        self.errorDetails = errorDetails
+        self.message = message
+        self.reason = reason
+        self.endReason = endReason
+        self.source = source
+        self.rejected = rejected
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case errorCode = "error_code"
+        case errorDetails = "error_details"
+        case message = "message"
+        case reason = "reason"
+        case endReason = "end_reason"
+        case source = "source"
+        case rejected = "rejected"
+    }
+}
+
+/// `RunEventV1RunGuardrailBlockedType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunGuardrailBlockedType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runGuardrailBlocked = RunEventV1RunGuardrailBlockedType(rawValue: "run.guardrail_blocked")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunGuardrailBlockedType] = [.runGuardrailBlocked]
+}
+
+/// `RunEventV1RunInputReceived` model.
+public struct RunEventV1RunInputReceived: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1RunInputReceivedType
+    public var seq: Int
+    public var payload: RunEventV1RunInputReceivedPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1RunInputReceivedType, seq: Int, payload: RunEventV1RunInputReceivedPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1RunInputReceivedPayload` model.
+public struct RunEventV1RunInputReceivedPayload: Codable, Hashable, Sendable {
+    public var responseLength: Int
+
+    public init(responseLength: Int) {
+        self.responseLength = responseLength
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case responseLength = "response_length"
+    }
+}
+
+/// `RunEventV1RunInputReceivedType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunInputReceivedType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runInputReceived = RunEventV1RunInputReceivedType(rawValue: "run.input_received")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunInputReceivedType] = [.runInputReceived]
+}
+
+/// `RunEventV1RunPaused` model.
+public struct RunEventV1RunPaused: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1RunPausedType
+    public var seq: Int
+    public var payload: RunEventV1RunPausedPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1RunPausedType, seq: Int, payload: RunEventV1RunPausedPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1RunPausedPayload` model.
+public struct RunEventV1RunPausedPayload: Codable, Hashable, Sendable {
+    public var reason: String
+    public var step: Int?
+    public var resumable: Bool?
+    public var heldOutput: Bool?
+
+    public init(reason: String, step: Int? = nil, resumable: Bool? = nil, heldOutput: Bool? = nil) {
+        self.reason = reason
+        self.step = step
+        self.resumable = resumable
+        self.heldOutput = heldOutput
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case reason = "reason"
+        case step = "step"
+        case resumable = "resumable"
+        case heldOutput = "held_output"
+    }
+}
+
+/// `RunEventV1RunPausedType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunPausedType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runPaused = RunEventV1RunPausedType(rawValue: "run.paused")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunPausedType] = [.runPaused]
+}
+
+/// `RunEventV1RunStarted` model.
+public struct RunEventV1RunStarted: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1RunStartedType
+    public var seq: Int
+    public var payload: RunEventV1RunStartedPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1RunStartedType, seq: Int, payload: RunEventV1RunStartedPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1RunStartedPayload` model.
+public struct RunEventV1RunStartedPayload: Codable, Hashable, Sendable {
+    public var agentId: String?
+    public var executionMode: RunEventV1RunStartedPayloadExecutionMode?
+    public var source: String?
+    public var priority: String?
+    public var resumedFrom: RunEventV1RunStartedPayloadResumedFrom?
+    public var approved: Bool?
+    public var revised: Bool?
+    public var input: JSONValue?
+
+    public init(agentId: String? = nil, executionMode: RunEventV1RunStartedPayloadExecutionMode? = nil, source: String? = nil, priority: String? = nil, resumedFrom: RunEventV1RunStartedPayloadResumedFrom? = nil, approved: Bool? = nil, revised: Bool? = nil, input: JSONValue? = nil) {
+        self.agentId = agentId
+        self.executionMode = executionMode
+        self.source = source
+        self.priority = priority
+        self.resumedFrom = resumedFrom
+        self.approved = approved
+        self.revised = revised
+        self.input = input
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentId = "agent_id"
+        case executionMode = "execution_mode"
+        case source = "source"
+        case priority = "priority"
+        case resumedFrom = "resumed_from"
+        case approved = "approved"
+        case revised = "revised"
+        case input = "input"
+    }
+}
+
+/// `RunEventV1RunStartedPayloadExecutionMode` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunStartedPayloadExecutionMode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let bridge = RunEventV1RunStartedPayloadExecutionMode(rawValue: "bridge")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunStartedPayloadExecutionMode] = [.bridge]
+}
+
+/// `RunEventV1RunStartedPayloadResumedFrom` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunStartedPayloadResumedFrom: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let awaitingApproval = RunEventV1RunStartedPayloadResumedFrom(rawValue: "awaiting_approval")
+    public static let paused = RunEventV1RunStartedPayloadResumedFrom(rawValue: "paused")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunStartedPayloadResumedFrom] = [.awaitingApproval, .paused]
+}
+
+/// `RunEventV1RunStartedType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunStartedType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runStarted = RunEventV1RunStartedType(rawValue: "run.started")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunStartedType] = [.runStarted]
+}
+
+/// `RunEventV1RunStepCompleted` model.
+public struct RunEventV1RunStepCompleted: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1RunStepCompletedType
+    public var seq: Int
+    public var payload: RunEventV1RunStepCompletedPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1RunStepCompletedType, seq: Int, payload: RunEventV1RunStepCompletedPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1RunStepCompletedPayload` model.
+public struct RunEventV1RunStepCompletedPayload: Codable, Hashable, Sendable {
+    public var stepIndex: Int
+    public var stepId: String?
+    public var hasToolCalls: Bool?
+    public var toolNames: [String]?
+    public var done: Bool?
+    public var durationMs: Int?
+    public var inputTokens: Int?
+    public var outputTokens: Int?
+    public var thinkingTokens: Int?
+    public var llmCallsCount: Int?
+
+    public init(stepIndex: Int, stepId: String? = nil, hasToolCalls: Bool? = nil, toolNames: [String]? = nil, done: Bool? = nil, durationMs: Int? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, thinkingTokens: Int? = nil, llmCallsCount: Int? = nil) {
+        self.stepIndex = stepIndex
+        self.stepId = stepId
+        self.hasToolCalls = hasToolCalls
+        self.toolNames = toolNames
+        self.done = done
+        self.durationMs = durationMs
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.thinkingTokens = thinkingTokens
+        self.llmCallsCount = llmCallsCount
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case stepIndex = "step_index"
+        case stepId = "step_id"
+        case hasToolCalls = "has_tool_calls"
+        case toolNames = "tool_names"
+        case done = "done"
+        case durationMs = "duration_ms"
+        case inputTokens = "input_tokens"
+        case outputTokens = "output_tokens"
+        case thinkingTokens = "thinking_tokens"
+        case llmCallsCount = "llm_calls_count"
+    }
+}
+
+/// `RunEventV1RunStepCompletedType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunStepCompletedType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runStepCompleted = RunEventV1RunStepCompletedType(rawValue: "run.step_completed")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunStepCompletedType] = [.runStepCompleted]
+}
+
+/// `RunEventV1RunStepStarted` model.
+public struct RunEventV1RunStepStarted: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1RunStepStartedType
+    public var seq: Int
+    public var payload: RunEventV1RunStepStartedPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1RunStepStartedType, seq: Int, payload: RunEventV1RunStepStartedPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1RunStepStartedPayload` model.
+public struct RunEventV1RunStepStartedPayload: Codable, Hashable, Sendable {
+    public var stepIndex: Int
+    public var streaming: Bool?
+    public var stepId: String?
+
+    public init(stepIndex: Int, streaming: Bool? = nil, stepId: String? = nil) {
+        self.stepIndex = stepIndex
+        self.streaming = streaming
+        self.stepId = stepId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case stepIndex = "step_index"
+        case streaming = "streaming"
+        case stepId = "step_id"
+    }
+}
+
+/// `RunEventV1RunStepStartedType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunStepStartedType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runStepStarted = RunEventV1RunStepStartedType(rawValue: "run.step_started")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunStepStartedType] = [.runStepStarted]
+}
+
+/// `RunEventV1SessionContext` model.
+public struct RunEventV1SessionContext: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1SessionContextType
+    public var seq: Int
+    public var payload: RunEventV1SessionContextPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1SessionContextType, seq: Int, payload: RunEventV1SessionContextPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1SessionContextCompacted` model.
+public struct RunEventV1SessionContextCompacted: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1SessionContextCompactedType
+    public var seq: Int
+    public var payload: RunEventV1SessionContextCompactedPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1SessionContextCompactedType, seq: Int, payload: RunEventV1SessionContextCompactedPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1SessionContextCompactedPayload` model.
+public struct RunEventV1SessionContextCompactedPayload: Codable, Hashable, Sendable {
+    public var stepIndex: Int?
+    public var strategy: String?
+    public var removedCount: Int?
+    public var tokensSaved: Int?
+    public var contextTokensBefore: Int?
+    public var contextTokensAfter: Int?
+    public var maxContextTokens: Int?
+
+    public init(stepIndex: Int? = nil, strategy: String? = nil, removedCount: Int? = nil, tokensSaved: Int? = nil, contextTokensBefore: Int? = nil, contextTokensAfter: Int? = nil, maxContextTokens: Int? = nil) {
+        self.stepIndex = stepIndex
+        self.strategy = strategy
+        self.removedCount = removedCount
+        self.tokensSaved = tokensSaved
+        self.contextTokensBefore = contextTokensBefore
+        self.contextTokensAfter = contextTokensAfter
+        self.maxContextTokens = maxContextTokens
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case stepIndex = "step_index"
+        case strategy = "strategy"
+        case removedCount = "removed_count"
+        case tokensSaved = "tokens_saved"
+        case contextTokensBefore = "context_tokens_before"
+        case contextTokensAfter = "context_tokens_after"
+        case maxContextTokens = "max_context_tokens"
+    }
+}
+
+/// `RunEventV1SessionContextCompactedType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1SessionContextCompactedType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let sessionContextCompacted = RunEventV1SessionContextCompactedType(rawValue: "session.context_compacted")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1SessionContextCompactedType] = [.sessionContextCompacted]
+}
+
+/// `RunEventV1SessionContextPayload` model.
+public struct RunEventV1SessionContextPayload: Codable, Hashable, Sendable {
+    public var sessionId: String
+    public var windowTokens: Int?
+    public var usedTokens: Int?
+    public var percent: Double?
+    public var source: SessionContextSource
+    public var updatedAt: String
+
+    public init(sessionId: String, windowTokens: Int? = nil, usedTokens: Int? = nil, percent: Double? = nil, source: SessionContextSource, updatedAt: String) {
+        self.sessionId = sessionId
+        self.windowTokens = windowTokens
+        self.usedTokens = usedTokens
+        self.percent = percent
+        self.source = source
+        self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sessionId = "session_id"
+        case windowTokens = "window_tokens"
+        case usedTokens = "used_tokens"
+        case percent = "percent"
+        case source = "source"
+        case updatedAt = "updated_at"
+    }
+}
+
+/// `RunEventV1SessionContextType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1SessionContextType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let sessionContext = RunEventV1SessionContextType(rawValue: "session.context")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1SessionContextType] = [.sessionContext]
+}
+
+/// `RunEventV1StepAct` model.
+public struct RunEventV1StepAct: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1StepActType
+    public var seq: Int
+    public var payload: RunEventV1StepActPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1StepActType, seq: Int, payload: RunEventV1StepActPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1StepActPayload` model.
+public struct RunEventV1StepActPayload: Codable, Hashable, Sendable {
+    public var message: String?
+    public var code: String?
+    public var params: JSONObject?
+    public var inputTokens: Int?
+    public var outputTokens: Int?
+    public var metrics: JSONObject?
+
+    public init(message: String? = nil, code: String? = nil, params: JSONObject? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, metrics: JSONObject? = nil) {
+        self.message = message
+        self.code = code
+        self.params = params
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.metrics = metrics
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case message = "message"
+        case code = "code"
+        case params = "params"
+        case inputTokens = "input_tokens"
+        case outputTokens = "output_tokens"
+        case metrics = "metrics"
+    }
+}
+
+/// `RunEventV1StepActType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1StepActType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let stepAct = RunEventV1StepActType(rawValue: "step.act")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1StepActType] = [.stepAct]
+}
+
+/// `RunEventV1StepEvaluate` model.
+public struct RunEventV1StepEvaluate: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1StepEvaluateType
+    public var seq: Int
+    public var payload: RunEventV1StepEvaluatePayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1StepEvaluateType, seq: Int, payload: RunEventV1StepEvaluatePayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1StepEvaluatePayload` model.
+public struct RunEventV1StepEvaluatePayload: Codable, Hashable, Sendable {
+    public var passed: Bool
+    public var feedback: String?
+
+    public init(passed: Bool, feedback: String? = nil) {
+        self.passed = passed
+        self.feedback = feedback
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case passed = "passed"
+        case feedback = "feedback"
+    }
+}
+
+/// `RunEventV1StepEvaluateType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1StepEvaluateType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let stepEvaluate = RunEventV1StepEvaluateType(rawValue: "step.evaluate")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1StepEvaluateType] = [.stepEvaluate]
+}
+
+/// `RunEventV1StepPlan` model.
+public struct RunEventV1StepPlan: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1StepPlanType
+    public var seq: Int
+    public var payload: RunEventV1StepPlanPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1StepPlanType, seq: Int, payload: RunEventV1StepPlanPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1StepPlanPayload` model.
+public struct RunEventV1StepPlanPayload: Codable, Hashable, Sendable {
+    public var effort: String?
+    public var skipped: Bool?
+    public var skipReason: String?
+    public var planContent: String?
+
+    public init(effort: String? = nil, skipped: Bool? = nil, skipReason: String? = nil, planContent: String? = nil) {
+        self.effort = effort
+        self.skipped = skipped
+        self.skipReason = skipReason
+        self.planContent = planContent
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case effort = "effort"
+        case skipped = "skipped"
+        case skipReason = "skip_reason"
+        case planContent = "plan_content"
+    }
+}
+
+/// `RunEventV1StepPlanType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1StepPlanType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let stepPlan = RunEventV1StepPlanType(rawValue: "step.plan")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1StepPlanType] = [.stepPlan]
+}
+
+/// `RunEventV1TeamDelegate` model.
+public struct RunEventV1TeamDelegate: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1TeamDelegateType
+    public var seq: Int
+    public var payload: RunEventV1TeamDelegatePayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1TeamDelegateType, seq: Int, payload: RunEventV1TeamDelegatePayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1TeamDelegatePayload` model.
+public struct RunEventV1TeamDelegatePayload: Codable, Hashable, Sendable {
+    public var topology: RunEventV1TeamDelegatePayloadTopology
+    public var mode: String?
+    public var round: Int?
+    public var step: Int?
+    public var handoffIndex: Int?
+    public var from: String?
+    public var to: [String]
+    public var workerCount: Int?
+
+    public init(topology: RunEventV1TeamDelegatePayloadTopology, mode: String? = nil, round: Int? = nil, step: Int? = nil, handoffIndex: Int? = nil, from: String? = nil, to: [String], workerCount: Int? = nil) {
+        self.topology = topology
+        self.mode = mode
+        self.round = round
+        self.step = step
+        self.handoffIndex = handoffIndex
+        self.from = from
+        self.to = to
+        self.workerCount = workerCount
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case topology = "topology"
+        case mode = "mode"
+        case round = "round"
+        case step = "step"
+        case handoffIndex = "handoff_index"
+        case from = "from"
+        case to = "to"
+        case workerCount = "worker_count"
+    }
+}
+
+/// `RunEventV1TeamDelegatePayloadTopology` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1TeamDelegatePayloadTopology: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let addressed = RunEventV1TeamDelegatePayloadTopology(rawValue: "addressed")
+    public static let supervisor = RunEventV1TeamDelegatePayloadTopology(rawValue: "supervisor")
+    public static let pipeline = RunEventV1TeamDelegatePayloadTopology(rawValue: "pipeline")
+    public static let swarm = RunEventV1TeamDelegatePayloadTopology(rawValue: "swarm")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1TeamDelegatePayloadTopology] = [.addressed, .supervisor, .pipeline, .swarm]
+}
+
+/// `RunEventV1TeamDelegateType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1TeamDelegateType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let teamDelegate = RunEventV1TeamDelegateType(rawValue: "team.delegate")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1TeamDelegateType] = [.teamDelegate]
+}
+
+/// `RunEventV1ToolCall` model.
+public struct RunEventV1ToolCall: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1ToolCallType
+    public var seq: Int
+    public var payload: RunEventV1ToolCallPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1ToolCallType, seq: Int, payload: RunEventV1ToolCallPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1ToolCallPayload` model.
+public struct RunEventV1ToolCallPayload: Codable, Hashable, Sendable {
+    public var toolCall: RunEventV1ToolCallPayloadToolCall
+    public var builtin: Bool?
+    public var mcpServerId: String?
+    public var mcpSessionId: String?
+    public var transportType: String?
+    public var parentEventId: String?
+    public var eventId: String?
+
+    public init(toolCall: RunEventV1ToolCallPayloadToolCall, builtin: Bool? = nil, mcpServerId: String? = nil, mcpSessionId: String? = nil, transportType: String? = nil, parentEventId: String? = nil, eventId: String? = nil) {
+        self.toolCall = toolCall
+        self.builtin = builtin
+        self.mcpServerId = mcpServerId
+        self.mcpSessionId = mcpSessionId
+        self.transportType = transportType
+        self.parentEventId = parentEventId
+        self.eventId = eventId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case toolCall = "tool_call"
+        case builtin = "builtin"
+        case mcpServerId = "mcp_server_id"
+        case mcpSessionId = "mcp_session_id"
+        case transportType = "transport_type"
+        case parentEventId = "parent_event_id"
+        case eventId = "_event_id"
+    }
+}
+
+/// `RunEventV1ToolCallPayloadToolCall` model.
+public struct RunEventV1ToolCallPayloadToolCall: Codable, Hashable, Sendable {
+    public var id: String
+    public var name: String
+    public var arguments: JSONObject
+    public var argumentsPreview: String?
+
+    public init(id: String, name: String, arguments: JSONObject, argumentsPreview: String? = nil) {
+        self.id = id
+        self.name = name
+        self.arguments = arguments
+        self.argumentsPreview = argumentsPreview
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case name = "name"
+        case arguments = "arguments"
+        case argumentsPreview = "arguments_preview"
+    }
+}
+
+/// `RunEventV1ToolCallType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1ToolCallType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let toolCall = RunEventV1ToolCallType(rawValue: "tool.call")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1ToolCallType] = [.toolCall]
+}
+
+/// `RunEventV1ToolError` model.
+public struct RunEventV1ToolError: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1ToolErrorType
+    public var seq: Int
+    public var payload: RunEventV1ToolErrorPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1ToolErrorType, seq: Int, payload: RunEventV1ToolErrorPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1ToolErrorPayload` model.
+public struct RunEventV1ToolErrorPayload: Codable, Hashable, Sendable {
+    public var error: String
+    public var toolName: String?
+    public var toolCallId: String?
+    public var governanceBlocked: Bool?
+    public var parseError: Bool?
+    public var builtin: Bool?
+    public var parentEventId: String?
+
+    public init(error: String, toolName: String? = nil, toolCallId: String? = nil, governanceBlocked: Bool? = nil, parseError: Bool? = nil, builtin: Bool? = nil, parentEventId: String? = nil) {
+        self.error = error
+        self.toolName = toolName
+        self.toolCallId = toolCallId
+        self.governanceBlocked = governanceBlocked
+        self.parseError = parseError
+        self.builtin = builtin
+        self.parentEventId = parentEventId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case toolName = "tool_name"
+        case toolCallId = "tool_call_id"
+        case governanceBlocked = "governance_blocked"
+        case parseError = "parse_error"
+        case builtin = "builtin"
+        case parentEventId = "parent_event_id"
+    }
+}
+
+/// `RunEventV1ToolErrorType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1ToolErrorType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let toolError = RunEventV1ToolErrorType(rawValue: "tool.error")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1ToolErrorType] = [.toolError]
+}
+
+/// `RunEventV1ToolResult` model.
+public struct RunEventV1ToolResult: Codable, Hashable, Sendable {
+    public var eventId: String
+    public var runId: String
+    public var sessionId: String?
+    public var type: RunEventV1ToolResultType
+    public var seq: Int
+    public var payload: RunEventV1ToolResultPayload
+    public var timestamp: String
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(eventId: String, runId: String, sessionId: String? = nil, type: RunEventV1ToolResultType, seq: Int, payload: RunEventV1ToolResultPayload, timestamp: String, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunEventV1ToolResultPayload` model.
+public struct RunEventV1ToolResultPayload: Codable, Hashable, Sendable {
+    public var toolCallId: String?
+    public var toolResult: RunEventV1ToolResultPayloadToolResult
+    public var latencyMs: Double?
+    public var builtin: Bool?
+    public var mcpServerId: String?
+    public var mcpSessionId: String?
+    public var transportType: String?
+    public var parentEventId: String?
+
+    public init(toolCallId: String? = nil, toolResult: RunEventV1ToolResultPayloadToolResult, latencyMs: Double? = nil, builtin: Bool? = nil, mcpServerId: String? = nil, mcpSessionId: String? = nil, transportType: String? = nil, parentEventId: String? = nil) {
+        self.toolCallId = toolCallId
+        self.toolResult = toolResult
+        self.latencyMs = latencyMs
+        self.builtin = builtin
+        self.mcpServerId = mcpServerId
+        self.mcpSessionId = mcpSessionId
+        self.transportType = transportType
+        self.parentEventId = parentEventId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case toolCallId = "tool_call_id"
+        case toolResult = "tool_result"
+        case latencyMs = "latency_ms"
+        case builtin = "builtin"
+        case mcpServerId = "mcp_server_id"
+        case mcpSessionId = "mcp_session_id"
+        case transportType = "transport_type"
+        case parentEventId = "parent_event_id"
+    }
+}
+
+/// `RunEventV1ToolResultPayloadToolResult` model.
+public struct RunEventV1ToolResultPayloadToolResult: Codable, Hashable, Sendable {
+    public var content: String
+
+    public init(content: String) {
+        self.content = content
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case content = "content"
+    }
+}
+
+/// `RunEventV1ToolResultType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1ToolResultType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let toolResult = RunEventV1ToolResultType(rawValue: "tool.result")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1ToolResultType] = [.toolResult]
+}
+
 /// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
 /// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
 /// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -45855,6 +48413,335 @@ public struct RunStreamEventTraceContext: Codable, Hashable, Sendable {
         case traceparent = "traceparent"
         case tracestate = "tracestate"
     }
+}
+
+/// `RunStreamFrameV1Connected` model.
+public struct RunStreamFrameV1Connected: Codable, Hashable, Sendable {
+    public var runId: String
+    public var status: String
+    public var connectedAt: String?
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(runId: String, status: String, connectedAt: String? = nil, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.runId = runId
+        self.status = status
+        self.connectedAt = connectedAt
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case runId = "run_id"
+        case status = "status"
+        case connectedAt = "connected_at"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunStreamFrameV1Done` model.
+public struct RunStreamFrameV1Done: Codable, Hashable, Sendable {
+    public var runId: String
+    public var status: String
+    public var metrics: RunStreamFrameV1DoneMetrics?
+    public var output: JSONObject?
+    public var error: String?
+    public var costUsd: Double?
+    public var guardrailBlocked: Bool?
+    public var guardrailViolation: JSONObject?
+    public var streamType: RunStreamDoneStreamType?
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(runId: String, status: String, metrics: RunStreamFrameV1DoneMetrics? = nil, output: JSONObject? = nil, error: String? = nil, costUsd: Double? = nil, guardrailBlocked: Bool? = nil, guardrailViolation: JSONObject? = nil, streamType: RunStreamDoneStreamType? = nil, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.runId = runId
+        self.status = status
+        self.metrics = metrics
+        self.output = output
+        self.error = error
+        self.costUsd = costUsd
+        self.guardrailBlocked = guardrailBlocked
+        self.guardrailViolation = guardrailViolation
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case runId = "run_id"
+        case status = "status"
+        case metrics = "metrics"
+        case output = "output"
+        case error = "error"
+        case costUsd = "cost_usd"
+        case guardrailBlocked = "guardrail_blocked"
+        case guardrailViolation = "_guardrail_violation"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunStreamFrameV1DoneMetrics` model.
+public struct RunStreamFrameV1DoneMetrics: Codable, Hashable, Sendable {
+    public var durationMs: Int?
+    public var stepsCount: Int?
+    public var inputTokens: Int?
+    public var outputTokens: Int?
+    public var thinkingTokens: Int?
+    public var cachedTokens: Int?
+    public var toolCallsCount: Int?
+    public var llmCallsCount: Int?
+    public var guardrailChecks: Int?
+    public var guardrailViolations: Int?
+    public var memoryRetrievals: Int?
+    public var memoryExtractions: Int?
+    public var totalCostUsd: Double?
+    public var fallbackUsed: Bool?
+    public var pricingConfidence: RunEventV1RunCompletedPayloadMetricsPricingConfidence?
+    public var costAttribution: RunMetricsCostAttribution?
+    public var filesModified: Int?
+    public var commandsExecuted: Int?
+
+    public init(durationMs: Int? = nil, stepsCount: Int? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, thinkingTokens: Int? = nil, cachedTokens: Int? = nil, toolCallsCount: Int? = nil, llmCallsCount: Int? = nil, guardrailChecks: Int? = nil, guardrailViolations: Int? = nil, memoryRetrievals: Int? = nil, memoryExtractions: Int? = nil, totalCostUsd: Double? = nil, fallbackUsed: Bool? = nil, pricingConfidence: RunEventV1RunCompletedPayloadMetricsPricingConfidence? = nil, costAttribution: RunMetricsCostAttribution? = nil, filesModified: Int? = nil, commandsExecuted: Int? = nil) {
+        self.durationMs = durationMs
+        self.stepsCount = stepsCount
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.thinkingTokens = thinkingTokens
+        self.cachedTokens = cachedTokens
+        self.toolCallsCount = toolCallsCount
+        self.llmCallsCount = llmCallsCount
+        self.guardrailChecks = guardrailChecks
+        self.guardrailViolations = guardrailViolations
+        self.memoryRetrievals = memoryRetrievals
+        self.memoryExtractions = memoryExtractions
+        self.totalCostUsd = totalCostUsd
+        self.fallbackUsed = fallbackUsed
+        self.pricingConfidence = pricingConfidence
+        self.costAttribution = costAttribution
+        self.filesModified = filesModified
+        self.commandsExecuted = commandsExecuted
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case durationMs = "duration_ms"
+        case stepsCount = "steps_count"
+        case inputTokens = "input_tokens"
+        case outputTokens = "output_tokens"
+        case thinkingTokens = "thinking_tokens"
+        case cachedTokens = "cached_tokens"
+        case toolCallsCount = "tool_calls_count"
+        case llmCallsCount = "llm_calls_count"
+        case guardrailChecks = "guardrail_checks"
+        case guardrailViolations = "guardrail_violations"
+        case memoryRetrievals = "memory_retrievals"
+        case memoryExtractions = "memory_extractions"
+        case totalCostUsd = "total_cost_usd"
+        case fallbackUsed = "fallback_used"
+        case pricingConfidence = "pricing_confidence"
+        case costAttribution = "cost_attribution"
+        case filesModified = "files_modified"
+        case commandsExecuted = "commands_executed"
+    }
+}
+
+public typealias RunStreamFrameV1Error = JSONValue
+
+/// `RunStreamFrameV1ErrorVariant1` model.
+public struct RunStreamFrameV1ErrorVariant1: Codable, Hashable, Sendable {
+    public var error: String
+    public var code: RunStreamFrameV1ErrorVariant1code
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(error: String, code: RunStreamFrameV1ErrorVariant1code, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.error = error
+        self.code = code
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case code = "code"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunStreamFrameV1ErrorVariant1code` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunStreamFrameV1ErrorVariant1code: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runNotFound = RunStreamFrameV1ErrorVariant1code(rawValue: "RUN_NOT_FOUND")
+    public static let streamError = RunStreamFrameV1ErrorVariant1code(rawValue: "STREAM_ERROR")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunStreamFrameV1ErrorVariant1code] = [.runNotFound, .streamError]
+}
+
+/// `RunStreamFrameV1ErrorVariant2` model.
+public struct RunStreamFrameV1ErrorVariant2: Codable, Hashable, Sendable {
+    public var type: RunStreamFrameV1ErrorVariant2type
+    public var message: String
+    public var code: RunStreamFrameV1ErrorVariant2code
+
+    public init(type: RunStreamFrameV1ErrorVariant2type, message: String, code: RunStreamFrameV1ErrorVariant2code) {
+        self.type = type
+        self.message = message
+        self.code = code
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case type = "type"
+        case message = "message"
+        case code = "code"
+    }
+}
+
+/// `RunStreamFrameV1ErrorVariant2code` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunStreamFrameV1ErrorVariant2code: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let streamBufferExceeded = RunStreamFrameV1ErrorVariant2code(rawValue: "STREAM_BUFFER_EXCEEDED")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunStreamFrameV1ErrorVariant2code] = [.streamBufferExceeded]
+}
+
+/// `RunStreamFrameV1ErrorVariant2type` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunStreamFrameV1ErrorVariant2type: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let error = RunStreamFrameV1ErrorVariant2type(rawValue: "error")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunStreamFrameV1ErrorVariant2type] = [.error]
+}
+
+/// `RunStreamFrameV1Gap` model.
+public struct RunStreamFrameV1Gap: Codable, Hashable, Sendable {
+    public var message: String
+
+    public init(message: String) {
+        self.message = message
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case message = "message"
+    }
+}
+
+/// `RunStreamFrameV1GuardrailViolation` model.
+public struct RunStreamFrameV1GuardrailViolation: Codable, Hashable, Sendable {
+    public var guardrailViolation: JSONObject?
+    public var violationSource: RunStreamFrameV1GuardrailViolationViolationSource
+    public var eventId: String?
+    public var runId: String?
+    public var sessionId: String?
+    public var type: String?
+    public var seq: Int?
+    public var payload: JSONObject?
+    public var timestamp: String?
+    public var stepId: String?
+    public var parentEventId: String?
+    public var streamType: RunStreamEventStreamType?
+    public var chunkId: String?
+    public var chunkIndex: Int?
+
+    public init(guardrailViolation: JSONObject? = nil, violationSource: RunStreamFrameV1GuardrailViolationViolationSource, eventId: String? = nil, runId: String? = nil, sessionId: String? = nil, type: String? = nil, seq: Int? = nil, payload: JSONObject? = nil, timestamp: String? = nil, stepId: String? = nil, parentEventId: String? = nil, streamType: RunStreamEventStreamType? = nil, chunkId: String? = nil, chunkIndex: Int? = nil) {
+        self.guardrailViolation = guardrailViolation
+        self.violationSource = violationSource
+        self.eventId = eventId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.type = type
+        self.seq = seq
+        self.payload = payload
+        self.timestamp = timestamp
+        self.stepId = stepId
+        self.parentEventId = parentEventId
+        self.streamType = streamType
+        self.chunkId = chunkId
+        self.chunkIndex = chunkIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case guardrailViolation = "_guardrail_violation"
+        case violationSource = "violation_source"
+        case eventId = "event_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case type = "type"
+        case seq = "seq"
+        case payload = "payload"
+        case timestamp = "timestamp"
+        case stepId = "step_id"
+        case parentEventId = "parent_event_id"
+        case streamType = "stream_type"
+        case chunkId = "_chunk_id"
+        case chunkIndex = "_chunk_index"
+    }
+}
+
+/// `RunStreamFrameV1GuardrailViolationViolationSource` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunStreamFrameV1GuardrailViolationViolationSource: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let stream = RunStreamFrameV1GuardrailViolationViolationSource(rawValue: "stream")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunStreamFrameV1GuardrailViolationViolationSource] = [.stream]
 }
 
 /// `RunWorkspaceCommandRequest` model.
@@ -47154,6 +50041,176 @@ public struct SessionQueueMode: RawRepresentable, Codable, Hashable, Sendable, E
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [SessionQueueMode] = [.allow, .reject]
+}
+
+/// `SessionStreamFrameV1Connected` model.
+public struct SessionStreamFrameV1Connected: Codable, Hashable, Sendable {
+    public var sessionId: String
+    public var connectedAt: String?
+    public var runs: [String]?
+
+    public init(sessionId: String, connectedAt: String? = nil, runs: [String]? = nil) {
+        self.sessionId = sessionId
+        self.connectedAt = connectedAt
+        self.runs = runs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sessionId = "session_id"
+        case connectedAt = "connected_at"
+        case runs = "runs"
+    }
+}
+
+/// `SessionStreamFrameV1Error` model.
+public struct SessionStreamFrameV1Error: Codable, Hashable, Sendable {
+    public var error: String
+    public var code: SessionStreamFrameV1ErrorCode
+
+    public init(error: String, code: SessionStreamFrameV1ErrorCode) {
+        self.error = error
+        self.code = code
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case code = "code"
+    }
+}
+
+/// `SessionStreamFrameV1ErrorCode` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct SessionStreamFrameV1ErrorCode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let sessionNotFound = SessionStreamFrameV1ErrorCode(rawValue: "SESSION_NOT_FOUND")
+    public static let streamError = SessionStreamFrameV1ErrorCode(rawValue: "STREAM_ERROR")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [SessionStreamFrameV1ErrorCode] = [.sessionNotFound, .streamError]
+}
+
+/// `SessionStreamFrameV1RunAdded` model.
+public struct SessionStreamFrameV1RunAdded: Codable, Hashable, Sendable {
+    public var runId: String
+
+    public init(runId: String) {
+        self.runId = runId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case runId = "run_id"
+    }
+}
+
+/// `SessionStreamFrameV1RunDone` model.
+public struct SessionStreamFrameV1RunDone: Codable, Hashable, Sendable {
+    public var runId: String
+    public var status: String
+    public var metrics: SessionStreamFrameV1RunDoneMetrics?
+    public var costUsd: Double?
+
+    public init(runId: String, status: String, metrics: SessionStreamFrameV1RunDoneMetrics? = nil, costUsd: Double? = nil) {
+        self.runId = runId
+        self.status = status
+        self.metrics = metrics
+        self.costUsd = costUsd
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case runId = "run_id"
+        case status = "status"
+        case metrics = "metrics"
+        case costUsd = "cost_usd"
+    }
+}
+
+/// `SessionStreamFrameV1RunDoneMetrics` model.
+public struct SessionStreamFrameV1RunDoneMetrics: Codable, Hashable, Sendable {
+    public var durationMs: Int?
+    public var stepsCount: Int?
+    public var inputTokens: Int?
+    public var outputTokens: Int?
+    public var thinkingTokens: Int?
+    public var cachedTokens: Int?
+    public var toolCallsCount: Int?
+    public var llmCallsCount: Int?
+    public var guardrailChecks: Int?
+    public var guardrailViolations: Int?
+    public var memoryRetrievals: Int?
+    public var memoryExtractions: Int?
+    public var totalCostUsd: Double?
+    public var fallbackUsed: Bool?
+    public var pricingConfidence: RunEventV1RunCompletedPayloadMetricsPricingConfidence?
+    public var costAttribution: RunMetricsCostAttribution?
+    public var filesModified: Int?
+    public var commandsExecuted: Int?
+
+    public init(durationMs: Int? = nil, stepsCount: Int? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, thinkingTokens: Int? = nil, cachedTokens: Int? = nil, toolCallsCount: Int? = nil, llmCallsCount: Int? = nil, guardrailChecks: Int? = nil, guardrailViolations: Int? = nil, memoryRetrievals: Int? = nil, memoryExtractions: Int? = nil, totalCostUsd: Double? = nil, fallbackUsed: Bool? = nil, pricingConfidence: RunEventV1RunCompletedPayloadMetricsPricingConfidence? = nil, costAttribution: RunMetricsCostAttribution? = nil, filesModified: Int? = nil, commandsExecuted: Int? = nil) {
+        self.durationMs = durationMs
+        self.stepsCount = stepsCount
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.thinkingTokens = thinkingTokens
+        self.cachedTokens = cachedTokens
+        self.toolCallsCount = toolCallsCount
+        self.llmCallsCount = llmCallsCount
+        self.guardrailChecks = guardrailChecks
+        self.guardrailViolations = guardrailViolations
+        self.memoryRetrievals = memoryRetrievals
+        self.memoryExtractions = memoryExtractions
+        self.totalCostUsd = totalCostUsd
+        self.fallbackUsed = fallbackUsed
+        self.pricingConfidence = pricingConfidence
+        self.costAttribution = costAttribution
+        self.filesModified = filesModified
+        self.commandsExecuted = commandsExecuted
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case durationMs = "duration_ms"
+        case stepsCount = "steps_count"
+        case inputTokens = "input_tokens"
+        case outputTokens = "output_tokens"
+        case thinkingTokens = "thinking_tokens"
+        case cachedTokens = "cached_tokens"
+        case toolCallsCount = "tool_calls_count"
+        case llmCallsCount = "llm_calls_count"
+        case guardrailChecks = "guardrail_checks"
+        case guardrailViolations = "guardrail_violations"
+        case memoryRetrievals = "memory_retrievals"
+        case memoryExtractions = "memory_extractions"
+        case totalCostUsd = "total_cost_usd"
+        case fallbackUsed = "fallback_used"
+        case pricingConfidence = "pricing_confidence"
+        case costAttribution = "cost_attribution"
+        case filesModified = "files_modified"
+        case commandsExecuted = "commands_executed"
+    }
+}
+
+/// `SessionStreamFrameV1SessionClosed` model.
+public struct SessionStreamFrameV1SessionClosed: Codable, Hashable, Sendable {
+    public var sessionId: String
+
+    public init(sessionId: String) {
+        self.sessionId = sessionId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sessionId = "session_id"
+    }
 }
 
 /// `user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a

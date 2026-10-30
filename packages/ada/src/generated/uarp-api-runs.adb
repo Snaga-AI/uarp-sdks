@@ -652,6 +652,9 @@ package body UARP.API.Runs is
       if Params.Has_Token then
          UARP.Types.Add (Query, "token", Params.Token);
       end if;
+      if Params.Has_Event_Schema then
+         UARP.Types.Add (Query, "event_schema", Params.Event_Schema);
+      end if;
       if Params.Has_Last_Event_Id then
          UARP.Types.Add (Headers, "Last-Event-ID", Params.Last_Event_Id);
       end if;

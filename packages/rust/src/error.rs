@@ -191,7 +191,7 @@ impl ApiError {
     }
 
     pub fn is_retryable(&self) -> bool {
-        matches!(self.status, 408 | 409 | 429 | 500 | 502 | 503 | 504)
+        matches!(self.status, 408 | 429 | 500 | 502 | 503 | 504)
     }
 }
 

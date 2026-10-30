@@ -114,14 +114,18 @@ package UARP.API.Analytics is
    --  it back unchanged as `?cursor=` (with any `limit`) to continue: first through the rest of
    --  the same window, then into the next 500 runs, and so on - every waiting run is reached
    --  exactly once, however old. A continuation page whose window holds nothing to show reads on,
-   --  up to 4 windows (2 000 runs) per request, before answering. On a continuation page `counts`
-   --  and `scanned` describe that page's span only, and `reviews`/`proposals` - complete lists,
-   --  not windowed - are empty: read them from the first page. A run that changes status between
-   --  pages can be seen twice or not at all, and a run created between pages can shift the first
-   --  window by one. A cursor this endpoint did not issue is 400.
+   --  up to 4 windows (2 000 runs) per request, before answering. A first page whose window holds
+   --  nothing looks on the same way (since 2026-10-29) to decide `has_more`: when no waiting run
+   --  exists until the oldest run, it answers `has_more: false` with no `cursor` - nobody is
+   --  waiting - and when one does, the `cursor` starts at that run's window rather than at the
+   --  empty ones in between. On a continuation page `counts` and `scanned` describe that page's
+   --  span only, and `reviews`/`proposals` - complete lists, not windowed - are empty: read them
+   --  from the first page. A run that changes status between pages can be seen twice or not at
+   --  all, and a run created between pages can shift the first window by one. A cursor this
+   --  endpoint did not issue is 400.
    --
-   --  Without `cursor` the answer is the first window, exactly as before paging existed;
-   --  `has_more`/`cursor` are additive.
+   --  Without `cursor` the items, `counts` and `scanned` are the first window's, exactly as before
+   --  paging existed; `has_more`/`cursor` are additive.
    --
    --  GET /api/v1/analytics/inbox
    --

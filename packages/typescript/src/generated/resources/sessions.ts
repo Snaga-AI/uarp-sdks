@@ -193,6 +193,19 @@ export interface StreamSessionEventsParams {
    */
   token?: string;
   /**
+   * The version of the event schemas the client parses strictly (since 2026-10-30). Every frame
+   * is then sent in exactly that version's shape — `RunEventV<N>` for run events,
+   * `RunStreamFrameV<N>*` / `SessionStreamFrameV<N>*` for the stream's own frames — and a frame
+   * the version does not know is not sent. Without it the stream is unchanged. An unsupported
+   * value, or `event_schema` together with `flat=1`, is 400 VALIDATION_ERROR before the stream
+   * opens. The operation's `x-event-stream` gives, per version, the line that ends the stream
+   * (SSE event name `message`, data `[DONE]` — not JSON, not versioned), the SSE `id` of every
+   * frame, what `Last-Event-ID` resumes, what a `gap` frame means and how to recover from it,
+   * and the frames the version never sends. Every `error` frame carries a closed `code`, and
+   * what to do next is decided by it, never by the text.
+   */
+  event_schema?: number;
+  /**
    * SSE resumption cursor. The browser's EventSource sets this automatically on reconnect;
    * servers replay events strictly after this id.
    */
@@ -1114,7 +1127,7 @@ export class SessionsResource extends APIResource {
     return this._client.stream({
       method: 'GET',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/events`,
-      query: pick(params, ['token']),
+      query: pick(params, ['token', 'event_schema']),
       headers: pick(params, ['Last-Event-ID']),
       options,
     });

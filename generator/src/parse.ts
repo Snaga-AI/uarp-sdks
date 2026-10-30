@@ -10,6 +10,7 @@ import {
   type AliasType,
   type BodyEncoding,
   type EnumType,
+  type EventStream,
   type Group,
   type MultipartPart,
   type NamedType,
@@ -129,7 +130,66 @@ class Parser {
       types: [...this.#types.values()].sort((a, b) => a.name.localeCompare(b.name)),
       groups,
       scopes: this.#scopeCatalogue(),
+      eventStreams: this.#eventStreams(),
     };
+  }
+
+  /**
+   * The frame table of every versioned SSE stream. The frame schemas are named
+   * `<Run|Session>StreamFrameV<N><Event>` and nothing references them, so the
+   * table is the only thing that ties a frame to the `event:` name it is sent
+   * under. A name without its schema, or a frame schema no name reaches, stops
+   * the build rather than leaving a hole a strict parser would fall into.
+   */
+  #eventStreams(): EventStream[] {
+    const out: EventStream[] = [];
+    for (const [path, item] of Object.entries<Json>(this.#doc.paths ?? {})) {
+      for (const [method, op] of Object.entries<Json>(item ?? {})) {
+        const versions = op?.['x-event-stream'];
+        if (!versions || typeof versions !== 'object') continue;
+        const id = String(op.operationId ?? '');
+        const stream = /^stream(\w+)Events$/.exec(id)?.[1];
+        if (!stream) throw new Error(`x-event-stream on ${method.toUpperCase()} ${path}: cannot name the stream of ${id}`);
+        for (const [version, rules] of Object.entries<Json>(versions)) {
+          const prefix = `${pascal(stream)}StreamFrameV${version}`;
+          const names = new Set<string>([
+            ...Object.keys(rules.ids ?? {}),
+            ...Object.keys(rules.sentWithoutId ?? {}),
+            ...(rules.gap !== undefined ? ['gap'] : []),
+          ]);
+          const frames: { event: string; type: string }[] = [];
+          for (const event of [...names].filter((n) => n !== '*').sort()) {
+            const type = prefix + pascal(event);
+            if (!this.#types.has(type)) throw new Error(`${prefix}: event \`${event}\` has no schema ${type}`);
+            frames.push({ event, type });
+          }
+          const covered = new Set(frames.map((f) => f.type));
+          for (const name of this.#componentNames) {
+            if (name.startsWith(prefix) && !covered.has(name)) {
+              throw new Error(`${prefix}: schema ${name} is not sent under any event name`);
+            }
+          }
+          if (names.has('*')) frames.push(...this.#runEventFrames(`RunEventV${version}`));
+          out.push({ name: `${prefix}Map`, method: method.toUpperCase(), path, version, frames });
+        }
+      }
+    }
+    return out;
+  }
+
+  /** `*` in a stream's ids: every run event, each under its own `type`. */
+  #runEventFrames(union: string): { event: string; type: string }[] {
+    const alias = this.#types.get(union);
+    if (alias?.kind !== 'alias' || alias.target.kind !== 'union') throw new Error(`${union} is not a union`);
+    return alias.target.variants.map((variant) => {
+      const member = variant.kind === 'named' ? this.#types.get(variant.name) : undefined;
+      const discriminant = member?.kind === 'object' ? member.properties.find((p) => p.wire === 'type') : undefined;
+      const literal = discriminant?.type.kind === 'named' ? this.#types.get(discriminant.type.name) : undefined;
+      if (literal?.kind !== 'enum' || literal.values.length !== 1) {
+        throw new Error(`${union}: member ${member?.name ?? '?'} has no single-valued \`type\``);
+      }
+      return { event: literal.values[0]!, type: member!.name };
+    });
   }
 
   // ---------------------------------------------------------------- schemas

@@ -19642,10 +19642,10 @@ public data class HandleStripeWebhookResponse(
 )
 
 /**
- * `HealthCheckV1aliasResponse` model.
+ * `HealthCheckV1AliasResponse` model.
  */
 @Serializable
-public data class HealthCheckV1aliasResponse(
+public data class HealthCheckV1AliasResponse(
     public val status: GetHealthResponseStatus? = null,
     public val timestamp: String? = null,
     @SerialName("kv_connected")
@@ -34982,6 +34982,1941 @@ public object RunEventTypeSerializer : KSerializer<RunEventType> {
 }
 
 /**
+ * A run event as `event_schema=1` sends it, on GET /runs/{runId}/events and GET
+ * /sessions/{sessionId}/events. Closed: a strict parser may refuse any field or value not
+ * declared here, because none is ever sent. A type this version does not list is not sent to a
+ * v1 client, and neither is an event whose discriminant value (`chunk_type`, `topology`, …)
+ * the version does not list. Bridge runs arrive in the native shape.
+ */
+public typealias RunEventV1 = JsonElement
+
+/**
+ * `RunEventV1ChildRunCompleted` model.
+ */
+@Serializable
+public data class RunEventV1ChildRunCompleted(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1ChildRunCompletedType,
+    public val seq: Long,
+    public val payload: RunEventV1ChildRunCompletedPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1ChildRunCompletedPayload` model.
+ */
+@Serializable
+public data class RunEventV1ChildRunCompletedPayload(
+    @SerialName("child_run_id")
+    public val childRunId: String,
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("agent_name")
+    public val agentName: String? = null,
+    public val status: String,
+    @SerialName("output_preview")
+    public val outputPreview: String? = null,
+    @SerialName("duration_ms")
+    public val durationMs: Long? = null,
+    @SerialName("execution_mode")
+    public val executionMode: String? = null,
+    @SerialName("cost_usd")
+    public val costUsd: Double? = null,
+)
+
+/**
+ * `RunEventV1ChildRunCompletedType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1ChildRunCompletedTypeSerializer::class)
+@JvmInline
+public value class RunEventV1ChildRunCompletedType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val CHILD_RUN_COMPLETED: RunEventV1ChildRunCompletedType = RunEventV1ChildRunCompletedType("child_run.completed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1ChildRunCompletedType> = listOf(CHILD_RUN_COMPLETED)
+    }
+}
+
+public object RunEventV1ChildRunCompletedTypeSerializer : KSerializer<RunEventV1ChildRunCompletedType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1ChildRunCompletedType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1ChildRunCompletedType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1ChildRunCompletedType = RunEventV1ChildRunCompletedType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1ChildRunFailed` model.
+ */
+@Serializable
+public data class RunEventV1ChildRunFailed(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1ChildRunFailedType,
+    public val seq: Long,
+    public val payload: RunEventV1ChildRunFailedPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1ChildRunFailedPayload` model.
+ */
+@Serializable
+public data class RunEventV1ChildRunFailedPayload(
+    @SerialName("child_run_id")
+    public val childRunId: String,
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("agent_name")
+    public val agentName: String? = null,
+    public val status: String,
+    public val error: String? = null,
+    @SerialName("execution_mode")
+    public val executionMode: String? = null,
+)
+
+/**
+ * `RunEventV1ChildRunFailedType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1ChildRunFailedTypeSerializer::class)
+@JvmInline
+public value class RunEventV1ChildRunFailedType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val CHILD_RUN_FAILED: RunEventV1ChildRunFailedType = RunEventV1ChildRunFailedType("child_run.failed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1ChildRunFailedType> = listOf(CHILD_RUN_FAILED)
+    }
+}
+
+public object RunEventV1ChildRunFailedTypeSerializer : KSerializer<RunEventV1ChildRunFailedType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1ChildRunFailedType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1ChildRunFailedType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1ChildRunFailedType = RunEventV1ChildRunFailedType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1LLMChunk` model.
+ */
+@Serializable
+public data class RunEventV1LLMChunk(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1LLMChunkType,
+    public val seq: Long,
+    public val payload: RunEventV1LLMChunkPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1LLMChunkPayload` model.
+ */
+@Serializable
+public data class RunEventV1LLMChunkPayload(
+    @SerialName("chunk_type")
+    public val chunkType: RunEventV1LLMChunkPayloadChunkType,
+    public val delta: String,
+    public val index: Long? = null,
+)
+
+/**
+ * `RunEventV1LLMChunkPayloadChunkType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1LLMChunkPayloadChunkTypeSerializer::class)
+@JvmInline
+public value class RunEventV1LLMChunkPayloadChunkType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val CONTENT: RunEventV1LLMChunkPayloadChunkType = RunEventV1LLMChunkPayloadChunkType("content")
+        public val THINKING: RunEventV1LLMChunkPayloadChunkType = RunEventV1LLMChunkPayloadChunkType("thinking")
+        public val TOOL_CALL: RunEventV1LLMChunkPayloadChunkType = RunEventV1LLMChunkPayloadChunkType("tool_call")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1LLMChunkPayloadChunkType> = listOf(CONTENT, THINKING, TOOL_CALL)
+    }
+}
+
+public object RunEventV1LLMChunkPayloadChunkTypeSerializer : KSerializer<RunEventV1LLMChunkPayloadChunkType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1LLMChunkPayloadChunkType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1LLMChunkPayloadChunkType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1LLMChunkPayloadChunkType = RunEventV1LLMChunkPayloadChunkType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1LLMChunkType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1LLMChunkTypeSerializer::class)
+@JvmInline
+public value class RunEventV1LLMChunkType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val LLM_CHUNK: RunEventV1LLMChunkType = RunEventV1LLMChunkType("llm.chunk")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1LLMChunkType> = listOf(LLM_CHUNK)
+    }
+}
+
+public object RunEventV1LLMChunkTypeSerializer : KSerializer<RunEventV1LLMChunkType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1LLMChunkType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1LLMChunkType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1LLMChunkType = RunEventV1LLMChunkType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1LLMError` model.
+ */
+@Serializable
+public data class RunEventV1LLMError(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1LLMErrorType,
+    public val seq: Long,
+    public val payload: RunEventV1LLMErrorPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1LLMErrorPayload` model.
+ */
+@Serializable
+public data class RunEventV1LLMErrorPayload(
+    public val error: String,
+    @SerialName("chunks_before_error")
+    public val chunksBeforeError: Long? = null,
+)
+
+/**
+ * `RunEventV1LLMErrorType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1LLMErrorTypeSerializer::class)
+@JvmInline
+public value class RunEventV1LLMErrorType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val LLM_ERROR: RunEventV1LLMErrorType = RunEventV1LLMErrorType("llm.error")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1LLMErrorType> = listOf(LLM_ERROR)
+    }
+}
+
+public object RunEventV1LLMErrorTypeSerializer : KSerializer<RunEventV1LLMErrorType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1LLMErrorType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1LLMErrorType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1LLMErrorType = RunEventV1LLMErrorType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunAwaitingApproval` model.
+ */
+@Serializable
+public data class RunEventV1RunAwaitingApproval(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1RunAwaitingApprovalType,
+    public val seq: Long,
+    public val payload: RunEventV1RunAwaitingApprovalPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1RunAwaitingApprovalPayload` model.
+ */
+@Serializable
+public data class RunEventV1RunAwaitingApprovalPayload(
+    @SerialName("tool_calls")
+    public val toolCalls: List<RunEventV1RunAwaitingApprovalPayloadToolCall>,
+)
+
+/**
+ * `RunEventV1RunAwaitingApprovalPayloadToolCall` model.
+ */
+@Serializable
+public data class RunEventV1RunAwaitingApprovalPayloadToolCall(
+    public val id: String,
+    public val name: String,
+    public val args: JsonObject,
+    public val options: List<String>? = null,
+    public val kind: String? = null,
+)
+
+/**
+ * `RunEventV1RunAwaitingApprovalType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunAwaitingApprovalTypeSerializer::class)
+@JvmInline
+public value class RunEventV1RunAwaitingApprovalType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_AWAITING_APPROVAL: RunEventV1RunAwaitingApprovalType = RunEventV1RunAwaitingApprovalType("run.awaiting_approval")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunAwaitingApprovalType> = listOf(RUN_AWAITING_APPROVAL)
+    }
+}
+
+public object RunEventV1RunAwaitingApprovalTypeSerializer : KSerializer<RunEventV1RunAwaitingApprovalType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunAwaitingApprovalType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunAwaitingApprovalType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunAwaitingApprovalType = RunEventV1RunAwaitingApprovalType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunAwaitingInput` model.
+ */
+@Serializable
+public data class RunEventV1RunAwaitingInput(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1RunAwaitingInputType,
+    public val seq: Long,
+    public val payload: RunEventV1RunAwaitingInputPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1RunAwaitingInputPayload` model.
+ */
+@Serializable
+public data class RunEventV1RunAwaitingInputPayload(
+    @SerialName("tool_call_id")
+    public val toolCallId: String,
+    public val question: String? = null,
+    public val options: List<String>? = null,
+    public val context: String? = null,
+    @SerialName("tool_name")
+    public val toolName: String? = null,
+    public val arguments: JsonObject? = null,
+)
+
+/**
+ * `RunEventV1RunAwaitingInputType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunAwaitingInputTypeSerializer::class)
+@JvmInline
+public value class RunEventV1RunAwaitingInputType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_AWAITING_INPUT: RunEventV1RunAwaitingInputType = RunEventV1RunAwaitingInputType("run.awaiting_input")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunAwaitingInputType> = listOf(RUN_AWAITING_INPUT)
+    }
+}
+
+public object RunEventV1RunAwaitingInputTypeSerializer : KSerializer<RunEventV1RunAwaitingInputType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunAwaitingInputType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunAwaitingInputType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunAwaitingInputType = RunEventV1RunAwaitingInputType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunCancelled` model.
+ */
+@Serializable
+public data class RunEventV1RunCancelled(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1RunCancelledType,
+    public val seq: Long,
+    public val payload: RunEventV1RunCancelledPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1RunCancelledPayload` model.
+ */
+@Serializable
+public data class RunEventV1RunCancelledPayload(
+    public val error: String? = null,
+    @SerialName("error_code")
+    public val errorCode: String? = null,
+    @SerialName("error_details")
+    public val errorDetails: JsonObject? = null,
+    public val message: String? = null,
+    public val reason: String? = null,
+    @SerialName("end_reason")
+    public val endReason: String? = null,
+    public val source: String? = null,
+    public val rejected: Boolean? = null,
+    @SerialName("previous_status")
+    public val previousStatus: String? = null,
+    @SerialName("team_run_id")
+    public val teamRunId: String? = null,
+    public val was: String? = null,
+)
+
+/**
+ * `RunEventV1RunCancelledType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunCancelledTypeSerializer::class)
+@JvmInline
+public value class RunEventV1RunCancelledType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_CANCELLED: RunEventV1RunCancelledType = RunEventV1RunCancelledType("run.cancelled")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunCancelledType> = listOf(RUN_CANCELLED)
+    }
+}
+
+public object RunEventV1RunCancelledTypeSerializer : KSerializer<RunEventV1RunCancelledType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunCancelledType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunCancelledType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunCancelledType = RunEventV1RunCancelledType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunCompleted` model.
+ */
+@Serializable
+public data class RunEventV1RunCompleted(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1RunCompletedType,
+    public val seq: Long,
+    public val payload: RunEventV1RunCompletedPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1RunCompletedPayload` model.
+ */
+@Serializable
+public data class RunEventV1RunCompletedPayload(
+    public val status: RunEventV1RunCompletedPayloadStatus,
+    public val output: JsonObject,
+    public val metrics: RunEventV1RunCompletedPayloadMetrics? = null,
+    @SerialName("cost_usd")
+    public val costUsd: Double? = null,
+)
+
+/**
+ * `RunEventV1RunCompletedPayloadMetrics` model.
+ */
+@Serializable
+public data class RunEventV1RunCompletedPayloadMetrics(
+    @SerialName("duration_ms")
+    public val durationMs: Long? = null,
+    @SerialName("steps_count")
+    public val stepsCount: Long? = null,
+    @SerialName("input_tokens")
+    public val inputTokens: Long? = null,
+    @SerialName("output_tokens")
+    public val outputTokens: Long? = null,
+    @SerialName("thinking_tokens")
+    public val thinkingTokens: Long? = null,
+    @SerialName("cached_tokens")
+    public val cachedTokens: Long? = null,
+    @SerialName("tool_calls_count")
+    public val toolCallsCount: Long? = null,
+    @SerialName("llm_calls_count")
+    public val llmCallsCount: Long? = null,
+    @SerialName("guardrail_checks")
+    public val guardrailChecks: Long? = null,
+    @SerialName("guardrail_violations")
+    public val guardrailViolations: Long? = null,
+    @SerialName("memory_retrievals")
+    public val memoryRetrievals: Long? = null,
+    @SerialName("memory_extractions")
+    public val memoryExtractions: Long? = null,
+    @SerialName("total_cost_usd")
+    public val totalCostUsd: Double? = null,
+    @SerialName("fallback_used")
+    public val fallbackUsed: Boolean? = null,
+    @SerialName("pricing_confidence")
+    public val pricingConfidence: RunEventV1RunCompletedPayloadMetricsPricingConfidence? = null,
+    @SerialName("cost_attribution")
+    public val costAttribution: RunMetricsCostAttribution? = null,
+    @SerialName("files_modified")
+    public val filesModified: Long? = null,
+    @SerialName("commands_executed")
+    public val commandsExecuted: Long? = null,
+)
+
+/**
+ * `RunEventV1RunCompletedPayloadMetricsPricingConfidence` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunCompletedPayloadMetricsPricingConfidenceSerializer::class)
+@JvmInline
+public value class RunEventV1RunCompletedPayloadMetricsPricingConfidence(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val KNOWN: RunEventV1RunCompletedPayloadMetricsPricingConfidence = RunEventV1RunCompletedPayloadMetricsPricingConfidence("known")
+        public val INFERRED: RunEventV1RunCompletedPayloadMetricsPricingConfidence = RunEventV1RunCompletedPayloadMetricsPricingConfidence("inferred")
+        public val FALLBACK: RunEventV1RunCompletedPayloadMetricsPricingConfidence = RunEventV1RunCompletedPayloadMetricsPricingConfidence("fallback")
+        public val UNKNOWN: RunEventV1RunCompletedPayloadMetricsPricingConfidence = RunEventV1RunCompletedPayloadMetricsPricingConfidence("unknown")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunCompletedPayloadMetricsPricingConfidence> = listOf(KNOWN, INFERRED, FALLBACK, UNKNOWN)
+    }
+}
+
+public object RunEventV1RunCompletedPayloadMetricsPricingConfidenceSerializer : KSerializer<RunEventV1RunCompletedPayloadMetricsPricingConfidence> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunCompletedPayloadMetricsPricingConfidence", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunCompletedPayloadMetricsPricingConfidence): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunCompletedPayloadMetricsPricingConfidence = RunEventV1RunCompletedPayloadMetricsPricingConfidence(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunCompletedPayloadStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunCompletedPayloadStatusSerializer::class)
+@JvmInline
+public value class RunEventV1RunCompletedPayloadStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val COMPLETED: RunEventV1RunCompletedPayloadStatus = RunEventV1RunCompletedPayloadStatus("completed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunCompletedPayloadStatus> = listOf(COMPLETED)
+    }
+}
+
+public object RunEventV1RunCompletedPayloadStatusSerializer : KSerializer<RunEventV1RunCompletedPayloadStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunCompletedPayloadStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunCompletedPayloadStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunCompletedPayloadStatus = RunEventV1RunCompletedPayloadStatus(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunCompletedType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunCompletedTypeSerializer::class)
+@JvmInline
+public value class RunEventV1RunCompletedType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_COMPLETED: RunEventV1RunCompletedType = RunEventV1RunCompletedType("run.completed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunCompletedType> = listOf(RUN_COMPLETED)
+    }
+}
+
+public object RunEventV1RunCompletedTypeSerializer : KSerializer<RunEventV1RunCompletedType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunCompletedType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunCompletedType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunCompletedType = RunEventV1RunCompletedType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunFailed` model.
+ */
+@Serializable
+public data class RunEventV1RunFailed(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1RunFailedType,
+    public val seq: Long,
+    public val payload: RunEventV1RunFailedPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1RunFailedPayload` model.
+ */
+@Serializable
+public data class RunEventV1RunFailedPayload(
+    public val error: String,
+    @SerialName("error_code")
+    public val errorCode: String? = null,
+    @SerialName("error_details")
+    public val errorDetails: JsonObject? = null,
+    public val message: String? = null,
+    public val reason: String? = null,
+    @SerialName("end_reason")
+    public val endReason: String? = null,
+    public val source: String? = null,
+    public val rejected: Boolean? = null,
+)
+
+/**
+ * `RunEventV1RunFailedType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunFailedTypeSerializer::class)
+@JvmInline
+public value class RunEventV1RunFailedType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_FAILED: RunEventV1RunFailedType = RunEventV1RunFailedType("run.failed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunFailedType> = listOf(RUN_FAILED)
+    }
+}
+
+public object RunEventV1RunFailedTypeSerializer : KSerializer<RunEventV1RunFailedType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunFailedType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunFailedType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunFailedType = RunEventV1RunFailedType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunGuardrailBlocked` model.
+ */
+@Serializable
+public data class RunEventV1RunGuardrailBlocked(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1RunGuardrailBlockedType,
+    public val seq: Long,
+    public val payload: RunEventV1RunGuardrailBlockedPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1RunGuardrailBlockedPayload` model.
+ */
+@Serializable
+public data class RunEventV1RunGuardrailBlockedPayload(
+    public val error: String,
+    @SerialName("error_code")
+    public val errorCode: String? = null,
+    @SerialName("error_details")
+    public val errorDetails: JsonObject? = null,
+    public val message: String? = null,
+    public val reason: String? = null,
+    @SerialName("end_reason")
+    public val endReason: String? = null,
+    public val source: String? = null,
+    public val rejected: Boolean? = null,
+)
+
+/**
+ * `RunEventV1RunGuardrailBlockedType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunGuardrailBlockedTypeSerializer::class)
+@JvmInline
+public value class RunEventV1RunGuardrailBlockedType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_GUARDRAIL_BLOCKED: RunEventV1RunGuardrailBlockedType = RunEventV1RunGuardrailBlockedType("run.guardrail_blocked")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunGuardrailBlockedType> = listOf(RUN_GUARDRAIL_BLOCKED)
+    }
+}
+
+public object RunEventV1RunGuardrailBlockedTypeSerializer : KSerializer<RunEventV1RunGuardrailBlockedType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunGuardrailBlockedType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunGuardrailBlockedType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunGuardrailBlockedType = RunEventV1RunGuardrailBlockedType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunInputReceived` model.
+ */
+@Serializable
+public data class RunEventV1RunInputReceived(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1RunInputReceivedType,
+    public val seq: Long,
+    public val payload: RunEventV1RunInputReceivedPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1RunInputReceivedPayload` model.
+ */
+@Serializable
+public data class RunEventV1RunInputReceivedPayload(
+    @SerialName("response_length")
+    public val responseLength: Long,
+)
+
+/**
+ * `RunEventV1RunInputReceivedType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunInputReceivedTypeSerializer::class)
+@JvmInline
+public value class RunEventV1RunInputReceivedType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_INPUT_RECEIVED: RunEventV1RunInputReceivedType = RunEventV1RunInputReceivedType("run.input_received")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunInputReceivedType> = listOf(RUN_INPUT_RECEIVED)
+    }
+}
+
+public object RunEventV1RunInputReceivedTypeSerializer : KSerializer<RunEventV1RunInputReceivedType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunInputReceivedType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunInputReceivedType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunInputReceivedType = RunEventV1RunInputReceivedType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunPaused` model.
+ */
+@Serializable
+public data class RunEventV1RunPaused(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1RunPausedType,
+    public val seq: Long,
+    public val payload: RunEventV1RunPausedPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1RunPausedPayload` model.
+ */
+@Serializable
+public data class RunEventV1RunPausedPayload(
+    public val reason: String,
+    public val step: Long? = null,
+    public val resumable: Boolean? = null,
+    @SerialName("held_output")
+    public val heldOutput: Boolean? = null,
+)
+
+/**
+ * `RunEventV1RunPausedType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunPausedTypeSerializer::class)
+@JvmInline
+public value class RunEventV1RunPausedType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_PAUSED: RunEventV1RunPausedType = RunEventV1RunPausedType("run.paused")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunPausedType> = listOf(RUN_PAUSED)
+    }
+}
+
+public object RunEventV1RunPausedTypeSerializer : KSerializer<RunEventV1RunPausedType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunPausedType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunPausedType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunPausedType = RunEventV1RunPausedType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunStarted` model.
+ */
+@Serializable
+public data class RunEventV1RunStarted(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1RunStartedType,
+    public val seq: Long,
+    public val payload: RunEventV1RunStartedPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1RunStartedPayload` model.
+ */
+@Serializable
+public data class RunEventV1RunStartedPayload(
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    @SerialName("execution_mode")
+    public val executionMode: RunEventV1RunStartedPayloadExecutionMode? = null,
+    public val source: String? = null,
+    public val priority: String? = null,
+    @SerialName("resumed_from")
+    public val resumedFrom: RunEventV1RunStartedPayloadResumedFrom? = null,
+    public val approved: Boolean? = null,
+    public val revised: Boolean? = null,
+    public val input: JsonElement? = null,
+)
+
+/**
+ * `RunEventV1RunStartedPayloadExecutionMode` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunStartedPayloadExecutionModeSerializer::class)
+@JvmInline
+public value class RunEventV1RunStartedPayloadExecutionMode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val BRIDGE: RunEventV1RunStartedPayloadExecutionMode = RunEventV1RunStartedPayloadExecutionMode("bridge")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunStartedPayloadExecutionMode> = listOf(BRIDGE)
+    }
+}
+
+public object RunEventV1RunStartedPayloadExecutionModeSerializer : KSerializer<RunEventV1RunStartedPayloadExecutionMode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunStartedPayloadExecutionMode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunStartedPayloadExecutionMode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunStartedPayloadExecutionMode = RunEventV1RunStartedPayloadExecutionMode(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunStartedPayloadResumedFrom` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunStartedPayloadResumedFromSerializer::class)
+@JvmInline
+public value class RunEventV1RunStartedPayloadResumedFrom(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val AWAITING_APPROVAL: RunEventV1RunStartedPayloadResumedFrom = RunEventV1RunStartedPayloadResumedFrom("awaiting_approval")
+        public val PAUSED: RunEventV1RunStartedPayloadResumedFrom = RunEventV1RunStartedPayloadResumedFrom("paused")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunStartedPayloadResumedFrom> = listOf(AWAITING_APPROVAL, PAUSED)
+    }
+}
+
+public object RunEventV1RunStartedPayloadResumedFromSerializer : KSerializer<RunEventV1RunStartedPayloadResumedFrom> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunStartedPayloadResumedFrom", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunStartedPayloadResumedFrom): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunStartedPayloadResumedFrom = RunEventV1RunStartedPayloadResumedFrom(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunStartedType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunStartedTypeSerializer::class)
+@JvmInline
+public value class RunEventV1RunStartedType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_STARTED: RunEventV1RunStartedType = RunEventV1RunStartedType("run.started")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunStartedType> = listOf(RUN_STARTED)
+    }
+}
+
+public object RunEventV1RunStartedTypeSerializer : KSerializer<RunEventV1RunStartedType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunStartedType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunStartedType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunStartedType = RunEventV1RunStartedType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunStepCompleted` model.
+ */
+@Serializable
+public data class RunEventV1RunStepCompleted(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1RunStepCompletedType,
+    public val seq: Long,
+    public val payload: RunEventV1RunStepCompletedPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1RunStepCompletedPayload` model.
+ */
+@Serializable
+public data class RunEventV1RunStepCompletedPayload(
+    @SerialName("step_index")
+    public val stepIndex: Long,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("has_tool_calls")
+    public val hasToolCalls: Boolean? = null,
+    @SerialName("tool_names")
+    public val toolNames: List<String>? = null,
+    public val done: Boolean? = null,
+    @SerialName("duration_ms")
+    public val durationMs: Long? = null,
+    @SerialName("input_tokens")
+    public val inputTokens: Long? = null,
+    @SerialName("output_tokens")
+    public val outputTokens: Long? = null,
+    @SerialName("thinking_tokens")
+    public val thinkingTokens: Long? = null,
+    @SerialName("llm_calls_count")
+    public val llmCallsCount: Long? = null,
+)
+
+/**
+ * `RunEventV1RunStepCompletedType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunStepCompletedTypeSerializer::class)
+@JvmInline
+public value class RunEventV1RunStepCompletedType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_STEP_COMPLETED: RunEventV1RunStepCompletedType = RunEventV1RunStepCompletedType("run.step_completed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunStepCompletedType> = listOf(RUN_STEP_COMPLETED)
+    }
+}
+
+public object RunEventV1RunStepCompletedTypeSerializer : KSerializer<RunEventV1RunStepCompletedType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunStepCompletedType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunStepCompletedType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunStepCompletedType = RunEventV1RunStepCompletedType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1RunStepStarted` model.
+ */
+@Serializable
+public data class RunEventV1RunStepStarted(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1RunStepStartedType,
+    public val seq: Long,
+    public val payload: RunEventV1RunStepStartedPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1RunStepStartedPayload` model.
+ */
+@Serializable
+public data class RunEventV1RunStepStartedPayload(
+    @SerialName("step_index")
+    public val stepIndex: Long,
+    public val streaming: Boolean? = null,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+)
+
+/**
+ * `RunEventV1RunStepStartedType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunStepStartedTypeSerializer::class)
+@JvmInline
+public value class RunEventV1RunStepStartedType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_STEP_STARTED: RunEventV1RunStepStartedType = RunEventV1RunStepStartedType("run.step_started")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunStepStartedType> = listOf(RUN_STEP_STARTED)
+    }
+}
+
+public object RunEventV1RunStepStartedTypeSerializer : KSerializer<RunEventV1RunStepStartedType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunStepStartedType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunStepStartedType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunStepStartedType = RunEventV1RunStepStartedType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1SessionContext` model.
+ */
+@Serializable
+public data class RunEventV1SessionContext(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1SessionContextType,
+    public val seq: Long,
+    public val payload: RunEventV1SessionContextPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1SessionContextCompacted` model.
+ */
+@Serializable
+public data class RunEventV1SessionContextCompacted(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1SessionContextCompactedType,
+    public val seq: Long,
+    public val payload: RunEventV1SessionContextCompactedPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1SessionContextCompactedPayload` model.
+ */
+@Serializable
+public data class RunEventV1SessionContextCompactedPayload(
+    @SerialName("step_index")
+    public val stepIndex: Long? = null,
+    public val strategy: String? = null,
+    @SerialName("removed_count")
+    public val removedCount: Long? = null,
+    @SerialName("tokens_saved")
+    public val tokensSaved: Long? = null,
+    @SerialName("context_tokens_before")
+    public val contextTokensBefore: Long? = null,
+    @SerialName("context_tokens_after")
+    public val contextTokensAfter: Long? = null,
+    @SerialName("max_context_tokens")
+    public val maxContextTokens: Long? = null,
+)
+
+/**
+ * `RunEventV1SessionContextCompactedType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1SessionContextCompactedTypeSerializer::class)
+@JvmInline
+public value class RunEventV1SessionContextCompactedType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val SESSION_CONTEXT_COMPACTED: RunEventV1SessionContextCompactedType = RunEventV1SessionContextCompactedType("session.context_compacted")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1SessionContextCompactedType> = listOf(SESSION_CONTEXT_COMPACTED)
+    }
+}
+
+public object RunEventV1SessionContextCompactedTypeSerializer : KSerializer<RunEventV1SessionContextCompactedType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1SessionContextCompactedType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1SessionContextCompactedType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1SessionContextCompactedType = RunEventV1SessionContextCompactedType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1SessionContextPayload` model.
+ */
+@Serializable
+public data class RunEventV1SessionContextPayload(
+    @SerialName("session_id")
+    public val sessionId: String,
+    @SerialName("window_tokens")
+    public val windowTokens: Long? = null,
+    @SerialName("used_tokens")
+    public val usedTokens: Long? = null,
+    public val percent: Double? = null,
+    public val source: SessionContextSource,
+    @SerialName("updated_at")
+    public val updatedAt: String,
+)
+
+/**
+ * `RunEventV1SessionContextType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1SessionContextTypeSerializer::class)
+@JvmInline
+public value class RunEventV1SessionContextType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val SESSION_CONTEXT: RunEventV1SessionContextType = RunEventV1SessionContextType("session.context")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1SessionContextType> = listOf(SESSION_CONTEXT)
+    }
+}
+
+public object RunEventV1SessionContextTypeSerializer : KSerializer<RunEventV1SessionContextType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1SessionContextType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1SessionContextType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1SessionContextType = RunEventV1SessionContextType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1StepAct` model.
+ */
+@Serializable
+public data class RunEventV1StepAct(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1StepActType,
+    public val seq: Long,
+    public val payload: RunEventV1StepActPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1StepActPayload` model.
+ */
+@Serializable
+public data class RunEventV1StepActPayload(
+    public val message: String? = null,
+    public val code: String? = null,
+    public val params: JsonObject? = null,
+    @SerialName("input_tokens")
+    public val inputTokens: Long? = null,
+    @SerialName("output_tokens")
+    public val outputTokens: Long? = null,
+    public val metrics: JsonObject? = null,
+)
+
+/**
+ * `RunEventV1StepActType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1StepActTypeSerializer::class)
+@JvmInline
+public value class RunEventV1StepActType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val STEP_ACT: RunEventV1StepActType = RunEventV1StepActType("step.act")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1StepActType> = listOf(STEP_ACT)
+    }
+}
+
+public object RunEventV1StepActTypeSerializer : KSerializer<RunEventV1StepActType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1StepActType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1StepActType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1StepActType = RunEventV1StepActType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1StepEvaluate` model.
+ */
+@Serializable
+public data class RunEventV1StepEvaluate(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1StepEvaluateType,
+    public val seq: Long,
+    public val payload: RunEventV1StepEvaluatePayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1StepEvaluatePayload` model.
+ */
+@Serializable
+public data class RunEventV1StepEvaluatePayload(
+    public val passed: Boolean,
+    public val feedback: String? = null,
+)
+
+/**
+ * `RunEventV1StepEvaluateType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1StepEvaluateTypeSerializer::class)
+@JvmInline
+public value class RunEventV1StepEvaluateType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val STEP_EVALUATE: RunEventV1StepEvaluateType = RunEventV1StepEvaluateType("step.evaluate")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1StepEvaluateType> = listOf(STEP_EVALUATE)
+    }
+}
+
+public object RunEventV1StepEvaluateTypeSerializer : KSerializer<RunEventV1StepEvaluateType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1StepEvaluateType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1StepEvaluateType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1StepEvaluateType = RunEventV1StepEvaluateType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1StepPlan` model.
+ */
+@Serializable
+public data class RunEventV1StepPlan(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1StepPlanType,
+    public val seq: Long,
+    public val payload: RunEventV1StepPlanPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1StepPlanPayload` model.
+ */
+@Serializable
+public data class RunEventV1StepPlanPayload(
+    public val effort: String? = null,
+    public val skipped: Boolean? = null,
+    @SerialName("skip_reason")
+    public val skipReason: String? = null,
+    @SerialName("plan_content")
+    public val planContent: String? = null,
+)
+
+/**
+ * `RunEventV1StepPlanType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1StepPlanTypeSerializer::class)
+@JvmInline
+public value class RunEventV1StepPlanType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val STEP_PLAN: RunEventV1StepPlanType = RunEventV1StepPlanType("step.plan")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1StepPlanType> = listOf(STEP_PLAN)
+    }
+}
+
+public object RunEventV1StepPlanTypeSerializer : KSerializer<RunEventV1StepPlanType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1StepPlanType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1StepPlanType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1StepPlanType = RunEventV1StepPlanType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1TeamDelegate` model.
+ */
+@Serializable
+public data class RunEventV1TeamDelegate(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1TeamDelegateType,
+    public val seq: Long,
+    public val payload: RunEventV1TeamDelegatePayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1TeamDelegatePayload` model.
+ */
+@Serializable
+public data class RunEventV1TeamDelegatePayload(
+    public val topology: RunEventV1TeamDelegatePayloadTopology,
+    public val mode: String? = null,
+    public val round: Long? = null,
+    public val step: Long? = null,
+    @SerialName("handoff_index")
+    public val handoffIndex: Long? = null,
+    public val from: String? = null,
+    public val to: List<String>,
+    @SerialName("worker_count")
+    public val workerCount: Long? = null,
+)
+
+/**
+ * `RunEventV1TeamDelegatePayloadTopology` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1TeamDelegatePayloadTopologySerializer::class)
+@JvmInline
+public value class RunEventV1TeamDelegatePayloadTopology(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ADDRESSED: RunEventV1TeamDelegatePayloadTopology = RunEventV1TeamDelegatePayloadTopology("addressed")
+        public val SUPERVISOR: RunEventV1TeamDelegatePayloadTopology = RunEventV1TeamDelegatePayloadTopology("supervisor")
+        public val PIPELINE: RunEventV1TeamDelegatePayloadTopology = RunEventV1TeamDelegatePayloadTopology("pipeline")
+        public val SWARM: RunEventV1TeamDelegatePayloadTopology = RunEventV1TeamDelegatePayloadTopology("swarm")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1TeamDelegatePayloadTopology> = listOf(ADDRESSED, SUPERVISOR, PIPELINE, SWARM)
+    }
+}
+
+public object RunEventV1TeamDelegatePayloadTopologySerializer : KSerializer<RunEventV1TeamDelegatePayloadTopology> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1TeamDelegatePayloadTopology", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1TeamDelegatePayloadTopology): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1TeamDelegatePayloadTopology = RunEventV1TeamDelegatePayloadTopology(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1TeamDelegateType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1TeamDelegateTypeSerializer::class)
+@JvmInline
+public value class RunEventV1TeamDelegateType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val TEAM_DELEGATE: RunEventV1TeamDelegateType = RunEventV1TeamDelegateType("team.delegate")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1TeamDelegateType> = listOf(TEAM_DELEGATE)
+    }
+}
+
+public object RunEventV1TeamDelegateTypeSerializer : KSerializer<RunEventV1TeamDelegateType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1TeamDelegateType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1TeamDelegateType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1TeamDelegateType = RunEventV1TeamDelegateType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1ToolCall` model.
+ */
+@Serializable
+public data class RunEventV1ToolCall(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1ToolCallType,
+    public val seq: Long,
+    public val payload: RunEventV1ToolCallPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1ToolCallPayload` model.
+ */
+@Serializable
+public data class RunEventV1ToolCallPayload(
+    @SerialName("tool_call")
+    public val toolCall: RunEventV1ToolCallPayloadToolCall,
+    public val builtin: Boolean? = null,
+    @SerialName("mcp_server_id")
+    public val mcpServerId: String? = null,
+    @SerialName("mcp_session_id")
+    public val mcpSessionId: String? = null,
+    @SerialName("transport_type")
+    public val transportType: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("_event_id")
+    public val eventId: String? = null,
+)
+
+/**
+ * `RunEventV1ToolCallPayloadToolCall` model.
+ */
+@Serializable
+public data class RunEventV1ToolCallPayloadToolCall(
+    public val id: String,
+    public val name: String,
+    public val arguments: JsonObject,
+    @SerialName("arguments_preview")
+    public val argumentsPreview: String? = null,
+)
+
+/**
+ * `RunEventV1ToolCallType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1ToolCallTypeSerializer::class)
+@JvmInline
+public value class RunEventV1ToolCallType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val TOOL_CALL: RunEventV1ToolCallType = RunEventV1ToolCallType("tool.call")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1ToolCallType> = listOf(TOOL_CALL)
+    }
+}
+
+public object RunEventV1ToolCallTypeSerializer : KSerializer<RunEventV1ToolCallType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1ToolCallType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1ToolCallType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1ToolCallType = RunEventV1ToolCallType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1ToolError` model.
+ */
+@Serializable
+public data class RunEventV1ToolError(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1ToolErrorType,
+    public val seq: Long,
+    public val payload: RunEventV1ToolErrorPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1ToolErrorPayload` model.
+ */
+@Serializable
+public data class RunEventV1ToolErrorPayload(
+    public val error: String,
+    @SerialName("tool_name")
+    public val toolName: String? = null,
+    @SerialName("tool_call_id")
+    public val toolCallId: String? = null,
+    @SerialName("governance_blocked")
+    public val governanceBlocked: Boolean? = null,
+    @SerialName("parse_error")
+    public val parseError: Boolean? = null,
+    public val builtin: Boolean? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+)
+
+/**
+ * `RunEventV1ToolErrorType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1ToolErrorTypeSerializer::class)
+@JvmInline
+public value class RunEventV1ToolErrorType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val TOOL_ERROR: RunEventV1ToolErrorType = RunEventV1ToolErrorType("tool.error")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1ToolErrorType> = listOf(TOOL_ERROR)
+    }
+}
+
+public object RunEventV1ToolErrorTypeSerializer : KSerializer<RunEventV1ToolErrorType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1ToolErrorType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1ToolErrorType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1ToolErrorType = RunEventV1ToolErrorType(decoder.decodeString())
+}
+
+/**
+ * `RunEventV1ToolResult` model.
+ */
+@Serializable
+public data class RunEventV1ToolResult(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventV1ToolResultType,
+    public val seq: Long,
+    public val payload: RunEventV1ToolResultPayload,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunEventV1ToolResultPayload` model.
+ */
+@Serializable
+public data class RunEventV1ToolResultPayload(
+    @SerialName("tool_call_id")
+    public val toolCallId: String? = null,
+    @SerialName("tool_result")
+    public val toolResult: RunEventV1ToolResultPayloadToolResult,
+    @SerialName("latency_ms")
+    public val latencyMs: Double? = null,
+    public val builtin: Boolean? = null,
+    @SerialName("mcp_server_id")
+    public val mcpServerId: String? = null,
+    @SerialName("mcp_session_id")
+    public val mcpSessionId: String? = null,
+    @SerialName("transport_type")
+    public val transportType: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+)
+
+/**
+ * `RunEventV1ToolResultPayloadToolResult` model.
+ */
+@Serializable
+public data class RunEventV1ToolResultPayloadToolResult(
+    public val content: String,
+)
+
+/**
+ * `RunEventV1ToolResultType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1ToolResultTypeSerializer::class)
+@JvmInline
+public value class RunEventV1ToolResultType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val TOOL_RESULT: RunEventV1ToolResultType = RunEventV1ToolResultType("tool.result")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1ToolResultType> = listOf(TOOL_RESULT)
+    }
+}
+
+public object RunEventV1ToolResultTypeSerializer : KSerializer<RunEventV1ToolResultType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1ToolResultType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1ToolResultType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1ToolResultType = RunEventV1ToolResultType(decoder.decodeString())
+}
+
+/**
  * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
  * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
  * client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -35747,6 +37682,263 @@ public data class RunStreamEventTraceContext(
     public val traceparent: String? = null,
     public val tracestate: String? = null,
 )
+
+/**
+ * `RunStreamFrameV1Connected` model.
+ */
+@Serializable
+public data class RunStreamFrameV1Connected(
+    @SerialName("run_id")
+    public val runId: String,
+    public val status: String,
+    @SerialName("connected_at")
+    public val connectedAt: String? = null,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunStreamFrameV1Done` model.
+ */
+@Serializable
+public data class RunStreamFrameV1Done(
+    @SerialName("run_id")
+    public val runId: String,
+    public val status: String,
+    public val metrics: RunStreamFrameV1DoneMetrics? = null,
+    public val output: JsonObject? = null,
+    public val error: String? = null,
+    @SerialName("cost_usd")
+    public val costUsd: Double? = null,
+    @SerialName("guardrail_blocked")
+    public val guardrailBlocked: Boolean? = null,
+    @SerialName("_guardrail_violation")
+    public val guardrailViolation: JsonObject? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamDoneStreamType? = null,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunStreamFrameV1DoneMetrics` model.
+ */
+@Serializable
+public data class RunStreamFrameV1DoneMetrics(
+    @SerialName("duration_ms")
+    public val durationMs: Long? = null,
+    @SerialName("steps_count")
+    public val stepsCount: Long? = null,
+    @SerialName("input_tokens")
+    public val inputTokens: Long? = null,
+    @SerialName("output_tokens")
+    public val outputTokens: Long? = null,
+    @SerialName("thinking_tokens")
+    public val thinkingTokens: Long? = null,
+    @SerialName("cached_tokens")
+    public val cachedTokens: Long? = null,
+    @SerialName("tool_calls_count")
+    public val toolCallsCount: Long? = null,
+    @SerialName("llm_calls_count")
+    public val llmCallsCount: Long? = null,
+    @SerialName("guardrail_checks")
+    public val guardrailChecks: Long? = null,
+    @SerialName("guardrail_violations")
+    public val guardrailViolations: Long? = null,
+    @SerialName("memory_retrievals")
+    public val memoryRetrievals: Long? = null,
+    @SerialName("memory_extractions")
+    public val memoryExtractions: Long? = null,
+    @SerialName("total_cost_usd")
+    public val totalCostUsd: Double? = null,
+    @SerialName("fallback_used")
+    public val fallbackUsed: Boolean? = null,
+    @SerialName("pricing_confidence")
+    public val pricingConfidence: RunEventV1RunCompletedPayloadMetricsPricingConfidence? = null,
+    @SerialName("cost_attribution")
+    public val costAttribution: RunMetricsCostAttribution? = null,
+    @SerialName("files_modified")
+    public val filesModified: Long? = null,
+    @SerialName("commands_executed")
+    public val commandsExecuted: Long? = null,
+)
+
+public typealias RunStreamFrameV1Error = JsonElement
+
+/**
+ * `RunStreamFrameV1ErrorVariant1` model.
+ */
+@Serializable
+public data class RunStreamFrameV1ErrorVariant1(
+    public val error: String,
+    public val code: RunStreamFrameV1ErrorVariant1code,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunStreamFrameV1ErrorVariant1code` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunStreamFrameV1ErrorVariant1codeSerializer::class)
+@JvmInline
+public value class RunStreamFrameV1ErrorVariant1code(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_NOT_FOUND: RunStreamFrameV1ErrorVariant1code = RunStreamFrameV1ErrorVariant1code("RUN_NOT_FOUND")
+        public val STREAM_ERROR: RunStreamFrameV1ErrorVariant1code = RunStreamFrameV1ErrorVariant1code("STREAM_ERROR")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunStreamFrameV1ErrorVariant1code> = listOf(RUN_NOT_FOUND, STREAM_ERROR)
+    }
+}
+
+public object RunStreamFrameV1ErrorVariant1codeSerializer : KSerializer<RunStreamFrameV1ErrorVariant1code> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunStreamFrameV1ErrorVariant1code", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunStreamFrameV1ErrorVariant1code): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunStreamFrameV1ErrorVariant1code = RunStreamFrameV1ErrorVariant1code(decoder.decodeString())
+}
+
+/**
+ * `RunStreamFrameV1ErrorVariant2` model.
+ */
+@Serializable
+public data class RunStreamFrameV1ErrorVariant2(
+    public val type: RunStreamFrameV1ErrorVariant2type,
+    public val message: String,
+    public val code: RunStreamFrameV1ErrorVariant2code,
+)
+
+/**
+ * `RunStreamFrameV1ErrorVariant2code` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunStreamFrameV1ErrorVariant2codeSerializer::class)
+@JvmInline
+public value class RunStreamFrameV1ErrorVariant2code(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val STREAM_BUFFER_EXCEEDED: RunStreamFrameV1ErrorVariant2code = RunStreamFrameV1ErrorVariant2code("STREAM_BUFFER_EXCEEDED")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunStreamFrameV1ErrorVariant2code> = listOf(STREAM_BUFFER_EXCEEDED)
+    }
+}
+
+public object RunStreamFrameV1ErrorVariant2codeSerializer : KSerializer<RunStreamFrameV1ErrorVariant2code> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunStreamFrameV1ErrorVariant2code", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunStreamFrameV1ErrorVariant2code): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunStreamFrameV1ErrorVariant2code = RunStreamFrameV1ErrorVariant2code(decoder.decodeString())
+}
+
+/**
+ * `RunStreamFrameV1ErrorVariant2type` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunStreamFrameV1ErrorVariant2typeSerializer::class)
+@JvmInline
+public value class RunStreamFrameV1ErrorVariant2type(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ERROR: RunStreamFrameV1ErrorVariant2type = RunStreamFrameV1ErrorVariant2type("error")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunStreamFrameV1ErrorVariant2type> = listOf(ERROR)
+    }
+}
+
+public object RunStreamFrameV1ErrorVariant2typeSerializer : KSerializer<RunStreamFrameV1ErrorVariant2type> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunStreamFrameV1ErrorVariant2type", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunStreamFrameV1ErrorVariant2type): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunStreamFrameV1ErrorVariant2type = RunStreamFrameV1ErrorVariant2type(decoder.decodeString())
+}
+
+/**
+ * `RunStreamFrameV1Gap` model.
+ */
+@Serializable
+public data class RunStreamFrameV1Gap(
+    public val message: String,
+)
+
+/**
+ * `RunStreamFrameV1GuardrailViolation` model.
+ */
+@Serializable
+public data class RunStreamFrameV1GuardrailViolation(
+    @SerialName("_guardrail_violation")
+    public val guardrailViolation: JsonObject? = null,
+    @SerialName("violation_source")
+    public val violationSource: RunStreamFrameV1GuardrailViolationViolationSource,
+    @SerialName("event_id")
+    public val eventId: String? = null,
+    @SerialName("run_id")
+    public val runId: String? = null,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: String? = null,
+    public val seq: Long? = null,
+    public val payload: JsonObject? = null,
+    public val timestamp: String? = null,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType? = null,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+)
+
+/**
+ * `RunStreamFrameV1GuardrailViolationViolationSource` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunStreamFrameV1GuardrailViolationViolationSourceSerializer::class)
+@JvmInline
+public value class RunStreamFrameV1GuardrailViolationViolationSource(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val STREAM: RunStreamFrameV1GuardrailViolationViolationSource = RunStreamFrameV1GuardrailViolationViolationSource("stream")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunStreamFrameV1GuardrailViolationViolationSource> = listOf(STREAM)
+    }
+}
+
+public object RunStreamFrameV1GuardrailViolationViolationSourceSerializer : KSerializer<RunStreamFrameV1GuardrailViolationViolationSource> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunStreamFrameV1GuardrailViolationViolationSource", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunStreamFrameV1GuardrailViolationViolationSource): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunStreamFrameV1GuardrailViolationViolationSource = RunStreamFrameV1GuardrailViolationViolationSource(decoder.decodeString())
+}
 
 /**
  * `RunWorkspaceCommandRequest` model.
@@ -36768,6 +38960,129 @@ public object SessionQueueModeSerializer : KSerializer<SessionQueueMode> {
     override fun serialize(encoder: Encoder, value: SessionQueueMode): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): SessionQueueMode = SessionQueueMode(decoder.decodeString())
 }
+
+/**
+ * `SessionStreamFrameV1Connected` model.
+ */
+@Serializable
+public data class SessionStreamFrameV1Connected(
+    @SerialName("session_id")
+    public val sessionId: String,
+    @SerialName("connected_at")
+    public val connectedAt: String? = null,
+    public val runs: List<String>? = null,
+)
+
+/**
+ * `SessionStreamFrameV1Error` model.
+ */
+@Serializable
+public data class SessionStreamFrameV1Error(
+    public val error: String,
+    public val code: SessionStreamFrameV1ErrorCode,
+)
+
+/**
+ * `SessionStreamFrameV1ErrorCode` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = SessionStreamFrameV1ErrorCodeSerializer::class)
+@JvmInline
+public value class SessionStreamFrameV1ErrorCode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val SESSION_NOT_FOUND: SessionStreamFrameV1ErrorCode = SessionStreamFrameV1ErrorCode("SESSION_NOT_FOUND")
+        public val STREAM_ERROR: SessionStreamFrameV1ErrorCode = SessionStreamFrameV1ErrorCode("STREAM_ERROR")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<SessionStreamFrameV1ErrorCode> = listOf(SESSION_NOT_FOUND, STREAM_ERROR)
+    }
+}
+
+public object SessionStreamFrameV1ErrorCodeSerializer : KSerializer<SessionStreamFrameV1ErrorCode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SessionStreamFrameV1ErrorCode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: SessionStreamFrameV1ErrorCode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): SessionStreamFrameV1ErrorCode = SessionStreamFrameV1ErrorCode(decoder.decodeString())
+}
+
+/**
+ * `SessionStreamFrameV1RunAdded` model.
+ */
+@Serializable
+public data class SessionStreamFrameV1RunAdded(
+    @SerialName("run_id")
+    public val runId: String,
+)
+
+/**
+ * `SessionStreamFrameV1RunDone` model.
+ */
+@Serializable
+public data class SessionStreamFrameV1RunDone(
+    @SerialName("run_id")
+    public val runId: String,
+    public val status: String,
+    public val metrics: SessionStreamFrameV1RunDoneMetrics? = null,
+    @SerialName("cost_usd")
+    public val costUsd: Double? = null,
+)
+
+/**
+ * `SessionStreamFrameV1RunDoneMetrics` model.
+ */
+@Serializable
+public data class SessionStreamFrameV1RunDoneMetrics(
+    @SerialName("duration_ms")
+    public val durationMs: Long? = null,
+    @SerialName("steps_count")
+    public val stepsCount: Long? = null,
+    @SerialName("input_tokens")
+    public val inputTokens: Long? = null,
+    @SerialName("output_tokens")
+    public val outputTokens: Long? = null,
+    @SerialName("thinking_tokens")
+    public val thinkingTokens: Long? = null,
+    @SerialName("cached_tokens")
+    public val cachedTokens: Long? = null,
+    @SerialName("tool_calls_count")
+    public val toolCallsCount: Long? = null,
+    @SerialName("llm_calls_count")
+    public val llmCallsCount: Long? = null,
+    @SerialName("guardrail_checks")
+    public val guardrailChecks: Long? = null,
+    @SerialName("guardrail_violations")
+    public val guardrailViolations: Long? = null,
+    @SerialName("memory_retrievals")
+    public val memoryRetrievals: Long? = null,
+    @SerialName("memory_extractions")
+    public val memoryExtractions: Long? = null,
+    @SerialName("total_cost_usd")
+    public val totalCostUsd: Double? = null,
+    @SerialName("fallback_used")
+    public val fallbackUsed: Boolean? = null,
+    @SerialName("pricing_confidence")
+    public val pricingConfidence: RunEventV1RunCompletedPayloadMetricsPricingConfidence? = null,
+    @SerialName("cost_attribution")
+    public val costAttribution: RunMetricsCostAttribution? = null,
+    @SerialName("files_modified")
+    public val filesModified: Long? = null,
+    @SerialName("commands_executed")
+    public val commandsExecuted: Long? = null,
+)
+
+/**
+ * `SessionStreamFrameV1SessionClosed` model.
+ */
+@Serializable
+public data class SessionStreamFrameV1SessionClosed(
+    @SerialName("session_id")
+    public val sessionId: String,
+)
 
 /**
  * `user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a

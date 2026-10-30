@@ -5,7 +5,7 @@ Every operation the API describes, built on `reqwest`, `serde` and `tokio`.
 
 ```toml
 [dependencies]
-uarp-sdk = "0.12.0"
+uarp-sdk = "0.13.0"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 futures-util = "0.3"   # only if you use streams
 ```
@@ -174,7 +174,7 @@ let mut events = std::pin::pin!(quiet.runs().stream_run_events(&run_id, &Default
 
 `with_options(RequestOptions { .. })` sets several at once.
 
-**Retries.** `408`, `409`, `429`, `500`, `502`, `503` and `504`, plus connection errors, retry with
+**Retries.** `408`, `429`, `500`, `502`, `503` and `504`, plus connection errors, retry with
 full-jitter backoff (500 ms → 8 s) and honour `Retry-After`. Reads always
 retry; writes only when they carry an idempotency key, which every mutating
 `/api/v1/*` call sends automatically.

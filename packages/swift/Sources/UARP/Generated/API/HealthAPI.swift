@@ -72,7 +72,7 @@ public struct HealthAPI: Sendable {
     /// `/api/v1`; new callers should use `/health`.
     ///
     /// `GET /api/v1/health`
-    public func healthCheckV1alias(options: RequestOptions = .init()) async throws -> HealthCheckV1aliasResponse {
+    public func healthCheckV1Alias(options: RequestOptions = .init()) async throws -> HealthCheckV1AliasResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/health",

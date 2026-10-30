@@ -189,6 +189,22 @@ export interface Server {
   description?: string;
 }
 
+/**
+ * One version of a server-sent event stream, from the operation's
+ * `x-event-stream`: which named type each SSE `event:` name carries. The
+ * document lists the frames under names alone, so a client that parses
+ * strictly needs this table to pick the schema for a frame.
+ */
+export interface EventStream {
+  /** Name of the emitted table, e.g. `SessionStreamFrameV1Map`. */
+  name: string;
+  method: string;
+  path: string;
+  /** The `event_schema` value this table describes. */
+  version: string;
+  frames: { event: string; type: string }[];
+}
+
 export interface Spec {
   title: string;
   version: string;
@@ -198,4 +214,5 @@ export interface Spec {
   groups: Group[];
   /** Every scope named by the security scheme, for docs. */
   scopes: string[];
+  eventStreams: EventStream[];
 }

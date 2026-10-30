@@ -10789,7 +10789,7 @@ export interface HandleStripeWebhookResponse {
   duplicate?: boolean;
 }
 
-export interface HealthCheckV1aliasResponse {
+export interface HealthCheckV1AliasResponse {
   status?: GetHealthResponseStatus;
   timestamp?: string;
   kv_connected?: boolean;
@@ -18927,6 +18927,745 @@ export type RunEventType = 'run.created' | 'run.started' | 'run.completed' | 'ru
 export const RUN_EVENT_TYPE_VALUES = ['run.created', 'run.started', 'run.completed', 'run.failed', 'run.cancelled', 'run.timeout', 'run.guardrail_blocked', 'run.awaiting_approval', 'run.awaiting_input', 'run.input_received', 'run.approved', 'run.rejected', 'run.checkpoint', 'run.paused', 'run.resumed', 'run.restored', 'run.affect', 'llm.request', 'llm.response', 'llm.error', 'llm.thinking', 'llm.chunk', 'llm.timeout', 'llm.fallback', 'step.plan', 'step.act', 'step.evaluate', 'step.thinking', 'tool.call', 'tool.result', 'tool.error', 'tool.timeout', 'guardrail.check', 'guardrail.violation', 'guardrail.custom.check', 'guardrail.custom.violation', 'memory.retrieval', 'memory.extraction', 'memory.stored', 'memory.evicted', 'session.context_compacted', 'session.context', 'session.created', 'session.closed', 'team.message', 'team.round_start', 'team.round_end', 'team.delegate', 'team.broadcast', 'team.merge', 'team.handoff', 'child_run.completed', 'child_run.failed', 'initiative.tick_start', 'initiative.tick_end', 'initiative.paused', 'initiative.resumed', 'initiative.budget_updated', 'initiative.escalation', 'initiative.objective_updated', 'circuit_breaker.opened', 'circuit_breaker.closed', 'circuit_breaker.half_open', 'streaming.started', 'streaming.completed', 'streaming.error', 'streaming.buffer_truncated', 'run.step_started', 'run.step_completed', 'budget.soft_threshold_crossed', 'budget.hard_limit_reached', 'tenant.created', 'tenant.suspended', 'tenant.purged', 'config.updated', 'webhook.delivered', 'webhook.failed', 'cron.fired', 'agent.version_created', 'agent.rollback', 'mcp.server_log', 'orchestration.started', 'orchestration.planned', 'orchestration.replanned', 'orchestration.task_started', 'orchestration.task_completed', 'orchestration.task_failed', 'orchestration.checkpoint', 'orchestration.policy_violation', 'orchestration.quality_report', 'orchestration.completed', 'orchestration.failed', 'graph.agent_spawned', 'graph.agent_terminated', 'graph.task_delegated', 'graph.edge_added', 'graph.edge_removed', 'plan.created', 'plan.updated', 'plan.sub_goal_completed', 'plan.sub_goal_abandoned', 'mcp.tool_called', 'mcp.server_connected', 'mcp.server_disconnected', 'a2a.task_sent', 'a2a.task_received', 'memory.compressed', 'capability.best_agent_selected', 'identity.created', 'identity.rotated', 'message.signed', 'message.verified', 'message.replay_blocked', 'constitution.bootstrapped', 'constitution.amended', 'constitution.check_passed', 'constitution.check_blocked', 'constitution.violation', 'ledger.appended', 'ledger.integrity_checked', 'permission.checked', 'permission.denied', 'permission.spawn_blocked', 'attestation.created', 'attestation.verified', 'attestation.invalid', 'arbitration.case_opened', 'arbitration.ruling_submitted', 'arbitration.appeal_filed', 'voting.proposal_created', 'voting.ballot_cast', 'voting.tallied', 'voting.vetoed', 'resource.spent', 'resource.earned', 'resource.transferred', 'resource.insufficient', 'ambassador.veto_issued', 'ambassador.request_submitted', 'builder.design_submitted', 'builder.design_approved', 'builder.design_spawned', 'emergency.safe_mode_activated', 'emergency.safe_mode_deactivated', 'emergency.deadlock_detected', 'goal.self_formulated', 'goal.approved', 'improvement.proposed', 'improvement.sandbox_tested', 'improvement.applied', 'collective.insight_published', 'collective.insights_retrieved', 'collective.review_requested', 'collective.poll_created', 'collective.agent_rated', 'collective.feedback_requested', 'collective.reflection_completed', 'collective.approaches_compared', 'collective.lesson_logged', 'collective.team_formed', 'collective.team_joined', 'collective.team_left', 'collective.team_broadcast', 'collective.specialist_requested', 'collective.budget_requested', 'collective.tokens_transferred', 'collective.task_posted', 'collective.bid_placed', 'collective.bid_accepted', 'collective.cost_reported', 'sensor.url_watch_created', 'sensor.rss_watch_created', 'sensor.webhook_listener_created', 'sensor.check_scheduled', 'sensor.event_subscription_created', 'sensor.triggered', 'collective.report_presented', 'collective.escalation', 'collective.anomaly_reported', 'collective.human_override', 'collective.collective_paused', 'collective.verification_requested', 'strategy.created', 'strategy.kpi_updated', 'document.edit_start', 'document.edit_chunk', 'document.edit_complete'] as const;
 
 /**
+ * A run event as `event_schema=1` sends it, on GET /runs/{runId}/events and GET
+ * /sessions/{sessionId}/events. Closed: a strict parser may refuse any field or value not
+ * declared here, because none is ever sent. A type this version does not list is not sent to a
+ * v1 client, and neither is an event whose discriminant value (`chunk_type`, `topology`, …)
+ * the version does not list. Bridge runs arrive in the native shape.
+ */
+export type RunEventV1 = RunEventV1RunStarted | RunEventV1RunCompleted | RunEventV1RunFailed | RunEventV1RunCancelled | RunEventV1RunGuardrailBlocked | RunEventV1RunPaused | RunEventV1RunAwaitingApproval | RunEventV1RunAwaitingInput | RunEventV1RunInputReceived | RunEventV1LLMChunk | RunEventV1LLMError | RunEventV1ToolCall | RunEventV1ToolResult | RunEventV1ToolError | RunEventV1RunStepStarted | RunEventV1RunStepCompleted | RunEventV1StepPlan | RunEventV1StepEvaluate | RunEventV1StepAct | RunEventV1TeamDelegate | RunEventV1ChildRunCompleted | RunEventV1ChildRunFailed | RunEventV1SessionContextCompacted | RunEventV1SessionContext;
+
+export interface RunEventV1ChildRunCompleted {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1ChildRunCompletedType;
+  seq: number;
+  payload: RunEventV1ChildRunCompletedPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1ChildRunCompletedPayload {
+  child_run_id: string;
+  agent_id: string;
+  agent_name?: string;
+  status: string;
+  output_preview?: string;
+  duration_ms?: number;
+  execution_mode?: string;
+  cost_usd?: number;
+}
+
+export type RunEventV1ChildRunCompletedType = 'child_run.completed';
+
+export const RUN_EVENT_V1_CHILD_RUN_COMPLETED_TYPE_VALUES = ['child_run.completed'] as const;
+
+export interface RunEventV1ChildRunFailed {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1ChildRunFailedType;
+  seq: number;
+  payload: RunEventV1ChildRunFailedPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1ChildRunFailedPayload {
+  child_run_id: string;
+  agent_id: string;
+  agent_name?: string;
+  status: string;
+  error?: string;
+  execution_mode?: string;
+}
+
+export type RunEventV1ChildRunFailedType = 'child_run.failed';
+
+export const RUN_EVENT_V1_CHILD_RUN_FAILED_TYPE_VALUES = ['child_run.failed'] as const;
+
+export interface RunEventV1LLMChunk {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1LLMChunkType;
+  seq: number;
+  payload: RunEventV1LLMChunkPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1LLMChunkPayload {
+  chunk_type: RunEventV1LLMChunkPayloadChunkType;
+  delta: string;
+  index?: number;
+}
+
+export type RunEventV1LLMChunkPayloadChunkType = 'content' | 'thinking' | 'tool_call';
+
+export const RUN_EVENT_V1_LLMCHUNK_PAYLOAD_CHUNK_TYPE_VALUES = ['content', 'thinking', 'tool_call'] as const;
+
+export type RunEventV1LLMChunkType = 'llm.chunk';
+
+export const RUN_EVENT_V1_LLMCHUNK_TYPE_VALUES = ['llm.chunk'] as const;
+
+export interface RunEventV1LLMError {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1LLMErrorType;
+  seq: number;
+  payload: RunEventV1LLMErrorPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1LLMErrorPayload {
+  error: string;
+  chunks_before_error?: number;
+}
+
+export type RunEventV1LLMErrorType = 'llm.error';
+
+export const RUN_EVENT_V1_LLMERROR_TYPE_VALUES = ['llm.error'] as const;
+
+export interface RunEventV1RunAwaitingApproval {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1RunAwaitingApprovalType;
+  seq: number;
+  payload: RunEventV1RunAwaitingApprovalPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1RunAwaitingApprovalPayload {
+  tool_calls: RunEventV1RunAwaitingApprovalPayloadToolCall[];
+}
+
+export interface RunEventV1RunAwaitingApprovalPayloadToolCall {
+  id: string;
+  name: string;
+  args: JsonObject;
+  options?: string[];
+  kind?: string;
+}
+
+export type RunEventV1RunAwaitingApprovalType = 'run.awaiting_approval';
+
+export const RUN_EVENT_V1_RUN_AWAITING_APPROVAL_TYPE_VALUES = ['run.awaiting_approval'] as const;
+
+export interface RunEventV1RunAwaitingInput {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1RunAwaitingInputType;
+  seq: number;
+  payload: RunEventV1RunAwaitingInputPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1RunAwaitingInputPayload {
+  tool_call_id: string;
+  question?: string;
+  options?: string[];
+  context?: string;
+  tool_name?: string;
+  arguments?: JsonObject;
+}
+
+export type RunEventV1RunAwaitingInputType = 'run.awaiting_input';
+
+export const RUN_EVENT_V1_RUN_AWAITING_INPUT_TYPE_VALUES = ['run.awaiting_input'] as const;
+
+export interface RunEventV1RunCancelled {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1RunCancelledType;
+  seq: number;
+  payload: RunEventV1RunCancelledPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1RunCancelledPayload {
+  error?: string;
+  error_code?: string;
+  error_details?: JsonObject;
+  message?: string;
+  reason?: string;
+  end_reason?: string;
+  source?: string;
+  rejected?: boolean;
+  previous_status?: string;
+  team_run_id?: string;
+  was?: string;
+}
+
+export type RunEventV1RunCancelledType = 'run.cancelled';
+
+export const RUN_EVENT_V1_RUN_CANCELLED_TYPE_VALUES = ['run.cancelled'] as const;
+
+export interface RunEventV1RunCompleted {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1RunCompletedType;
+  seq: number;
+  payload: RunEventV1RunCompletedPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1RunCompletedPayload {
+  status: RunEventV1RunCompletedPayloadStatus;
+  output: JsonObject;
+  metrics?: RunEventV1RunCompletedPayloadMetrics;
+  cost_usd?: number;
+}
+
+export interface RunEventV1RunCompletedPayloadMetrics {
+  duration_ms?: number;
+  steps_count?: number;
+  input_tokens?: number;
+  output_tokens?: number;
+  thinking_tokens?: number;
+  cached_tokens?: number;
+  tool_calls_count?: number;
+  llm_calls_count?: number;
+  guardrail_checks?: number;
+  guardrail_violations?: number;
+  memory_retrievals?: number;
+  memory_extractions?: number;
+  total_cost_usd?: number;
+  fallback_used?: boolean;
+  pricing_confidence?: RunEventV1RunCompletedPayloadMetricsPricingConfidence;
+  cost_attribution?: RunMetricsCostAttribution;
+  files_modified?: number;
+  commands_executed?: number;
+}
+
+export type RunEventV1RunCompletedPayloadMetricsPricingConfidence = 'known' | 'inferred' | 'fallback' | 'unknown';
+
+export const RUN_EVENT_V1_RUN_COMPLETED_PAYLOAD_METRICS_PRICING_CONFIDENCE_VALUES = ['known', 'inferred', 'fallback', 'unknown'] as const;
+
+export type RunEventV1RunCompletedPayloadStatus = 'completed';
+
+export const RUN_EVENT_V1_RUN_COMPLETED_PAYLOAD_STATUS_VALUES = ['completed'] as const;
+
+export type RunEventV1RunCompletedType = 'run.completed';
+
+export const RUN_EVENT_V1_RUN_COMPLETED_TYPE_VALUES = ['run.completed'] as const;
+
+export interface RunEventV1RunFailed {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1RunFailedType;
+  seq: number;
+  payload: RunEventV1RunFailedPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1RunFailedPayload {
+  error: string;
+  error_code?: string;
+  error_details?: JsonObject;
+  message?: string;
+  reason?: string;
+  end_reason?: string;
+  source?: string;
+  rejected?: boolean;
+}
+
+export type RunEventV1RunFailedType = 'run.failed';
+
+export const RUN_EVENT_V1_RUN_FAILED_TYPE_VALUES = ['run.failed'] as const;
+
+export interface RunEventV1RunGuardrailBlocked {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1RunGuardrailBlockedType;
+  seq: number;
+  payload: RunEventV1RunGuardrailBlockedPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1RunGuardrailBlockedPayload {
+  error: string;
+  error_code?: string;
+  error_details?: JsonObject;
+  message?: string;
+  reason?: string;
+  end_reason?: string;
+  source?: string;
+  rejected?: boolean;
+}
+
+export type RunEventV1RunGuardrailBlockedType = 'run.guardrail_blocked';
+
+export const RUN_EVENT_V1_RUN_GUARDRAIL_BLOCKED_TYPE_VALUES = ['run.guardrail_blocked'] as const;
+
+export interface RunEventV1RunInputReceived {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1RunInputReceivedType;
+  seq: number;
+  payload: RunEventV1RunInputReceivedPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1RunInputReceivedPayload {
+  response_length: number;
+}
+
+export type RunEventV1RunInputReceivedType = 'run.input_received';
+
+export const RUN_EVENT_V1_RUN_INPUT_RECEIVED_TYPE_VALUES = ['run.input_received'] as const;
+
+export interface RunEventV1RunPaused {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1RunPausedType;
+  seq: number;
+  payload: RunEventV1RunPausedPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1RunPausedPayload {
+  reason: string;
+  step?: number;
+  resumable?: boolean;
+  held_output?: boolean;
+}
+
+export type RunEventV1RunPausedType = 'run.paused';
+
+export const RUN_EVENT_V1_RUN_PAUSED_TYPE_VALUES = ['run.paused'] as const;
+
+export interface RunEventV1RunStarted {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1RunStartedType;
+  seq: number;
+  payload: RunEventV1RunStartedPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1RunStartedPayload {
+  agent_id?: string;
+  execution_mode?: RunEventV1RunStartedPayloadExecutionMode;
+  source?: string;
+  priority?: string;
+  resumed_from?: RunEventV1RunStartedPayloadResumedFrom;
+  approved?: boolean;
+  revised?: boolean;
+  input?: JsonValue;
+}
+
+export type RunEventV1RunStartedPayloadExecutionMode = 'bridge';
+
+export const RUN_EVENT_V1_RUN_STARTED_PAYLOAD_EXECUTION_MODE_VALUES = ['bridge'] as const;
+
+export type RunEventV1RunStartedPayloadResumedFrom = 'awaiting_approval' | 'paused';
+
+export const RUN_EVENT_V1_RUN_STARTED_PAYLOAD_RESUMED_FROM_VALUES = ['awaiting_approval', 'paused'] as const;
+
+export type RunEventV1RunStartedType = 'run.started';
+
+export const RUN_EVENT_V1_RUN_STARTED_TYPE_VALUES = ['run.started'] as const;
+
+export interface RunEventV1RunStepCompleted {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1RunStepCompletedType;
+  seq: number;
+  payload: RunEventV1RunStepCompletedPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1RunStepCompletedPayload {
+  step_index: number;
+  step_id?: string;
+  has_tool_calls?: boolean;
+  tool_names?: string[];
+  done?: boolean;
+  duration_ms?: number;
+  input_tokens?: number;
+  output_tokens?: number;
+  thinking_tokens?: number;
+  llm_calls_count?: number;
+}
+
+export type RunEventV1RunStepCompletedType = 'run.step_completed';
+
+export const RUN_EVENT_V1_RUN_STEP_COMPLETED_TYPE_VALUES = ['run.step_completed'] as const;
+
+export interface RunEventV1RunStepStarted {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1RunStepStartedType;
+  seq: number;
+  payload: RunEventV1RunStepStartedPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1RunStepStartedPayload {
+  step_index: number;
+  streaming?: boolean;
+  step_id?: string;
+}
+
+export type RunEventV1RunStepStartedType = 'run.step_started';
+
+export const RUN_EVENT_V1_RUN_STEP_STARTED_TYPE_VALUES = ['run.step_started'] as const;
+
+export interface RunEventV1SessionContext {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1SessionContextType;
+  seq: number;
+  payload: RunEventV1SessionContextPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1SessionContextCompacted {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1SessionContextCompactedType;
+  seq: number;
+  payload: RunEventV1SessionContextCompactedPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1SessionContextCompactedPayload {
+  step_index?: number;
+  strategy?: string;
+  removed_count?: number;
+  tokens_saved?: number;
+  context_tokens_before?: number;
+  context_tokens_after?: number;
+  max_context_tokens?: number;
+}
+
+export type RunEventV1SessionContextCompactedType = 'session.context_compacted';
+
+export const RUN_EVENT_V1_SESSION_CONTEXT_COMPACTED_TYPE_VALUES = ['session.context_compacted'] as const;
+
+export interface RunEventV1SessionContextPayload {
+  session_id: string;
+  window_tokens?: number | null;
+  used_tokens?: number | null;
+  percent?: number | null;
+  source: SessionContextSource;
+  updated_at: string;
+}
+
+export type RunEventV1SessionContextType = 'session.context';
+
+export const RUN_EVENT_V1_SESSION_CONTEXT_TYPE_VALUES = ['session.context'] as const;
+
+export interface RunEventV1StepAct {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1StepActType;
+  seq: number;
+  payload: RunEventV1StepActPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1StepActPayload {
+  message?: string;
+  code?: string;
+  params?: JsonObject;
+  input_tokens?: number;
+  output_tokens?: number;
+  metrics?: JsonObject;
+}
+
+export type RunEventV1StepActType = 'step.act';
+
+export const RUN_EVENT_V1_STEP_ACT_TYPE_VALUES = ['step.act'] as const;
+
+export interface RunEventV1StepEvaluate {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1StepEvaluateType;
+  seq: number;
+  payload: RunEventV1StepEvaluatePayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1StepEvaluatePayload {
+  passed: boolean;
+  feedback?: string;
+}
+
+export type RunEventV1StepEvaluateType = 'step.evaluate';
+
+export const RUN_EVENT_V1_STEP_EVALUATE_TYPE_VALUES = ['step.evaluate'] as const;
+
+export interface RunEventV1StepPlan {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1StepPlanType;
+  seq: number;
+  payload: RunEventV1StepPlanPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1StepPlanPayload {
+  effort?: string;
+  skipped?: boolean;
+  skip_reason?: string;
+  plan_content?: string;
+}
+
+export type RunEventV1StepPlanType = 'step.plan';
+
+export const RUN_EVENT_V1_STEP_PLAN_TYPE_VALUES = ['step.plan'] as const;
+
+export interface RunEventV1TeamDelegate {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1TeamDelegateType;
+  seq: number;
+  payload: RunEventV1TeamDelegatePayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1TeamDelegatePayload {
+  topology: RunEventV1TeamDelegatePayloadTopology;
+  mode?: string;
+  round?: number;
+  step?: number;
+  handoff_index?: number;
+  from?: string;
+  to: string[];
+  worker_count?: number;
+}
+
+export type RunEventV1TeamDelegatePayloadTopology = 'addressed' | 'supervisor' | 'pipeline' | 'swarm';
+
+export const RUN_EVENT_V1_TEAM_DELEGATE_PAYLOAD_TOPOLOGY_VALUES = ['addressed', 'supervisor', 'pipeline', 'swarm'] as const;
+
+export type RunEventV1TeamDelegateType = 'team.delegate';
+
+export const RUN_EVENT_V1_TEAM_DELEGATE_TYPE_VALUES = ['team.delegate'] as const;
+
+export interface RunEventV1ToolCall {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1ToolCallType;
+  seq: number;
+  payload: RunEventV1ToolCallPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1ToolCallPayload {
+  tool_call: RunEventV1ToolCallPayloadToolCall;
+  builtin?: boolean;
+  mcp_server_id?: string;
+  mcp_session_id?: string;
+  transport_type?: string;
+  parent_event_id?: string;
+  _event_id?: string;
+}
+
+export interface RunEventV1ToolCallPayloadToolCall {
+  id: string;
+  name: string;
+  arguments: JsonObject;
+  arguments_preview?: string;
+}
+
+export type RunEventV1ToolCallType = 'tool.call';
+
+export const RUN_EVENT_V1_TOOL_CALL_TYPE_VALUES = ['tool.call'] as const;
+
+export interface RunEventV1ToolError {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1ToolErrorType;
+  seq: number;
+  payload: RunEventV1ToolErrorPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1ToolErrorPayload {
+  error: string;
+  tool_name?: string;
+  tool_call_id?: string;
+  governance_blocked?: boolean;
+  parse_error?: boolean;
+  builtin?: boolean;
+  parent_event_id?: string;
+}
+
+export type RunEventV1ToolErrorType = 'tool.error';
+
+export const RUN_EVENT_V1_TOOL_ERROR_TYPE_VALUES = ['tool.error'] as const;
+
+export interface RunEventV1ToolResult {
+  event_id: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventV1ToolResultType;
+  seq: number;
+  payload: RunEventV1ToolResultPayload;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunEventV1ToolResultPayload {
+  tool_call_id?: string;
+  tool_result: RunEventV1ToolResultPayloadToolResult;
+  latency_ms?: number;
+  builtin?: boolean;
+  mcp_server_id?: string;
+  mcp_session_id?: string;
+  transport_type?: string;
+  parent_event_id?: string;
+}
+
+export interface RunEventV1ToolResultPayloadToolResult {
+  content: string;
+}
+
+export type RunEventV1ToolResultType = 'tool.result';
+
+export const RUN_EVENT_V1_TOOL_RESULT_TYPE_VALUES = ['tool.result'] as const;
+
+/**
  * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
  * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
  * client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -19300,6 +20039,101 @@ export interface RunStreamEventTraceContext {
   traceparent?: string;
   tracestate?: string;
 }
+
+export interface RunStreamFrameV1Connected {
+  run_id: string;
+  status: string;
+  connected_at?: string;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunStreamFrameV1Done {
+  run_id: string;
+  status: string;
+  metrics?: RunStreamFrameV1DoneMetrics;
+  output?: JsonObject | null;
+  error?: string;
+  cost_usd?: number;
+  guardrail_blocked?: boolean;
+  _guardrail_violation?: JsonObject;
+  stream_type?: RunStreamDoneStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export interface RunStreamFrameV1DoneMetrics {
+  duration_ms?: number;
+  steps_count?: number;
+  input_tokens?: number;
+  output_tokens?: number;
+  thinking_tokens?: number;
+  cached_tokens?: number;
+  tool_calls_count?: number;
+  llm_calls_count?: number;
+  guardrail_checks?: number;
+  guardrail_violations?: number;
+  memory_retrievals?: number;
+  memory_extractions?: number;
+  total_cost_usd?: number;
+  fallback_used?: boolean;
+  pricing_confidence?: RunEventV1RunCompletedPayloadMetricsPricingConfidence;
+  cost_attribution?: RunMetricsCostAttribution;
+  files_modified?: number;
+  commands_executed?: number;
+}
+
+export type RunStreamFrameV1Error = RunStreamFrameV1ErrorVariant1 | RunStreamFrameV1ErrorVariant2;
+
+export interface RunStreamFrameV1ErrorVariant1 {
+  error: string;
+  code: RunStreamFrameV1ErrorVariant1code;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export type RunStreamFrameV1ErrorVariant1code = 'RUN_NOT_FOUND' | 'STREAM_ERROR';
+
+export const RUN_STREAM_FRAME_V1_ERROR_VARIANT1CODE_VALUES = ['RUN_NOT_FOUND', 'STREAM_ERROR'] as const;
+
+export interface RunStreamFrameV1ErrorVariant2 {
+  type: RunStreamFrameV1ErrorVariant2type;
+  message: string;
+  code: RunStreamFrameV1ErrorVariant2code;
+}
+
+export type RunStreamFrameV1ErrorVariant2code = 'STREAM_BUFFER_EXCEEDED';
+
+export const RUN_STREAM_FRAME_V1_ERROR_VARIANT2CODE_VALUES = ['STREAM_BUFFER_EXCEEDED'] as const;
+
+export type RunStreamFrameV1ErrorVariant2type = 'error';
+
+export const RUN_STREAM_FRAME_V1_ERROR_VARIANT2TYPE_VALUES = ['error'] as const;
+
+export interface RunStreamFrameV1Gap {
+  message: string;
+}
+
+export interface RunStreamFrameV1GuardrailViolation {
+  _guardrail_violation?: JsonObject;
+  violation_source: RunStreamFrameV1GuardrailViolationViolationSource;
+  event_id?: string;
+  run_id?: string;
+  session_id?: string;
+  type?: string;
+  seq?: number;
+  payload?: JsonObject;
+  timestamp?: string;
+  step_id?: string;
+  parent_event_id?: string;
+  stream_type?: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+}
+
+export type RunStreamFrameV1GuardrailViolationViolationSource = 'stream';
+
+export const RUN_STREAM_FRAME_V1_GUARDRAIL_VIOLATION_VIOLATION_SOURCE_VALUES = ['stream'] as const;
 
 export interface RunWorkspaceCommandRequest {
   command: string;
@@ -19887,6 +20721,57 @@ export interface SessionModelOverride {
 export type SessionQueueMode = 'allow' | 'reject';
 
 export const SESSION_QUEUE_MODE_VALUES = ['allow', 'reject'] as const;
+
+export interface SessionStreamFrameV1Connected {
+  session_id: string;
+  connected_at?: string;
+  runs?: string[];
+}
+
+export interface SessionStreamFrameV1Error {
+  error: string;
+  code: SessionStreamFrameV1ErrorCode;
+}
+
+export type SessionStreamFrameV1ErrorCode = 'SESSION_NOT_FOUND' | 'STREAM_ERROR';
+
+export const SESSION_STREAM_FRAME_V1_ERROR_CODE_VALUES = ['SESSION_NOT_FOUND', 'STREAM_ERROR'] as const;
+
+export interface SessionStreamFrameV1RunAdded {
+  run_id: string;
+}
+
+export interface SessionStreamFrameV1RunDone {
+  run_id: string;
+  status: string;
+  metrics?: SessionStreamFrameV1RunDoneMetrics;
+  cost_usd?: number;
+}
+
+export interface SessionStreamFrameV1RunDoneMetrics {
+  duration_ms?: number;
+  steps_count?: number;
+  input_tokens?: number;
+  output_tokens?: number;
+  thinking_tokens?: number;
+  cached_tokens?: number;
+  tool_calls_count?: number;
+  llm_calls_count?: number;
+  guardrail_checks?: number;
+  guardrail_violations?: number;
+  memory_retrievals?: number;
+  memory_extractions?: number;
+  total_cost_usd?: number;
+  fallback_used?: boolean;
+  pricing_confidence?: RunEventV1RunCompletedPayloadMetricsPricingConfidence;
+  cost_attribution?: RunMetricsCostAttribution;
+  files_modified?: number;
+  commands_executed?: number;
+}
+
+export interface SessionStreamFrameV1SessionClosed {
+  session_id: string;
+}
 
 /**
  * `user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a
@@ -24326,3 +25211,75 @@ export interface WorkspaceFileVersion {
 export type WorkspaceOwnerType = 'agent' | 'team' | 'standalone';
 
 export const WORKSPACE_OWNER_TYPE_VALUES = ['agent', 'team', 'standalone'] as const;
+
+/**
+ * The frame each SSE `event:` name carries on `GET /api/v1/sessions/{sessionId}/events` with
+ * `event_schema=1`, from the document's `x-event-stream`.
+ */
+export interface SessionStreamFrameV1Map {
+  connected: SessionStreamFrameV1Connected;
+  error: SessionStreamFrameV1Error;
+  run_added: SessionStreamFrameV1RunAdded;
+  run_done: SessionStreamFrameV1RunDone;
+  session_closed: SessionStreamFrameV1SessionClosed;
+  'run.started': RunEventV1RunStarted;
+  'run.completed': RunEventV1RunCompleted;
+  'run.failed': RunEventV1RunFailed;
+  'run.cancelled': RunEventV1RunCancelled;
+  'run.guardrail_blocked': RunEventV1RunGuardrailBlocked;
+  'run.paused': RunEventV1RunPaused;
+  'run.awaiting_approval': RunEventV1RunAwaitingApproval;
+  'run.awaiting_input': RunEventV1RunAwaitingInput;
+  'run.input_received': RunEventV1RunInputReceived;
+  'llm.chunk': RunEventV1LLMChunk;
+  'llm.error': RunEventV1LLMError;
+  'tool.call': RunEventV1ToolCall;
+  'tool.result': RunEventV1ToolResult;
+  'tool.error': RunEventV1ToolError;
+  'run.step_started': RunEventV1RunStepStarted;
+  'run.step_completed': RunEventV1RunStepCompleted;
+  'step.plan': RunEventV1StepPlan;
+  'step.evaluate': RunEventV1StepEvaluate;
+  'step.act': RunEventV1StepAct;
+  'team.delegate': RunEventV1TeamDelegate;
+  'child_run.completed': RunEventV1ChildRunCompleted;
+  'child_run.failed': RunEventV1ChildRunFailed;
+  'session.context_compacted': RunEventV1SessionContextCompacted;
+  'session.context': RunEventV1SessionContext;
+}
+
+/**
+ * The frame each SSE `event:` name carries on `GET /api/v1/runs/{runId}/events` with
+ * `event_schema=1`, from the document's `x-event-stream`.
+ */
+export interface RunStreamFrameV1Map {
+  connected: RunStreamFrameV1Connected;
+  done: RunStreamFrameV1Done;
+  error: RunStreamFrameV1Error;
+  gap: RunStreamFrameV1Gap;
+  'guardrail.violation': RunStreamFrameV1GuardrailViolation;
+  'run.started': RunEventV1RunStarted;
+  'run.completed': RunEventV1RunCompleted;
+  'run.failed': RunEventV1RunFailed;
+  'run.cancelled': RunEventV1RunCancelled;
+  'run.guardrail_blocked': RunEventV1RunGuardrailBlocked;
+  'run.paused': RunEventV1RunPaused;
+  'run.awaiting_approval': RunEventV1RunAwaitingApproval;
+  'run.awaiting_input': RunEventV1RunAwaitingInput;
+  'run.input_received': RunEventV1RunInputReceived;
+  'llm.chunk': RunEventV1LLMChunk;
+  'llm.error': RunEventV1LLMError;
+  'tool.call': RunEventV1ToolCall;
+  'tool.result': RunEventV1ToolResult;
+  'tool.error': RunEventV1ToolError;
+  'run.step_started': RunEventV1RunStepStarted;
+  'run.step_completed': RunEventV1RunStepCompleted;
+  'step.plan': RunEventV1StepPlan;
+  'step.evaluate': RunEventV1StepEvaluate;
+  'step.act': RunEventV1StepAct;
+  'team.delegate': RunEventV1TeamDelegate;
+  'child_run.completed': RunEventV1ChildRunCompleted;
+  'child_run.failed': RunEventV1ChildRunFailed;
+  'session.context_compacted': RunEventV1SessionContextCompacted;
+  'session.context': RunEventV1SessionContext;
+}

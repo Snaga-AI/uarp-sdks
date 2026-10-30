@@ -192,29 +192,22 @@ def _inline_event(body: str) -> Event:
 
 
 def _extract_field(text: str, field: str) -> Optional[str]:
-    """One string member of a JSON body, peeked without decoding the whole frame."""
-    needle = f'"{field}"'
-    start = text.find(needle)
-    if start < 0:
+    """A top-level string or integer member of a JSON body, as text; else `None`.
+
+    Decoded, not searched: the first `"type"` in the text may belong to a nested
+    object — an OpenAI-compatible chunk carries `tool_calls[].type = "function"`
+    before anything else — and a searched value keeps its escapes.
+    """
+    try:
+        value = json.loads(text)
+    except ValueError:
         return None
-    index = start + len(needle)
-    while index < len(text) and text[index] in ": ":
-        index += 1
-    if index >= len(text) or text[index] != '"':
-        return None
-    index += 1
-    value_start = index
-    while index < len(text):
-        char = text[index]
-        if char == "\\":
-            index += 2
-            continue
-        if char == '"':
-            break
-        index += 1
-    if index <= value_start:
-        return None
-    return text[value_start:index]
+    member = value.get(field) if isinstance(value, dict) else None
+    if isinstance(member, str):
+        return member
+    if isinstance(member, int) and not isinstance(member, bool):
+        return str(member)
+    return None
 
 
 def is_event_stream(content_type: Optional[str]) -> bool:
@@ -281,6 +274,11 @@ class EventStream:
         self.close()
 
 
+def _reconnectable(status: int) -> bool:
+    """A refusal that may be gone by the next attempt: a timeout, a rate limit, a 5xx."""
+    return status in (408, 429) or status >= 500
+
+
 def reconnecting(connect: Connect, options: StreamOptions) -> Iterator[Event]:
     last_event_id: Optional[str] = None
     attempt = 0
@@ -301,9 +299,10 @@ def reconnecting(connect: Connect, options: StreamOptions) -> Iterator[Event]:
 
         try:
             if not response.is_success:
-                #  A 401 always surfaces; the caller has to act on it. Any other
-                #  status retries like a dropped connection while the budget lasts.
-                if response.status_code == 401 or not options.reconnect or attempt >= options.max_reconnects:
+                #  Only a transient refusal reconnects, while the budget lasts. A
+                #  404 for a wrong run id is final: it used to retry five times
+                #  and surface twenty seconds later.
+                if not _reconnectable(response.status_code) or not options.reconnect or attempt >= options.max_reconnects:
                     raise _api_error(response, response.read())
                 attempt += 1
                 continue
@@ -446,7 +445,7 @@ async def areconnecting(connect: AsyncConnect, options: StreamOptions) -> AsyncI
 
         try:
             if not response.is_success:
-                if response.status_code == 401 or not options.reconnect or attempt >= options.max_reconnects:
+                if not _reconnectable(response.status_code) or not options.reconnect or attempt >= options.max_reconnects:
                     raise _api_error(response, await response.aread())
                 attempt += 1
                 continue

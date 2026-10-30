@@ -31,7 +31,7 @@ package body UARP.Errors is
    ------------------
 
    function Is_Retryable (Status : Natural) return Boolean is
-     (Status in 408 | 409 | 429 | 500 | 502 | 503 | 504);
+     (Status in 408 | 429 | 500 | 502 | 503 | 504);
 
    -------------------------
    -- Retry_After_Seconds --

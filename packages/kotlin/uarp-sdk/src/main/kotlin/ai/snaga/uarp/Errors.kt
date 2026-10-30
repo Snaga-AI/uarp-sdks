@@ -125,7 +125,7 @@ public class ApiException(
         get() = problem.errors
 
     override val isRetryable: Boolean
-        get() = status in setOf(408, 409, 429, 500, 502, 503, 504)
+        get() = status in setOf(408, 429, 500, 502, 503, 504)
 
     private companion object {
         fun formatMessage(status: Int, problem: Problem): String = buildString {

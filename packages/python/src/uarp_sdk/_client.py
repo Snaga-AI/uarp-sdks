@@ -36,16 +36,18 @@ class Client(SyncTransport, SyncResources):
         *,
         timeout: Optional[float] = None,
         max_retries: Optional[int] = None,
-        idempotency_key: Optional[str] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
         query: Optional[Mapping[str, Any]] = None,
         stream: Optional[StreamOptions] = None,
     ) -> "Client":
         """A copy of this client that applies these options to every call made through it.
 
-        The connection pool is shared with this client, so it is cheap.
+        The connection pool is shared with this client, so it is cheap. There is
+        no `idempotency_key` here: one key on every write would make the server
+        answer each create after the first as a replay of it. Pass it per call in
+        `RequestOptions`.
         """
-        return cast("Client", _with_options(self, timeout, max_retries, idempotency_key, headers, query, stream))
+        return cast("Client", _with_options(self, timeout, max_retries, headers, query, stream))
 
     def request(
         self,
@@ -114,13 +116,12 @@ class AsyncClient(AsyncTransport, AsyncResources):
         *,
         timeout: Optional[float] = None,
         max_retries: Optional[int] = None,
-        idempotency_key: Optional[str] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
         query: Optional[Mapping[str, Any]] = None,
         stream: Optional[StreamOptions] = None,
     ) -> "AsyncClient":
         """A copy of this client that applies these options to every call made through it."""
-        return cast("AsyncClient", _with_options(self, timeout, max_retries, idempotency_key, headers, query, stream))
+        return cast("AsyncClient", _with_options(self, timeout, max_retries, headers, query, stream))
 
     async def request(
         self,
@@ -154,7 +155,6 @@ def _with_options(
     client: Any,
     timeout: Optional[float],
     max_retries: Optional[int],
-    idempotency_key: Optional[str],
     headers: Optional[Mapping[str, Optional[str]]],
     query: Optional[Mapping[str, Any]],
     stream: Optional[StreamOptions],
@@ -170,7 +170,6 @@ def _with_options(
         RequestOptions(
             timeout=timeout,
             max_retries=max_retries,
-            idempotency_key=idempotency_key,
             headers=dict(headers or {}),
             query=dict(query or {}),
             stream=stream,

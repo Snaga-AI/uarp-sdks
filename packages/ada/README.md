@@ -6,7 +6,7 @@ coverage of every operation the API describes, HTTP over libcurl, JSON via GNATC
 ```toml
 # alire.toml
 [[depends-on]]
-uarp_sdk = "^0.12.0"
+uarp_sdk = "^0.13.0"
 ```
 
 Needs GNAT (Ada 2022), GNATCOLL, and **libcurl** on the system:
@@ -236,7 +236,7 @@ Options.Timeout_Ms := 5_000;
 UARP.Types.Add (Options.Extra_Headers, "X-Trace", Trace_Id);
 ```
 
-**Retries.** `408`, `409`, `429`, `500`, `502`, `503` and `504` retry with full-jitter backoff
+**Retries.** `408`, `429`, `500`, `502`, `503` and `504` retry with full-jitter backoff
 (0.5 s → 8 s) and honour `Retry-After`. Reads always retry; writes only when
 they carry an idempotency key, which every mutating `/api/v1/*` call sends.
 

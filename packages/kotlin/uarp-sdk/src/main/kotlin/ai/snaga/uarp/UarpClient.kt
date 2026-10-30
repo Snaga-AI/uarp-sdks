@@ -216,7 +216,9 @@ public class UarpClient internal constructor(
             return builder.build()
         }
 
-        private val RETRYABLE = setOf(408, 409, 429, 500, 502, 503, 504)
+        // Not 409: a conflict is the server's answer about the state of the resource,
+        // and sending the same request again meets the same state.
+        private val RETRYABLE = setOf(408, 429, 500, 502, 503, 504)
     }
 
     // ---------------------------------------------------------- transport

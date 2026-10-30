@@ -12,8 +12,10 @@ package body UARP.Client is
 
    package JS renames UARP.JSON_Support;
 
+   --  Not 409: a conflict is the server's answer about the state of the
+   --  resource, and sending the same request again meets the same state.
    Retryable_Statuses : constant array (Positive range <>) of Natural :=
-     (408, 409, 429, 500, 502, 503, 504);
+     (408, 429, 500, 502, 503, 504);
 
    subtype Hex_Digit is Natural range 0 .. 15;
    package Hex_Random is new Ada.Numerics.Discrete_Random (Hex_Digit);

@@ -22,7 +22,9 @@ pub const NO_QUERY: Option<&()> = None;
 /// Placeholder for "this request has no body".
 pub const NO_BODY: Option<&()> = None;
 
-const RETRYABLE: [u16; 7] = [408, 409, 429, 500, 502, 503, 504];
+// Not 409: a conflict is the server's answer about the state of the resource,
+// and sending the same request again meets the same state.
+const RETRYABLE: [u16; 6] = [408, 429, 500, 502, 503, 504];
 
 /// Per-call overrides.
 ///

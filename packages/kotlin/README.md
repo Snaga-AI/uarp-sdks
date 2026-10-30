@@ -6,7 +6,7 @@ OkHttp + kotlinx.serialization.
 
 ```kotlin
 dependencies {
-    implementation("ai.snaga:uarp-sdk:0.12.0")
+    implementation("ai.snaga:uarp-sdk:0.13.0")
 }
 ```
 
@@ -168,7 +168,7 @@ Per-call overrides go in the trailing `options` argument:
 client.agents.create(request, options = RequestOptions(idempotencyKey = "order-4711"))
 ```
 
-**Retries.** `408`, `409`, `429`, `500`, `502`, `503` and `504`, plus connection errors, retry with
+**Retries.** `408`, `429`, `500`, `502`, `503` and `504`, plus connection errors, retry with
 full-jitter backoff (500 ms → 8 s) and honour `Retry-After`. Reads always retry;
 writes only when they carry an idempotency key, which every mutating
 `/api/v1/*` call sends automatically.

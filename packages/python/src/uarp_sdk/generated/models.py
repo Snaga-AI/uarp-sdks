@@ -3139,6 +3139,195 @@ class RunEventType(UarpEnum):
     DOCUMENT_EDIT_COMPLETE = "document.edit_complete"
 
 
+class RunEventV1ChildRunCompletedType(UarpEnum):
+    """`RunEventV1ChildRunCompletedType` enumeration."""
+
+    CHILD_RUN_COMPLETED = "child_run.completed"
+
+
+class RunEventV1ChildRunFailedType(UarpEnum):
+    """`RunEventV1ChildRunFailedType` enumeration."""
+
+    CHILD_RUN_FAILED = "child_run.failed"
+
+
+class RunEventV1LLMChunkPayloadChunkType(UarpEnum):
+    """`RunEventV1LLMChunkPayloadChunkType` enumeration."""
+
+    CONTENT = "content"
+    THINKING = "thinking"
+    TOOL_CALL = "tool_call"
+
+
+class RunEventV1LLMChunkType(UarpEnum):
+    """`RunEventV1LLMChunkType` enumeration."""
+
+    LLM_CHUNK = "llm.chunk"
+
+
+class RunEventV1LLMErrorType(UarpEnum):
+    """`RunEventV1LLMErrorType` enumeration."""
+
+    LLM_ERROR = "llm.error"
+
+
+class RunEventV1RunAwaitingApprovalType(UarpEnum):
+    """`RunEventV1RunAwaitingApprovalType` enumeration."""
+
+    RUN_AWAITING_APPROVAL = "run.awaiting_approval"
+
+
+class RunEventV1RunAwaitingInputType(UarpEnum):
+    """`RunEventV1RunAwaitingInputType` enumeration."""
+
+    RUN_AWAITING_INPUT = "run.awaiting_input"
+
+
+class RunEventV1RunCancelledType(UarpEnum):
+    """`RunEventV1RunCancelledType` enumeration."""
+
+    RUN_CANCELLED = "run.cancelled"
+
+
+class RunEventV1RunCompletedPayloadMetricsPricingConfidence(UarpEnum):
+    """`RunEventV1RunCompletedPayloadMetricsPricingConfidence` enumeration."""
+
+    KNOWN = "known"
+    INFERRED = "inferred"
+    FALLBACK = "fallback"
+    UNKNOWN = "unknown"
+
+
+class RunEventV1RunCompletedPayloadStatus(UarpEnum):
+    """`RunEventV1RunCompletedPayloadStatus` enumeration."""
+
+    COMPLETED = "completed"
+
+
+class RunEventV1RunCompletedType(UarpEnum):
+    """`RunEventV1RunCompletedType` enumeration."""
+
+    RUN_COMPLETED = "run.completed"
+
+
+class RunEventV1RunFailedType(UarpEnum):
+    """`RunEventV1RunFailedType` enumeration."""
+
+    RUN_FAILED = "run.failed"
+
+
+class RunEventV1RunGuardrailBlockedType(UarpEnum):
+    """`RunEventV1RunGuardrailBlockedType` enumeration."""
+
+    RUN_GUARDRAIL_BLOCKED = "run.guardrail_blocked"
+
+
+class RunEventV1RunInputReceivedType(UarpEnum):
+    """`RunEventV1RunInputReceivedType` enumeration."""
+
+    RUN_INPUT_RECEIVED = "run.input_received"
+
+
+class RunEventV1RunPausedType(UarpEnum):
+    """`RunEventV1RunPausedType` enumeration."""
+
+    RUN_PAUSED = "run.paused"
+
+
+class RunEventV1RunStartedPayloadExecutionMode(UarpEnum):
+    """`RunEventV1RunStartedPayloadExecutionMode` enumeration."""
+
+    BRIDGE = "bridge"
+
+
+class RunEventV1RunStartedPayloadResumedFrom(UarpEnum):
+    """`RunEventV1RunStartedPayloadResumedFrom` enumeration."""
+
+    AWAITING_APPROVAL = "awaiting_approval"
+    PAUSED = "paused"
+
+
+class RunEventV1RunStartedType(UarpEnum):
+    """`RunEventV1RunStartedType` enumeration."""
+
+    RUN_STARTED = "run.started"
+
+
+class RunEventV1RunStepCompletedType(UarpEnum):
+    """`RunEventV1RunStepCompletedType` enumeration."""
+
+    RUN_STEP_COMPLETED = "run.step_completed"
+
+
+class RunEventV1RunStepStartedType(UarpEnum):
+    """`RunEventV1RunStepStartedType` enumeration."""
+
+    RUN_STEP_STARTED = "run.step_started"
+
+
+class RunEventV1SessionContextCompactedType(UarpEnum):
+    """`RunEventV1SessionContextCompactedType` enumeration."""
+
+    SESSION_CONTEXT_COMPACTED = "session.context_compacted"
+
+
+class RunEventV1SessionContextType(UarpEnum):
+    """`RunEventV1SessionContextType` enumeration."""
+
+    SESSION_CONTEXT = "session.context"
+
+
+class RunEventV1StepActType(UarpEnum):
+    """`RunEventV1StepActType` enumeration."""
+
+    STEP_ACT = "step.act"
+
+
+class RunEventV1StepEvaluateType(UarpEnum):
+    """`RunEventV1StepEvaluateType` enumeration."""
+
+    STEP_EVALUATE = "step.evaluate"
+
+
+class RunEventV1StepPlanType(UarpEnum):
+    """`RunEventV1StepPlanType` enumeration."""
+
+    STEP_PLAN = "step.plan"
+
+
+class RunEventV1TeamDelegatePayloadTopology(UarpEnum):
+    """`RunEventV1TeamDelegatePayloadTopology` enumeration."""
+
+    ADDRESSED = "addressed"
+    SUPERVISOR = "supervisor"
+    PIPELINE = "pipeline"
+    SWARM = "swarm"
+
+
+class RunEventV1TeamDelegateType(UarpEnum):
+    """`RunEventV1TeamDelegateType` enumeration."""
+
+    TEAM_DELEGATE = "team.delegate"
+
+
+class RunEventV1ToolCallType(UarpEnum):
+    """`RunEventV1ToolCallType` enumeration."""
+
+    TOOL_CALL = "tool.call"
+
+
+class RunEventV1ToolErrorType(UarpEnum):
+    """`RunEventV1ToolErrorType` enumeration."""
+
+    TOOL_ERROR = "tool.error"
+
+
+class RunEventV1ToolResultType(UarpEnum):
+    """`RunEventV1ToolResultType` enumeration."""
+
+    TOOL_RESULT = "tool.result"
+
+
 class RunExecutionMode(UarpEnum):
     """Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
     agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
@@ -3214,6 +3403,31 @@ class RunStreamEventStreamType(UarpEnum):
     ASSISTANT = "assistant"
     TOOL = "tool"
     OTHER = "other"
+
+
+class RunStreamFrameV1ErrorVariant1code(UarpEnum):
+    """`RunStreamFrameV1ErrorVariant1code` enumeration."""
+
+    RUN_NOT_FOUND = "RUN_NOT_FOUND"
+    STREAM_ERROR = "STREAM_ERROR"
+
+
+class RunStreamFrameV1ErrorVariant2code(UarpEnum):
+    """`RunStreamFrameV1ErrorVariant2code` enumeration."""
+
+    STREAM_BUFFER_EXCEEDED = "STREAM_BUFFER_EXCEEDED"
+
+
+class RunStreamFrameV1ErrorVariant2type(UarpEnum):
+    """`RunStreamFrameV1ErrorVariant2type` enumeration."""
+
+    ERROR = "error"
+
+
+class RunStreamFrameV1GuardrailViolationViolationSource(UarpEnum):
+    """`RunStreamFrameV1GuardrailViolationViolationSource` enumeration."""
+
+    STREAM = "stream"
 
 
 class ScheduleCanvasWorkflowResponseStatus(UarpEnum):
@@ -3297,6 +3511,13 @@ class SessionQueueMode(UarpEnum):
 
     ALLOW = "allow"
     REJECT = "reject"
+
+
+class SessionStreamFrameV1ErrorCode(UarpEnum):
+    """`SessionStreamFrameV1ErrorCode` enumeration."""
+
+    SESSION_NOT_FOUND = "SESSION_NOT_FOUND"
+    STREAM_ERROR = "STREAM_ERROR"
 
 
 class SessionTitleSource(UarpEnum):
@@ -17862,8 +18083,8 @@ class HandleStripeWebhookResponse(Model):
 
 
 @_dataclass(kw_only=True)
-class HealthCheckV1aliasResponse(Model):
-    """`HealthCheckV1aliasResponse` model."""
+class HealthCheckV1AliasResponse(Model):
+    """`HealthCheckV1AliasResponse` model."""
 
     status: Optional[GetHealthResponseStatus] = None
 
@@ -27790,6 +28011,1174 @@ class RunEventTraceContext(Model):
 
 
 @_dataclass(kw_only=True)
+class RunEventV1ChildRunCompleted(Model):
+    """`RunEventV1ChildRunCompleted` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1ChildRunCompletedType
+
+    seq: int
+
+    payload: RunEventV1ChildRunCompletedPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1ChildRunCompletedPayload(Model):
+    """`RunEventV1ChildRunCompletedPayload` model."""
+
+    child_run_id: str
+
+    agent_id: str
+
+    agent_name: Optional[str] = None
+
+    status: str
+
+    output_preview: Optional[str] = None
+
+    duration_ms: Optional[int] = None
+
+    execution_mode: Optional[str] = None
+
+    cost_usd: Optional[float] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1ChildRunFailed(Model):
+    """`RunEventV1ChildRunFailed` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1ChildRunFailedType
+
+    seq: int
+
+    payload: RunEventV1ChildRunFailedPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1ChildRunFailedPayload(Model):
+    """`RunEventV1ChildRunFailedPayload` model."""
+
+    child_run_id: str
+
+    agent_id: str
+
+    agent_name: Optional[str] = None
+
+    status: str
+
+    error: Optional[str] = None
+
+    execution_mode: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1LLMChunk(Model):
+    """`RunEventV1LLMChunk` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1LLMChunkType
+
+    seq: int
+
+    payload: RunEventV1LLMChunkPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1LLMChunkPayload(Model):
+    """`RunEventV1LLMChunkPayload` model."""
+
+    chunk_type: RunEventV1LLMChunkPayloadChunkType
+
+    delta: str
+
+    index: Optional[int] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1LLMError(Model):
+    """`RunEventV1LLMError` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1LLMErrorType
+
+    seq: int
+
+    payload: RunEventV1LLMErrorPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1LLMErrorPayload(Model):
+    """`RunEventV1LLMErrorPayload` model."""
+
+    error: str
+
+    chunks_before_error: Optional[int] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunAwaitingApproval(Model):
+    """`RunEventV1RunAwaitingApproval` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1RunAwaitingApprovalType
+
+    seq: int
+
+    payload: RunEventV1RunAwaitingApprovalPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunAwaitingApprovalPayload(Model):
+    """`RunEventV1RunAwaitingApprovalPayload` model."""
+
+    tool_calls: List[RunEventV1RunAwaitingApprovalPayloadToolCall]
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunAwaitingApprovalPayloadToolCall(Model):
+    """`RunEventV1RunAwaitingApprovalPayloadToolCall` model."""
+
+    id: str
+
+    name: str
+
+    args: JsonObject
+
+    options: Optional[List[str]] = None
+
+    kind: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunAwaitingInput(Model):
+    """`RunEventV1RunAwaitingInput` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1RunAwaitingInputType
+
+    seq: int
+
+    payload: RunEventV1RunAwaitingInputPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunAwaitingInputPayload(Model):
+    """`RunEventV1RunAwaitingInputPayload` model."""
+
+    tool_call_id: str
+
+    question: Optional[str] = None
+
+    options: Optional[List[str]] = None
+
+    context: Optional[str] = None
+
+    tool_name: Optional[str] = None
+
+    arguments: Optional[JsonObject] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunCancelled(Model):
+    """`RunEventV1RunCancelled` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1RunCancelledType
+
+    seq: int
+
+    payload: RunEventV1RunCancelledPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunCancelledPayload(Model):
+    """`RunEventV1RunCancelledPayload` model."""
+
+    error: Optional[str] = None
+
+    error_code: Optional[str] = None
+
+    error_details: Optional[JsonObject] = None
+
+    message: Optional[str] = None
+
+    reason: Optional[str] = None
+
+    end_reason: Optional[str] = None
+
+    source: Optional[str] = None
+
+    rejected: Optional[bool] = None
+
+    previous_status: Optional[str] = None
+
+    team_run_id: Optional[str] = None
+
+    was: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunCompleted(Model):
+    """`RunEventV1RunCompleted` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1RunCompletedType
+
+    seq: int
+
+    payload: RunEventV1RunCompletedPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunCompletedPayload(Model):
+    """`RunEventV1RunCompletedPayload` model."""
+
+    status: RunEventV1RunCompletedPayloadStatus
+
+    output: JsonObject
+
+    metrics: Optional[RunEventV1RunCompletedPayloadMetrics] = None
+
+    cost_usd: Optional[float] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunCompletedPayloadMetrics(Model):
+    """`RunEventV1RunCompletedPayloadMetrics` model."""
+
+    duration_ms: Optional[int] = None
+
+    steps_count: Optional[int] = None
+
+    input_tokens: Optional[int] = None
+
+    output_tokens: Optional[int] = None
+
+    thinking_tokens: Optional[int] = None
+
+    cached_tokens: Optional[int] = None
+
+    tool_calls_count: Optional[int] = None
+
+    llm_calls_count: Optional[int] = None
+
+    guardrail_checks: Optional[int] = None
+
+    guardrail_violations: Optional[int] = None
+
+    memory_retrievals: Optional[int] = None
+
+    memory_extractions: Optional[int] = None
+
+    total_cost_usd: Optional[float] = None
+
+    fallback_used: Optional[bool] = None
+
+    pricing_confidence: Optional[RunEventV1RunCompletedPayloadMetricsPricingConfidence] = None
+
+    cost_attribution: Optional[RunMetricsCostAttribution] = None
+
+    files_modified: Optional[int] = None
+
+    commands_executed: Optional[int] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunFailed(Model):
+    """`RunEventV1RunFailed` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1RunFailedType
+
+    seq: int
+
+    payload: RunEventV1RunFailedPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunFailedPayload(Model):
+    """`RunEventV1RunFailedPayload` model."""
+
+    error: str
+
+    error_code: Optional[str] = None
+
+    error_details: Optional[JsonObject] = None
+
+    message: Optional[str] = None
+
+    reason: Optional[str] = None
+
+    end_reason: Optional[str] = None
+
+    source: Optional[str] = None
+
+    rejected: Optional[bool] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunGuardrailBlocked(Model):
+    """`RunEventV1RunGuardrailBlocked` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1RunGuardrailBlockedType
+
+    seq: int
+
+    payload: RunEventV1RunGuardrailBlockedPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunGuardrailBlockedPayload(Model):
+    """`RunEventV1RunGuardrailBlockedPayload` model."""
+
+    error: str
+
+    error_code: Optional[str] = None
+
+    error_details: Optional[JsonObject] = None
+
+    message: Optional[str] = None
+
+    reason: Optional[str] = None
+
+    end_reason: Optional[str] = None
+
+    source: Optional[str] = None
+
+    rejected: Optional[bool] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunInputReceived(Model):
+    """`RunEventV1RunInputReceived` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1RunInputReceivedType
+
+    seq: int
+
+    payload: RunEventV1RunInputReceivedPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunInputReceivedPayload(Model):
+    """`RunEventV1RunInputReceivedPayload` model."""
+
+    response_length: int
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunPaused(Model):
+    """`RunEventV1RunPaused` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1RunPausedType
+
+    seq: int
+
+    payload: RunEventV1RunPausedPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunPausedPayload(Model):
+    """`RunEventV1RunPausedPayload` model."""
+
+    reason: str
+
+    step: Optional[int] = None
+
+    resumable: Optional[bool] = None
+
+    held_output: Optional[bool] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunStarted(Model):
+    """`RunEventV1RunStarted` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1RunStartedType
+
+    seq: int
+
+    payload: RunEventV1RunStartedPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunStartedPayload(Model):
+    """`RunEventV1RunStartedPayload` model."""
+
+    agent_id: Optional[str] = None
+
+    execution_mode: Optional[RunEventV1RunStartedPayloadExecutionMode] = None
+
+    source: Optional[str] = None
+
+    priority: Optional[str] = None
+
+    resumed_from: Optional[RunEventV1RunStartedPayloadResumedFrom] = None
+
+    approved: Optional[bool] = None
+
+    revised: Optional[bool] = None
+
+    input: JsonValue = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunStepCompleted(Model):
+    """`RunEventV1RunStepCompleted` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1RunStepCompletedType
+
+    seq: int
+
+    payload: RunEventV1RunStepCompletedPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunStepCompletedPayload(Model):
+    """`RunEventV1RunStepCompletedPayload` model."""
+
+    step_index: int
+
+    step_id: Optional[str] = None
+
+    has_tool_calls: Optional[bool] = None
+
+    tool_names: Optional[List[str]] = None
+
+    done: Optional[bool] = None
+
+    duration_ms: Optional[int] = None
+
+    input_tokens: Optional[int] = None
+
+    output_tokens: Optional[int] = None
+
+    thinking_tokens: Optional[int] = None
+
+    llm_calls_count: Optional[int] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunStepStarted(Model):
+    """`RunEventV1RunStepStarted` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1RunStepStartedType
+
+    seq: int
+
+    payload: RunEventV1RunStepStartedPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1RunStepStartedPayload(Model):
+    """`RunEventV1RunStepStartedPayload` model."""
+
+    step_index: int
+
+    streaming: Optional[bool] = None
+
+    step_id: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1SessionContext(Model):
+    """`RunEventV1SessionContext` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1SessionContextType
+
+    seq: int
+
+    payload: RunEventV1SessionContextPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1SessionContextCompacted(Model):
+    """`RunEventV1SessionContextCompacted` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1SessionContextCompactedType
+
+    seq: int
+
+    payload: RunEventV1SessionContextCompactedPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1SessionContextCompactedPayload(Model):
+    """`RunEventV1SessionContextCompactedPayload` model."""
+
+    step_index: Optional[int] = None
+
+    strategy: Optional[str] = None
+
+    removed_count: Optional[int] = None
+
+    tokens_saved: Optional[int] = None
+
+    context_tokens_before: Optional[int] = None
+
+    context_tokens_after: Optional[int] = None
+
+    max_context_tokens: Optional[int] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1SessionContextPayload(Model):
+    """`RunEventV1SessionContextPayload` model."""
+
+    session_id: str
+
+    window_tokens: Optional[int] = None
+
+    used_tokens: Optional[int] = None
+
+    percent: Optional[float] = None
+
+    source: SessionContextSource
+
+    updated_at: str
+
+
+@_dataclass(kw_only=True)
+class RunEventV1StepAct(Model):
+    """`RunEventV1StepAct` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1StepActType
+
+    seq: int
+
+    payload: RunEventV1StepActPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1StepActPayload(Model):
+    """`RunEventV1StepActPayload` model."""
+
+    message: Optional[str] = None
+
+    code: Optional[str] = None
+
+    params: Optional[JsonObject] = None
+
+    input_tokens: Optional[int] = None
+
+    output_tokens: Optional[int] = None
+
+    metrics: Optional[JsonObject] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1StepEvaluate(Model):
+    """`RunEventV1StepEvaluate` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1StepEvaluateType
+
+    seq: int
+
+    payload: RunEventV1StepEvaluatePayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1StepEvaluatePayload(Model):
+    """`RunEventV1StepEvaluatePayload` model."""
+
+    passed: bool
+
+    feedback: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1StepPlan(Model):
+    """`RunEventV1StepPlan` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1StepPlanType
+
+    seq: int
+
+    payload: RunEventV1StepPlanPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1StepPlanPayload(Model):
+    """`RunEventV1StepPlanPayload` model."""
+
+    effort: Optional[str] = None
+
+    skipped: Optional[bool] = None
+
+    skip_reason: Optional[str] = None
+
+    plan_content: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1TeamDelegate(Model):
+    """`RunEventV1TeamDelegate` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1TeamDelegateType
+
+    seq: int
+
+    payload: RunEventV1TeamDelegatePayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1TeamDelegatePayload(Model):
+    """`RunEventV1TeamDelegatePayload` model."""
+
+    topology: RunEventV1TeamDelegatePayloadTopology
+
+    mode: Optional[str] = None
+
+    round: Optional[int] = None
+
+    step: Optional[int] = None
+
+    handoff_index: Optional[int] = None
+
+    from_: Optional[str] = _field(default=None, metadata={"wire": "from"})
+
+    to: List[str]
+
+    worker_count: Optional[int] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1ToolCall(Model):
+    """`RunEventV1ToolCall` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1ToolCallType
+
+    seq: int
+
+    payload: RunEventV1ToolCallPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1ToolCallPayload(Model):
+    """`RunEventV1ToolCallPayload` model."""
+
+    tool_call: RunEventV1ToolCallPayloadToolCall
+
+    builtin: Optional[bool] = None
+
+    mcp_server_id: Optional[str] = None
+
+    mcp_session_id: Optional[str] = None
+
+    transport_type: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    event_id: Optional[str] = _field(default=None, metadata={"wire": "_event_id"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1ToolCallPayloadToolCall(Model):
+    """`RunEventV1ToolCallPayloadToolCall` model."""
+
+    id: str
+
+    name: str
+
+    arguments: JsonObject
+
+    arguments_preview: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1ToolError(Model):
+    """`RunEventV1ToolError` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1ToolErrorType
+
+    seq: int
+
+    payload: RunEventV1ToolErrorPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1ToolErrorPayload(Model):
+    """`RunEventV1ToolErrorPayload` model."""
+
+    error: str
+
+    tool_name: Optional[str] = None
+
+    tool_call_id: Optional[str] = None
+
+    governance_blocked: Optional[bool] = None
+
+    parse_error: Optional[bool] = None
+
+    builtin: Optional[bool] = None
+
+    parent_event_id: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1ToolResult(Model):
+    """`RunEventV1ToolResult` model."""
+
+    event_id: str
+
+    run_id: str
+
+    session_id: Optional[str] = None
+
+    type: RunEventV1ToolResultType
+
+    seq: int
+
+    payload: RunEventV1ToolResultPayload
+
+    timestamp: str
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: RunStreamEventStreamType
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunEventV1ToolResultPayload(Model):
+    """`RunEventV1ToolResultPayload` model."""
+
+    tool_call_id: Optional[str] = None
+
+    tool_result: RunEventV1ToolResultPayloadToolResult
+
+    latency_ms: Optional[float] = None
+
+    builtin: Optional[bool] = None
+
+    mcp_server_id: Optional[str] = None
+
+    mcp_session_id: Optional[str] = None
+
+    transport_type: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class RunEventV1ToolResultPayloadToolResult(Model):
+    """`RunEventV1ToolResultPayloadToolResult` model."""
+
+    content: str
+
+
+@_dataclass(kw_only=True)
 class RunFeedbackList(Model):
     """GET …/feedback without `message_id`: every reaction the caller stored on the run (measured
     2026-09-10: `{"feedbacks":[]}` on a run with none).
@@ -28197,6 +29586,153 @@ class RunStreamEventTraceContext(Model):
     traceparent: Optional[str] = None
 
     tracestate: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class RunStreamFrameV1Connected(Model):
+    """`RunStreamFrameV1Connected` model."""
+
+    run_id: str
+
+    status: str
+
+    connected_at: Optional[str] = None
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunStreamFrameV1Done(Model):
+    """`RunStreamFrameV1Done` model."""
+
+    run_id: str
+
+    status: str
+
+    metrics: Optional[RunStreamFrameV1DoneMetrics] = None
+
+    output: Optional[JsonObject] = None
+
+    error: Optional[str] = None
+
+    cost_usd: Optional[float] = None
+
+    guardrail_blocked: Optional[bool] = None
+
+    guardrail_violation: Optional[JsonObject] = _field(default=None, metadata={"wire": "_guardrail_violation"})
+
+    stream_type: Optional[RunStreamDoneStreamType] = None
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunStreamFrameV1DoneMetrics(Model):
+    """`RunStreamFrameV1DoneMetrics` model."""
+
+    duration_ms: Optional[int] = None
+
+    steps_count: Optional[int] = None
+
+    input_tokens: Optional[int] = None
+
+    output_tokens: Optional[int] = None
+
+    thinking_tokens: Optional[int] = None
+
+    cached_tokens: Optional[int] = None
+
+    tool_calls_count: Optional[int] = None
+
+    llm_calls_count: Optional[int] = None
+
+    guardrail_checks: Optional[int] = None
+
+    guardrail_violations: Optional[int] = None
+
+    memory_retrievals: Optional[int] = None
+
+    memory_extractions: Optional[int] = None
+
+    total_cost_usd: Optional[float] = None
+
+    fallback_used: Optional[bool] = None
+
+    pricing_confidence: Optional[RunEventV1RunCompletedPayloadMetricsPricingConfidence] = None
+
+    cost_attribution: Optional[RunMetricsCostAttribution] = None
+
+    files_modified: Optional[int] = None
+
+    commands_executed: Optional[int] = None
+
+
+@_dataclass(kw_only=True)
+class RunStreamFrameV1ErrorVariant1(Model):
+    """`RunStreamFrameV1ErrorVariant1` model."""
+
+    error: str
+
+    code: RunStreamFrameV1ErrorVariant1code
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
+
+
+@_dataclass(kw_only=True)
+class RunStreamFrameV1ErrorVariant2(Model):
+    """`RunStreamFrameV1ErrorVariant2` model."""
+
+    type: RunStreamFrameV1ErrorVariant2type
+
+    message: str
+
+    code: RunStreamFrameV1ErrorVariant2code
+
+
+@_dataclass(kw_only=True)
+class RunStreamFrameV1Gap(Model):
+    """`RunStreamFrameV1Gap` model."""
+
+    message: str
+
+
+@_dataclass(kw_only=True)
+class RunStreamFrameV1GuardrailViolation(Model):
+    """`RunStreamFrameV1GuardrailViolation` model."""
+
+    guardrail_violation: Optional[JsonObject] = _field(default=None, metadata={"wire": "_guardrail_violation"})
+
+    violation_source: RunStreamFrameV1GuardrailViolationViolationSource
+
+    event_id: Optional[str] = None
+
+    run_id: Optional[str] = None
+
+    session_id: Optional[str] = None
+
+    type: Optional[str] = None
+
+    seq: Optional[int] = None
+
+    payload: Optional[JsonObject] = None
+
+    timestamp: Optional[str] = None
+
+    step_id: Optional[str] = None
+
+    parent_event_id: Optional[str] = None
+
+    stream_type: Optional[RunStreamEventStreamType] = None
+
+    chunk_id: Optional[str] = _field(default=None, metadata={"wire": "_chunk_id"})
+
+    chunk_index: Optional[int] = _field(default=None, metadata={"wire": "_chunk_index"})
 
 
 @_dataclass(kw_only=True)
@@ -28899,6 +30435,94 @@ class SessionModelOverride(Model):
     endpoint_url: Optional[str] = None
 
     capabilities: Optional[JsonObject] = None
+
+
+@_dataclass(kw_only=True)
+class SessionStreamFrameV1Connected(Model):
+    """`SessionStreamFrameV1Connected` model."""
+
+    session_id: str
+
+    connected_at: Optional[str] = None
+
+    runs: Optional[List[str]] = None
+
+
+@_dataclass(kw_only=True)
+class SessionStreamFrameV1Error(Model):
+    """`SessionStreamFrameV1Error` model."""
+
+    error: str
+
+    code: SessionStreamFrameV1ErrorCode
+
+
+@_dataclass(kw_only=True)
+class SessionStreamFrameV1RunAdded(Model):
+    """`SessionStreamFrameV1RunAdded` model."""
+
+    run_id: str
+
+
+@_dataclass(kw_only=True)
+class SessionStreamFrameV1RunDone(Model):
+    """`SessionStreamFrameV1RunDone` model."""
+
+    run_id: str
+
+    status: str
+
+    metrics: Optional[SessionStreamFrameV1RunDoneMetrics] = None
+
+    cost_usd: Optional[float] = None
+
+
+@_dataclass(kw_only=True)
+class SessionStreamFrameV1RunDoneMetrics(Model):
+    """`SessionStreamFrameV1RunDoneMetrics` model."""
+
+    duration_ms: Optional[int] = None
+
+    steps_count: Optional[int] = None
+
+    input_tokens: Optional[int] = None
+
+    output_tokens: Optional[int] = None
+
+    thinking_tokens: Optional[int] = None
+
+    cached_tokens: Optional[int] = None
+
+    tool_calls_count: Optional[int] = None
+
+    llm_calls_count: Optional[int] = None
+
+    guardrail_checks: Optional[int] = None
+
+    guardrail_violations: Optional[int] = None
+
+    memory_retrievals: Optional[int] = None
+
+    memory_extractions: Optional[int] = None
+
+    total_cost_usd: Optional[float] = None
+
+    fallback_used: Optional[bool] = None
+
+    pricing_confidence: Optional[RunEventV1RunCompletedPayloadMetricsPricingConfidence] = None
+
+    cost_attribution: Optional[RunMetricsCostAttribution] = None
+
+    files_modified: Optional[int] = None
+
+    commands_executed: Optional[int] = None
+
+
+@_dataclass(kw_only=True)
+class SessionStreamFrameV1SessionClosed(Model):
+    """`SessionStreamFrameV1SessionClosed` model."""
+
+    session_id: str
 
 
 @_dataclass(kw_only=True)
@@ -35055,6 +36679,13 @@ QualificationRunMetadata: TypeAlias = Dict[str, JsonValue]
 #: apply — every kind is a closed object and a coordinate that does not fit is refused with
 #: `422`.
 ReviewAnchor: TypeAlias = JsonValue
+#: A run event as `event_schema=1` sends it, on GET /runs/{runId}/events and GET
+#: /sessions/{sessionId}/events. Closed: a strict parser may refuse any field or value not
+#: declared here, because none is ever sent. A type this version does not list is not sent to a
+#: v1 client, and neither is an event whose discriminant value (`chunk_type`, `topology`, …)
+#: the version does not list. Bridge runs arrive in the native shape.
+RunEventV1: TypeAlias = JsonValue
+RunStreamFrameV1Error: TypeAlias = JsonValue
 #: A cron in a shape clients localize; null when the cron is not one of these — show the cron.
 #: Weekdays are ISO (1 = Monday … 7 = Sunday).
 ScheduleShape: TypeAlias = JsonValue
@@ -36032,7 +37663,7 @@ __all__ = [
     "HandleAppStoreNotificationResponseAction",
     "HandleStripeWebhookRequest",
     "HandleStripeWebhookResponse",
-    "HealthCheckV1aliasResponse",
+    "HealthCheckV1AliasResponse",
     "HealthLiveResponse",
     "HealthzAliasResponse",
     "HireAgentRequest",
@@ -36749,6 +38380,89 @@ __all__ = [
     "RunEvent",
     "RunEventTraceContext",
     "RunEventType",
+    "RunEventV1",
+    "RunEventV1ChildRunCompleted",
+    "RunEventV1ChildRunCompletedPayload",
+    "RunEventV1ChildRunCompletedType",
+    "RunEventV1ChildRunFailed",
+    "RunEventV1ChildRunFailedPayload",
+    "RunEventV1ChildRunFailedType",
+    "RunEventV1LLMChunk",
+    "RunEventV1LLMChunkPayload",
+    "RunEventV1LLMChunkPayloadChunkType",
+    "RunEventV1LLMChunkType",
+    "RunEventV1LLMError",
+    "RunEventV1LLMErrorPayload",
+    "RunEventV1LLMErrorType",
+    "RunEventV1RunAwaitingApproval",
+    "RunEventV1RunAwaitingApprovalPayload",
+    "RunEventV1RunAwaitingApprovalPayloadToolCall",
+    "RunEventV1RunAwaitingApprovalType",
+    "RunEventV1RunAwaitingInput",
+    "RunEventV1RunAwaitingInputPayload",
+    "RunEventV1RunAwaitingInputType",
+    "RunEventV1RunCancelled",
+    "RunEventV1RunCancelledPayload",
+    "RunEventV1RunCancelledType",
+    "RunEventV1RunCompleted",
+    "RunEventV1RunCompletedPayload",
+    "RunEventV1RunCompletedPayloadMetrics",
+    "RunEventV1RunCompletedPayloadMetricsPricingConfidence",
+    "RunEventV1RunCompletedPayloadStatus",
+    "RunEventV1RunCompletedType",
+    "RunEventV1RunFailed",
+    "RunEventV1RunFailedPayload",
+    "RunEventV1RunFailedType",
+    "RunEventV1RunGuardrailBlocked",
+    "RunEventV1RunGuardrailBlockedPayload",
+    "RunEventV1RunGuardrailBlockedType",
+    "RunEventV1RunInputReceived",
+    "RunEventV1RunInputReceivedPayload",
+    "RunEventV1RunInputReceivedType",
+    "RunEventV1RunPaused",
+    "RunEventV1RunPausedPayload",
+    "RunEventV1RunPausedType",
+    "RunEventV1RunStarted",
+    "RunEventV1RunStartedPayload",
+    "RunEventV1RunStartedPayloadExecutionMode",
+    "RunEventV1RunStartedPayloadResumedFrom",
+    "RunEventV1RunStartedType",
+    "RunEventV1RunStepCompleted",
+    "RunEventV1RunStepCompletedPayload",
+    "RunEventV1RunStepCompletedType",
+    "RunEventV1RunStepStarted",
+    "RunEventV1RunStepStartedPayload",
+    "RunEventV1RunStepStartedType",
+    "RunEventV1SessionContext",
+    "RunEventV1SessionContextCompacted",
+    "RunEventV1SessionContextCompactedPayload",
+    "RunEventV1SessionContextCompactedType",
+    "RunEventV1SessionContextPayload",
+    "RunEventV1SessionContextType",
+    "RunEventV1StepAct",
+    "RunEventV1StepActPayload",
+    "RunEventV1StepActType",
+    "RunEventV1StepEvaluate",
+    "RunEventV1StepEvaluatePayload",
+    "RunEventV1StepEvaluateType",
+    "RunEventV1StepPlan",
+    "RunEventV1StepPlanPayload",
+    "RunEventV1StepPlanType",
+    "RunEventV1TeamDelegate",
+    "RunEventV1TeamDelegatePayload",
+    "RunEventV1TeamDelegatePayloadTopology",
+    "RunEventV1TeamDelegateType",
+    "RunEventV1ToolCall",
+    "RunEventV1ToolCallPayload",
+    "RunEventV1ToolCallPayloadToolCall",
+    "RunEventV1ToolCallType",
+    "RunEventV1ToolError",
+    "RunEventV1ToolErrorPayload",
+    "RunEventV1ToolErrorType",
+    "RunEventV1ToolResult",
+    "RunEventV1ToolResultPayload",
+    "RunEventV1ToolResultPayloadToolResult",
+    "RunEventV1ToolResultType",
     "RunExecutionMode",
     "RunFeedbackList",
     "RunFeedbackListFeedback",
@@ -36775,6 +38489,18 @@ __all__ = [
     "RunStreamEvent",
     "RunStreamEventStreamType",
     "RunStreamEventTraceContext",
+    "RunStreamFrameV1Connected",
+    "RunStreamFrameV1Done",
+    "RunStreamFrameV1DoneMetrics",
+    "RunStreamFrameV1Error",
+    "RunStreamFrameV1ErrorVariant1",
+    "RunStreamFrameV1ErrorVariant1code",
+    "RunStreamFrameV1ErrorVariant2",
+    "RunStreamFrameV1ErrorVariant2code",
+    "RunStreamFrameV1ErrorVariant2type",
+    "RunStreamFrameV1Gap",
+    "RunStreamFrameV1GuardrailViolation",
+    "RunStreamFrameV1GuardrailViolationViolationSource",
     "RunWorkspaceCommandRequest",
     "RunWorkspaceCommandResponse",
     "SaveACPSessionRequest",
@@ -36827,6 +38553,13 @@ __all__ = [
     "SessionExportMessageToolCall",
     "SessionModelOverride",
     "SessionQueueMode",
+    "SessionStreamFrameV1Connected",
+    "SessionStreamFrameV1Error",
+    "SessionStreamFrameV1ErrorCode",
+    "SessionStreamFrameV1RunAdded",
+    "SessionStreamFrameV1RunDone",
+    "SessionStreamFrameV1RunDoneMetrics",
+    "SessionStreamFrameV1SessionClosed",
     "SessionTitleSource",
     "SetAdminIntegrationOAuthProviderRequest",
     "SetAdminIntegrationOAuthProviderResponse",

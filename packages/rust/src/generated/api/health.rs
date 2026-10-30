@@ -107,7 +107,7 @@ impl HealthApi {
     /// `/api/v1`; new callers should use `/health`.
     ///
     /// `GET /api/v1/health`
-    pub async fn health_check_v1alias(&self) -> Result<models::HealthCheckV1aliasResponse> {
+    pub async fn health_check_v1_alias(&self) -> Result<models::HealthCheckV1AliasResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,

@@ -151,7 +151,9 @@ public final class UARPClient: @unchecked Sendable {
     let encoder: JSONEncoder
     let decoder: JSONDecoder
 
-    private static let retryableStatuses: Set<Int> = [408, 409, 429, 500, 502, 503, 504]
+    // Not 409: a conflict is the server's answer about the state of the resource,
+    // and sending the same request again meets the same state.
+    private static let retryableStatuses: Set<Int> = [408, 429, 500, 502, 503, 504]
 
     public init(configuration: Configuration, session: URLSession = .shared) {
         self.configuration = configuration
