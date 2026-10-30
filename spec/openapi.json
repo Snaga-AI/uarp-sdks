@@ -28756,6 +28756,2695 @@
                         }
                     }
                 }
+            },
+            "RunEventV1RunStarted": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "run.started"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "agent_id": {
+                                "type": "string"
+                            },
+                            "execution_mode": {
+                                "type": "string",
+                                "enum": [
+                                    "bridge"
+                                ]
+                            },
+                            "source": {
+                                "type": "string"
+                            },
+                            "priority": {
+                                "type": "string"
+                            },
+                            "resumed_from": {
+                                "type": "string",
+                                "enum": [
+                                    "awaiting_approval",
+                                    "paused"
+                                ]
+                            },
+                            "approved": {
+                                "type": "boolean"
+                            },
+                            "revised": {
+                                "type": "boolean"
+                            },
+                            "input": {}
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1RunCompleted": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "run.completed"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "status",
+                            "output"
+                        ],
+                        "properties": {
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "completed"
+                                ]
+                            },
+                            "output": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "metrics": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "duration_ms": {
+                                        "type": "integer"
+                                    },
+                                    "steps_count": {
+                                        "type": "integer"
+                                    },
+                                    "input_tokens": {
+                                        "type": "integer"
+                                    },
+                                    "output_tokens": {
+                                        "type": "integer"
+                                    },
+                                    "thinking_tokens": {
+                                        "type": "integer"
+                                    },
+                                    "cached_tokens": {
+                                        "type": "integer"
+                                    },
+                                    "tool_calls_count": {
+                                        "type": "integer"
+                                    },
+                                    "llm_calls_count": {
+                                        "type": "integer"
+                                    },
+                                    "guardrail_checks": {
+                                        "type": "integer"
+                                    },
+                                    "guardrail_violations": {
+                                        "type": "integer"
+                                    },
+                                    "memory_retrievals": {
+                                        "type": "integer"
+                                    },
+                                    "memory_extractions": {
+                                        "type": "integer"
+                                    },
+                                    "total_cost_usd": {
+                                        "type": "number"
+                                    },
+                                    "fallback_used": {
+                                        "type": "boolean"
+                                    },
+                                    "pricing_confidence": {
+                                        "type": "string",
+                                        "enum": [
+                                            "known",
+                                            "inferred",
+                                            "fallback",
+                                            "unknown"
+                                        ]
+                                    },
+                                    "cost_attribution": {
+                                        "type": "string",
+                                        "enum": [
+                                            "sponsored_telemetry"
+                                        ]
+                                    },
+                                    "files_modified": {
+                                        "type": "integer"
+                                    },
+                                    "commands_executed": {
+                                        "type": "integer"
+                                    }
+                                }
+                            },
+                            "cost_usd": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1RunFailed": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "run.failed"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "error"
+                        ],
+                        "properties": {
+                            "error": {
+                                "type": "string"
+                            },
+                            "error_code": {
+                                "type": "string"
+                            },
+                            "error_details": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "message": {
+                                "type": "string"
+                            },
+                            "reason": {
+                                "type": "string"
+                            },
+                            "end_reason": {
+                                "type": "string"
+                            },
+                            "source": {
+                                "type": "string"
+                            },
+                            "rejected": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1RunCancelled": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "run.cancelled"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "error": {
+                                "type": "string"
+                            },
+                            "error_code": {
+                                "type": "string"
+                            },
+                            "error_details": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "message": {
+                                "type": "string"
+                            },
+                            "reason": {
+                                "type": "string"
+                            },
+                            "end_reason": {
+                                "type": "string"
+                            },
+                            "source": {
+                                "type": "string"
+                            },
+                            "rejected": {
+                                "type": "boolean"
+                            },
+                            "previous_status": {
+                                "type": "string"
+                            },
+                            "team_run_id": {
+                                "type": "string"
+                            },
+                            "was": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1RunGuardrailBlocked": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "run.guardrail_blocked"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "error"
+                        ],
+                        "properties": {
+                            "error": {
+                                "type": "string"
+                            },
+                            "error_code": {
+                                "type": "string"
+                            },
+                            "error_details": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "message": {
+                                "type": "string"
+                            },
+                            "reason": {
+                                "type": "string"
+                            },
+                            "end_reason": {
+                                "type": "string"
+                            },
+                            "source": {
+                                "type": "string"
+                            },
+                            "rejected": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1RunPaused": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "run.paused"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "reason"
+                        ],
+                        "properties": {
+                            "reason": {
+                                "type": "string"
+                            },
+                            "step": {
+                                "type": "integer"
+                            },
+                            "resumable": {
+                                "type": "boolean"
+                            },
+                            "held_output": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1RunAwaitingApproval": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "run.awaiting_approval"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "tool_calls"
+                        ],
+                        "properties": {
+                            "tool_calls": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "args"
+                                    ],
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "args": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        },
+                                        "options": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "kind": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1RunAwaitingInput": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "run.awaiting_input"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "tool_call_id"
+                        ],
+                        "properties": {
+                            "tool_call_id": {
+                                "type": "string"
+                            },
+                            "question": {
+                                "type": "string"
+                            },
+                            "options": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "context": {
+                                "type": "string"
+                            },
+                            "tool_name": {
+                                "type": "string"
+                            },
+                            "arguments": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1RunInputReceived": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "run.input_received"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "response_length"
+                        ],
+                        "properties": {
+                            "response_length": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1LlmChunk": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "llm.chunk"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "chunk_type",
+                            "delta"
+                        ],
+                        "properties": {
+                            "chunk_type": {
+                                "type": "string",
+                                "enum": [
+                                    "content",
+                                    "thinking",
+                                    "tool_call"
+                                ]
+                            },
+                            "delta": {
+                                "type": "string"
+                            },
+                            "index": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1LlmError": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "llm.error"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "error"
+                        ],
+                        "properties": {
+                            "error": {
+                                "type": "string"
+                            },
+                            "chunks_before_error": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1ToolCall": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "tool.call"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "tool_call"
+                        ],
+                        "properties": {
+                            "tool_call": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "id",
+                                    "name",
+                                    "arguments"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "arguments": {
+                                        "type": "object",
+                                        "additionalProperties": true
+                                    },
+                                    "arguments_preview": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "builtin": {
+                                "type": "boolean"
+                            },
+                            "mcp_server_id": {
+                                "type": "string"
+                            },
+                            "mcp_session_id": {
+                                "type": "string"
+                            },
+                            "transport_type": {
+                                "type": "string"
+                            },
+                            "parent_event_id": {
+                                "type": "string"
+                            },
+                            "_event_id": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1ToolResult": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "tool.result"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "tool_result"
+                        ],
+                        "properties": {
+                            "tool_call_id": {
+                                "type": "string"
+                            },
+                            "tool_result": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "content"
+                                ],
+                                "properties": {
+                                    "content": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "latency_ms": {
+                                "type": "number"
+                            },
+                            "builtin": {
+                                "type": "boolean"
+                            },
+                            "mcp_server_id": {
+                                "type": "string"
+                            },
+                            "mcp_session_id": {
+                                "type": "string"
+                            },
+                            "transport_type": {
+                                "type": "string"
+                            },
+                            "parent_event_id": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1ToolError": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "tool.error"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "error"
+                        ],
+                        "properties": {
+                            "error": {
+                                "type": "string"
+                            },
+                            "tool_name": {
+                                "type": "string"
+                            },
+                            "tool_call_id": {
+                                "type": "string"
+                            },
+                            "governance_blocked": {
+                                "type": "boolean"
+                            },
+                            "parse_error": {
+                                "type": "boolean"
+                            },
+                            "builtin": {
+                                "type": "boolean"
+                            },
+                            "parent_event_id": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1RunStepStarted": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "run.step_started"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "step_index"
+                        ],
+                        "properties": {
+                            "step_index": {
+                                "type": "integer"
+                            },
+                            "streaming": {
+                                "type": "boolean"
+                            },
+                            "step_id": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1RunStepCompleted": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "run.step_completed"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "step_index"
+                        ],
+                        "properties": {
+                            "step_index": {
+                                "type": "integer"
+                            },
+                            "step_id": {
+                                "type": "string"
+                            },
+                            "has_tool_calls": {
+                                "type": "boolean"
+                            },
+                            "tool_names": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "done": {
+                                "type": "boolean"
+                            },
+                            "duration_ms": {
+                                "type": "integer"
+                            },
+                            "input_tokens": {
+                                "type": "integer"
+                            },
+                            "output_tokens": {
+                                "type": "integer"
+                            },
+                            "thinking_tokens": {
+                                "type": "integer"
+                            },
+                            "llm_calls_count": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1StepPlan": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "step.plan"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "effort": {
+                                "type": "string"
+                            },
+                            "skipped": {
+                                "type": "boolean"
+                            },
+                            "skip_reason": {
+                                "type": "string"
+                            },
+                            "plan_content": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1StepEvaluate": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "step.evaluate"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "passed"
+                        ],
+                        "properties": {
+                            "passed": {
+                                "type": "boolean"
+                            },
+                            "feedback": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1StepAct": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "step.act"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "message": {
+                                "type": "string"
+                            },
+                            "code": {
+                                "type": "string"
+                            },
+                            "params": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "input_tokens": {
+                                "type": "integer"
+                            },
+                            "output_tokens": {
+                                "type": "integer"
+                            },
+                            "metrics": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1TeamDelegate": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "team.delegate"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "topology",
+                            "to"
+                        ],
+                        "properties": {
+                            "topology": {
+                                "type": "string",
+                                "enum": [
+                                    "addressed",
+                                    "supervisor",
+                                    "pipeline",
+                                    "swarm"
+                                ]
+                            },
+                            "mode": {
+                                "type": "string"
+                            },
+                            "round": {
+                                "type": "integer"
+                            },
+                            "step": {
+                                "type": "integer"
+                            },
+                            "handoff_index": {
+                                "type": "integer"
+                            },
+                            "from": {
+                                "type": "string"
+                            },
+                            "to": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "worker_count": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1ChildRunCompleted": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "child_run.completed"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "child_run_id",
+                            "agent_id",
+                            "status"
+                        ],
+                        "properties": {
+                            "child_run_id": {
+                                "type": "string"
+                            },
+                            "agent_id": {
+                                "type": "string"
+                            },
+                            "agent_name": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            },
+                            "output_preview": {
+                                "type": "string"
+                            },
+                            "duration_ms": {
+                                "type": "integer"
+                            },
+                            "execution_mode": {
+                                "type": "string"
+                            },
+                            "cost_usd": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1ChildRunFailed": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "child_run.failed"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "child_run_id",
+                            "agent_id",
+                            "status"
+                        ],
+                        "properties": {
+                            "child_run_id": {
+                                "type": "string"
+                            },
+                            "agent_id": {
+                                "type": "string"
+                            },
+                            "agent_name": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            },
+                            "error": {
+                                "type": "string"
+                            },
+                            "execution_mode": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1SessionContextCompacted": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "session.context_compacted"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "step_index": {
+                                "type": "integer"
+                            },
+                            "strategy": {
+                                "type": "string"
+                            },
+                            "removed_count": {
+                                "type": "integer"
+                            },
+                            "tokens_saved": {
+                                "type": "integer"
+                            },
+                            "context_tokens_before": {
+                                "type": "integer"
+                            },
+                            "context_tokens_after": {
+                                "type": "integer"
+                            },
+                            "max_context_tokens": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1SessionContext": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "event_id",
+                    "run_id",
+                    "type",
+                    "seq",
+                    "payload",
+                    "timestamp",
+                    "stream_type"
+                ],
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "session.context"
+                        ]
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "session_id",
+                            "source",
+                            "updated_at"
+                        ],
+                        "properties": {
+                            "session_id": {
+                                "type": "string"
+                            },
+                            "window_tokens": {
+                                "type": "integer",
+                                "nullable": true
+                            },
+                            "used_tokens": {
+                                "type": "integer",
+                                "nullable": true
+                            },
+                            "percent": {
+                                "type": "number",
+                                "nullable": true
+                            },
+                            "source": {
+                                "type": "string",
+                                "enum": [
+                                    "model",
+                                    "agent"
+                                ]
+                            },
+                            "updated_at": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunEventV1": {
+                "description": "A run event as `event_schema=1` sends it, on GET /runs/{runId}/events and GET /sessions/{sessionId}/events. Closed: a strict parser may refuse any field or value not declared here, because none is ever sent. A type this version does not list is not sent to a v1 client, and neither is an event whose discriminant value (`chunk_type`, `topology`, …) the version does not list. Bridge runs arrive in the native shape.",
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/RunEventV1RunStarted"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1RunCompleted"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1RunFailed"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1RunCancelled"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1RunGuardrailBlocked"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1RunPaused"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1RunAwaitingApproval"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1RunAwaitingInput"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1RunInputReceived"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1LlmChunk"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1LlmError"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1ToolCall"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1ToolResult"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1ToolError"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1RunStepStarted"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1RunStepCompleted"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1StepPlan"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1StepEvaluate"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1StepAct"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1TeamDelegate"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1ChildRunCompleted"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1ChildRunFailed"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1SessionContextCompacted"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RunEventV1SessionContext"
+                    }
+                ],
+                "discriminator": {
+                    "propertyName": "type",
+                    "mapping": {
+                        "run.started": "#/components/schemas/RunEventV1RunStarted",
+                        "run.completed": "#/components/schemas/RunEventV1RunCompleted",
+                        "run.failed": "#/components/schemas/RunEventV1RunFailed",
+                        "run.cancelled": "#/components/schemas/RunEventV1RunCancelled",
+                        "run.guardrail_blocked": "#/components/schemas/RunEventV1RunGuardrailBlocked",
+                        "run.paused": "#/components/schemas/RunEventV1RunPaused",
+                        "run.awaiting_approval": "#/components/schemas/RunEventV1RunAwaitingApproval",
+                        "run.awaiting_input": "#/components/schemas/RunEventV1RunAwaitingInput",
+                        "run.input_received": "#/components/schemas/RunEventV1RunInputReceived",
+                        "llm.chunk": "#/components/schemas/RunEventV1LlmChunk",
+                        "llm.error": "#/components/schemas/RunEventV1LlmError",
+                        "tool.call": "#/components/schemas/RunEventV1ToolCall",
+                        "tool.result": "#/components/schemas/RunEventV1ToolResult",
+                        "tool.error": "#/components/schemas/RunEventV1ToolError",
+                        "run.step_started": "#/components/schemas/RunEventV1RunStepStarted",
+                        "run.step_completed": "#/components/schemas/RunEventV1RunStepCompleted",
+                        "step.plan": "#/components/schemas/RunEventV1StepPlan",
+                        "step.evaluate": "#/components/schemas/RunEventV1StepEvaluate",
+                        "step.act": "#/components/schemas/RunEventV1StepAct",
+                        "team.delegate": "#/components/schemas/RunEventV1TeamDelegate",
+                        "child_run.completed": "#/components/schemas/RunEventV1ChildRunCompleted",
+                        "child_run.failed": "#/components/schemas/RunEventV1ChildRunFailed",
+                        "session.context_compacted": "#/components/schemas/RunEventV1SessionContextCompacted",
+                        "session.context": "#/components/schemas/RunEventV1SessionContext"
+                    }
+                }
+            },
+            "RunStreamFrameV1Connected": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "run_id",
+                    "status"
+                ],
+                "properties": {
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "connected_at": {
+                        "type": "string"
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunStreamFrameV1Done": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "run_id",
+                    "status"
+                ],
+                "properties": {
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "metrics": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "duration_ms": {
+                                "type": "integer"
+                            },
+                            "steps_count": {
+                                "type": "integer"
+                            },
+                            "input_tokens": {
+                                "type": "integer"
+                            },
+                            "output_tokens": {
+                                "type": "integer"
+                            },
+                            "thinking_tokens": {
+                                "type": "integer"
+                            },
+                            "cached_tokens": {
+                                "type": "integer"
+                            },
+                            "tool_calls_count": {
+                                "type": "integer"
+                            },
+                            "llm_calls_count": {
+                                "type": "integer"
+                            },
+                            "guardrail_checks": {
+                                "type": "integer"
+                            },
+                            "guardrail_violations": {
+                                "type": "integer"
+                            },
+                            "memory_retrievals": {
+                                "type": "integer"
+                            },
+                            "memory_extractions": {
+                                "type": "integer"
+                            },
+                            "total_cost_usd": {
+                                "type": "number"
+                            },
+                            "fallback_used": {
+                                "type": "boolean"
+                            },
+                            "pricing_confidence": {
+                                "type": "string",
+                                "enum": [
+                                    "known",
+                                    "inferred",
+                                    "fallback",
+                                    "unknown"
+                                ]
+                            },
+                            "cost_attribution": {
+                                "type": "string",
+                                "enum": [
+                                    "sponsored_telemetry"
+                                ]
+                            },
+                            "files_modified": {
+                                "type": "integer"
+                            },
+                            "commands_executed": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "output": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "nullable": true
+                    },
+                    "error": {
+                        "type": "string"
+                    },
+                    "cost_usd": {
+                        "type": "number"
+                    },
+                    "guardrail_blocked": {
+                        "type": "boolean"
+                    },
+                    "_guardrail_violation": {
+                        "type": "object",
+                        "additionalProperties": true
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunStreamFrameV1Error": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "error",
+                            "code"
+                        ],
+                        "properties": {
+                            "error": {
+                                "type": "string"
+                            },
+                            "code": {
+                                "type": "string",
+                                "enum": [
+                                    "RUN_NOT_FOUND",
+                                    "STREAM_ERROR"
+                                ]
+                            },
+                            "_chunk_id": {
+                                "type": "string"
+                            },
+                            "_chunk_index": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "type",
+                            "message",
+                            "code"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "error"
+                                ]
+                            },
+                            "message": {
+                                "type": "string"
+                            },
+                            "code": {
+                                "type": "string",
+                                "enum": [
+                                    "STREAM_BUFFER_EXCEEDED"
+                                ]
+                            }
+                        }
+                    }
+                ]
+            },
+            "RunStreamFrameV1Gap": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "message"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            },
+            "RunStreamFrameV1GuardrailViolation": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "violation_source"
+                ],
+                "properties": {
+                    "_guardrail_violation": {
+                        "type": "object",
+                        "additionalProperties": true
+                    },
+                    "violation_source": {
+                        "type": "string",
+                        "enum": [
+                            "stream"
+                        ]
+                    },
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": true
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "step_id": {
+                        "type": "string"
+                    },
+                    "parent_event_id": {
+                        "type": "string"
+                    },
+                    "stream_type": {
+                        "type": "string",
+                        "enum": [
+                            "lifecycle",
+                            "assistant",
+                            "tool",
+                            "other"
+                        ]
+                    },
+                    "_chunk_id": {
+                        "type": "string"
+                    },
+                    "_chunk_index": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "SessionStreamFrameV1Connected": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "session_id"
+                ],
+                "properties": {
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "connected_at": {
+                        "type": "string"
+                    },
+                    "runs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "SessionStreamFrameV1RunAdded": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "run_id"
+                ],
+                "properties": {
+                    "run_id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "SessionStreamFrameV1RunDone": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "run_id",
+                    "status"
+                ],
+                "properties": {
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "metrics": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "duration_ms": {
+                                "type": "integer"
+                            },
+                            "steps_count": {
+                                "type": "integer"
+                            },
+                            "input_tokens": {
+                                "type": "integer"
+                            },
+                            "output_tokens": {
+                                "type": "integer"
+                            },
+                            "thinking_tokens": {
+                                "type": "integer"
+                            },
+                            "cached_tokens": {
+                                "type": "integer"
+                            },
+                            "tool_calls_count": {
+                                "type": "integer"
+                            },
+                            "llm_calls_count": {
+                                "type": "integer"
+                            },
+                            "guardrail_checks": {
+                                "type": "integer"
+                            },
+                            "guardrail_violations": {
+                                "type": "integer"
+                            },
+                            "memory_retrievals": {
+                                "type": "integer"
+                            },
+                            "memory_extractions": {
+                                "type": "integer"
+                            },
+                            "total_cost_usd": {
+                                "type": "number"
+                            },
+                            "fallback_used": {
+                                "type": "boolean"
+                            },
+                            "pricing_confidence": {
+                                "type": "string",
+                                "enum": [
+                                    "known",
+                                    "inferred",
+                                    "fallback",
+                                    "unknown"
+                                ]
+                            },
+                            "cost_attribution": {
+                                "type": "string",
+                                "enum": [
+                                    "sponsored_telemetry"
+                                ]
+                            },
+                            "files_modified": {
+                                "type": "integer"
+                            },
+                            "commands_executed": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "cost_usd": {
+                        "type": "number"
+                    }
+                }
+            },
+            "SessionStreamFrameV1SessionClosed": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "session_id"
+                ],
+                "properties": {
+                    "session_id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "SessionStreamFrameV1Error": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "error",
+                    "code"
+                ],
+                "properties": {
+                    "error": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string",
+                        "enum": [
+                            "SESSION_NOT_FOUND",
+                            "STREAM_ERROR"
+                        ]
+                    }
+                }
             }
         },
         "responses": {
@@ -28808,7 +31497,19 @@
                 }
             },
             "Conflict": {
-                "description": "State conflict (duplicate, already exists, version mismatch). Idempotency-Key collisions return 202 with Retry-After, not 409.",
+                "description": "State conflict (duplicate, already exists, version mismatch). Idempotency-Key collisions return 202 with Retry-After, not 409.\n\nEvery 409 whose `code` says whether the same request can succeed when sent again carries `X-Should-Retry` (since 2026-10-29): `false` for a refusal no repeat changes (`CLIENT_REQUEST_CONFLICT`, `ALREADY_EXISTS`, `INVALID_STATE_TRANSITION`, `COMPANY_NOT_READY`, …), `true` for a lost race (`CONCURRENT_MODIFICATION`, a promo code other redeemers hold at that moment). The generic `CONFLICT` and a 409 without `code` carry none — keep your own retry policy there.",
+                "headers": {
+                    "X-Should-Retry": {
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "true",
+                                "false"
+                            ]
+                        },
+                        "description": "Whether repeating the same request can succeed. Absent when the conflict's `code` does not say."
+                    }
+                },
                 "content": {
                     "application/problem+json": {
                         "schema": {
@@ -29088,6 +31789,18 @@
                     "type": "string",
                     "maxLength": 65536
                 }
+            },
+            "EventSchema": {
+                "name": "event_schema",
+                "in": "query",
+                "required": false,
+                "schema": {
+                    "type": "integer",
+                    "enum": [
+                        1
+                    ]
+                },
+                "description": "The version of the event schemas the client parses strictly (since 2026-10-30). Every frame is then sent in exactly that version's shape — `RunEventV<N>` for run events, `RunStreamFrameV<N>*` / `SessionStreamFrameV<N>*` for the stream's own frames — and a frame the version does not know is not sent. Without it the stream is unchanged. An unsupported value, or `event_schema` together with `flat=1`, is 400 VALIDATION_ERROR before the stream opens. The operation's `x-event-stream` gives, per version, the line that ends the stream (SSE event name `message`, data `[DONE]` — not JSON, not versioned), the SSE `id` of every frame, what `Last-Event-ID` resumes, what a `gap` frame means and how to recover from it, and the frames the version never sends. Every `error` frame carries a closed `code`, and what to do next is decided by it, never by the text."
             }
         },
         "headers": {
@@ -34876,6 +37589,9 @@
                     },
                     {
                         "$ref": "#/components/parameters/LastEventId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/EventSchema"
                     }
                 ],
                 "responses": {
@@ -35044,7 +37760,35 @@
                 },
                 "x-scopes": [
                     "sessions:read"
-                ]
+                ],
+                "x-event-stream": {
+                    "1": {
+                        "terminator": {
+                            "event": "message",
+                            "data": "[DONE]",
+                            "meaning": "The server closed the stream on purpose; the frame before it says why. After `done` (run stream) or `session_closed` (session stream) it is over: do not reconnect. After `error` its `code` decides: `RUN_NOT_FOUND` and `SESSION_NOT_FOUND` (id `error-0`) are final; `STREAM_ERROR` and `STREAM_BUFFER_EXCEEDED` may be resumed with Last-Event-ID. The `error` / `message` text is for people and may change. With no frame before it, the credential that opened the stream is no longer valid: authenticate again before reconnecting. A stream that ends WITHOUT it — the session stream's two-hour cap, a dropped connection — is resumed with Last-Event-ID."
+                        },
+                        "ids": {
+                            "connected": "^0$",
+                            "run_added": "^[^:]+:added$",
+                            "*": "^[^:]+:\\d+$",
+                            "run_done": "^[^:]+:done$",
+                            "session_closed": "^session_closed$",
+                            "error": "^error(-0)?$"
+                        },
+                        "lastEventId": "`<runId>:<seq>` of the last run-event frame received: that run resumes after seq. Every other run of the session is replayed from its first event, so a client keeps the last seq per run and drops what it already has. Any other id (`0`, `<runId>:added`, `<runId>:done`, `session_closed`) replays the whole session.",
+                        "notSent": {
+                            "run.affect": "cosmetic mood signal; never run state",
+                            "streaming.started": "transport bookkeeping of one model call",
+                            "streaming.completed": "transport bookkeeping of one model call",
+                            "llm.response": "the whole response again; llm.chunk already carried it",
+                            "llm.request": "never streamed on any version",
+                            "*": "any run-event type not listed in `events`, and any event whose discriminant value (chunk_type, topology, …) the version does not list",
+                            "drawing.created": "canvas frames are not part of v1; the next version carries them",
+                            "drawing.ops": "canvas frames are not part of v1; the next version carries them"
+                        }
+                    }
+                }
             }
         },
         "/api/v1/sessions/{sessionId}/share": {
@@ -36555,6 +39299,9 @@
                     },
                     {
                         "$ref": "#/components/parameters/LastEventId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/EventSchema"
                     }
                 ],
                 "responses": {
@@ -36683,7 +39430,36 @@
                 },
                 "x-scopes": [
                     "runs:read"
-                ]
+                ],
+                "x-event-stream": {
+                    "1": {
+                        "terminator": {
+                            "event": "message",
+                            "data": "[DONE]",
+                            "meaning": "The server closed the stream on purpose; the frame before it says why. After `done` (run stream) or `session_closed` (session stream) it is over: do not reconnect. After `error` its `code` decides: `RUN_NOT_FOUND` and `SESSION_NOT_FOUND` (id `error-0`) are final; `STREAM_ERROR` and `STREAM_BUFFER_EXCEEDED` may be resumed with Last-Event-ID. The `error` / `message` text is for people and may change. With no frame before it, the credential that opened the stream is no longer valid: authenticate again before reconnecting. A stream that ends WITHOUT it — the session stream's two-hour cap, a dropped connection — is resumed with Last-Event-ID."
+                        },
+                        "ids": {
+                            "connected": "^0$",
+                            "*": "^\\d+$",
+                            "done": "^done$",
+                            "error": "^error(-0)?$",
+                            "guardrail.violation": "^\\d+$"
+                        },
+                        "sentWithoutId": {
+                            "error": "the `STREAM_BUFFER_EXCEEDED` form, so that Last-Event-ID stays the seq of the last event received and a reconnect resumes from it"
+                        },
+                        "lastEventId": "The seq of the last run-event frame received (its id, an integer): the stream replays every event after it, then follows the run. `0`, `done`, an error id or any id that is not a non-negative integer replays the run from its first event. `gap` is sent without an id and does not move the position.",
+                        "notSent": {
+                            "run.affect": "cosmetic mood signal; never run state",
+                            "streaming.started": "transport bookkeeping of one model call",
+                            "streaming.completed": "transport bookkeeping of one model call",
+                            "llm.response": "the whole response again; llm.chunk already carried it",
+                            "llm.request": "never streamed on any version",
+                            "*": "any run-event type not listed in `events`, and any event whose discriminant value (chunk_type, topology, …) the version does not list"
+                        },
+                        "gap": "Nothing is lost from the run: this connection fell behind and skipped frames, and every run event it skipped is persisted. Under backpressure it skips every frame except `done`, `error`, `tool.call`, `tool.result`, `tool.error`, `run.awaiting_approval`, `run.awaiting_input` and `document.*`, and sends one `gap` (no id) when it starts; once it has caught up it may fall behind and send another. To recover, reconnect with Last-Event-ID set to the seq of the last run event received before the first `gap`, and drop every event whose seq was already received: the frames that got through after the gap come again. For a run that has ended, `done.output` is the whole output, so the skipped `llm.chunk` frames need not be replayed to show it."
+                    }
+                }
             }
         },
         "/api/v1/runs/{runId}/cancel": {
@@ -115309,7 +118085,7 @@
                 "tags": [
                     "Analytics"
                 ],
-                "description": "Approvals, input requests, paused and failed runs, each with a one-line summary of what is being asked — and, in `reviews`, mission results waiting for a person's verdict — tool names, the question, or the error.\n\n**Limits.** One page reads one SCAN WINDOW of the tenant's 500 newest run records (newest first), sorts every waiting run in it by urgency (approval, input, paused, failed; newest first inside each) and returns at most `limit` of them (1–200, default 50). `counts` is computed over the window, not over `items`, so a short page still reports the window's backlog. Failed runs count only for 24 hours after they were created.\n\n**Paging** (since 2026-10-19). When the window held more waiting runs than `limit`, or older runs exist past it (`truncated`), the answer carries `has_more: true` and a `cursor`. Pass it back unchanged as `?cursor=` (with any `limit`) to continue: first through the rest of the same window, then into the next 500 runs, and so on — every waiting run is reached exactly once, however old. A continuation page whose window holds nothing to show reads on, up to 4 windows (2 000 runs) per request, before answering. On a continuation page `counts` and `scanned` describe that page's span only, and `reviews`/`proposals` — complete lists, not windowed — are empty: read them from the first page. A run that changes status between pages can be seen twice or not at all, and a run created between pages can shift the first window by one. A cursor this endpoint did not issue is 400.\n\nWithout `cursor` the answer is the first window, exactly as before paging existed; `has_more`/`cursor` are additive.",
+                "description": "Approvals, input requests, paused and failed runs, each with a one-line summary of what is being asked — and, in `reviews`, mission results waiting for a person's verdict — tool names, the question, or the error.\n\n**Limits.** One page reads one SCAN WINDOW of the tenant's 500 newest run records (newest first), sorts every waiting run in it by urgency (approval, input, paused, failed; newest first inside each) and returns at most `limit` of them (1–200, default 50). `counts` is computed over the window, not over `items`, so a short page still reports the window's backlog. Failed runs count only for 24 hours after they were created.\n\n**Paging** (since 2026-10-19). When the window held more waiting runs than `limit`, or older runs exist past it (`truncated`), the answer carries `has_more: true` and a `cursor`. Pass it back unchanged as `?cursor=` (with any `limit`) to continue: first through the rest of the same window, then into the next 500 runs, and so on — every waiting run is reached exactly once, however old. A continuation page whose window holds nothing to show reads on, up to 4 windows (2 000 runs) per request, before answering. A first page whose window holds nothing looks on the same way (since 2026-10-29) to decide `has_more`: when no waiting run exists until the oldest run, it answers `has_more: false` with no `cursor` — nobody is waiting — and when one does, the `cursor` starts at that run's window rather than at the empty ones in between. On a continuation page `counts` and `scanned` describe that page's span only, and `reviews`/`proposals` — complete lists, not windowed — are empty: read them from the first page. A run that changes status between pages can be seen twice or not at all, and a run created between pages can shift the first window by one. A cursor this endpoint did not issue is 400.\n\nWithout `cursor` the items, `counts` and `scanned` are the first window's, exactly as before paging existed; `has_more`/`cursor` are additive.",
                 "parameters": [
                     {
                         "name": "limit",

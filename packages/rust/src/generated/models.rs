@@ -20085,9 +20085,9 @@ pub struct HandleStripeWebhookResponse {
     pub duplicate: Option<bool>,
 }
 
-/// `HealthCheckV1aliasResponse` model.
+/// `HealthCheckV1AliasResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct HealthCheckV1aliasResponse {
+pub struct HealthCheckV1AliasResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<GetHealthResponseStatus>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -35317,6 +35317,2094 @@ impl From<&str> for RunEventType {
     }
 }
 
+/// A run event as `event_schema=1` sends it, on GET /runs/{runId}/events and GET
+/// /sessions/{sessionId}/events. Closed: a strict parser may refuse any field or value not
+/// declared here, because none is ever sent. A type this version does not list is not sent to a
+/// v1 client, and neither is an event whose discriminant value (`chunk_type`, `topology`, …)
+/// the version does not list. Bridge runs arrive in the native shape.
+pub type RunEventV1 = serde_json::Value;
+
+/// `RunEventV1ChildRunCompleted` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1ChildRunCompleted {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1ChildRunCompletedType,
+    pub seq: i64,
+    pub payload: RunEventV1ChildRunCompletedPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1ChildRunCompletedPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1ChildRunCompletedPayload {
+    pub child_run_id: String,
+    pub agent_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_name: Option<String>,
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_preview: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_mode: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_usd: Option<f64>,
+}
+
+/// `RunEventV1ChildRunCompletedType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1ChildRunCompletedType {
+    #[default]
+    #[serde(rename = "child_run.completed")]
+    ChildRunCompleted,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1ChildRunCompletedType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::ChildRunCompleted => "child_run.completed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1ChildRunCompletedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1ChildRunCompletedType {
+    fn from(value: &str) -> Self {
+        match value {
+            "child_run.completed" => Self::ChildRunCompleted,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1ChildRunFailed` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1ChildRunFailed {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1ChildRunFailedType,
+    pub seq: i64,
+    pub payload: RunEventV1ChildRunFailedPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1ChildRunFailedPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1ChildRunFailedPayload {
+    pub child_run_id: String,
+    pub agent_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_name: Option<String>,
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_mode: Option<String>,
+}
+
+/// `RunEventV1ChildRunFailedType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1ChildRunFailedType {
+    #[default]
+    #[serde(rename = "child_run.failed")]
+    ChildRunFailed,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1ChildRunFailedType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::ChildRunFailed => "child_run.failed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1ChildRunFailedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1ChildRunFailedType {
+    fn from(value: &str) -> Self {
+        match value {
+            "child_run.failed" => Self::ChildRunFailed,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1LLMChunk` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1LLMChunk {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1LLMChunkType,
+    pub seq: i64,
+    pub payload: RunEventV1LLMChunkPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1LLMChunkPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1LLMChunkPayload {
+    pub chunk_type: RunEventV1LLMChunkPayloadChunkType,
+    pub delta: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub index: Option<i64>,
+}
+
+/// `RunEventV1LLMChunkPayloadChunkType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1LLMChunkPayloadChunkType {
+    #[default]
+    #[serde(rename = "content")]
+    Content,
+    #[serde(rename = "thinking")]
+    Thinking,
+    #[serde(rename = "tool_call")]
+    ToolCall,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1LLMChunkPayloadChunkType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Content => "content",
+            Self::Thinking => "thinking",
+            Self::ToolCall => "tool_call",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1LLMChunkPayloadChunkType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1LLMChunkPayloadChunkType {
+    fn from(value: &str) -> Self {
+        match value {
+            "content" => Self::Content,
+            "thinking" => Self::Thinking,
+            "tool_call" => Self::ToolCall,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1LLMChunkType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1LLMChunkType {
+    #[default]
+    #[serde(rename = "llm.chunk")]
+    LLMChunk,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1LLMChunkType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::LLMChunk => "llm.chunk",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1LLMChunkType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1LLMChunkType {
+    fn from(value: &str) -> Self {
+        match value {
+            "llm.chunk" => Self::LLMChunk,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1LLMError` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1LLMError {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1LLMErrorType,
+    pub seq: i64,
+    pub payload: RunEventV1LLMErrorPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1LLMErrorPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1LLMErrorPayload {
+    pub error: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chunks_before_error: Option<i64>,
+}
+
+/// `RunEventV1LLMErrorType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1LLMErrorType {
+    #[default]
+    #[serde(rename = "llm.error")]
+    LLMError,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1LLMErrorType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::LLMError => "llm.error",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1LLMErrorType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1LLMErrorType {
+    fn from(value: &str) -> Self {
+        match value {
+            "llm.error" => Self::LLMError,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunAwaitingApproval` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunAwaitingApproval {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1RunAwaitingApprovalType,
+    pub seq: i64,
+    pub payload: RunEventV1RunAwaitingApprovalPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1RunAwaitingApprovalPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunAwaitingApprovalPayload {
+    pub tool_calls: Vec<RunEventV1RunAwaitingApprovalPayloadToolCall>,
+}
+
+/// `RunEventV1RunAwaitingApprovalPayloadToolCall` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunAwaitingApprovalPayloadToolCall {
+    pub id: String,
+    pub name: String,
+    pub args: serde_json::Map<String, serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub options: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+}
+
+/// `RunEventV1RunAwaitingApprovalType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunAwaitingApprovalType {
+    #[default]
+    #[serde(rename = "run.awaiting_approval")]
+    RunAwaitingApproval,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunAwaitingApprovalType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunAwaitingApproval => "run.awaiting_approval",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunAwaitingApprovalType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunAwaitingApprovalType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.awaiting_approval" => Self::RunAwaitingApproval,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunAwaitingInput` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunAwaitingInput {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1RunAwaitingInputType,
+    pub seq: i64,
+    pub payload: RunEventV1RunAwaitingInputPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1RunAwaitingInputPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunAwaitingInputPayload {
+    pub tool_call_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub question: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub options: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arguments: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `RunEventV1RunAwaitingInputType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunAwaitingInputType {
+    #[default]
+    #[serde(rename = "run.awaiting_input")]
+    RunAwaitingInput,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunAwaitingInputType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunAwaitingInput => "run.awaiting_input",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunAwaitingInputType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunAwaitingInputType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.awaiting_input" => Self::RunAwaitingInput,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunCancelled` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunCancelled {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1RunCancelledType,
+    pub seq: i64,
+    pub payload: RunEventV1RunCancelledPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1RunCancelledPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunCancelledPayload {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end_reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rejected: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub previous_status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub team_run_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub was: Option<String>,
+}
+
+/// `RunEventV1RunCancelledType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunCancelledType {
+    #[default]
+    #[serde(rename = "run.cancelled")]
+    RunCancelled,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunCancelledType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunCancelled => "run.cancelled",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunCancelledType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunCancelledType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.cancelled" => Self::RunCancelled,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunCompleted` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunCompleted {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1RunCompletedType,
+    pub seq: i64,
+    pub payload: RunEventV1RunCompletedPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1RunCompletedPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunCompletedPayload {
+    pub status: RunEventV1RunCompletedPayloadStatus,
+    pub output: serde_json::Map<String, serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<RunEventV1RunCompletedPayloadMetrics>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_usd: Option<f64>,
+}
+
+/// `RunEventV1RunCompletedPayloadMetrics` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunCompletedPayloadMetrics {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub steps_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinking_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cached_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub llm_calls_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_checks: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_violations: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_retrievals: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_extractions: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_cost_usd: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fallback_used: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pricing_confidence: Option<RunEventV1RunCompletedPayloadMetricsPricingConfidence>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_attribution: Option<RunMetricsCostAttribution>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub files_modified: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub commands_executed: Option<i64>,
+}
+
+/// `RunEventV1RunCompletedPayloadMetricsPricingConfidence` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunCompletedPayloadMetricsPricingConfidence {
+    #[default]
+    #[serde(rename = "known")]
+    Known,
+    #[serde(rename = "inferred")]
+    Inferred,
+    #[serde(rename = "fallback")]
+    Fallback,
+    #[serde(rename = "unknown")]
+    Unknown,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunCompletedPayloadMetricsPricingConfidence {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Known => "known",
+            Self::Inferred => "inferred",
+            Self::Fallback => "fallback",
+            Self::Unknown => "unknown",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunCompletedPayloadMetricsPricingConfidence {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunCompletedPayloadMetricsPricingConfidence {
+    fn from(value: &str) -> Self {
+        match value {
+            "known" => Self::Known,
+            "inferred" => Self::Inferred,
+            "fallback" => Self::Fallback,
+            "unknown" => Self::Unknown,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunCompletedPayloadStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunCompletedPayloadStatus {
+    #[default]
+    #[serde(rename = "completed")]
+    Completed,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunCompletedPayloadStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Completed => "completed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunCompletedPayloadStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunCompletedPayloadStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "completed" => Self::Completed,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunCompletedType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunCompletedType {
+    #[default]
+    #[serde(rename = "run.completed")]
+    RunCompleted,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunCompletedType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunCompleted => "run.completed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunCompletedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunCompletedType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.completed" => Self::RunCompleted,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunFailed` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunFailed {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1RunFailedType,
+    pub seq: i64,
+    pub payload: RunEventV1RunFailedPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1RunFailedPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunFailedPayload {
+    pub error: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end_reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rejected: Option<bool>,
+}
+
+/// `RunEventV1RunFailedType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunFailedType {
+    #[default]
+    #[serde(rename = "run.failed")]
+    RunFailed,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunFailedType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunFailed => "run.failed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunFailedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunFailedType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.failed" => Self::RunFailed,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunGuardrailBlocked` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunGuardrailBlocked {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1RunGuardrailBlockedType,
+    pub seq: i64,
+    pub payload: RunEventV1RunGuardrailBlockedPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1RunGuardrailBlockedPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunGuardrailBlockedPayload {
+    pub error: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end_reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rejected: Option<bool>,
+}
+
+/// `RunEventV1RunGuardrailBlockedType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunGuardrailBlockedType {
+    #[default]
+    #[serde(rename = "run.guardrail_blocked")]
+    RunGuardrailBlocked,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunGuardrailBlockedType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunGuardrailBlocked => "run.guardrail_blocked",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunGuardrailBlockedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunGuardrailBlockedType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.guardrail_blocked" => Self::RunGuardrailBlocked,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunInputReceived` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunInputReceived {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1RunInputReceivedType,
+    pub seq: i64,
+    pub payload: RunEventV1RunInputReceivedPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1RunInputReceivedPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunInputReceivedPayload {
+    pub response_length: i64,
+}
+
+/// `RunEventV1RunInputReceivedType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunInputReceivedType {
+    #[default]
+    #[serde(rename = "run.input_received")]
+    RunInputReceived,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunInputReceivedType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunInputReceived => "run.input_received",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunInputReceivedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunInputReceivedType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.input_received" => Self::RunInputReceived,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunPaused` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunPaused {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1RunPausedType,
+    pub seq: i64,
+    pub payload: RunEventV1RunPausedPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1RunPausedPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunPausedPayload {
+    pub reason: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resumable: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub held_output: Option<bool>,
+}
+
+/// `RunEventV1RunPausedType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunPausedType {
+    #[default]
+    #[serde(rename = "run.paused")]
+    RunPaused,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunPausedType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunPaused => "run.paused",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunPausedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunPausedType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.paused" => Self::RunPaused,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunStarted` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunStarted {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1RunStartedType,
+    pub seq: i64,
+    pub payload: RunEventV1RunStartedPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1RunStartedPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunStartedPayload {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_mode: Option<RunEventV1RunStartedPayloadExecutionMode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resumed_from: Option<RunEventV1RunStartedPayloadResumedFrom>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approved: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revised: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input: Option<serde_json::Value>,
+}
+
+/// `RunEventV1RunStartedPayloadExecutionMode` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunStartedPayloadExecutionMode {
+    #[default]
+    #[serde(rename = "bridge")]
+    Bridge,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunStartedPayloadExecutionMode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Bridge => "bridge",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunStartedPayloadExecutionMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunStartedPayloadExecutionMode {
+    fn from(value: &str) -> Self {
+        match value {
+            "bridge" => Self::Bridge,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunStartedPayloadResumedFrom` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunStartedPayloadResumedFrom {
+    #[default]
+    #[serde(rename = "awaiting_approval")]
+    AwaitingApproval,
+    #[serde(rename = "paused")]
+    Paused,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunStartedPayloadResumedFrom {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::AwaitingApproval => "awaiting_approval",
+            Self::Paused => "paused",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunStartedPayloadResumedFrom {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunStartedPayloadResumedFrom {
+    fn from(value: &str) -> Self {
+        match value {
+            "awaiting_approval" => Self::AwaitingApproval,
+            "paused" => Self::Paused,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunStartedType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunStartedType {
+    #[default]
+    #[serde(rename = "run.started")]
+    RunStarted,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunStartedType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunStarted => "run.started",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunStartedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunStartedType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.started" => Self::RunStarted,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunStepCompleted` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunStepCompleted {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1RunStepCompletedType,
+    pub seq: i64,
+    pub payload: RunEventV1RunStepCompletedPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1RunStepCompletedPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunStepCompletedPayload {
+    pub step_index: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub has_tool_calls: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_names: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub done: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinking_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub llm_calls_count: Option<i64>,
+}
+
+/// `RunEventV1RunStepCompletedType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunStepCompletedType {
+    #[default]
+    #[serde(rename = "run.step_completed")]
+    RunStepCompleted,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunStepCompletedType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunStepCompleted => "run.step_completed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunStepCompletedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunStepCompletedType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.step_completed" => Self::RunStepCompleted,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1RunStepStarted` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunStepStarted {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1RunStepStartedType,
+    pub seq: i64,
+    pub payload: RunEventV1RunStepStartedPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1RunStepStartedPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1RunStepStartedPayload {
+    pub step_index: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub streaming: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+}
+
+/// `RunEventV1RunStepStartedType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunStepStartedType {
+    #[default]
+    #[serde(rename = "run.step_started")]
+    RunStepStarted,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunStepStartedType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunStepStarted => "run.step_started",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunStepStartedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunStepStartedType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.step_started" => Self::RunStepStarted,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1SessionContext` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1SessionContext {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1SessionContextType,
+    pub seq: i64,
+    pub payload: RunEventV1SessionContextPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1SessionContextCompacted` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1SessionContextCompacted {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1SessionContextCompactedType,
+    pub seq: i64,
+    pub payload: RunEventV1SessionContextCompactedPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1SessionContextCompactedPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1SessionContextCompactedPayload {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_index: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub strategy: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub removed_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens_saved: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_tokens_before: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_tokens_after: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_context_tokens: Option<i64>,
+}
+
+/// `RunEventV1SessionContextCompactedType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1SessionContextCompactedType {
+    #[default]
+    #[serde(rename = "session.context_compacted")]
+    SessionContextCompacted,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1SessionContextCompactedType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::SessionContextCompacted => "session.context_compacted",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1SessionContextCompactedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1SessionContextCompactedType {
+    fn from(value: &str) -> Self {
+        match value {
+            "session.context_compacted" => Self::SessionContextCompacted,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1SessionContextPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1SessionContextPayload {
+    pub session_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub window_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub used_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub percent: Option<f64>,
+    pub source: SessionContextSource,
+    pub updated_at: String,
+}
+
+/// `RunEventV1SessionContextType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1SessionContextType {
+    #[default]
+    #[serde(rename = "session.context")]
+    SessionContext,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1SessionContextType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::SessionContext => "session.context",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1SessionContextType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1SessionContextType {
+    fn from(value: &str) -> Self {
+        match value {
+            "session.context" => Self::SessionContext,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1StepAct` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1StepAct {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1StepActType,
+    pub seq: i64,
+    pub payload: RunEventV1StepActPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1StepActPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1StepActPayload {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub params: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `RunEventV1StepActType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1StepActType {
+    #[default]
+    #[serde(rename = "step.act")]
+    StepAct,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1StepActType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::StepAct => "step.act",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1StepActType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1StepActType {
+    fn from(value: &str) -> Self {
+        match value {
+            "step.act" => Self::StepAct,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1StepEvaluate` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1StepEvaluate {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1StepEvaluateType,
+    pub seq: i64,
+    pub payload: RunEventV1StepEvaluatePayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1StepEvaluatePayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1StepEvaluatePayload {
+    pub passed: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub feedback: Option<String>,
+}
+
+/// `RunEventV1StepEvaluateType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1StepEvaluateType {
+    #[default]
+    #[serde(rename = "step.evaluate")]
+    StepEvaluate,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1StepEvaluateType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::StepEvaluate => "step.evaluate",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1StepEvaluateType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1StepEvaluateType {
+    fn from(value: &str) -> Self {
+        match value {
+            "step.evaluate" => Self::StepEvaluate,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1StepPlan` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1StepPlan {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1StepPlanType,
+    pub seq: i64,
+    pub payload: RunEventV1StepPlanPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1StepPlanPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1StepPlanPayload {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effort: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub skipped: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub skip_reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan_content: Option<String>,
+}
+
+/// `RunEventV1StepPlanType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1StepPlanType {
+    #[default]
+    #[serde(rename = "step.plan")]
+    StepPlan,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1StepPlanType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::StepPlan => "step.plan",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1StepPlanType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1StepPlanType {
+    fn from(value: &str) -> Self {
+        match value {
+            "step.plan" => Self::StepPlan,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1TeamDelegate` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1TeamDelegate {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1TeamDelegateType,
+    pub seq: i64,
+    pub payload: RunEventV1TeamDelegatePayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1TeamDelegatePayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1TeamDelegatePayload {
+    pub topology: RunEventV1TeamDelegatePayloadTopology,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub round: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub handoff_index: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    pub to: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub worker_count: Option<i64>,
+}
+
+/// `RunEventV1TeamDelegatePayloadTopology` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1TeamDelegatePayloadTopology {
+    #[default]
+    #[serde(rename = "addressed")]
+    Addressed,
+    #[serde(rename = "supervisor")]
+    Supervisor,
+    #[serde(rename = "pipeline")]
+    Pipeline,
+    #[serde(rename = "swarm")]
+    Swarm,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1TeamDelegatePayloadTopology {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Addressed => "addressed",
+            Self::Supervisor => "supervisor",
+            Self::Pipeline => "pipeline",
+            Self::Swarm => "swarm",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1TeamDelegatePayloadTopology {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1TeamDelegatePayloadTopology {
+    fn from(value: &str) -> Self {
+        match value {
+            "addressed" => Self::Addressed,
+            "supervisor" => Self::Supervisor,
+            "pipeline" => Self::Pipeline,
+            "swarm" => Self::Swarm,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1TeamDelegateType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1TeamDelegateType {
+    #[default]
+    #[serde(rename = "team.delegate")]
+    TeamDelegate,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1TeamDelegateType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::TeamDelegate => "team.delegate",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1TeamDelegateType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1TeamDelegateType {
+    fn from(value: &str) -> Self {
+        match value {
+            "team.delegate" => Self::TeamDelegate,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1ToolCall` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1ToolCall {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1ToolCallType,
+    pub seq: i64,
+    pub payload: RunEventV1ToolCallPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1ToolCallPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1ToolCallPayload {
+    pub tool_call: RunEventV1ToolCallPayloadToolCall,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub builtin: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mcp_server_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mcp_session_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub transport_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    #[serde(rename = "_event_id", default, skip_serializing_if = "Option::is_none")]
+    pub event_id: Option<String>,
+}
+
+/// `RunEventV1ToolCallPayloadToolCall` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1ToolCallPayloadToolCall {
+    pub id: String,
+    pub name: String,
+    pub arguments: serde_json::Map<String, serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arguments_preview: Option<String>,
+}
+
+/// `RunEventV1ToolCallType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1ToolCallType {
+    #[default]
+    #[serde(rename = "tool.call")]
+    ToolCall,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1ToolCallType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::ToolCall => "tool.call",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1ToolCallType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1ToolCallType {
+    fn from(value: &str) -> Self {
+        match value {
+            "tool.call" => Self::ToolCall,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1ToolError` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1ToolError {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1ToolErrorType,
+    pub seq: i64,
+    pub payload: RunEventV1ToolErrorPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1ToolErrorPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1ToolErrorPayload {
+    pub error: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_call_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub governance_blocked: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parse_error: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub builtin: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+}
+
+/// `RunEventV1ToolErrorType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1ToolErrorType {
+    #[default]
+    #[serde(rename = "tool.error")]
+    ToolError,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1ToolErrorType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::ToolError => "tool.error",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1ToolErrorType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1ToolErrorType {
+    fn from(value: &str) -> Self {
+        match value {
+            "tool.error" => Self::ToolError,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunEventV1ToolResult` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1ToolResult {
+    pub event_id: String,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventV1ToolResultType,
+    pub seq: i64,
+    pub payload: RunEventV1ToolResultPayload,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunEventV1ToolResultPayload` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1ToolResultPayload {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_call_id: Option<String>,
+    pub tool_result: RunEventV1ToolResultPayloadToolResult,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latency_ms: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub builtin: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mcp_server_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mcp_session_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub transport_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+}
+
+/// `RunEventV1ToolResultPayloadToolResult` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventV1ToolResultPayloadToolResult {
+    pub content: String,
+}
+
+/// `RunEventV1ToolResultType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1ToolResultType {
+    #[default]
+    #[serde(rename = "tool.result")]
+    ToolResult,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1ToolResultType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::ToolResult => "tool.result",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1ToolResultType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1ToolResultType {
+    fn from(value: &str) -> Self {
+        match value {
+            "tool.result" => Self::ToolResult,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
 /// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
 /// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -36050,6 +38138,292 @@ pub struct RunStreamEventTraceContext {
     pub traceparent: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tracestate: Option<String>,
+}
+
+/// `RunStreamFrameV1Connected` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunStreamFrameV1Connected {
+    pub run_id: String,
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connected_at: Option<String>,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunStreamFrameV1Done` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunStreamFrameV1Done {
+    pub run_id: String,
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<RunStreamFrameV1DoneMetrics>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_usd: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_blocked: Option<bool>,
+    #[serde(rename = "_guardrail_violation", default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_violation: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stream_type: Option<RunStreamDoneStreamType>,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunStreamFrameV1DoneMetrics` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunStreamFrameV1DoneMetrics {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub steps_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinking_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cached_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub llm_calls_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_checks: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_violations: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_retrievals: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_extractions: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_cost_usd: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fallback_used: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pricing_confidence: Option<RunEventV1RunCompletedPayloadMetricsPricingConfidence>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_attribution: Option<RunMetricsCostAttribution>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub files_modified: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub commands_executed: Option<i64>,
+}
+
+pub type RunStreamFrameV1Error = serde_json::Value;
+
+/// `RunStreamFrameV1ErrorVariant1` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunStreamFrameV1ErrorVariant1 {
+    pub error: String,
+    pub code: RunStreamFrameV1ErrorVariant1code,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunStreamFrameV1ErrorVariant1code` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunStreamFrameV1ErrorVariant1code {
+    #[default]
+    #[serde(rename = "RUN_NOT_FOUND")]
+    RunNotFound,
+    #[serde(rename = "STREAM_ERROR")]
+    StreamError,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunStreamFrameV1ErrorVariant1code {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunNotFound => "RUN_NOT_FOUND",
+            Self::StreamError => "STREAM_ERROR",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunStreamFrameV1ErrorVariant1code {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunStreamFrameV1ErrorVariant1code {
+    fn from(value: &str) -> Self {
+        match value {
+            "RUN_NOT_FOUND" => Self::RunNotFound,
+            "STREAM_ERROR" => Self::StreamError,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunStreamFrameV1ErrorVariant2` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunStreamFrameV1ErrorVariant2 {
+    pub r#type: RunStreamFrameV1ErrorVariant2type,
+    pub message: String,
+    pub code: RunStreamFrameV1ErrorVariant2code,
+}
+
+/// `RunStreamFrameV1ErrorVariant2code` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunStreamFrameV1ErrorVariant2code {
+    #[default]
+    #[serde(rename = "STREAM_BUFFER_EXCEEDED")]
+    StreamBufferExceeded,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunStreamFrameV1ErrorVariant2code {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::StreamBufferExceeded => "STREAM_BUFFER_EXCEEDED",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunStreamFrameV1ErrorVariant2code {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunStreamFrameV1ErrorVariant2code {
+    fn from(value: &str) -> Self {
+        match value {
+            "STREAM_BUFFER_EXCEEDED" => Self::StreamBufferExceeded,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunStreamFrameV1ErrorVariant2type` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunStreamFrameV1ErrorVariant2type {
+    #[default]
+    #[serde(rename = "error")]
+    Error,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunStreamFrameV1ErrorVariant2type {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Error => "error",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunStreamFrameV1ErrorVariant2type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunStreamFrameV1ErrorVariant2type {
+    fn from(value: &str) -> Self {
+        match value {
+            "error" => Self::Error,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RunStreamFrameV1Gap` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunStreamFrameV1Gap {
+    pub message: String,
+}
+
+/// `RunStreamFrameV1GuardrailViolation` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunStreamFrameV1GuardrailViolation {
+    #[serde(rename = "_guardrail_violation", default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_violation: Option<serde_json::Map<String, serde_json::Value>>,
+    pub violation_source: RunStreamFrameV1GuardrailViolationViolationSource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub event_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seq: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub payload: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stream_type: Option<RunStreamEventStreamType>,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+}
+
+/// `RunStreamFrameV1GuardrailViolationViolationSource` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunStreamFrameV1GuardrailViolationViolationSource {
+    #[default]
+    #[serde(rename = "stream")]
+    Stream,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunStreamFrameV1GuardrailViolationViolationSource {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Stream => "stream",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunStreamFrameV1GuardrailViolationViolationSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunStreamFrameV1GuardrailViolationViolationSource {
+    fn from(value: &str) -> Self {
+        match value {
+            "stream" => Self::Stream,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `RunWorkspaceCommandRequest` model.
@@ -37059,6 +39433,127 @@ impl From<&str> for SessionQueueMode {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `SessionStreamFrameV1Connected` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SessionStreamFrameV1Connected {
+    pub session_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connected_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runs: Option<Vec<String>>,
+}
+
+/// `SessionStreamFrameV1Error` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SessionStreamFrameV1Error {
+    pub error: String,
+    pub code: SessionStreamFrameV1ErrorCode,
+}
+
+/// `SessionStreamFrameV1ErrorCode` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum SessionStreamFrameV1ErrorCode {
+    #[default]
+    #[serde(rename = "SESSION_NOT_FOUND")]
+    SessionNotFound,
+    #[serde(rename = "STREAM_ERROR")]
+    StreamError,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl SessionStreamFrameV1ErrorCode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::SessionNotFound => "SESSION_NOT_FOUND",
+            Self::StreamError => "STREAM_ERROR",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for SessionStreamFrameV1ErrorCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for SessionStreamFrameV1ErrorCode {
+    fn from(value: &str) -> Self {
+        match value {
+            "SESSION_NOT_FOUND" => Self::SessionNotFound,
+            "STREAM_ERROR" => Self::StreamError,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `SessionStreamFrameV1RunAdded` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SessionStreamFrameV1RunAdded {
+    pub run_id: String,
+}
+
+/// `SessionStreamFrameV1RunDone` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SessionStreamFrameV1RunDone {
+    pub run_id: String,
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<SessionStreamFrameV1RunDoneMetrics>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_usd: Option<f64>,
+}
+
+/// `SessionStreamFrameV1RunDoneMetrics` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SessionStreamFrameV1RunDoneMetrics {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub steps_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinking_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cached_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub llm_calls_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_checks: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_violations: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_retrievals: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_extractions: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_cost_usd: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fallback_used: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pricing_confidence: Option<RunEventV1RunCompletedPayloadMetricsPricingConfidence>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_attribution: Option<RunMetricsCostAttribution>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub files_modified: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub commands_executed: Option<i64>,
+}
+
+/// `SessionStreamFrameV1SessionClosed` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SessionStreamFrameV1SessionClosed {
+    pub session_id: String,
 }
 
 /// `user` when a person set or cleared the title (`PUT|PATCH /sessions/{id} {title}`) — a

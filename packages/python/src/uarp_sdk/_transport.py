@@ -40,7 +40,13 @@ from ._sse import (
 )
 from ._util import backoff_delay, build_query, encode_form, join_url, json_text, parse_retry_after, random_id, scalar_text
 
-_RETRYABLE = frozenset((408, 409, 429, 500, 502, 503, 504))
+#  Not 409: a conflict is the server's answer about the state of the resource
+#  (`CLIENT_REQUEST_CONFLICT`, `VERSION_CONFLICT`), and sending the same request
+#  again meets the same state.
+_RETRYABLE = frozenset((408, 429, 500, 502, 503, 504))
+
+#: Mints the short-lived key a `sse_token_in_query` stream puts in its URL.
+SSE_TOKENS = "/api/v1/auth/sse-tokens"
 
 #: Passed as a header value in `RequestOptions.headers`, removes that header.
 OMIT: Any = None
@@ -269,12 +275,17 @@ class BaseClient:
             headers = [*headers, ("Last-Event-ID", last_event_id)]
         return self._headers("text/event-stream", headers, None, None, options)
 
-    def _stream_query(self, query: Sequence[Tuple[str, Any]]) -> List[Tuple[str, Any]]:
+    def _token_in_query(self) -> bool:
         #  A keyless client has no token to put in the query either, and an
         #  empty `?token=` is a credential the server then rejects.
-        if self.sse_token_in_query and self.api_key:
-            return [*query, ("token", self.api_key)]
-        return list(query)
+        return bool(self.sse_token_in_query and self.api_key)
+
+    @staticmethod
+    def _minted(answer: Any) -> str:
+        token = answer.get("token") if isinstance(answer, dict) else None
+        if not isinstance(token, str) or not token:
+            raise DecodeError(f"POST {SSE_TOKENS} answered without a token", path="$.token", body=answer)
+        return token
 
     def _stream_timeout(self, options: RequestOptions, read: Optional[float]) -> httpx.Timeout:
         #  A timeout on the whole response would cut the very stream it is
@@ -411,12 +422,20 @@ class SyncTransport(BaseClient):
     ) -> EventStream:
         options = self._options.merged(request_options)
         stream = options.stream or StreamOptions()
-        url = self._url(path, self._stream_query(query), options)
         timeout = self._stream_timeout(options, stream.inactivity_timeout)
 
         def connect(last_event_id: Optional[str]) -> httpx.Response:
+            #  The query carries a 60-second token minted for this connection,
+            #  never the API key: a URL ends up in proxy and access logs that
+            #  mask no query string. Each reconnect mints its own.
+            pairs = list(query)
+            if self._token_in_query():
+                pairs.append(("token", self._minted(self._request("POST", SSE_TOKENS, idempotent=True))))
             request = self._http.build_request(
-                "GET", url, headers=self._stream_headers(headers, last_event_id, options), timeout=timeout
+                "GET",
+                self._url(path, pairs, options),
+                headers=self._stream_headers(headers, last_event_id, options),
+                timeout=timeout,
             )
             return self._http.send(request, stream=True)
 
@@ -520,12 +539,18 @@ class AsyncTransport(BaseClient):
     ) -> AsyncEventStream:
         options = self._options.merged(request_options)
         stream = options.stream or StreamOptions()
-        url = self._url(path, self._stream_query(query), options)
         timeout = self._stream_timeout(options, stream.inactivity_timeout)
 
         async def connect(last_event_id: Optional[str]) -> httpx.Response:
+            #  See the blocking transport: a minted token, never the key.
+            pairs = list(query)
+            if self._token_in_query():
+                pairs.append(("token", self._minted(await self._request("POST", SSE_TOKENS, idempotent=True))))
             request = self._http.build_request(
-                "GET", url, headers=self._stream_headers(headers, last_event_id, options), timeout=timeout
+                "GET",
+                self._url(path, pairs, options),
+                headers=self._stream_headers(headers, last_event_id, options),
+                timeout=timeout,
             )
             return await self._http.send(request, stream=True)
 

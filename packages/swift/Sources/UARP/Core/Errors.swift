@@ -168,7 +168,7 @@ public struct APIError: Error, Sendable, CustomStringConvertible {
     }
 
     public var isRetryable: Bool {
-        [408, 409, 429, 500, 502, 503, 504].contains(status)
+        [408, 429, 500, 502, 503, 504].contains(status)
     }
 
     public var description: String {

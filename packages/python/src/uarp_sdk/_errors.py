@@ -149,7 +149,7 @@ class APIError(UarpError):
     @property
     def is_retryable(self) -> bool:
         """Whether retrying the very same request could plausibly succeed."""
-        return self.status in (408, 409, 429, 500, 502, 503, 504)
+        return self.status in (408, 429, 500, 502, 503, 504)
 
     def _message(self) -> str:
         title = self.problem.title or f"HTTP {self.status}"

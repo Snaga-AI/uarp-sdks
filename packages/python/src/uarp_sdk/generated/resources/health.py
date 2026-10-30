@@ -96,7 +96,7 @@ class HealthResource:
             request_options=request_options,
         ))
 
-    def health_check_v1alias(self, *, request_options: Optional[RequestOptions] = None) -> _m.HealthCheckV1aliasResponse:
+    def health_check_v1_alias(self, *, request_options: Optional[RequestOptions] = None) -> _m.HealthCheckV1AliasResponse:
         """Liveness (alias of /health)
 
         Identical body to `GET /health`. Kept for callers that assume every route lives under
@@ -104,10 +104,10 @@ class HealthResource:
 
         `GET /api/v1/health`
         """
-        return _cast("_m.HealthCheckV1aliasResponse", self._client._request(
+        return _cast("_m.HealthCheckV1AliasResponse", self._client._request(
             "GET",
             "/api/v1/health",
-            response=_Response(type=_m.HealthCheckV1aliasResponse),
+            response=_Response(type=_m.HealthCheckV1AliasResponse),
             request_options=request_options,
         ))
 
@@ -261,7 +261,7 @@ class AsyncHealthResource:
             request_options=request_options,
         ))
 
-    async def health_check_v1alias(self, *, request_options: Optional[RequestOptions] = None) -> _m.HealthCheckV1aliasResponse:
+    async def health_check_v1_alias(self, *, request_options: Optional[RequestOptions] = None) -> _m.HealthCheckV1AliasResponse:
         """Liveness (alias of /health)
 
         Identical body to `GET /health`. Kept for callers that assume every route lives under
@@ -269,10 +269,10 @@ class AsyncHealthResource:
 
         `GET /api/v1/health`
         """
-        return _cast("_m.HealthCheckV1aliasResponse", await self._client._request(
+        return _cast("_m.HealthCheckV1AliasResponse", await self._client._request(
             "GET",
             "/api/v1/health",
-            response=_Response(type=_m.HealthCheckV1aliasResponse),
+            response=_Response(type=_m.HealthCheckV1AliasResponse),
             request_options=request_options,
         ))
 

@@ -102,8 +102,8 @@ public class HealthApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/health`
      */
-    public suspend fun healthCheckV1alias(options: RequestOptions = RequestOptions()): HealthCheckV1aliasResponse {
-        return client.request<HealthCheckV1aliasResponse>(
+    public suspend fun healthCheckV1Alias(options: RequestOptions = RequestOptions()): HealthCheckV1AliasResponse {
+        return client.request<HealthCheckV1AliasResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/health",

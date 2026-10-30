@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "uarp-sdk"
-version = "0.12.0"
+version = "0.13.0"
 description = "Python client for the UARP (Snaga) Universal Agent Runtime Platform API"
 readme = "README.md"
 license = "MIT"
@@ -41,6 +41,12 @@ packages = ["src/uarp_sdk"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/uarp_sdk", "tests", "README.md", "LICENSE", "pyproject.toml"]
+
+# The SSE fixture every SDK of the family replays lives at the repository root,
+# outside this project; without it two tests of the published sdist cannot run.
+[tool.hatch.build.targets.sdist.force-include]
+"../../contract/sse-fixtures/mixed.txt" = "tests/sse-fixtures/mixed.txt"
+"../../contract/sse-fixtures/mixed.expected.json" = "tests/sse-fixtures/mixed.expected.json"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

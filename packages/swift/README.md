@@ -7,7 +7,7 @@ beyond Foundation.
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.12.0"),
+    .package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.13.0"),
 ],
 targets: [
     .target(name: "App", dependencies: [.product(name: "UARPSDK", package: "uarp-swift")]),
@@ -162,7 +162,7 @@ try await client.agents.create(
 )
 ```
 
-**Retries.** `408`, `409`, `429`, `500`, `502`, `503` and `504`, plus connection errors, retry with
+**Retries.** `408`, `429`, `500`, `502`, `503` and `504`, plus connection errors, retry with
 full-jitter backoff (0.5 s → 8 s) and honour `Retry-After`. Reads always retry;
 writes only when they carry an idempotency key, which every mutating
 `/api/v1/*` call sends automatically.

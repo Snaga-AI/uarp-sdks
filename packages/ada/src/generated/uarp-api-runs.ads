@@ -105,6 +105,18 @@ package UARP.API.Runs is
       --  Used by browser EventSource which cannot set Authorization header.
       Has_Token : Boolean := False;
       Token : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The version of the event schemas the client parses strictly (since 2026-10-30). Every frame
+      --  is then sent in exactly that version's shape - `RunEventV<N>` for run events,
+      --  `RunStreamFrameV<N>*` / `SessionStreamFrameV<N>*` for the stream's own frames - and a frame
+      --  the version does not know is not sent. Without it the stream is unchanged. An unsupported
+      --  value, or `event_schema` together with `flat=1`, is 400 VALIDATION_ERROR before the stream
+      --  opens. The operation's `x-event-stream` gives, per version, the line that ends the stream
+      --  (SSE event name `message`, data `[DONE]` - not JSON, not versioned), the SSE `id` of every
+      --  frame, what `Last-Event-ID` resumes, what a `gap` frame means and how to recover from it,
+      --  and the frames the version never sends. Every `error` frame carries a closed `code`, and
+      --  what to do next is decided by it, never by the text.
+      Has_Event_Schema : Boolean := False;
+      Event_Schema : UARP.Types.Integer_Value := 0;
       --  SSE resumption cursor. The browser's EventSource sets this automatically on reconnect;
       --  servers replay events strictly after this id.
       Has_Last_Event_Id : Boolean := False;

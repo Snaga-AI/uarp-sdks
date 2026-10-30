@@ -39,6 +39,19 @@ test('keeps digits inside their word', () => {
   assert.deepEqual(words('2fa'), ['2fa']);
 });
 
+test('a version tag ends its word before the next capital', () => {
+  // `RunEventV1RunStarted` came out as `RunEventV1runStarted`, and once the
+  // name had been rendered, `...V1LLMChunk` re-split as `v1llm`.
+  assert.deepEqual(words('RunEventV1RunStarted'), ['run', 'event', 'v1', 'run', 'started']);
+  assert.deepEqual(words('RunEventV1LLMChunkPayload'), ['run', 'event', 'v1', 'llm', 'chunk', 'payload']);
+  assert.equal(pascal('RunEventV1LlmChunk' + 'Payload'), 'RunEventV1LLMChunkPayload');
+  // ...but `A2A` is one word wherever it stands, and a digit after a lowercase
+  // word keeps the spelling already published.
+  assert.deepEqual(words('A2AAgentCard'), ['a2a', 'agent', 'card']);
+  assert.deepEqual(words('TeamWorkerExternalA2A'), ['team', 'worker', 'external', 'a2a']);
+  assert.equal(pascal('ChatMessageContentVariant2' + 'Item'), 'ChatMessageContentVariant2item');
+});
+
 test('renders PascalCase', () => {
   assert.equal(pascal('list_agents'), 'ListAgents');
   assert.equal(pascal('listAgents'), 'ListAgents');

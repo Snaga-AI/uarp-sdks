@@ -765,7 +765,10 @@ test('parses the production document into the expected shape', () => {
   // and App Store fields on billing.
   // 2214 -> 2215 on 2026-10-29 (build f9e27e23): the account cleanup counts
   // that DELETE /me now reports, hoisted as their own type.
-  assert.equal(spec.types.length, 2215);
+  // 2215 -> 2317 on 2026-10-30 (build 3d07d69d): +102, none removed — the
+  // closed `event_schema=1` shapes: 35 schemas (24 RunEventV1 members, the union,
+  // five frames per stream) and their payloads and literal discriminants.
+  assert.equal(spec.types.length, 2317);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);
@@ -1007,4 +1010,49 @@ test('createRun is typed by its 202 Run, not by the sponsored 200/201 excerpt', 
   const op = productionSpec().groups.flatMap((g) => g.operations).find((o) => o.id === 'createRun')!;
   assert.equal(op.response.status, 202);
   assert.deepEqual(op.response.type, { kind: 'named', name: 'Run' });
+});
+
+test('each versioned stream maps its SSE event names to closed frame types', () => {
+  const spec = productionSpec();
+  const table = (name: string) => {
+    const stream = spec.eventStreams.find((s) => s.name === name);
+    assert.ok(stream, `${name} should be emitted`);
+    return new Map(stream.frames.map((f) => [f.event, f.type] as const));
+  };
+  const session = table('SessionStreamFrameV1Map');
+  assert.equal(session.get('session_closed'), 'SessionStreamFrameV1SessionClosed');
+  assert.equal(session.get('run_added'), 'SessionStreamFrameV1RunAdded');
+  assert.equal(session.get('tool.call'), 'RunEventV1ToolCall');
+  // A frame v1 does not send has no entry, not a loose one.
+  assert.equal(session.get('drawing.created'), undefined);
+  const run = table('RunStreamFrameV1Map');
+  // `gap` carries no id, so only its own rule names it.
+  assert.equal(run.get('gap'), 'RunStreamFrameV1Gap');
+  assert.equal(run.get('guardrail.violation'), 'RunStreamFrameV1GuardrailViolation');
+  assert.equal(run.get('llm.request'), undefined);
+  // Every RunEventV1 member is reachable from both streams.
+  const members = [...run.values()].filter((t) => t.startsWith('RunEventV1'));
+  assert.equal(members.length, 24);
+});
+
+test('a stream frame schema that no event name reaches stops the build', () => {
+  const doc = (extra: Record<string, unknown>) => ({
+    openapi: '3.0.3',
+    info: { title: 'T', version: '1' },
+    paths: {
+      '/sessions/{sessionId}/events': {
+        get: {
+          operationId: 'streamSessionEvents',
+          tags: ['Sessions'],
+          parameters: [{ name: 'sessionId', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: { '200': { description: 'SSE', content: { 'text/event-stream': { schema: { type: 'string' } } } } },
+          'x-event-stream': { '1': { ids: { connected: '^0$' } } },
+        },
+      },
+    },
+    components: { schemas: { SessionStreamFrameV1Connected: { type: 'object', properties: {} }, ...extra } },
+  });
+  assert.equal(parse(doc({})).eventStreams[0]?.frames[0]?.type, 'SessionStreamFrameV1Connected');
+  const orphan = doc({ SessionStreamFrameV1Orphan: { type: 'object', properties: {} } });
+  assert.throws(() => parse(orphan), /SessionStreamFrameV1Orphan is not sent under any event name/);
 });

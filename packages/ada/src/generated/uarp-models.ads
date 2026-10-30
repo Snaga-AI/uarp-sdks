@@ -21000,8 +21000,8 @@ package UARP.Models is
    function To_JSON (Model : Handle_Stripe_Webhook_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Handle_Stripe_Webhook_Response;
 
-   --  `HealthCheckV1aliasResponse` model.
-   type Health_Check_V1alias_Response is record
+   --  `HealthCheckV1AliasResponse` model.
+   type Health_Check_V1_Alias_Response is record
       Has_Status : Boolean := False;
       Status : UARP.Models.Get_Health_Response_Status;
       Has_Timestamp : Boolean := False;
@@ -21050,8 +21050,8 @@ package UARP.Models is
       Capabilities : UARP.Types.Text_Vectors.Vector;
    end record;
 
-   function To_JSON (Model : Health_Check_V1alias_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Health_Check_V1alias_Response;
+   function To_JSON (Model : Health_Check_V1_Alias_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Health_Check_V1_Alias_Response;
 
    --  `HealthLiveResponse` model.
    type Health_Live_Response is record
@@ -32673,6 +32673,1655 @@ package UARP.Models is
    function To_JSON (Model : Run_Event) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event;
 
+   --  Values of `RunEventV1RunStartedType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Started_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Started_Type_Kind is
+     (Run_Event_V1_Run_Started_Type_Run_Started,
+   Run_Event_V1_Run_Started_Type_Unrecognized);
+
+   type Run_Event_V1_Run_Started_Type is record
+      Kind : Run_Event_V1_Run_Started_Type_Kind := Run_Event_V1_Run_Started_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Started_Type (Value : String) return Run_Event_V1_Run_Started_Type;
+   function To_Run_Event_V1_Run_Started_Type (Kind : Run_Event_V1_Run_Started_Type_Kind) return Run_Event_V1_Run_Started_Type;
+   function Image (Model : Run_Event_V1_Run_Started_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Started_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Started_Type;
+
+   --  Values of `RunEventV1RunStartedPayloadExecutionMode`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Started_Payload_Execution_Mode_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Started_Payload_Execution_Mode_Kind is
+     (Run_Event_V1_Run_Started_Payload_Execution_Mode_Bridge,
+   Run_Event_V1_Run_Started_Payload_Execution_Mode_Unrecognized);
+
+   type Run_Event_V1_Run_Started_Payload_Execution_Mode is record
+      Kind : Run_Event_V1_Run_Started_Payload_Execution_Mode_Kind := Run_Event_V1_Run_Started_Payload_Execution_Mode_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Started_Payload_Execution_Mode (Value : String) return Run_Event_V1_Run_Started_Payload_Execution_Mode;
+   function To_Run_Event_V1_Run_Started_Payload_Execution_Mode (Kind : Run_Event_V1_Run_Started_Payload_Execution_Mode_Kind) return Run_Event_V1_Run_Started_Payload_Execution_Mode;
+   function Image (Model : Run_Event_V1_Run_Started_Payload_Execution_Mode) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Started_Payload_Execution_Mode) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Started_Payload_Execution_Mode;
+
+   --  Values of `RunEventV1RunStartedPayloadResumedFrom`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Started_Payload_Resumed_From_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Started_Payload_Resumed_From_Kind is
+     (Run_Event_V1_Run_Started_Payload_Resumed_From_Awaiting_Approval,
+   Run_Event_V1_Run_Started_Payload_Resumed_From_Paused,
+   Run_Event_V1_Run_Started_Payload_Resumed_From_Unrecognized);
+
+   type Run_Event_V1_Run_Started_Payload_Resumed_From is record
+      Kind : Run_Event_V1_Run_Started_Payload_Resumed_From_Kind := Run_Event_V1_Run_Started_Payload_Resumed_From_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Started_Payload_Resumed_From (Value : String) return Run_Event_V1_Run_Started_Payload_Resumed_From;
+   function To_Run_Event_V1_Run_Started_Payload_Resumed_From (Kind : Run_Event_V1_Run_Started_Payload_Resumed_From_Kind) return Run_Event_V1_Run_Started_Payload_Resumed_From;
+   function Image (Model : Run_Event_V1_Run_Started_Payload_Resumed_From) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Started_Payload_Resumed_From) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Started_Payload_Resumed_From;
+
+   --  `RunEventV1RunStartedPayload` model.
+   type Run_Event_V1_Run_Started_Payload is record
+      Has_Agent_Id : Boolean := False;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Execution_Mode : Boolean := False;
+      Execution_Mode : UARP.Models.Run_Event_V1_Run_Started_Payload_Execution_Mode;
+      Has_Source : Boolean := False;
+      Source : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Priority : Boolean := False;
+      Priority : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Resumed_From : Boolean := False;
+      Resumed_From : UARP.Models.Run_Event_V1_Run_Started_Payload_Resumed_From;
+      Has_Approved : Boolean := False;
+      Approved : Standard.Boolean := False;
+      Has_Revised : Boolean := False;
+      Revised : Standard.Boolean := False;
+      Has_Input : Boolean := False;
+      Input : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Started_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Started_Payload;
+
+   --  Values of `RunStreamEventStreamType`.
+   --  A value the API introduces later decodes as Run_Stream_Event_Stream_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Stream_Event_Stream_Type_Kind is
+     (Run_Stream_Event_Stream_Type_Lifecycle,
+   Run_Stream_Event_Stream_Type_Assistant,
+   Run_Stream_Event_Stream_Type_Tool,
+   Run_Stream_Event_Stream_Type_Other,
+   Run_Stream_Event_Stream_Type_Unrecognized);
+
+   type Run_Stream_Event_Stream_Type is record
+      Kind : Run_Stream_Event_Stream_Type_Kind := Run_Stream_Event_Stream_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Stream_Event_Stream_Type (Value : String) return Run_Stream_Event_Stream_Type;
+   function To_Run_Stream_Event_Stream_Type (Kind : Run_Stream_Event_Stream_Type_Kind) return Run_Stream_Event_Stream_Type;
+   function Image (Model : Run_Stream_Event_Stream_Type) return String;
+   function To_JSON (Model : Run_Stream_Event_Stream_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Event_Stream_Type;
+
+   --  `RunEventV1RunStarted` model.
+   type Run_Event_V1_Run_Started is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Run_Started_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Run_Started_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Started) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Started;
+
+   --  Values of `RunEventV1RunCompletedType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Completed_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Completed_Type_Kind is
+     (Run_Event_V1_Run_Completed_Type_Run_Completed,
+   Run_Event_V1_Run_Completed_Type_Unrecognized);
+
+   type Run_Event_V1_Run_Completed_Type is record
+      Kind : Run_Event_V1_Run_Completed_Type_Kind := Run_Event_V1_Run_Completed_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Completed_Type (Value : String) return Run_Event_V1_Run_Completed_Type;
+   function To_Run_Event_V1_Run_Completed_Type (Kind : Run_Event_V1_Run_Completed_Type_Kind) return Run_Event_V1_Run_Completed_Type;
+   function Image (Model : Run_Event_V1_Run_Completed_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Completed_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Completed_Type;
+
+   --  Values of `RunEventV1RunCompletedPayloadStatus`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Completed_Payload_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Completed_Payload_Status_Kind is
+     (Run_Event_V1_Run_Completed_Payload_Status_Completed,
+   Run_Event_V1_Run_Completed_Payload_Status_Unrecognized);
+
+   type Run_Event_V1_Run_Completed_Payload_Status is record
+      Kind : Run_Event_V1_Run_Completed_Payload_Status_Kind := Run_Event_V1_Run_Completed_Payload_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Completed_Payload_Status (Value : String) return Run_Event_V1_Run_Completed_Payload_Status;
+   function To_Run_Event_V1_Run_Completed_Payload_Status (Kind : Run_Event_V1_Run_Completed_Payload_Status_Kind) return Run_Event_V1_Run_Completed_Payload_Status;
+   function Image (Model : Run_Event_V1_Run_Completed_Payload_Status) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Completed_Payload_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Completed_Payload_Status;
+
+   --  Values of `RunEventV1RunCompletedPayloadMetricsPricingConfidence`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Kind is
+     (Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Known,
+   Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Inferred,
+   Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Fallback,
+   Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Unknown,
+   Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Unrecognized);
+
+   type Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence is record
+      Kind : Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Kind := Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence (Value : String) return Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence;
+   function To_Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence (Kind : Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Kind) return Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence;
+   function Image (Model : Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence;
+
+   --  `RunEventV1RunCompletedPayloadMetrics` model.
+   type Run_Event_V1_Run_Completed_Payload_Metrics is record
+      Has_Duration_Ms : Boolean := False;
+      Duration_Ms : UARP.Types.Integer_Value := 0;
+      Has_Steps_Count : Boolean := False;
+      Steps_Count : UARP.Types.Integer_Value := 0;
+      Has_Input_Tokens : Boolean := False;
+      Input_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Output_Tokens : Boolean := False;
+      Output_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Thinking_Tokens : Boolean := False;
+      Thinking_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Cached_Tokens : Boolean := False;
+      Cached_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Tool_Calls_Count : Boolean := False;
+      Tool_Calls_Count : UARP.Types.Integer_Value := 0;
+      Has_LLM_Calls_Count : Boolean := False;
+      LLM_Calls_Count : UARP.Types.Integer_Value := 0;
+      Has_Guardrail_Checks : Boolean := False;
+      Guardrail_Checks : UARP.Types.Integer_Value := 0;
+      Has_Guardrail_Violations : Boolean := False;
+      Guardrail_Violations : UARP.Types.Integer_Value := 0;
+      Has_Memory_Retrievals : Boolean := False;
+      Memory_Retrievals : UARP.Types.Integer_Value := 0;
+      Has_Memory_Extractions : Boolean := False;
+      Memory_Extractions : UARP.Types.Integer_Value := 0;
+      Has_Total_Cost_Usd : Boolean := False;
+      Total_Cost_Usd : UARP.Types.Float_Value := 0.0;
+      Has_Fallback_Used : Boolean := False;
+      Fallback_Used : Standard.Boolean := False;
+      Has_Pricing_Confidence : Boolean := False;
+      Pricing_Confidence : UARP.Models.Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence;
+      Has_Cost_Attribution : Boolean := False;
+      Cost_Attribution : UARP.Models.Run_Metrics_Cost_Attribution;
+      Has_Files_Modified : Boolean := False;
+      Files_Modified : UARP.Types.Integer_Value := 0;
+      Has_Commands_Executed : Boolean := False;
+      Commands_Executed : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Completed_Payload_Metrics) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Completed_Payload_Metrics;
+
+   --  `RunEventV1RunCompletedPayload` model.
+   type Run_Event_V1_Run_Completed_Payload is record
+      Status : UARP.Models.Run_Event_V1_Run_Completed_Payload_Status;
+      Output : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Metrics : Boolean := False;
+      Metrics : UARP.Models.Run_Event_V1_Run_Completed_Payload_Metrics;
+      Has_Cost_Usd : Boolean := False;
+      Cost_Usd : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Completed_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Completed_Payload;
+
+   --  `RunEventV1RunCompleted` model.
+   type Run_Event_V1_Run_Completed is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Run_Completed_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Run_Completed_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Completed) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Completed;
+
+   --  Values of `RunEventV1RunFailedType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Failed_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Failed_Type_Kind is
+     (Run_Event_V1_Run_Failed_Type_Run_Failed,
+   Run_Event_V1_Run_Failed_Type_Unrecognized);
+
+   type Run_Event_V1_Run_Failed_Type is record
+      Kind : Run_Event_V1_Run_Failed_Type_Kind := Run_Event_V1_Run_Failed_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Failed_Type (Value : String) return Run_Event_V1_Run_Failed_Type;
+   function To_Run_Event_V1_Run_Failed_Type (Kind : Run_Event_V1_Run_Failed_Type_Kind) return Run_Event_V1_Run_Failed_Type;
+   function Image (Model : Run_Event_V1_Run_Failed_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Failed_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Failed_Type;
+
+   --  `RunEventV1RunFailedPayload` model.
+   type Run_Event_V1_Run_Failed_Payload is record
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Error_Code : Boolean := False;
+      Error_Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Error_Details : Boolean := False;
+      Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Message : Boolean := False;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_End_Reason : Boolean := False;
+      End_Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Source : Boolean := False;
+      Source : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Rejected : Boolean := False;
+      Rejected : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Failed_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Failed_Payload;
+
+   --  `RunEventV1RunFailed` model.
+   type Run_Event_V1_Run_Failed is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Run_Failed_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Run_Failed_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Failed) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Failed;
+
+   --  Values of `RunEventV1RunCancelledType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Cancelled_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Cancelled_Type_Kind is
+     (Run_Event_V1_Run_Cancelled_Type_Run_Cancelled,
+   Run_Event_V1_Run_Cancelled_Type_Unrecognized);
+
+   type Run_Event_V1_Run_Cancelled_Type is record
+      Kind : Run_Event_V1_Run_Cancelled_Type_Kind := Run_Event_V1_Run_Cancelled_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Cancelled_Type (Value : String) return Run_Event_V1_Run_Cancelled_Type;
+   function To_Run_Event_V1_Run_Cancelled_Type (Kind : Run_Event_V1_Run_Cancelled_Type_Kind) return Run_Event_V1_Run_Cancelled_Type;
+   function Image (Model : Run_Event_V1_Run_Cancelled_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Cancelled_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Cancelled_Type;
+
+   --  `RunEventV1RunCancelledPayload` model.
+   type Run_Event_V1_Run_Cancelled_Payload is record
+      Has_Error : Boolean := False;
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Error_Code : Boolean := False;
+      Error_Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Error_Details : Boolean := False;
+      Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Message : Boolean := False;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_End_Reason : Boolean := False;
+      End_Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Source : Boolean := False;
+      Source : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Rejected : Boolean := False;
+      Rejected : Standard.Boolean := False;
+      Has_Previous_Status : Boolean := False;
+      Previous_Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Team_Run_Id : Boolean := False;
+      Team_Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Was : Boolean := False;
+      Was : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Cancelled_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Cancelled_Payload;
+
+   --  `RunEventV1RunCancelled` model.
+   type Run_Event_V1_Run_Cancelled is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Run_Cancelled_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Run_Cancelled_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Cancelled) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Cancelled;
+
+   --  Values of `RunEventV1RunGuardrailBlockedType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Guardrail_Blocked_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Guardrail_Blocked_Type_Kind is
+     (Run_Event_V1_Run_Guardrail_Blocked_Type_Run_Guardrail_Blocked,
+   Run_Event_V1_Run_Guardrail_Blocked_Type_Unrecognized);
+
+   type Run_Event_V1_Run_Guardrail_Blocked_Type is record
+      Kind : Run_Event_V1_Run_Guardrail_Blocked_Type_Kind := Run_Event_V1_Run_Guardrail_Blocked_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Guardrail_Blocked_Type (Value : String) return Run_Event_V1_Run_Guardrail_Blocked_Type;
+   function To_Run_Event_V1_Run_Guardrail_Blocked_Type (Kind : Run_Event_V1_Run_Guardrail_Blocked_Type_Kind) return Run_Event_V1_Run_Guardrail_Blocked_Type;
+   function Image (Model : Run_Event_V1_Run_Guardrail_Blocked_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Guardrail_Blocked_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Guardrail_Blocked_Type;
+
+   --  `RunEventV1RunGuardrailBlockedPayload` model.
+   type Run_Event_V1_Run_Guardrail_Blocked_Payload is record
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Error_Code : Boolean := False;
+      Error_Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Error_Details : Boolean := False;
+      Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Message : Boolean := False;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_End_Reason : Boolean := False;
+      End_Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Source : Boolean := False;
+      Source : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Rejected : Boolean := False;
+      Rejected : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Guardrail_Blocked_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Guardrail_Blocked_Payload;
+
+   --  `RunEventV1RunGuardrailBlocked` model.
+   type Run_Event_V1_Run_Guardrail_Blocked is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Run_Guardrail_Blocked_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Run_Guardrail_Blocked_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Guardrail_Blocked) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Guardrail_Blocked;
+
+   --  Values of `RunEventV1RunPausedType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Paused_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Paused_Type_Kind is
+     (Run_Event_V1_Run_Paused_Type_Run_Paused,
+   Run_Event_V1_Run_Paused_Type_Unrecognized);
+
+   type Run_Event_V1_Run_Paused_Type is record
+      Kind : Run_Event_V1_Run_Paused_Type_Kind := Run_Event_V1_Run_Paused_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Paused_Type (Value : String) return Run_Event_V1_Run_Paused_Type;
+   function To_Run_Event_V1_Run_Paused_Type (Kind : Run_Event_V1_Run_Paused_Type_Kind) return Run_Event_V1_Run_Paused_Type;
+   function Image (Model : Run_Event_V1_Run_Paused_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Paused_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Paused_Type;
+
+   --  `RunEventV1RunPausedPayload` model.
+   type Run_Event_V1_Run_Paused_Payload is record
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step : Boolean := False;
+      Step : UARP.Types.Integer_Value := 0;
+      Has_Resumable : Boolean := False;
+      Resumable : Standard.Boolean := False;
+      Has_Held_Output : Boolean := False;
+      Held_Output : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Paused_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Paused_Payload;
+
+   --  `RunEventV1RunPaused` model.
+   type Run_Event_V1_Run_Paused is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Run_Paused_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Run_Paused_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Paused) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Paused;
+
+   --  Values of `RunEventV1RunAwaitingApprovalType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Awaiting_Approval_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Awaiting_Approval_Type_Kind is
+     (Run_Event_V1_Run_Awaiting_Approval_Type_Run_Awaiting_Approval,
+   Run_Event_V1_Run_Awaiting_Approval_Type_Unrecognized);
+
+   type Run_Event_V1_Run_Awaiting_Approval_Type is record
+      Kind : Run_Event_V1_Run_Awaiting_Approval_Type_Kind := Run_Event_V1_Run_Awaiting_Approval_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Awaiting_Approval_Type (Value : String) return Run_Event_V1_Run_Awaiting_Approval_Type;
+   function To_Run_Event_V1_Run_Awaiting_Approval_Type (Kind : Run_Event_V1_Run_Awaiting_Approval_Type_Kind) return Run_Event_V1_Run_Awaiting_Approval_Type;
+   function Image (Model : Run_Event_V1_Run_Awaiting_Approval_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Approval_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Approval_Type;
+
+   --  `RunEventV1RunAwaitingApprovalPayloadToolCall` model.
+   type Run_Event_V1_Run_Awaiting_Approval_Payload_Tool_Call is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Args : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Options : Boolean := False;
+      Options : UARP.Types.Text_Vectors.Vector;
+      Has_Kind : Boolean := False;
+      Kind : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Approval_Payload_Tool_Call) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Approval_Payload_Tool_Call;
+
+   package Run_Event_V1_Run_Awaiting_Approval_Payload_Tool_Call_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Run_Event_V1_Run_Awaiting_Approval_Payload_Tool_Call);
+
+   --  `RunEventV1RunAwaitingApprovalPayload` model.
+   type Run_Event_V1_Run_Awaiting_Approval_Payload is record
+      Tool_Calls : UARP.Models.Run_Event_V1_Run_Awaiting_Approval_Payload_Tool_Call_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Approval_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Approval_Payload;
+
+   --  `RunEventV1RunAwaitingApproval` model.
+   type Run_Event_V1_Run_Awaiting_Approval is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Run_Awaiting_Approval_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Run_Awaiting_Approval_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Approval) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Approval;
+
+   --  Values of `RunEventV1RunAwaitingInputType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Awaiting_Input_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Awaiting_Input_Type_Kind is
+     (Run_Event_V1_Run_Awaiting_Input_Type_Run_Awaiting_Input,
+   Run_Event_V1_Run_Awaiting_Input_Type_Unrecognized);
+
+   type Run_Event_V1_Run_Awaiting_Input_Type is record
+      Kind : Run_Event_V1_Run_Awaiting_Input_Type_Kind := Run_Event_V1_Run_Awaiting_Input_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Awaiting_Input_Type (Value : String) return Run_Event_V1_Run_Awaiting_Input_Type;
+   function To_Run_Event_V1_Run_Awaiting_Input_Type (Kind : Run_Event_V1_Run_Awaiting_Input_Type_Kind) return Run_Event_V1_Run_Awaiting_Input_Type;
+   function Image (Model : Run_Event_V1_Run_Awaiting_Input_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Input_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Input_Type;
+
+   --  `RunEventV1RunAwaitingInputPayload` model.
+   type Run_Event_V1_Run_Awaiting_Input_Payload is record
+      Tool_Call_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Question : Boolean := False;
+      Question : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Options : Boolean := False;
+      Options : UARP.Types.Text_Vectors.Vector;
+      Has_Context : Boolean := False;
+      Context : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tool_Name : Boolean := False;
+      Tool_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Arguments : Boolean := False;
+      Arguments : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Input_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Input_Payload;
+
+   --  `RunEventV1RunAwaitingInput` model.
+   type Run_Event_V1_Run_Awaiting_Input is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Run_Awaiting_Input_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Run_Awaiting_Input_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Input) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Input;
+
+   --  Values of `RunEventV1RunInputReceivedType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Input_Received_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Input_Received_Type_Kind is
+     (Run_Event_V1_Run_Input_Received_Type_Run_Input_Received,
+   Run_Event_V1_Run_Input_Received_Type_Unrecognized);
+
+   type Run_Event_V1_Run_Input_Received_Type is record
+      Kind : Run_Event_V1_Run_Input_Received_Type_Kind := Run_Event_V1_Run_Input_Received_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Input_Received_Type (Value : String) return Run_Event_V1_Run_Input_Received_Type;
+   function To_Run_Event_V1_Run_Input_Received_Type (Kind : Run_Event_V1_Run_Input_Received_Type_Kind) return Run_Event_V1_Run_Input_Received_Type;
+   function Image (Model : Run_Event_V1_Run_Input_Received_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Input_Received_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Input_Received_Type;
+
+   --  `RunEventV1RunInputReceivedPayload` model.
+   type Run_Event_V1_Run_Input_Received_Payload is record
+      Response_Length : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Input_Received_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Input_Received_Payload;
+
+   --  `RunEventV1RunInputReceived` model.
+   type Run_Event_V1_Run_Input_Received is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Run_Input_Received_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Run_Input_Received_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Input_Received) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Input_Received;
+
+   --  Values of `RunEventV1LLMChunkType`.
+   --  A value the API introduces later decodes as Run_Event_V1_LLM_Chunk_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_LLM_Chunk_Type_Kind is
+     (Run_Event_V1_LLM_Chunk_Type_LLM_Chunk,
+   Run_Event_V1_LLM_Chunk_Type_Unrecognized);
+
+   type Run_Event_V1_LLM_Chunk_Type is record
+      Kind : Run_Event_V1_LLM_Chunk_Type_Kind := Run_Event_V1_LLM_Chunk_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_LLM_Chunk_Type (Value : String) return Run_Event_V1_LLM_Chunk_Type;
+   function To_Run_Event_V1_LLM_Chunk_Type (Kind : Run_Event_V1_LLM_Chunk_Type_Kind) return Run_Event_V1_LLM_Chunk_Type;
+   function Image (Model : Run_Event_V1_LLM_Chunk_Type) return String;
+   function To_JSON (Model : Run_Event_V1_LLM_Chunk_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Chunk_Type;
+
+   --  Values of `RunEventV1LLMChunkPayloadChunkType`.
+   --  A value the API introduces later decodes as Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Kind is
+     (Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Content,
+   Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Thinking,
+   Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Tool_Call,
+   Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Unrecognized);
+
+   type Run_Event_V1_LLM_Chunk_Payload_Chunk_Type is record
+      Kind : Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Kind := Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_LLM_Chunk_Payload_Chunk_Type (Value : String) return Run_Event_V1_LLM_Chunk_Payload_Chunk_Type;
+   function To_Run_Event_V1_LLM_Chunk_Payload_Chunk_Type (Kind : Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Kind) return Run_Event_V1_LLM_Chunk_Payload_Chunk_Type;
+   function Image (Model : Run_Event_V1_LLM_Chunk_Payload_Chunk_Type) return String;
+   function To_JSON (Model : Run_Event_V1_LLM_Chunk_Payload_Chunk_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Chunk_Payload_Chunk_Type;
+
+   --  `RunEventV1LLMChunkPayload` model.
+   type Run_Event_V1_LLM_Chunk_Payload is record
+      Chunk_Type : UARP.Models.Run_Event_V1_LLM_Chunk_Payload_Chunk_Type;
+      Delta_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Index : Boolean := False;
+      Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_LLM_Chunk_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Chunk_Payload;
+
+   --  `RunEventV1LLMChunk` model.
+   type Run_Event_V1_LLM_Chunk is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_LLM_Chunk_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_LLM_Chunk_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_LLM_Chunk) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Chunk;
+
+   --  Values of `RunEventV1LLMErrorType`.
+   --  A value the API introduces later decodes as Run_Event_V1_LLM_Error_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_LLM_Error_Type_Kind is
+     (Run_Event_V1_LLM_Error_Type_LLM_Error,
+   Run_Event_V1_LLM_Error_Type_Unrecognized);
+
+   type Run_Event_V1_LLM_Error_Type is record
+      Kind : Run_Event_V1_LLM_Error_Type_Kind := Run_Event_V1_LLM_Error_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_LLM_Error_Type (Value : String) return Run_Event_V1_LLM_Error_Type;
+   function To_Run_Event_V1_LLM_Error_Type (Kind : Run_Event_V1_LLM_Error_Type_Kind) return Run_Event_V1_LLM_Error_Type;
+   function Image (Model : Run_Event_V1_LLM_Error_Type) return String;
+   function To_JSON (Model : Run_Event_V1_LLM_Error_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Error_Type;
+
+   --  `RunEventV1LLMErrorPayload` model.
+   type Run_Event_V1_LLM_Error_Payload is record
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunks_Before_Error : Boolean := False;
+      Chunks_Before_Error : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_LLM_Error_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Error_Payload;
+
+   --  `RunEventV1LLMError` model.
+   type Run_Event_V1_LLM_Error is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_LLM_Error_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_LLM_Error_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_LLM_Error) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Error;
+
+   --  Values of `RunEventV1ToolCallType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Tool_Call_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Tool_Call_Type_Kind is
+     (Run_Event_V1_Tool_Call_Type_Tool_Call,
+   Run_Event_V1_Tool_Call_Type_Unrecognized);
+
+   type Run_Event_V1_Tool_Call_Type is record
+      Kind : Run_Event_V1_Tool_Call_Type_Kind := Run_Event_V1_Tool_Call_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Tool_Call_Type (Value : String) return Run_Event_V1_Tool_Call_Type;
+   function To_Run_Event_V1_Tool_Call_Type (Kind : Run_Event_V1_Tool_Call_Type_Kind) return Run_Event_V1_Tool_Call_Type;
+   function Image (Model : Run_Event_V1_Tool_Call_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Tool_Call_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Call_Type;
+
+   --  `RunEventV1ToolCallPayloadToolCall` model.
+   type Run_Event_V1_Tool_Call_Payload_Tool_Call is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Arguments : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Arguments_Preview : Boolean := False;
+      Arguments_Preview : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Call_Payload_Tool_Call) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Call_Payload_Tool_Call;
+
+   --  `RunEventV1ToolCallPayload` model.
+   type Run_Event_V1_Tool_Call_Payload is record
+      Tool_Call : UARP.Models.Run_Event_V1_Tool_Call_Payload_Tool_Call;
+      Has_Builtin : Boolean := False;
+      Builtin : Standard.Boolean := False;
+      Has_MCP_Server_Id : Boolean := False;
+      MCP_Server_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_MCP_Session_Id : Boolean := False;
+      MCP_Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Transport_Type : Boolean := False;
+      Transport_Type : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Event_Id : Boolean := False;
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Call_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Call_Payload;
+
+   --  `RunEventV1ToolCall` model.
+   type Run_Event_V1_Tool_Call is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Tool_Call_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Tool_Call_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Call) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Call;
+
+   --  Values of `RunEventV1ToolResultType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Tool_Result_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Tool_Result_Type_Kind is
+     (Run_Event_V1_Tool_Result_Type_Tool_Result,
+   Run_Event_V1_Tool_Result_Type_Unrecognized);
+
+   type Run_Event_V1_Tool_Result_Type is record
+      Kind : Run_Event_V1_Tool_Result_Type_Kind := Run_Event_V1_Tool_Result_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Tool_Result_Type (Value : String) return Run_Event_V1_Tool_Result_Type;
+   function To_Run_Event_V1_Tool_Result_Type (Kind : Run_Event_V1_Tool_Result_Type_Kind) return Run_Event_V1_Tool_Result_Type;
+   function Image (Model : Run_Event_V1_Tool_Result_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Tool_Result_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Result_Type;
+
+   --  `RunEventV1ToolResultPayloadToolResult` model.
+   type Run_Event_V1_Tool_Result_Payload_Tool_Result is record
+      Content : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Result_Payload_Tool_Result) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Result_Payload_Tool_Result;
+
+   --  `RunEventV1ToolResultPayload` model.
+   type Run_Event_V1_Tool_Result_Payload is record
+      Has_Tool_Call_Id : Boolean := False;
+      Tool_Call_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tool_Result : UARP.Models.Run_Event_V1_Tool_Result_Payload_Tool_Result;
+      Has_Latency_Ms : Boolean := False;
+      Latency_Ms : UARP.Types.Float_Value := 0.0;
+      Has_Builtin : Boolean := False;
+      Builtin : Standard.Boolean := False;
+      Has_MCP_Server_Id : Boolean := False;
+      MCP_Server_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_MCP_Session_Id : Boolean := False;
+      MCP_Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Transport_Type : Boolean := False;
+      Transport_Type : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Result_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Result_Payload;
+
+   --  `RunEventV1ToolResult` model.
+   type Run_Event_V1_Tool_Result is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Tool_Result_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Tool_Result_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Result) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Result;
+
+   --  Values of `RunEventV1ToolErrorType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Tool_Error_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Tool_Error_Type_Kind is
+     (Run_Event_V1_Tool_Error_Type_Tool_Error,
+   Run_Event_V1_Tool_Error_Type_Unrecognized);
+
+   type Run_Event_V1_Tool_Error_Type is record
+      Kind : Run_Event_V1_Tool_Error_Type_Kind := Run_Event_V1_Tool_Error_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Tool_Error_Type (Value : String) return Run_Event_V1_Tool_Error_Type;
+   function To_Run_Event_V1_Tool_Error_Type (Kind : Run_Event_V1_Tool_Error_Type_Kind) return Run_Event_V1_Tool_Error_Type;
+   function Image (Model : Run_Event_V1_Tool_Error_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Tool_Error_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Error_Type;
+
+   --  `RunEventV1ToolErrorPayload` model.
+   type Run_Event_V1_Tool_Error_Payload is record
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tool_Name : Boolean := False;
+      Tool_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tool_Call_Id : Boolean := False;
+      Tool_Call_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Governance_Blocked : Boolean := False;
+      Governance_Blocked : Standard.Boolean := False;
+      Has_Parse_Error : Boolean := False;
+      Parse_Error : Standard.Boolean := False;
+      Has_Builtin : Boolean := False;
+      Builtin : Standard.Boolean := False;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Error_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Error_Payload;
+
+   --  `RunEventV1ToolError` model.
+   type Run_Event_V1_Tool_Error is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Tool_Error_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Tool_Error_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Error) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Error;
+
+   --  Values of `RunEventV1RunStepStartedType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Step_Started_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Step_Started_Type_Kind is
+     (Run_Event_V1_Run_Step_Started_Type_Run_Step_Started,
+   Run_Event_V1_Run_Step_Started_Type_Unrecognized);
+
+   type Run_Event_V1_Run_Step_Started_Type is record
+      Kind : Run_Event_V1_Run_Step_Started_Type_Kind := Run_Event_V1_Run_Step_Started_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Step_Started_Type (Value : String) return Run_Event_V1_Run_Step_Started_Type;
+   function To_Run_Event_V1_Run_Step_Started_Type (Kind : Run_Event_V1_Run_Step_Started_Type_Kind) return Run_Event_V1_Run_Step_Started_Type;
+   function Image (Model : Run_Event_V1_Run_Step_Started_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Step_Started_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Step_Started_Type;
+
+   --  `RunEventV1RunStepStartedPayload` model.
+   type Run_Event_V1_Run_Step_Started_Payload is record
+      Step_Index : UARP.Types.Integer_Value := 0;
+      Has_Streaming : Boolean := False;
+      Streaming : Standard.Boolean := False;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Step_Started_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Step_Started_Payload;
+
+   --  `RunEventV1RunStepStarted` model.
+   type Run_Event_V1_Run_Step_Started is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Run_Step_Started_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Run_Step_Started_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Step_Started) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Step_Started;
+
+   --  Values of `RunEventV1RunStepCompletedType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Step_Completed_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Step_Completed_Type_Kind is
+     (Run_Event_V1_Run_Step_Completed_Type_Run_Step_Completed,
+   Run_Event_V1_Run_Step_Completed_Type_Unrecognized);
+
+   type Run_Event_V1_Run_Step_Completed_Type is record
+      Kind : Run_Event_V1_Run_Step_Completed_Type_Kind := Run_Event_V1_Run_Step_Completed_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Step_Completed_Type (Value : String) return Run_Event_V1_Run_Step_Completed_Type;
+   function To_Run_Event_V1_Run_Step_Completed_Type (Kind : Run_Event_V1_Run_Step_Completed_Type_Kind) return Run_Event_V1_Run_Step_Completed_Type;
+   function Image (Model : Run_Event_V1_Run_Step_Completed_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Step_Completed_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Step_Completed_Type;
+
+   --  `RunEventV1RunStepCompletedPayload` model.
+   type Run_Event_V1_Run_Step_Completed_Payload is record
+      Step_Index : UARP.Types.Integer_Value := 0;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Has_Tool_Calls : Boolean := False;
+      Has_Tool_Calls : Standard.Boolean := False;
+      Has_Tool_Names : Boolean := False;
+      Tool_Names : UARP.Types.Text_Vectors.Vector;
+      Has_Done : Boolean := False;
+      Done : Standard.Boolean := False;
+      Has_Duration_Ms : Boolean := False;
+      Duration_Ms : UARP.Types.Integer_Value := 0;
+      Has_Input_Tokens : Boolean := False;
+      Input_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Output_Tokens : Boolean := False;
+      Output_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Thinking_Tokens : Boolean := False;
+      Thinking_Tokens : UARP.Types.Integer_Value := 0;
+      Has_LLM_Calls_Count : Boolean := False;
+      LLM_Calls_Count : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Step_Completed_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Step_Completed_Payload;
+
+   --  `RunEventV1RunStepCompleted` model.
+   type Run_Event_V1_Run_Step_Completed is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Run_Step_Completed_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Run_Step_Completed_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Run_Step_Completed) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Step_Completed;
+
+   --  Values of `RunEventV1StepPlanType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Step_Plan_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Step_Plan_Type_Kind is
+     (Run_Event_V1_Step_Plan_Type_Step_Plan,
+   Run_Event_V1_Step_Plan_Type_Unrecognized);
+
+   type Run_Event_V1_Step_Plan_Type is record
+      Kind : Run_Event_V1_Step_Plan_Type_Kind := Run_Event_V1_Step_Plan_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Step_Plan_Type (Value : String) return Run_Event_V1_Step_Plan_Type;
+   function To_Run_Event_V1_Step_Plan_Type (Kind : Run_Event_V1_Step_Plan_Type_Kind) return Run_Event_V1_Step_Plan_Type;
+   function Image (Model : Run_Event_V1_Step_Plan_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Step_Plan_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Plan_Type;
+
+   --  `RunEventV1StepPlanPayload` model.
+   type Run_Event_V1_Step_Plan_Payload is record
+      Has_Effort : Boolean := False;
+      Effort : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Skipped : Boolean := False;
+      Skipped : Standard.Boolean := False;
+      Has_Skip_Reason : Boolean := False;
+      Skip_Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Plan_Content : Boolean := False;
+      Plan_Content : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Step_Plan_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Plan_Payload;
+
+   --  `RunEventV1StepPlan` model.
+   type Run_Event_V1_Step_Plan is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Step_Plan_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Step_Plan_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Step_Plan) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Plan;
+
+   --  Values of `RunEventV1StepEvaluateType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Step_Evaluate_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Step_Evaluate_Type_Kind is
+     (Run_Event_V1_Step_Evaluate_Type_Step_Evaluate,
+   Run_Event_V1_Step_Evaluate_Type_Unrecognized);
+
+   type Run_Event_V1_Step_Evaluate_Type is record
+      Kind : Run_Event_V1_Step_Evaluate_Type_Kind := Run_Event_V1_Step_Evaluate_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Step_Evaluate_Type (Value : String) return Run_Event_V1_Step_Evaluate_Type;
+   function To_Run_Event_V1_Step_Evaluate_Type (Kind : Run_Event_V1_Step_Evaluate_Type_Kind) return Run_Event_V1_Step_Evaluate_Type;
+   function Image (Model : Run_Event_V1_Step_Evaluate_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Step_Evaluate_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Evaluate_Type;
+
+   --  `RunEventV1StepEvaluatePayload` model.
+   type Run_Event_V1_Step_Evaluate_Payload is record
+      Passed : Standard.Boolean := False;
+      Has_Feedback : Boolean := False;
+      Feedback : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Step_Evaluate_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Evaluate_Payload;
+
+   --  `RunEventV1StepEvaluate` model.
+   type Run_Event_V1_Step_Evaluate is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Step_Evaluate_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Step_Evaluate_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Step_Evaluate) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Evaluate;
+
+   --  Values of `RunEventV1StepActType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Step_Act_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Step_Act_Type_Kind is
+     (Run_Event_V1_Step_Act_Type_Step_Act,
+   Run_Event_V1_Step_Act_Type_Unrecognized);
+
+   type Run_Event_V1_Step_Act_Type is record
+      Kind : Run_Event_V1_Step_Act_Type_Kind := Run_Event_V1_Step_Act_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Step_Act_Type (Value : String) return Run_Event_V1_Step_Act_Type;
+   function To_Run_Event_V1_Step_Act_Type (Kind : Run_Event_V1_Step_Act_Type_Kind) return Run_Event_V1_Step_Act_Type;
+   function Image (Model : Run_Event_V1_Step_Act_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Step_Act_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Act_Type;
+
+   --  `RunEventV1StepActPayload` model.
+   type Run_Event_V1_Step_Act_Payload is record
+      Has_Message : Boolean := False;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Code : Boolean := False;
+      Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Params : Boolean := False;
+      Params : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Input_Tokens : Boolean := False;
+      Input_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Output_Tokens : Boolean := False;
+      Output_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Metrics : Boolean := False;
+      Metrics : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Step_Act_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Act_Payload;
+
+   --  `RunEventV1StepAct` model.
+   type Run_Event_V1_Step_Act is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Step_Act_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Step_Act_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Step_Act) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Act;
+
+   --  Values of `RunEventV1TeamDelegateType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Team_Delegate_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Team_Delegate_Type_Kind is
+     (Run_Event_V1_Team_Delegate_Type_Team_Delegate,
+   Run_Event_V1_Team_Delegate_Type_Unrecognized);
+
+   type Run_Event_V1_Team_Delegate_Type is record
+      Kind : Run_Event_V1_Team_Delegate_Type_Kind := Run_Event_V1_Team_Delegate_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Team_Delegate_Type (Value : String) return Run_Event_V1_Team_Delegate_Type;
+   function To_Run_Event_V1_Team_Delegate_Type (Kind : Run_Event_V1_Team_Delegate_Type_Kind) return Run_Event_V1_Team_Delegate_Type;
+   function Image (Model : Run_Event_V1_Team_Delegate_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Team_Delegate_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Team_Delegate_Type;
+
+   --  Values of `RunEventV1TeamDelegatePayloadTopology`.
+   --  A value the API introduces later decodes as Run_Event_V1_Team_Delegate_Payload_Topology_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Team_Delegate_Payload_Topology_Kind is
+     (Run_Event_V1_Team_Delegate_Payload_Topology_Addressed,
+   Run_Event_V1_Team_Delegate_Payload_Topology_Supervisor,
+   Run_Event_V1_Team_Delegate_Payload_Topology_Pipeline,
+   Run_Event_V1_Team_Delegate_Payload_Topology_Swarm,
+   Run_Event_V1_Team_Delegate_Payload_Topology_Unrecognized);
+
+   type Run_Event_V1_Team_Delegate_Payload_Topology is record
+      Kind : Run_Event_V1_Team_Delegate_Payload_Topology_Kind := Run_Event_V1_Team_Delegate_Payload_Topology_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Team_Delegate_Payload_Topology (Value : String) return Run_Event_V1_Team_Delegate_Payload_Topology;
+   function To_Run_Event_V1_Team_Delegate_Payload_Topology (Kind : Run_Event_V1_Team_Delegate_Payload_Topology_Kind) return Run_Event_V1_Team_Delegate_Payload_Topology;
+   function Image (Model : Run_Event_V1_Team_Delegate_Payload_Topology) return String;
+   function To_JSON (Model : Run_Event_V1_Team_Delegate_Payload_Topology) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Team_Delegate_Payload_Topology;
+
+   --  `RunEventV1TeamDelegatePayload` model.
+   type Run_Event_V1_Team_Delegate_Payload is record
+      Topology : UARP.Models.Run_Event_V1_Team_Delegate_Payload_Topology;
+      Has_Mode : Boolean := False;
+      Mode : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Round : Boolean := False;
+      Round : UARP.Types.Integer_Value := 0;
+      Has_Step : Boolean := False;
+      Step : UARP.Types.Integer_Value := 0;
+      Has_Handoff_Index : Boolean := False;
+      Handoff_Index : UARP.Types.Integer_Value := 0;
+      Has_From : Boolean := False;
+      From : UARP.Types.Text := UARP.Types.Empty_Text;
+      To : UARP.Types.Text_Vectors.Vector;
+      Has_Worker_Count : Boolean := False;
+      Worker_Count : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Team_Delegate_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Team_Delegate_Payload;
+
+   --  `RunEventV1TeamDelegate` model.
+   type Run_Event_V1_Team_Delegate is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Team_Delegate_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Team_Delegate_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Team_Delegate) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Team_Delegate;
+
+   --  Values of `RunEventV1ChildRunCompletedType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Child_Run_Completed_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Child_Run_Completed_Type_Kind is
+     (Run_Event_V1_Child_Run_Completed_Type_Child_Run_Completed,
+   Run_Event_V1_Child_Run_Completed_Type_Unrecognized);
+
+   type Run_Event_V1_Child_Run_Completed_Type is record
+      Kind : Run_Event_V1_Child_Run_Completed_Type_Kind := Run_Event_V1_Child_Run_Completed_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Child_Run_Completed_Type (Value : String) return Run_Event_V1_Child_Run_Completed_Type;
+   function To_Run_Event_V1_Child_Run_Completed_Type (Kind : Run_Event_V1_Child_Run_Completed_Type_Kind) return Run_Event_V1_Child_Run_Completed_Type;
+   function Image (Model : Run_Event_V1_Child_Run_Completed_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Child_Run_Completed_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Child_Run_Completed_Type;
+
+   --  `RunEventV1ChildRunCompletedPayload` model.
+   type Run_Event_V1_Child_Run_Completed_Payload is record
+      Child_Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Agent_Name : Boolean := False;
+      Agent_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Output_Preview : Boolean := False;
+      Output_Preview : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Duration_Ms : Boolean := False;
+      Duration_Ms : UARP.Types.Integer_Value := 0;
+      Has_Execution_Mode : Boolean := False;
+      Execution_Mode : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Cost_Usd : Boolean := False;
+      Cost_Usd : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Child_Run_Completed_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Child_Run_Completed_Payload;
+
+   --  `RunEventV1ChildRunCompleted` model.
+   type Run_Event_V1_Child_Run_Completed is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Child_Run_Completed_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Child_Run_Completed_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Child_Run_Completed) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Child_Run_Completed;
+
+   --  Values of `RunEventV1ChildRunFailedType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Child_Run_Failed_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Child_Run_Failed_Type_Kind is
+     (Run_Event_V1_Child_Run_Failed_Type_Child_Run_Failed,
+   Run_Event_V1_Child_Run_Failed_Type_Unrecognized);
+
+   type Run_Event_V1_Child_Run_Failed_Type is record
+      Kind : Run_Event_V1_Child_Run_Failed_Type_Kind := Run_Event_V1_Child_Run_Failed_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Child_Run_Failed_Type (Value : String) return Run_Event_V1_Child_Run_Failed_Type;
+   function To_Run_Event_V1_Child_Run_Failed_Type (Kind : Run_Event_V1_Child_Run_Failed_Type_Kind) return Run_Event_V1_Child_Run_Failed_Type;
+   function Image (Model : Run_Event_V1_Child_Run_Failed_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Child_Run_Failed_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Child_Run_Failed_Type;
+
+   --  `RunEventV1ChildRunFailedPayload` model.
+   type Run_Event_V1_Child_Run_Failed_Payload is record
+      Child_Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Agent_Name : Boolean := False;
+      Agent_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Error : Boolean := False;
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Execution_Mode : Boolean := False;
+      Execution_Mode : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Child_Run_Failed_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Child_Run_Failed_Payload;
+
+   --  `RunEventV1ChildRunFailed` model.
+   type Run_Event_V1_Child_Run_Failed is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Child_Run_Failed_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Child_Run_Failed_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Child_Run_Failed) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Child_Run_Failed;
+
+   --  Values of `RunEventV1SessionContextCompactedType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Session_Context_Compacted_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Session_Context_Compacted_Type_Kind is
+     (Run_Event_V1_Session_Context_Compacted_Type_Session_Context_Compacted,
+   Run_Event_V1_Session_Context_Compacted_Type_Unrecognized);
+
+   type Run_Event_V1_Session_Context_Compacted_Type is record
+      Kind : Run_Event_V1_Session_Context_Compacted_Type_Kind := Run_Event_V1_Session_Context_Compacted_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Session_Context_Compacted_Type (Value : String) return Run_Event_V1_Session_Context_Compacted_Type;
+   function To_Run_Event_V1_Session_Context_Compacted_Type (Kind : Run_Event_V1_Session_Context_Compacted_Type_Kind) return Run_Event_V1_Session_Context_Compacted_Type;
+   function Image (Model : Run_Event_V1_Session_Context_Compacted_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Session_Context_Compacted_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Session_Context_Compacted_Type;
+
+   --  `RunEventV1SessionContextCompactedPayload` model.
+   type Run_Event_V1_Session_Context_Compacted_Payload is record
+      Has_Step_Index : Boolean := False;
+      Step_Index : UARP.Types.Integer_Value := 0;
+      Has_Strategy : Boolean := False;
+      Strategy : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Removed_Count : Boolean := False;
+      Removed_Count : UARP.Types.Integer_Value := 0;
+      Has_Tokens_Saved : Boolean := False;
+      Tokens_Saved : UARP.Types.Integer_Value := 0;
+      Has_Context_Tokens_Before : Boolean := False;
+      Context_Tokens_Before : UARP.Types.Integer_Value := 0;
+      Has_Context_Tokens_After : Boolean := False;
+      Context_Tokens_After : UARP.Types.Integer_Value := 0;
+      Has_Max_Context_Tokens : Boolean := False;
+      Max_Context_Tokens : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Session_Context_Compacted_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Session_Context_Compacted_Payload;
+
+   --  `RunEventV1SessionContextCompacted` model.
+   type Run_Event_V1_Session_Context_Compacted is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Session_Context_Compacted_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Session_Context_Compacted_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Session_Context_Compacted) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Session_Context_Compacted;
+
+   --  Values of `RunEventV1SessionContextType`.
+   --  A value the API introduces later decodes as Run_Event_V1_Session_Context_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Session_Context_Type_Kind is
+     (Run_Event_V1_Session_Context_Type_Session_Context,
+   Run_Event_V1_Session_Context_Type_Unrecognized);
+
+   type Run_Event_V1_Session_Context_Type is record
+      Kind : Run_Event_V1_Session_Context_Type_Kind := Run_Event_V1_Session_Context_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Session_Context_Type (Value : String) return Run_Event_V1_Session_Context_Type;
+   function To_Run_Event_V1_Session_Context_Type (Kind : Run_Event_V1_Session_Context_Type_Kind) return Run_Event_V1_Session_Context_Type;
+   function Image (Model : Run_Event_V1_Session_Context_Type) return String;
+   function To_JSON (Model : Run_Event_V1_Session_Context_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Session_Context_Type;
+
+   --  `RunEventV1SessionContextPayload` model.
+   type Run_Event_V1_Session_Context_Payload is record
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Window_Tokens : Boolean := False;
+      Window_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Used_Tokens : Boolean := False;
+      Used_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Percent : Boolean := False;
+      Percent : UARP.Types.Float_Value := 0.0;
+      Source : UARP.Models.Session_Context_Source;
+      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Session_Context_Payload) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Session_Context_Payload;
+
+   --  `RunEventV1SessionContext` model.
+   type Run_Event_V1_Session_Context is record
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Run_Event_V1_Session_Context_Type;
+      Seq : UARP.Types.Integer_Value := 0;
+      Payload : UARP.Models.Run_Event_V1_Session_Context_Payload;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Event_V1_Session_Context) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Session_Context;
+
+   --  A run event as `event_schema=1` sends it, on GET /runs/{runId}/events and GET
+   --  /sessions/{sessionId}/events. Closed: a strict parser may refuse any field or value not
+   --  declared here, because none is ever sent. A type this version does not list is not sent to a
+   --  v1 client, and neither is an event whose discriminant value (`chunk_type`, `topology`, ...)
+   --  the version does not list. Bridge runs arrive in the native shape.
+   subtype Run_Event_V1 is UARP.JSON_Support.JSON_Value;
+
    --  `RunFeedbackListFeedback` model.
    type Run_Feedback_List_Feedback is record
       --  The entry's `message_id` from GET /sessions/{sessionId}/messages
@@ -32856,27 +34505,6 @@ package UARP.Models is
    function To_JSON (Model : Run_Stream_Event_Trace_Context) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Event_Trace_Context;
 
-   --  Values of `RunStreamEventStreamType`.
-   --  A value the API introduces later decodes as Run_Stream_Event_Stream_Type_Unrecognized
-   --  with the original text kept in Raw.
-   type Run_Stream_Event_Stream_Type_Kind is
-     (Run_Stream_Event_Stream_Type_Lifecycle,
-   Run_Stream_Event_Stream_Type_Assistant,
-   Run_Stream_Event_Stream_Type_Tool,
-   Run_Stream_Event_Stream_Type_Other,
-   Run_Stream_Event_Stream_Type_Unrecognized);
-
-   type Run_Stream_Event_Stream_Type is record
-      Kind : Run_Stream_Event_Stream_Type_Kind := Run_Stream_Event_Stream_Type_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Run_Stream_Event_Stream_Type (Value : String) return Run_Stream_Event_Stream_Type;
-   function To_Run_Stream_Event_Stream_Type (Kind : Run_Stream_Event_Stream_Type_Kind) return Run_Stream_Event_Stream_Type;
-   function Image (Model : Run_Stream_Event_Stream_Type) return String;
-   function To_JSON (Model : Run_Stream_Event_Stream_Type) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Event_Stream_Type;
-
    --  A run event on `GET /runs/{runId}/events`: the stored event plus `stream_type` (the bucket
    --  to filter on: `run.*` lifecycle except the cosmetic `run.affect`, `llm.chunk` assistant,
    --  `tool.*` tool, anything else other) and per-frame `_chunk_id` / `_chunk_index`. With
@@ -32914,6 +34542,231 @@ package UARP.Models is
 
    function To_JSON (Model : Run_Stream_Event) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Event;
+
+   --  `RunStreamFrameV1Connected` model.
+   type Run_Stream_Frame_V1_Connected is record
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Connected_At : Boolean := False;
+      Connected_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Connected) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Connected;
+
+   --  `RunStreamFrameV1DoneMetrics` model.
+   type Run_Stream_Frame_V1_Done_Metrics is record
+      Has_Duration_Ms : Boolean := False;
+      Duration_Ms : UARP.Types.Integer_Value := 0;
+      Has_Steps_Count : Boolean := False;
+      Steps_Count : UARP.Types.Integer_Value := 0;
+      Has_Input_Tokens : Boolean := False;
+      Input_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Output_Tokens : Boolean := False;
+      Output_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Thinking_Tokens : Boolean := False;
+      Thinking_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Cached_Tokens : Boolean := False;
+      Cached_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Tool_Calls_Count : Boolean := False;
+      Tool_Calls_Count : UARP.Types.Integer_Value := 0;
+      Has_LLM_Calls_Count : Boolean := False;
+      LLM_Calls_Count : UARP.Types.Integer_Value := 0;
+      Has_Guardrail_Checks : Boolean := False;
+      Guardrail_Checks : UARP.Types.Integer_Value := 0;
+      Has_Guardrail_Violations : Boolean := False;
+      Guardrail_Violations : UARP.Types.Integer_Value := 0;
+      Has_Memory_Retrievals : Boolean := False;
+      Memory_Retrievals : UARP.Types.Integer_Value := 0;
+      Has_Memory_Extractions : Boolean := False;
+      Memory_Extractions : UARP.Types.Integer_Value := 0;
+      Has_Total_Cost_Usd : Boolean := False;
+      Total_Cost_Usd : UARP.Types.Float_Value := 0.0;
+      Has_Fallback_Used : Boolean := False;
+      Fallback_Used : Standard.Boolean := False;
+      Has_Pricing_Confidence : Boolean := False;
+      Pricing_Confidence : UARP.Models.Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence;
+      Has_Cost_Attribution : Boolean := False;
+      Cost_Attribution : UARP.Models.Run_Metrics_Cost_Attribution;
+      Has_Files_Modified : Boolean := False;
+      Files_Modified : UARP.Types.Integer_Value := 0;
+      Has_Commands_Executed : Boolean := False;
+      Commands_Executed : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Done_Metrics) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Done_Metrics;
+
+   --  `RunStreamFrameV1Done` model.
+   type Run_Stream_Frame_V1_Done is record
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Metrics : Boolean := False;
+      Metrics : UARP.Models.Run_Stream_Frame_V1_Done_Metrics;
+      Has_Output : Boolean := False;
+      Output : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Error : Boolean := False;
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Cost_Usd : Boolean := False;
+      Cost_Usd : UARP.Types.Float_Value := 0.0;
+      Has_Guardrail_Blocked : Boolean := False;
+      Guardrail_Blocked : Standard.Boolean := False;
+      Has_Guardrail_Violation : Boolean := False;
+      Guardrail_Violation : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Stream_Type : Boolean := False;
+      Stream_Type : UARP.Models.Run_Stream_Done_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Done) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Done;
+
+   --  Values of `RunStreamFrameV1ErrorVariant1code`.
+   --  A value the API introduces later decodes as Run_Stream_Frame_V1_Error_Variant1code_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Stream_Frame_V1_Error_Variant1code_Kind is
+     (Run_Stream_Frame_V1_Error_Variant1code_Run_Not_Found,
+   Run_Stream_Frame_V1_Error_Variant1code_Stream_Error,
+   Run_Stream_Frame_V1_Error_Variant1code_Unrecognized);
+
+   type Run_Stream_Frame_V1_Error_Variant1code is record
+      Kind : Run_Stream_Frame_V1_Error_Variant1code_Kind := Run_Stream_Frame_V1_Error_Variant1code_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Stream_Frame_V1_Error_Variant1code (Value : String) return Run_Stream_Frame_V1_Error_Variant1code;
+   function To_Run_Stream_Frame_V1_Error_Variant1code (Kind : Run_Stream_Frame_V1_Error_Variant1code_Kind) return Run_Stream_Frame_V1_Error_Variant1code;
+   function Image (Model : Run_Stream_Frame_V1_Error_Variant1code) return String;
+   function To_JSON (Model : Run_Stream_Frame_V1_Error_Variant1code) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Error_Variant1code;
+
+   --  `RunStreamFrameV1ErrorVariant1` model.
+   type Run_Stream_Frame_V1_Error_Variant1 is record
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Code : UARP.Models.Run_Stream_Frame_V1_Error_Variant1code;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Error_Variant1) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Error_Variant1;
+
+   --  Values of `RunStreamFrameV1ErrorVariant2type`.
+   --  A value the API introduces later decodes as Run_Stream_Frame_V1_Error_Variant2type_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Stream_Frame_V1_Error_Variant2type_Kind is
+     (Run_Stream_Frame_V1_Error_Variant2type_Error,
+   Run_Stream_Frame_V1_Error_Variant2type_Unrecognized);
+
+   type Run_Stream_Frame_V1_Error_Variant2type is record
+      Kind : Run_Stream_Frame_V1_Error_Variant2type_Kind := Run_Stream_Frame_V1_Error_Variant2type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Stream_Frame_V1_Error_Variant2type (Value : String) return Run_Stream_Frame_V1_Error_Variant2type;
+   function To_Run_Stream_Frame_V1_Error_Variant2type (Kind : Run_Stream_Frame_V1_Error_Variant2type_Kind) return Run_Stream_Frame_V1_Error_Variant2type;
+   function Image (Model : Run_Stream_Frame_V1_Error_Variant2type) return String;
+   function To_JSON (Model : Run_Stream_Frame_V1_Error_Variant2type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Error_Variant2type;
+
+   --  Values of `RunStreamFrameV1ErrorVariant2code`.
+   --  A value the API introduces later decodes as Run_Stream_Frame_V1_Error_Variant2code_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Stream_Frame_V1_Error_Variant2code_Kind is
+     (Run_Stream_Frame_V1_Error_Variant2code_Stream_Buffer_Exceeded,
+   Run_Stream_Frame_V1_Error_Variant2code_Unrecognized);
+
+   type Run_Stream_Frame_V1_Error_Variant2code is record
+      Kind : Run_Stream_Frame_V1_Error_Variant2code_Kind := Run_Stream_Frame_V1_Error_Variant2code_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Stream_Frame_V1_Error_Variant2code (Value : String) return Run_Stream_Frame_V1_Error_Variant2code;
+   function To_Run_Stream_Frame_V1_Error_Variant2code (Kind : Run_Stream_Frame_V1_Error_Variant2code_Kind) return Run_Stream_Frame_V1_Error_Variant2code;
+   function Image (Model : Run_Stream_Frame_V1_Error_Variant2code) return String;
+   function To_JSON (Model : Run_Stream_Frame_V1_Error_Variant2code) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Error_Variant2code;
+
+   --  `RunStreamFrameV1ErrorVariant2` model.
+   type Run_Stream_Frame_V1_Error_Variant2 is record
+      Type_K : UARP.Models.Run_Stream_Frame_V1_Error_Variant2type;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Code : UARP.Models.Run_Stream_Frame_V1_Error_Variant2code;
+   end record;
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Error_Variant2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Error_Variant2;
+
+   subtype Run_Stream_Frame_V1_Error is UARP.JSON_Support.JSON_Value;
+
+   --  `RunStreamFrameV1Gap` model.
+   type Run_Stream_Frame_V1_Gap is record
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Gap) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Gap;
+
+   --  Values of `RunStreamFrameV1GuardrailViolationViolationSource`.
+   --  A value the API introduces later decodes as Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source_Kind is
+     (Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source_Stream,
+   Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source_Unrecognized);
+
+   type Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source is record
+      Kind : Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source_Kind := Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source (Value : String) return Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source;
+   function To_Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source (Kind : Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source_Kind) return Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source;
+   function Image (Model : Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source) return String;
+   function To_JSON (Model : Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source;
+
+   --  `RunStreamFrameV1GuardrailViolation` model.
+   type Run_Stream_Frame_V1_Guardrail_Violation is record
+      Has_Guardrail_Violation : Boolean := False;
+      Guardrail_Violation : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Violation_Source : UARP.Models.Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source;
+      Has_Event_Id : Boolean := False;
+      Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Run_Id : Boolean := False;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Type : Boolean := False;
+      Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Seq : Boolean := False;
+      Seq : UARP.Types.Integer_Value := 0;
+      Has_Payload : Boolean := False;
+      Payload : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Timestamp : Boolean := False;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Id : Boolean := False;
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Parent_Event_Id : Boolean := False;
+      Parent_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Stream_Type : Boolean := False;
+      Stream_Type : UARP.Models.Run_Stream_Event_Stream_Type;
+      Has_Chunk_Id : Boolean := False;
+      Chunk_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Chunk_Index : Boolean := False;
+      Chunk_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Guardrail_Violation) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Guardrail_Violation;
 
    --  `RunWorkspaceCommandRequest` model.
    type Run_Workspace_Command_Request is record
@@ -33533,6 +35386,118 @@ package UARP.Models is
 
    function To_JSON (Model : Session_Export) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Export;
+
+   --  `SessionStreamFrameV1Connected` model.
+   type Session_Stream_Frame_V1_Connected is record
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Connected_At : Boolean := False;
+      Connected_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Runs : Boolean := False;
+      Runs : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Connected) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Connected;
+
+   --  Values of `SessionStreamFrameV1ErrorCode`.
+   --  A value the API introduces later decodes as Session_Stream_Frame_V1_Error_Code_Unrecognized
+   --  with the original text kept in Raw.
+   type Session_Stream_Frame_V1_Error_Code_Kind is
+     (Session_Stream_Frame_V1_Error_Code_Session_Not_Found,
+   Session_Stream_Frame_V1_Error_Code_Stream_Error,
+   Session_Stream_Frame_V1_Error_Code_Unrecognized);
+
+   type Session_Stream_Frame_V1_Error_Code is record
+      Kind : Session_Stream_Frame_V1_Error_Code_Kind := Session_Stream_Frame_V1_Error_Code_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Session_Stream_Frame_V1_Error_Code (Value : String) return Session_Stream_Frame_V1_Error_Code;
+   function To_Session_Stream_Frame_V1_Error_Code (Kind : Session_Stream_Frame_V1_Error_Code_Kind) return Session_Stream_Frame_V1_Error_Code;
+   function Image (Model : Session_Stream_Frame_V1_Error_Code) return String;
+   function To_JSON (Model : Session_Stream_Frame_V1_Error_Code) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Error_Code;
+
+   --  `SessionStreamFrameV1Error` model.
+   type Session_Stream_Frame_V1_Error is record
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Code : UARP.Models.Session_Stream_Frame_V1_Error_Code;
+   end record;
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Error) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Error;
+
+   --  `SessionStreamFrameV1RunAdded` model.
+   type Session_Stream_Frame_V1_Run_Added is record
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Run_Added) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Run_Added;
+
+   --  `SessionStreamFrameV1RunDoneMetrics` model.
+   type Session_Stream_Frame_V1_Run_Done_Metrics is record
+      Has_Duration_Ms : Boolean := False;
+      Duration_Ms : UARP.Types.Integer_Value := 0;
+      Has_Steps_Count : Boolean := False;
+      Steps_Count : UARP.Types.Integer_Value := 0;
+      Has_Input_Tokens : Boolean := False;
+      Input_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Output_Tokens : Boolean := False;
+      Output_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Thinking_Tokens : Boolean := False;
+      Thinking_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Cached_Tokens : Boolean := False;
+      Cached_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Tool_Calls_Count : Boolean := False;
+      Tool_Calls_Count : UARP.Types.Integer_Value := 0;
+      Has_LLM_Calls_Count : Boolean := False;
+      LLM_Calls_Count : UARP.Types.Integer_Value := 0;
+      Has_Guardrail_Checks : Boolean := False;
+      Guardrail_Checks : UARP.Types.Integer_Value := 0;
+      Has_Guardrail_Violations : Boolean := False;
+      Guardrail_Violations : UARP.Types.Integer_Value := 0;
+      Has_Memory_Retrievals : Boolean := False;
+      Memory_Retrievals : UARP.Types.Integer_Value := 0;
+      Has_Memory_Extractions : Boolean := False;
+      Memory_Extractions : UARP.Types.Integer_Value := 0;
+      Has_Total_Cost_Usd : Boolean := False;
+      Total_Cost_Usd : UARP.Types.Float_Value := 0.0;
+      Has_Fallback_Used : Boolean := False;
+      Fallback_Used : Standard.Boolean := False;
+      Has_Pricing_Confidence : Boolean := False;
+      Pricing_Confidence : UARP.Models.Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence;
+      Has_Cost_Attribution : Boolean := False;
+      Cost_Attribution : UARP.Models.Run_Metrics_Cost_Attribution;
+      Has_Files_Modified : Boolean := False;
+      Files_Modified : UARP.Types.Integer_Value := 0;
+      Has_Commands_Executed : Boolean := False;
+      Commands_Executed : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Run_Done_Metrics) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Run_Done_Metrics;
+
+   --  `SessionStreamFrameV1RunDone` model.
+   type Session_Stream_Frame_V1_Run_Done is record
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Metrics : Boolean := False;
+      Metrics : UARP.Models.Session_Stream_Frame_V1_Run_Done_Metrics;
+      Has_Cost_Usd : Boolean := False;
+      Cost_Usd : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Run_Done) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Run_Done;
+
+   --  `SessionStreamFrameV1SessionClosed` model.
+   type Session_Stream_Frame_V1_Session_Closed is record
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Session_Closed) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Session_Closed;
 
    --  `SetAdminIntegrationOAuthProviderRequest` model.
    type Set_Admin_Integration_O_Auth_Provider_Request is record

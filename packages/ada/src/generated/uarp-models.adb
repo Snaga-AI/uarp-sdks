@@ -52454,7 +52454,7 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Health_Check_V1alias_Response) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Health_Check_V1_Alias_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       if Model.Has_Status then
@@ -52497,8 +52497,8 @@ package body UARP.Models is
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Health_Check_V1alias_Response is
-      Result : Health_Check_V1alias_Response;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Health_Check_V1_Alias_Response is
+      Result : Health_Check_V1_Alias_Response;
    begin
       if JS.Present (Node, "status") then
          Result.Has_Status := True;
@@ -82193,6 +82193,4242 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Run_Event_V1_Run_Started_Type (Value : String) return Run_Event_V1_Run_Started_Type is
+   begin
+      if Value = "run.started" then
+         return (Kind => Run_Event_V1_Run_Started_Type_Run_Started, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Started_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Started_Type;
+
+   function To_Run_Event_V1_Run_Started_Type (Kind : Run_Event_V1_Run_Started_Type_Kind) return Run_Event_V1_Run_Started_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Started_Type_Run_Started =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.started"));
+         when Run_Event_V1_Run_Started_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Started_Type;
+
+   function Image (Model : Run_Event_V1_Run_Started_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Started_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Started_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Started_Type is
+      (To_Run_Event_V1_Run_Started_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Run_Event_V1_Run_Started_Payload_Execution_Mode (Value : String) return Run_Event_V1_Run_Started_Payload_Execution_Mode is
+   begin
+      if Value = "bridge" then
+         return (Kind => Run_Event_V1_Run_Started_Payload_Execution_Mode_Bridge, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Started_Payload_Execution_Mode_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Started_Payload_Execution_Mode;
+
+   function To_Run_Event_V1_Run_Started_Payload_Execution_Mode (Kind : Run_Event_V1_Run_Started_Payload_Execution_Mode_Kind) return Run_Event_V1_Run_Started_Payload_Execution_Mode is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Started_Payload_Execution_Mode_Bridge =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("bridge"));
+         when Run_Event_V1_Run_Started_Payload_Execution_Mode_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Started_Payload_Execution_Mode;
+
+   function Image (Model : Run_Event_V1_Run_Started_Payload_Execution_Mode) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Started_Payload_Execution_Mode (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Started_Payload_Execution_Mode) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Started_Payload_Execution_Mode is
+      (To_Run_Event_V1_Run_Started_Payload_Execution_Mode (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Run_Event_V1_Run_Started_Payload_Resumed_From (Value : String) return Run_Event_V1_Run_Started_Payload_Resumed_From is
+   begin
+      if Value = "awaiting_approval" then
+         return (Kind => Run_Event_V1_Run_Started_Payload_Resumed_From_Awaiting_Approval, Raw => UARP.Types."+" (Value));
+      elsif Value = "paused" then
+         return (Kind => Run_Event_V1_Run_Started_Payload_Resumed_From_Paused, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Started_Payload_Resumed_From_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Started_Payload_Resumed_From;
+
+   function To_Run_Event_V1_Run_Started_Payload_Resumed_From (Kind : Run_Event_V1_Run_Started_Payload_Resumed_From_Kind) return Run_Event_V1_Run_Started_Payload_Resumed_From is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Started_Payload_Resumed_From_Awaiting_Approval =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("awaiting_approval"));
+         when Run_Event_V1_Run_Started_Payload_Resumed_From_Paused =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("paused"));
+         when Run_Event_V1_Run_Started_Payload_Resumed_From_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Started_Payload_Resumed_From;
+
+   function Image (Model : Run_Event_V1_Run_Started_Payload_Resumed_From) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Started_Payload_Resumed_From (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Started_Payload_Resumed_From) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Started_Payload_Resumed_From is
+      (To_Run_Event_V1_Run_Started_Payload_Resumed_From (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Run_Started_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Agent_Id then
+         JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
+      end if;
+      if Model.Has_Execution_Mode then
+         JS.Set (Result, "execution_mode", To_JSON (Model.Execution_Mode));
+      end if;
+      if Model.Has_Source then
+         JS.Set (Result, "source", JS.JSON.Create (Model.Source));
+      end if;
+      if Model.Has_Priority then
+         JS.Set (Result, "priority", JS.JSON.Create (Model.Priority));
+      end if;
+      if Model.Has_Resumed_From then
+         JS.Set (Result, "resumed_from", To_JSON (Model.Resumed_From));
+      end if;
+      if Model.Has_Approved then
+         JS.Set (Result, "approved", JS.JSON.Create (Model.Approved));
+      end if;
+      if Model.Has_Revised then
+         JS.Set (Result, "revised", JS.JSON.Create (Model.Revised));
+      end if;
+      if Model.Has_Input then
+         JS.Set (Result, "input", Model.Input);
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Started_Payload is
+      Result : Run_Event_V1_Run_Started_Payload;
+   begin
+      if JS.Present (Node, "agent_id") then
+         Result.Has_Agent_Id := True;
+         Result.Agent_Id := JS.As_Text (JS.Get_Value (Node, "agent_id"));
+      end if;
+      if JS.Present (Node, "execution_mode") then
+         Result.Has_Execution_Mode := True;
+         Result.Execution_Mode := From_JSON (JS.Get_Value (Node, "execution_mode"));
+      end if;
+      if JS.Present (Node, "source") then
+         Result.Has_Source := True;
+         Result.Source := JS.As_Text (JS.Get_Value (Node, "source"));
+      end if;
+      if JS.Present (Node, "priority") then
+         Result.Has_Priority := True;
+         Result.Priority := JS.As_Text (JS.Get_Value (Node, "priority"));
+      end if;
+      if JS.Present (Node, "resumed_from") then
+         Result.Has_Resumed_From := True;
+         Result.Resumed_From := From_JSON (JS.Get_Value (Node, "resumed_from"));
+      end if;
+      if JS.Present (Node, "approved") then
+         Result.Has_Approved := True;
+         Result.Approved := JS.As_Boolean (JS.Get_Value (Node, "approved"));
+      end if;
+      if JS.Present (Node, "revised") then
+         Result.Has_Revised := True;
+         Result.Revised := JS.As_Boolean (JS.Get_Value (Node, "revised"));
+      end if;
+      if JS.Present (Node, "input") then
+         Result.Has_Input := True;
+         Result.Input := JS.Get_Value (Node, "input");
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Stream_Event_Stream_Type (Value : String) return Run_Stream_Event_Stream_Type is
+   begin
+      if Value = "lifecycle" then
+         return (Kind => Run_Stream_Event_Stream_Type_Lifecycle, Raw => UARP.Types."+" (Value));
+      elsif Value = "assistant" then
+         return (Kind => Run_Stream_Event_Stream_Type_Assistant, Raw => UARP.Types."+" (Value));
+      elsif Value = "tool" then
+         return (Kind => Run_Stream_Event_Stream_Type_Tool, Raw => UARP.Types."+" (Value));
+      elsif Value = "other" then
+         return (Kind => Run_Stream_Event_Stream_Type_Other, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Stream_Event_Stream_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Stream_Event_Stream_Type;
+
+   function To_Run_Stream_Event_Stream_Type (Kind : Run_Stream_Event_Stream_Type_Kind) return Run_Stream_Event_Stream_Type is
+   begin
+      case Kind is
+         when Run_Stream_Event_Stream_Type_Lifecycle =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("lifecycle"));
+         when Run_Stream_Event_Stream_Type_Assistant =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("assistant"));
+         when Run_Stream_Event_Stream_Type_Tool =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tool"));
+         when Run_Stream_Event_Stream_Type_Other =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("other"));
+         when Run_Stream_Event_Stream_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Stream_Event_Stream_Type;
+
+   function Image (Model : Run_Stream_Event_Stream_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Stream_Event_Stream_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Stream_Event_Stream_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Event_Stream_Type is
+      (To_Run_Stream_Event_Stream_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Run_Started) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Started is
+      Result : Run_Event_V1_Run_Started;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Run_Completed_Type (Value : String) return Run_Event_V1_Run_Completed_Type is
+   begin
+      if Value = "run.completed" then
+         return (Kind => Run_Event_V1_Run_Completed_Type_Run_Completed, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Completed_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Completed_Type;
+
+   function To_Run_Event_V1_Run_Completed_Type (Kind : Run_Event_V1_Run_Completed_Type_Kind) return Run_Event_V1_Run_Completed_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Completed_Type_Run_Completed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.completed"));
+         when Run_Event_V1_Run_Completed_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Completed_Type;
+
+   function Image (Model : Run_Event_V1_Run_Completed_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Completed_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Completed_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Completed_Type is
+      (To_Run_Event_V1_Run_Completed_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Run_Event_V1_Run_Completed_Payload_Status (Value : String) return Run_Event_V1_Run_Completed_Payload_Status is
+   begin
+      if Value = "completed" then
+         return (Kind => Run_Event_V1_Run_Completed_Payload_Status_Completed, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Completed_Payload_Status_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Completed_Payload_Status;
+
+   function To_Run_Event_V1_Run_Completed_Payload_Status (Kind : Run_Event_V1_Run_Completed_Payload_Status_Kind) return Run_Event_V1_Run_Completed_Payload_Status is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Completed_Payload_Status_Completed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("completed"));
+         when Run_Event_V1_Run_Completed_Payload_Status_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Completed_Payload_Status;
+
+   function Image (Model : Run_Event_V1_Run_Completed_Payload_Status) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Completed_Payload_Status (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Completed_Payload_Status) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Completed_Payload_Status is
+      (To_Run_Event_V1_Run_Completed_Payload_Status (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence (Value : String) return Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence is
+   begin
+      if Value = "known" then
+         return (Kind => Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Known, Raw => UARP.Types."+" (Value));
+      elsif Value = "inferred" then
+         return (Kind => Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Inferred, Raw => UARP.Types."+" (Value));
+      elsif Value = "fallback" then
+         return (Kind => Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Fallback, Raw => UARP.Types."+" (Value));
+      elsif Value = "unknown" then
+         return (Kind => Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Unknown, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence;
+
+   function To_Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence (Kind : Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Kind) return Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Known =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("known"));
+         when Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Inferred =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("inferred"));
+         when Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Fallback =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("fallback"));
+         when Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Unknown =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("unknown"));
+         when Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence;
+
+   function Image (Model : Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence is
+      (To_Run_Event_V1_Run_Completed_Payload_Metrics_Pricing_Confidence (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Run_Completed_Payload_Metrics) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Duration_Ms then
+         JS.Set (Result, "duration_ms", JS.JSON.Create (Model.Duration_Ms));
+      end if;
+      if Model.Has_Steps_Count then
+         JS.Set (Result, "steps_count", JS.JSON.Create (Model.Steps_Count));
+      end if;
+      if Model.Has_Input_Tokens then
+         JS.Set (Result, "input_tokens", JS.JSON.Create (Model.Input_Tokens));
+      end if;
+      if Model.Has_Output_Tokens then
+         JS.Set (Result, "output_tokens", JS.JSON.Create (Model.Output_Tokens));
+      end if;
+      if Model.Has_Thinking_Tokens then
+         JS.Set (Result, "thinking_tokens", JS.JSON.Create (Model.Thinking_Tokens));
+      end if;
+      if Model.Has_Cached_Tokens then
+         JS.Set (Result, "cached_tokens", JS.JSON.Create (Model.Cached_Tokens));
+      end if;
+      if Model.Has_Tool_Calls_Count then
+         JS.Set (Result, "tool_calls_count", JS.JSON.Create (Model.Tool_Calls_Count));
+      end if;
+      if Model.Has_LLM_Calls_Count then
+         JS.Set (Result, "llm_calls_count", JS.JSON.Create (Model.LLM_Calls_Count));
+      end if;
+      if Model.Has_Guardrail_Checks then
+         JS.Set (Result, "guardrail_checks", JS.JSON.Create (Model.Guardrail_Checks));
+      end if;
+      if Model.Has_Guardrail_Violations then
+         JS.Set (Result, "guardrail_violations", JS.JSON.Create (Model.Guardrail_Violations));
+      end if;
+      if Model.Has_Memory_Retrievals then
+         JS.Set (Result, "memory_retrievals", JS.JSON.Create (Model.Memory_Retrievals));
+      end if;
+      if Model.Has_Memory_Extractions then
+         JS.Set (Result, "memory_extractions", JS.JSON.Create (Model.Memory_Extractions));
+      end if;
+      if Model.Has_Total_Cost_Usd then
+         JS.Set (Result, "total_cost_usd", JS.JSON.Create (Model.Total_Cost_Usd));
+      end if;
+      if Model.Has_Fallback_Used then
+         JS.Set (Result, "fallback_used", JS.JSON.Create (Model.Fallback_Used));
+      end if;
+      if Model.Has_Pricing_Confidence then
+         JS.Set (Result, "pricing_confidence", To_JSON (Model.Pricing_Confidence));
+      end if;
+      if Model.Has_Cost_Attribution then
+         JS.Set (Result, "cost_attribution", To_JSON (Model.Cost_Attribution));
+      end if;
+      if Model.Has_Files_Modified then
+         JS.Set (Result, "files_modified", JS.JSON.Create (Model.Files_Modified));
+      end if;
+      if Model.Has_Commands_Executed then
+         JS.Set (Result, "commands_executed", JS.JSON.Create (Model.Commands_Executed));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Completed_Payload_Metrics is
+      Result : Run_Event_V1_Run_Completed_Payload_Metrics;
+   begin
+      if JS.Present (Node, "duration_ms") then
+         Result.Has_Duration_Ms := True;
+         Result.Duration_Ms := JS.As_Integer (JS.Get_Value (Node, "duration_ms"));
+      end if;
+      if JS.Present (Node, "steps_count") then
+         Result.Has_Steps_Count := True;
+         Result.Steps_Count := JS.As_Integer (JS.Get_Value (Node, "steps_count"));
+      end if;
+      if JS.Present (Node, "input_tokens") then
+         Result.Has_Input_Tokens := True;
+         Result.Input_Tokens := JS.As_Integer (JS.Get_Value (Node, "input_tokens"));
+      end if;
+      if JS.Present (Node, "output_tokens") then
+         Result.Has_Output_Tokens := True;
+         Result.Output_Tokens := JS.As_Integer (JS.Get_Value (Node, "output_tokens"));
+      end if;
+      if JS.Present (Node, "thinking_tokens") then
+         Result.Has_Thinking_Tokens := True;
+         Result.Thinking_Tokens := JS.As_Integer (JS.Get_Value (Node, "thinking_tokens"));
+      end if;
+      if JS.Present (Node, "cached_tokens") then
+         Result.Has_Cached_Tokens := True;
+         Result.Cached_Tokens := JS.As_Integer (JS.Get_Value (Node, "cached_tokens"));
+      end if;
+      if JS.Present (Node, "tool_calls_count") then
+         Result.Has_Tool_Calls_Count := True;
+         Result.Tool_Calls_Count := JS.As_Integer (JS.Get_Value (Node, "tool_calls_count"));
+      end if;
+      if JS.Present (Node, "llm_calls_count") then
+         Result.Has_LLM_Calls_Count := True;
+         Result.LLM_Calls_Count := JS.As_Integer (JS.Get_Value (Node, "llm_calls_count"));
+      end if;
+      if JS.Present (Node, "guardrail_checks") then
+         Result.Has_Guardrail_Checks := True;
+         Result.Guardrail_Checks := JS.As_Integer (JS.Get_Value (Node, "guardrail_checks"));
+      end if;
+      if JS.Present (Node, "guardrail_violations") then
+         Result.Has_Guardrail_Violations := True;
+         Result.Guardrail_Violations := JS.As_Integer (JS.Get_Value (Node, "guardrail_violations"));
+      end if;
+      if JS.Present (Node, "memory_retrievals") then
+         Result.Has_Memory_Retrievals := True;
+         Result.Memory_Retrievals := JS.As_Integer (JS.Get_Value (Node, "memory_retrievals"));
+      end if;
+      if JS.Present (Node, "memory_extractions") then
+         Result.Has_Memory_Extractions := True;
+         Result.Memory_Extractions := JS.As_Integer (JS.Get_Value (Node, "memory_extractions"));
+      end if;
+      if JS.Present (Node, "total_cost_usd") then
+         Result.Has_Total_Cost_Usd := True;
+         Result.Total_Cost_Usd := JS.As_Float (JS.Get_Value (Node, "total_cost_usd"));
+      end if;
+      if JS.Present (Node, "fallback_used") then
+         Result.Has_Fallback_Used := True;
+         Result.Fallback_Used := JS.As_Boolean (JS.Get_Value (Node, "fallback_used"));
+      end if;
+      if JS.Present (Node, "pricing_confidence") then
+         Result.Has_Pricing_Confidence := True;
+         Result.Pricing_Confidence := From_JSON (JS.Get_Value (Node, "pricing_confidence"));
+      end if;
+      if JS.Present (Node, "cost_attribution") then
+         Result.Has_Cost_Attribution := True;
+         Result.Cost_Attribution := From_JSON (JS.Get_Value (Node, "cost_attribution"));
+      end if;
+      if JS.Present (Node, "files_modified") then
+         Result.Has_Files_Modified := True;
+         Result.Files_Modified := JS.As_Integer (JS.Get_Value (Node, "files_modified"));
+      end if;
+      if JS.Present (Node, "commands_executed") then
+         Result.Has_Commands_Executed := True;
+         Result.Commands_Executed := JS.As_Integer (JS.Get_Value (Node, "commands_executed"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Run_Completed_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "status", To_JSON (Model.Status));
+      JS.Set (Result, "output", Model.Output);
+      if Model.Has_Metrics then
+         JS.Set (Result, "metrics", To_JSON (Model.Metrics));
+      end if;
+      if Model.Has_Cost_Usd then
+         JS.Set (Result, "cost_usd", JS.JSON.Create (Model.Cost_Usd));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Completed_Payload is
+      Result : Run_Event_V1_Run_Completed_Payload;
+   begin
+      if JS.Present (Node, "status") then
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "output") then
+         Result.Output := JS.Get_Value (Node, "output");
+      end if;
+      if JS.Present (Node, "metrics") then
+         Result.Has_Metrics := True;
+         Result.Metrics := From_JSON (JS.Get_Value (Node, "metrics"));
+      end if;
+      if JS.Present (Node, "cost_usd") then
+         Result.Has_Cost_Usd := True;
+         Result.Cost_Usd := JS.As_Float (JS.Get_Value (Node, "cost_usd"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Run_Completed) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Completed is
+      Result : Run_Event_V1_Run_Completed;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Run_Failed_Type (Value : String) return Run_Event_V1_Run_Failed_Type is
+   begin
+      if Value = "run.failed" then
+         return (Kind => Run_Event_V1_Run_Failed_Type_Run_Failed, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Failed_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Failed_Type;
+
+   function To_Run_Event_V1_Run_Failed_Type (Kind : Run_Event_V1_Run_Failed_Type_Kind) return Run_Event_V1_Run_Failed_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Failed_Type_Run_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.failed"));
+         when Run_Event_V1_Run_Failed_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Failed_Type;
+
+   function Image (Model : Run_Event_V1_Run_Failed_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Failed_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Failed_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Failed_Type is
+      (To_Run_Event_V1_Run_Failed_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Run_Failed_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "error", JS.JSON.Create (Model.Error));
+      if Model.Has_Error_Code then
+         JS.Set (Result, "error_code", JS.JSON.Create (Model.Error_Code));
+      end if;
+      if Model.Has_Error_Details then
+         JS.Set (Result, "error_details", Model.Error_Details);
+      end if;
+      if Model.Has_Message then
+         JS.Set (Result, "message", JS.JSON.Create (Model.Message));
+      end if;
+      if Model.Has_Reason then
+         JS.Set (Result, "reason", JS.JSON.Create (Model.Reason));
+      end if;
+      if Model.Has_End_Reason then
+         JS.Set (Result, "end_reason", JS.JSON.Create (Model.End_Reason));
+      end if;
+      if Model.Has_Source then
+         JS.Set (Result, "source", JS.JSON.Create (Model.Source));
+      end if;
+      if Model.Has_Rejected then
+         JS.Set (Result, "rejected", JS.JSON.Create (Model.Rejected));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Failed_Payload is
+      Result : Run_Event_V1_Run_Failed_Payload;
+   begin
+      if JS.Present (Node, "error") then
+         Result.Error := JS.As_Text (JS.Get_Value (Node, "error"));
+      end if;
+      if JS.Present (Node, "error_code") then
+         Result.Has_Error_Code := True;
+         Result.Error_Code := JS.As_Text (JS.Get_Value (Node, "error_code"));
+      end if;
+      if JS.Present (Node, "error_details") then
+         Result.Has_Error_Details := True;
+         Result.Error_Details := JS.Get_Value (Node, "error_details");
+      end if;
+      if JS.Present (Node, "message") then
+         Result.Has_Message := True;
+         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
+      end if;
+      if JS.Present (Node, "reason") then
+         Result.Has_Reason := True;
+         Result.Reason := JS.As_Text (JS.Get_Value (Node, "reason"));
+      end if;
+      if JS.Present (Node, "end_reason") then
+         Result.Has_End_Reason := True;
+         Result.End_Reason := JS.As_Text (JS.Get_Value (Node, "end_reason"));
+      end if;
+      if JS.Present (Node, "source") then
+         Result.Has_Source := True;
+         Result.Source := JS.As_Text (JS.Get_Value (Node, "source"));
+      end if;
+      if JS.Present (Node, "rejected") then
+         Result.Has_Rejected := True;
+         Result.Rejected := JS.As_Boolean (JS.Get_Value (Node, "rejected"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Run_Failed) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Failed is
+      Result : Run_Event_V1_Run_Failed;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Run_Cancelled_Type (Value : String) return Run_Event_V1_Run_Cancelled_Type is
+   begin
+      if Value = "run.cancelled" then
+         return (Kind => Run_Event_V1_Run_Cancelled_Type_Run_Cancelled, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Cancelled_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Cancelled_Type;
+
+   function To_Run_Event_V1_Run_Cancelled_Type (Kind : Run_Event_V1_Run_Cancelled_Type_Kind) return Run_Event_V1_Run_Cancelled_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Cancelled_Type_Run_Cancelled =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.cancelled"));
+         when Run_Event_V1_Run_Cancelled_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Cancelled_Type;
+
+   function Image (Model : Run_Event_V1_Run_Cancelled_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Cancelled_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Cancelled_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Cancelled_Type is
+      (To_Run_Event_V1_Run_Cancelled_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Run_Cancelled_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Error then
+         JS.Set (Result, "error", JS.JSON.Create (Model.Error));
+      end if;
+      if Model.Has_Error_Code then
+         JS.Set (Result, "error_code", JS.JSON.Create (Model.Error_Code));
+      end if;
+      if Model.Has_Error_Details then
+         JS.Set (Result, "error_details", Model.Error_Details);
+      end if;
+      if Model.Has_Message then
+         JS.Set (Result, "message", JS.JSON.Create (Model.Message));
+      end if;
+      if Model.Has_Reason then
+         JS.Set (Result, "reason", JS.JSON.Create (Model.Reason));
+      end if;
+      if Model.Has_End_Reason then
+         JS.Set (Result, "end_reason", JS.JSON.Create (Model.End_Reason));
+      end if;
+      if Model.Has_Source then
+         JS.Set (Result, "source", JS.JSON.Create (Model.Source));
+      end if;
+      if Model.Has_Rejected then
+         JS.Set (Result, "rejected", JS.JSON.Create (Model.Rejected));
+      end if;
+      if Model.Has_Previous_Status then
+         JS.Set (Result, "previous_status", JS.JSON.Create (Model.Previous_Status));
+      end if;
+      if Model.Has_Team_Run_Id then
+         JS.Set (Result, "team_run_id", JS.JSON.Create (Model.Team_Run_Id));
+      end if;
+      if Model.Has_Was then
+         JS.Set (Result, "was", JS.JSON.Create (Model.Was));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Cancelled_Payload is
+      Result : Run_Event_V1_Run_Cancelled_Payload;
+   begin
+      if JS.Present (Node, "error") then
+         Result.Has_Error := True;
+         Result.Error := JS.As_Text (JS.Get_Value (Node, "error"));
+      end if;
+      if JS.Present (Node, "error_code") then
+         Result.Has_Error_Code := True;
+         Result.Error_Code := JS.As_Text (JS.Get_Value (Node, "error_code"));
+      end if;
+      if JS.Present (Node, "error_details") then
+         Result.Has_Error_Details := True;
+         Result.Error_Details := JS.Get_Value (Node, "error_details");
+      end if;
+      if JS.Present (Node, "message") then
+         Result.Has_Message := True;
+         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
+      end if;
+      if JS.Present (Node, "reason") then
+         Result.Has_Reason := True;
+         Result.Reason := JS.As_Text (JS.Get_Value (Node, "reason"));
+      end if;
+      if JS.Present (Node, "end_reason") then
+         Result.Has_End_Reason := True;
+         Result.End_Reason := JS.As_Text (JS.Get_Value (Node, "end_reason"));
+      end if;
+      if JS.Present (Node, "source") then
+         Result.Has_Source := True;
+         Result.Source := JS.As_Text (JS.Get_Value (Node, "source"));
+      end if;
+      if JS.Present (Node, "rejected") then
+         Result.Has_Rejected := True;
+         Result.Rejected := JS.As_Boolean (JS.Get_Value (Node, "rejected"));
+      end if;
+      if JS.Present (Node, "previous_status") then
+         Result.Has_Previous_Status := True;
+         Result.Previous_Status := JS.As_Text (JS.Get_Value (Node, "previous_status"));
+      end if;
+      if JS.Present (Node, "team_run_id") then
+         Result.Has_Team_Run_Id := True;
+         Result.Team_Run_Id := JS.As_Text (JS.Get_Value (Node, "team_run_id"));
+      end if;
+      if JS.Present (Node, "was") then
+         Result.Has_Was := True;
+         Result.Was := JS.As_Text (JS.Get_Value (Node, "was"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Run_Cancelled) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Cancelled is
+      Result : Run_Event_V1_Run_Cancelled;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Run_Guardrail_Blocked_Type (Value : String) return Run_Event_V1_Run_Guardrail_Blocked_Type is
+   begin
+      if Value = "run.guardrail_blocked" then
+         return (Kind => Run_Event_V1_Run_Guardrail_Blocked_Type_Run_Guardrail_Blocked, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Guardrail_Blocked_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Guardrail_Blocked_Type;
+
+   function To_Run_Event_V1_Run_Guardrail_Blocked_Type (Kind : Run_Event_V1_Run_Guardrail_Blocked_Type_Kind) return Run_Event_V1_Run_Guardrail_Blocked_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Guardrail_Blocked_Type_Run_Guardrail_Blocked =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.guardrail_blocked"));
+         when Run_Event_V1_Run_Guardrail_Blocked_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Guardrail_Blocked_Type;
+
+   function Image (Model : Run_Event_V1_Run_Guardrail_Blocked_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Guardrail_Blocked_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Guardrail_Blocked_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Guardrail_Blocked_Type is
+      (To_Run_Event_V1_Run_Guardrail_Blocked_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Run_Guardrail_Blocked_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "error", JS.JSON.Create (Model.Error));
+      if Model.Has_Error_Code then
+         JS.Set (Result, "error_code", JS.JSON.Create (Model.Error_Code));
+      end if;
+      if Model.Has_Error_Details then
+         JS.Set (Result, "error_details", Model.Error_Details);
+      end if;
+      if Model.Has_Message then
+         JS.Set (Result, "message", JS.JSON.Create (Model.Message));
+      end if;
+      if Model.Has_Reason then
+         JS.Set (Result, "reason", JS.JSON.Create (Model.Reason));
+      end if;
+      if Model.Has_End_Reason then
+         JS.Set (Result, "end_reason", JS.JSON.Create (Model.End_Reason));
+      end if;
+      if Model.Has_Source then
+         JS.Set (Result, "source", JS.JSON.Create (Model.Source));
+      end if;
+      if Model.Has_Rejected then
+         JS.Set (Result, "rejected", JS.JSON.Create (Model.Rejected));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Guardrail_Blocked_Payload is
+      Result : Run_Event_V1_Run_Guardrail_Blocked_Payload;
+   begin
+      if JS.Present (Node, "error") then
+         Result.Error := JS.As_Text (JS.Get_Value (Node, "error"));
+      end if;
+      if JS.Present (Node, "error_code") then
+         Result.Has_Error_Code := True;
+         Result.Error_Code := JS.As_Text (JS.Get_Value (Node, "error_code"));
+      end if;
+      if JS.Present (Node, "error_details") then
+         Result.Has_Error_Details := True;
+         Result.Error_Details := JS.Get_Value (Node, "error_details");
+      end if;
+      if JS.Present (Node, "message") then
+         Result.Has_Message := True;
+         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
+      end if;
+      if JS.Present (Node, "reason") then
+         Result.Has_Reason := True;
+         Result.Reason := JS.As_Text (JS.Get_Value (Node, "reason"));
+      end if;
+      if JS.Present (Node, "end_reason") then
+         Result.Has_End_Reason := True;
+         Result.End_Reason := JS.As_Text (JS.Get_Value (Node, "end_reason"));
+      end if;
+      if JS.Present (Node, "source") then
+         Result.Has_Source := True;
+         Result.Source := JS.As_Text (JS.Get_Value (Node, "source"));
+      end if;
+      if JS.Present (Node, "rejected") then
+         Result.Has_Rejected := True;
+         Result.Rejected := JS.As_Boolean (JS.Get_Value (Node, "rejected"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Run_Guardrail_Blocked) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Guardrail_Blocked is
+      Result : Run_Event_V1_Run_Guardrail_Blocked;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Run_Paused_Type (Value : String) return Run_Event_V1_Run_Paused_Type is
+   begin
+      if Value = "run.paused" then
+         return (Kind => Run_Event_V1_Run_Paused_Type_Run_Paused, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Paused_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Paused_Type;
+
+   function To_Run_Event_V1_Run_Paused_Type (Kind : Run_Event_V1_Run_Paused_Type_Kind) return Run_Event_V1_Run_Paused_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Paused_Type_Run_Paused =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.paused"));
+         when Run_Event_V1_Run_Paused_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Paused_Type;
+
+   function Image (Model : Run_Event_V1_Run_Paused_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Paused_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Paused_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Paused_Type is
+      (To_Run_Event_V1_Run_Paused_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Run_Paused_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "reason", JS.JSON.Create (Model.Reason));
+      if Model.Has_Step then
+         JS.Set (Result, "step", JS.JSON.Create (Model.Step));
+      end if;
+      if Model.Has_Resumable then
+         JS.Set (Result, "resumable", JS.JSON.Create (Model.Resumable));
+      end if;
+      if Model.Has_Held_Output then
+         JS.Set (Result, "held_output", JS.JSON.Create (Model.Held_Output));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Paused_Payload is
+      Result : Run_Event_V1_Run_Paused_Payload;
+   begin
+      if JS.Present (Node, "reason") then
+         Result.Reason := JS.As_Text (JS.Get_Value (Node, "reason"));
+      end if;
+      if JS.Present (Node, "step") then
+         Result.Has_Step := True;
+         Result.Step := JS.As_Integer (JS.Get_Value (Node, "step"));
+      end if;
+      if JS.Present (Node, "resumable") then
+         Result.Has_Resumable := True;
+         Result.Resumable := JS.As_Boolean (JS.Get_Value (Node, "resumable"));
+      end if;
+      if JS.Present (Node, "held_output") then
+         Result.Has_Held_Output := True;
+         Result.Held_Output := JS.As_Boolean (JS.Get_Value (Node, "held_output"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Run_Paused) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Paused is
+      Result : Run_Event_V1_Run_Paused;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Run_Awaiting_Approval_Type (Value : String) return Run_Event_V1_Run_Awaiting_Approval_Type is
+   begin
+      if Value = "run.awaiting_approval" then
+         return (Kind => Run_Event_V1_Run_Awaiting_Approval_Type_Run_Awaiting_Approval, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Awaiting_Approval_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Awaiting_Approval_Type;
+
+   function To_Run_Event_V1_Run_Awaiting_Approval_Type (Kind : Run_Event_V1_Run_Awaiting_Approval_Type_Kind) return Run_Event_V1_Run_Awaiting_Approval_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Awaiting_Approval_Type_Run_Awaiting_Approval =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.awaiting_approval"));
+         when Run_Event_V1_Run_Awaiting_Approval_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Awaiting_Approval_Type;
+
+   function Image (Model : Run_Event_V1_Run_Awaiting_Approval_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Awaiting_Approval_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Approval_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Approval_Type is
+      (To_Run_Event_V1_Run_Awaiting_Approval_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Approval_Payload_Tool_Call) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "id", JS.JSON.Create (Model.Id));
+      JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      JS.Set (Result, "args", Model.Args);
+      if Model.Has_Options then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Options loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "options", Items);
+         end;
+      end if;
+      if Model.Has_Kind then
+         JS.Set (Result, "kind", JS.JSON.Create (Model.Kind));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Approval_Payload_Tool_Call is
+      Result : Run_Event_V1_Run_Awaiting_Approval_Payload_Tool_Call;
+   begin
+      if JS.Present (Node, "id") then
+         Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
+      end if;
+      if JS.Present (Node, "name") then
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "args") then
+         Result.Args := JS.Get_Value (Node, "args");
+      end if;
+      if JS.Present (Node, "options") then
+         Result.Has_Options := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "options");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Options.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "kind") then
+         Result.Has_Kind := True;
+         Result.Kind := JS.As_Text (JS.Get_Value (Node, "kind"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Approval_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Tool_Calls loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "tool_calls", Items);
+      end;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Approval_Payload is
+      Result : Run_Event_V1_Run_Awaiting_Approval_Payload;
+   begin
+      if JS.Present (Node, "tool_calls") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "tool_calls");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Tool_Calls.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Approval) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Approval is
+      Result : Run_Event_V1_Run_Awaiting_Approval;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Run_Awaiting_Input_Type (Value : String) return Run_Event_V1_Run_Awaiting_Input_Type is
+   begin
+      if Value = "run.awaiting_input" then
+         return (Kind => Run_Event_V1_Run_Awaiting_Input_Type_Run_Awaiting_Input, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Awaiting_Input_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Awaiting_Input_Type;
+
+   function To_Run_Event_V1_Run_Awaiting_Input_Type (Kind : Run_Event_V1_Run_Awaiting_Input_Type_Kind) return Run_Event_V1_Run_Awaiting_Input_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Awaiting_Input_Type_Run_Awaiting_Input =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.awaiting_input"));
+         when Run_Event_V1_Run_Awaiting_Input_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Awaiting_Input_Type;
+
+   function Image (Model : Run_Event_V1_Run_Awaiting_Input_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Awaiting_Input_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Input_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Input_Type is
+      (To_Run_Event_V1_Run_Awaiting_Input_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Input_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "tool_call_id", JS.JSON.Create (Model.Tool_Call_Id));
+      if Model.Has_Question then
+         JS.Set (Result, "question", JS.JSON.Create (Model.Question));
+      end if;
+      if Model.Has_Options then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Options loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "options", Items);
+         end;
+      end if;
+      if Model.Has_Context then
+         JS.Set (Result, "context", JS.JSON.Create (Model.Context));
+      end if;
+      if Model.Has_Tool_Name then
+         JS.Set (Result, "tool_name", JS.JSON.Create (Model.Tool_Name));
+      end if;
+      if Model.Has_Arguments then
+         JS.Set (Result, "arguments", Model.Arguments);
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Input_Payload is
+      Result : Run_Event_V1_Run_Awaiting_Input_Payload;
+   begin
+      if JS.Present (Node, "tool_call_id") then
+         Result.Tool_Call_Id := JS.As_Text (JS.Get_Value (Node, "tool_call_id"));
+      end if;
+      if JS.Present (Node, "question") then
+         Result.Has_Question := True;
+         Result.Question := JS.As_Text (JS.Get_Value (Node, "question"));
+      end if;
+      if JS.Present (Node, "options") then
+         Result.Has_Options := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "options");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Options.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "context") then
+         Result.Has_Context := True;
+         Result.Context := JS.As_Text (JS.Get_Value (Node, "context"));
+      end if;
+      if JS.Present (Node, "tool_name") then
+         Result.Has_Tool_Name := True;
+         Result.Tool_Name := JS.As_Text (JS.Get_Value (Node, "tool_name"));
+      end if;
+      if JS.Present (Node, "arguments") then
+         Result.Has_Arguments := True;
+         Result.Arguments := JS.Get_Value (Node, "arguments");
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Run_Awaiting_Input) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Awaiting_Input is
+      Result : Run_Event_V1_Run_Awaiting_Input;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Run_Input_Received_Type (Value : String) return Run_Event_V1_Run_Input_Received_Type is
+   begin
+      if Value = "run.input_received" then
+         return (Kind => Run_Event_V1_Run_Input_Received_Type_Run_Input_Received, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Input_Received_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Input_Received_Type;
+
+   function To_Run_Event_V1_Run_Input_Received_Type (Kind : Run_Event_V1_Run_Input_Received_Type_Kind) return Run_Event_V1_Run_Input_Received_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Input_Received_Type_Run_Input_Received =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.input_received"));
+         when Run_Event_V1_Run_Input_Received_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Input_Received_Type;
+
+   function Image (Model : Run_Event_V1_Run_Input_Received_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Input_Received_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Input_Received_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Input_Received_Type is
+      (To_Run_Event_V1_Run_Input_Received_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Run_Input_Received_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "response_length", JS.JSON.Create (Model.Response_Length));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Input_Received_Payload is
+      Result : Run_Event_V1_Run_Input_Received_Payload;
+   begin
+      if JS.Present (Node, "response_length") then
+         Result.Response_Length := JS.As_Integer (JS.Get_Value (Node, "response_length"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Run_Input_Received) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Input_Received is
+      Result : Run_Event_V1_Run_Input_Received;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_LLM_Chunk_Type (Value : String) return Run_Event_V1_LLM_Chunk_Type is
+   begin
+      if Value = "llm.chunk" then
+         return (Kind => Run_Event_V1_LLM_Chunk_Type_LLM_Chunk, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_LLM_Chunk_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_LLM_Chunk_Type;
+
+   function To_Run_Event_V1_LLM_Chunk_Type (Kind : Run_Event_V1_LLM_Chunk_Type_Kind) return Run_Event_V1_LLM_Chunk_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_LLM_Chunk_Type_LLM_Chunk =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("llm.chunk"));
+         when Run_Event_V1_LLM_Chunk_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_LLM_Chunk_Type;
+
+   function Image (Model : Run_Event_V1_LLM_Chunk_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_LLM_Chunk_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_LLM_Chunk_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Chunk_Type is
+      (To_Run_Event_V1_LLM_Chunk_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Run_Event_V1_LLM_Chunk_Payload_Chunk_Type (Value : String) return Run_Event_V1_LLM_Chunk_Payload_Chunk_Type is
+   begin
+      if Value = "content" then
+         return (Kind => Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Content, Raw => UARP.Types."+" (Value));
+      elsif Value = "thinking" then
+         return (Kind => Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Thinking, Raw => UARP.Types."+" (Value));
+      elsif Value = "tool_call" then
+         return (Kind => Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Tool_Call, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_LLM_Chunk_Payload_Chunk_Type;
+
+   function To_Run_Event_V1_LLM_Chunk_Payload_Chunk_Type (Kind : Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Kind) return Run_Event_V1_LLM_Chunk_Payload_Chunk_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Content =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("content"));
+         when Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Thinking =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("thinking"));
+         when Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Tool_Call =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tool_call"));
+         when Run_Event_V1_LLM_Chunk_Payload_Chunk_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_LLM_Chunk_Payload_Chunk_Type;
+
+   function Image (Model : Run_Event_V1_LLM_Chunk_Payload_Chunk_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_LLM_Chunk_Payload_Chunk_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_LLM_Chunk_Payload_Chunk_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Chunk_Payload_Chunk_Type is
+      (To_Run_Event_V1_LLM_Chunk_Payload_Chunk_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_LLM_Chunk_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "chunk_type", To_JSON (Model.Chunk_Type));
+      JS.Set (Result, "delta", JS.JSON.Create (Model.Delta_K));
+      if Model.Has_Index then
+         JS.Set (Result, "index", JS.JSON.Create (Model.Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Chunk_Payload is
+      Result : Run_Event_V1_LLM_Chunk_Payload;
+   begin
+      if JS.Present (Node, "chunk_type") then
+         Result.Chunk_Type := From_JSON (JS.Get_Value (Node, "chunk_type"));
+      end if;
+      if JS.Present (Node, "delta") then
+         Result.Delta_K := JS.As_Text (JS.Get_Value (Node, "delta"));
+      end if;
+      if JS.Present (Node, "index") then
+         Result.Has_Index := True;
+         Result.Index := JS.As_Integer (JS.Get_Value (Node, "index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_LLM_Chunk) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Chunk is
+      Result : Run_Event_V1_LLM_Chunk;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_LLM_Error_Type (Value : String) return Run_Event_V1_LLM_Error_Type is
+   begin
+      if Value = "llm.error" then
+         return (Kind => Run_Event_V1_LLM_Error_Type_LLM_Error, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_LLM_Error_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_LLM_Error_Type;
+
+   function To_Run_Event_V1_LLM_Error_Type (Kind : Run_Event_V1_LLM_Error_Type_Kind) return Run_Event_V1_LLM_Error_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_LLM_Error_Type_LLM_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("llm.error"));
+         when Run_Event_V1_LLM_Error_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_LLM_Error_Type;
+
+   function Image (Model : Run_Event_V1_LLM_Error_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_LLM_Error_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_LLM_Error_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Error_Type is
+      (To_Run_Event_V1_LLM_Error_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_LLM_Error_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "error", JS.JSON.Create (Model.Error));
+      if Model.Has_Chunks_Before_Error then
+         JS.Set (Result, "chunks_before_error", JS.JSON.Create (Model.Chunks_Before_Error));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Error_Payload is
+      Result : Run_Event_V1_LLM_Error_Payload;
+   begin
+      if JS.Present (Node, "error") then
+         Result.Error := JS.As_Text (JS.Get_Value (Node, "error"));
+      end if;
+      if JS.Present (Node, "chunks_before_error") then
+         Result.Has_Chunks_Before_Error := True;
+         Result.Chunks_Before_Error := JS.As_Integer (JS.Get_Value (Node, "chunks_before_error"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_LLM_Error) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_LLM_Error is
+      Result : Run_Event_V1_LLM_Error;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Tool_Call_Type (Value : String) return Run_Event_V1_Tool_Call_Type is
+   begin
+      if Value = "tool.call" then
+         return (Kind => Run_Event_V1_Tool_Call_Type_Tool_Call, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Tool_Call_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Tool_Call_Type;
+
+   function To_Run_Event_V1_Tool_Call_Type (Kind : Run_Event_V1_Tool_Call_Type_Kind) return Run_Event_V1_Tool_Call_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Tool_Call_Type_Tool_Call =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tool.call"));
+         when Run_Event_V1_Tool_Call_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Tool_Call_Type;
+
+   function Image (Model : Run_Event_V1_Tool_Call_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Tool_Call_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Tool_Call_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Call_Type is
+      (To_Run_Event_V1_Tool_Call_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Tool_Call_Payload_Tool_Call) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "id", JS.JSON.Create (Model.Id));
+      JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      JS.Set (Result, "arguments", Model.Arguments);
+      if Model.Has_Arguments_Preview then
+         JS.Set (Result, "arguments_preview", JS.JSON.Create (Model.Arguments_Preview));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Call_Payload_Tool_Call is
+      Result : Run_Event_V1_Tool_Call_Payload_Tool_Call;
+   begin
+      if JS.Present (Node, "id") then
+         Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
+      end if;
+      if JS.Present (Node, "name") then
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "arguments") then
+         Result.Arguments := JS.Get_Value (Node, "arguments");
+      end if;
+      if JS.Present (Node, "arguments_preview") then
+         Result.Has_Arguments_Preview := True;
+         Result.Arguments_Preview := JS.As_Text (JS.Get_Value (Node, "arguments_preview"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Call_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "tool_call", To_JSON (Model.Tool_Call));
+      if Model.Has_Builtin then
+         JS.Set (Result, "builtin", JS.JSON.Create (Model.Builtin));
+      end if;
+      if Model.Has_MCP_Server_Id then
+         JS.Set (Result, "mcp_server_id", JS.JSON.Create (Model.MCP_Server_Id));
+      end if;
+      if Model.Has_MCP_Session_Id then
+         JS.Set (Result, "mcp_session_id", JS.JSON.Create (Model.MCP_Session_Id));
+      end if;
+      if Model.Has_Transport_Type then
+         JS.Set (Result, "transport_type", JS.JSON.Create (Model.Transport_Type));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      if Model.Has_Event_Id then
+         JS.Set (Result, "_event_id", JS.JSON.Create (Model.Event_Id));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Call_Payload is
+      Result : Run_Event_V1_Tool_Call_Payload;
+   begin
+      if JS.Present (Node, "tool_call") then
+         Result.Tool_Call := From_JSON (JS.Get_Value (Node, "tool_call"));
+      end if;
+      if JS.Present (Node, "builtin") then
+         Result.Has_Builtin := True;
+         Result.Builtin := JS.As_Boolean (JS.Get_Value (Node, "builtin"));
+      end if;
+      if JS.Present (Node, "mcp_server_id") then
+         Result.Has_MCP_Server_Id := True;
+         Result.MCP_Server_Id := JS.As_Text (JS.Get_Value (Node, "mcp_server_id"));
+      end if;
+      if JS.Present (Node, "mcp_session_id") then
+         Result.Has_MCP_Session_Id := True;
+         Result.MCP_Session_Id := JS.As_Text (JS.Get_Value (Node, "mcp_session_id"));
+      end if;
+      if JS.Present (Node, "transport_type") then
+         Result.Has_Transport_Type := True;
+         Result.Transport_Type := JS.As_Text (JS.Get_Value (Node, "transport_type"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "_event_id") then
+         Result.Has_Event_Id := True;
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "_event_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Call) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Call is
+      Result : Run_Event_V1_Tool_Call;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Tool_Result_Type (Value : String) return Run_Event_V1_Tool_Result_Type is
+   begin
+      if Value = "tool.result" then
+         return (Kind => Run_Event_V1_Tool_Result_Type_Tool_Result, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Tool_Result_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Tool_Result_Type;
+
+   function To_Run_Event_V1_Tool_Result_Type (Kind : Run_Event_V1_Tool_Result_Type_Kind) return Run_Event_V1_Tool_Result_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Tool_Result_Type_Tool_Result =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tool.result"));
+         when Run_Event_V1_Tool_Result_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Tool_Result_Type;
+
+   function Image (Model : Run_Event_V1_Tool_Result_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Tool_Result_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Tool_Result_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Result_Type is
+      (To_Run_Event_V1_Tool_Result_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Tool_Result_Payload_Tool_Result) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "content", JS.JSON.Create (Model.Content));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Result_Payload_Tool_Result is
+      Result : Run_Event_V1_Tool_Result_Payload_Tool_Result;
+   begin
+      if JS.Present (Node, "content") then
+         Result.Content := JS.As_Text (JS.Get_Value (Node, "content"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Result_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Tool_Call_Id then
+         JS.Set (Result, "tool_call_id", JS.JSON.Create (Model.Tool_Call_Id));
+      end if;
+      JS.Set (Result, "tool_result", To_JSON (Model.Tool_Result));
+      if Model.Has_Latency_Ms then
+         JS.Set (Result, "latency_ms", JS.JSON.Create (Model.Latency_Ms));
+      end if;
+      if Model.Has_Builtin then
+         JS.Set (Result, "builtin", JS.JSON.Create (Model.Builtin));
+      end if;
+      if Model.Has_MCP_Server_Id then
+         JS.Set (Result, "mcp_server_id", JS.JSON.Create (Model.MCP_Server_Id));
+      end if;
+      if Model.Has_MCP_Session_Id then
+         JS.Set (Result, "mcp_session_id", JS.JSON.Create (Model.MCP_Session_Id));
+      end if;
+      if Model.Has_Transport_Type then
+         JS.Set (Result, "transport_type", JS.JSON.Create (Model.Transport_Type));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Result_Payload is
+      Result : Run_Event_V1_Tool_Result_Payload;
+   begin
+      if JS.Present (Node, "tool_call_id") then
+         Result.Has_Tool_Call_Id := True;
+         Result.Tool_Call_Id := JS.As_Text (JS.Get_Value (Node, "tool_call_id"));
+      end if;
+      if JS.Present (Node, "tool_result") then
+         Result.Tool_Result := From_JSON (JS.Get_Value (Node, "tool_result"));
+      end if;
+      if JS.Present (Node, "latency_ms") then
+         Result.Has_Latency_Ms := True;
+         Result.Latency_Ms := JS.As_Float (JS.Get_Value (Node, "latency_ms"));
+      end if;
+      if JS.Present (Node, "builtin") then
+         Result.Has_Builtin := True;
+         Result.Builtin := JS.As_Boolean (JS.Get_Value (Node, "builtin"));
+      end if;
+      if JS.Present (Node, "mcp_server_id") then
+         Result.Has_MCP_Server_Id := True;
+         Result.MCP_Server_Id := JS.As_Text (JS.Get_Value (Node, "mcp_server_id"));
+      end if;
+      if JS.Present (Node, "mcp_session_id") then
+         Result.Has_MCP_Session_Id := True;
+         Result.MCP_Session_Id := JS.As_Text (JS.Get_Value (Node, "mcp_session_id"));
+      end if;
+      if JS.Present (Node, "transport_type") then
+         Result.Has_Transport_Type := True;
+         Result.Transport_Type := JS.As_Text (JS.Get_Value (Node, "transport_type"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Result) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Result is
+      Result : Run_Event_V1_Tool_Result;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Tool_Error_Type (Value : String) return Run_Event_V1_Tool_Error_Type is
+   begin
+      if Value = "tool.error" then
+         return (Kind => Run_Event_V1_Tool_Error_Type_Tool_Error, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Tool_Error_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Tool_Error_Type;
+
+   function To_Run_Event_V1_Tool_Error_Type (Kind : Run_Event_V1_Tool_Error_Type_Kind) return Run_Event_V1_Tool_Error_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Tool_Error_Type_Tool_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tool.error"));
+         when Run_Event_V1_Tool_Error_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Tool_Error_Type;
+
+   function Image (Model : Run_Event_V1_Tool_Error_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Tool_Error_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Tool_Error_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Error_Type is
+      (To_Run_Event_V1_Tool_Error_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Tool_Error_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "error", JS.JSON.Create (Model.Error));
+      if Model.Has_Tool_Name then
+         JS.Set (Result, "tool_name", JS.JSON.Create (Model.Tool_Name));
+      end if;
+      if Model.Has_Tool_Call_Id then
+         JS.Set (Result, "tool_call_id", JS.JSON.Create (Model.Tool_Call_Id));
+      end if;
+      if Model.Has_Governance_Blocked then
+         JS.Set (Result, "governance_blocked", JS.JSON.Create (Model.Governance_Blocked));
+      end if;
+      if Model.Has_Parse_Error then
+         JS.Set (Result, "parse_error", JS.JSON.Create (Model.Parse_Error));
+      end if;
+      if Model.Has_Builtin then
+         JS.Set (Result, "builtin", JS.JSON.Create (Model.Builtin));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Error_Payload is
+      Result : Run_Event_V1_Tool_Error_Payload;
+   begin
+      if JS.Present (Node, "error") then
+         Result.Error := JS.As_Text (JS.Get_Value (Node, "error"));
+      end if;
+      if JS.Present (Node, "tool_name") then
+         Result.Has_Tool_Name := True;
+         Result.Tool_Name := JS.As_Text (JS.Get_Value (Node, "tool_name"));
+      end if;
+      if JS.Present (Node, "tool_call_id") then
+         Result.Has_Tool_Call_Id := True;
+         Result.Tool_Call_Id := JS.As_Text (JS.Get_Value (Node, "tool_call_id"));
+      end if;
+      if JS.Present (Node, "governance_blocked") then
+         Result.Has_Governance_Blocked := True;
+         Result.Governance_Blocked := JS.As_Boolean (JS.Get_Value (Node, "governance_blocked"));
+      end if;
+      if JS.Present (Node, "parse_error") then
+         Result.Has_Parse_Error := True;
+         Result.Parse_Error := JS.As_Boolean (JS.Get_Value (Node, "parse_error"));
+      end if;
+      if JS.Present (Node, "builtin") then
+         Result.Has_Builtin := True;
+         Result.Builtin := JS.As_Boolean (JS.Get_Value (Node, "builtin"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Tool_Error) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Tool_Error is
+      Result : Run_Event_V1_Tool_Error;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Run_Step_Started_Type (Value : String) return Run_Event_V1_Run_Step_Started_Type is
+   begin
+      if Value = "run.step_started" then
+         return (Kind => Run_Event_V1_Run_Step_Started_Type_Run_Step_Started, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Step_Started_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Step_Started_Type;
+
+   function To_Run_Event_V1_Run_Step_Started_Type (Kind : Run_Event_V1_Run_Step_Started_Type_Kind) return Run_Event_V1_Run_Step_Started_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Step_Started_Type_Run_Step_Started =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.step_started"));
+         when Run_Event_V1_Run_Step_Started_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Step_Started_Type;
+
+   function Image (Model : Run_Event_V1_Run_Step_Started_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Step_Started_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Step_Started_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Step_Started_Type is
+      (To_Run_Event_V1_Run_Step_Started_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Run_Step_Started_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "step_index", JS.JSON.Create (Model.Step_Index));
+      if Model.Has_Streaming then
+         JS.Set (Result, "streaming", JS.JSON.Create (Model.Streaming));
+      end if;
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Step_Started_Payload is
+      Result : Run_Event_V1_Run_Step_Started_Payload;
+   begin
+      if JS.Present (Node, "step_index") then
+         Result.Step_Index := JS.As_Integer (JS.Get_Value (Node, "step_index"));
+      end if;
+      if JS.Present (Node, "streaming") then
+         Result.Has_Streaming := True;
+         Result.Streaming := JS.As_Boolean (JS.Get_Value (Node, "streaming"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Run_Step_Started) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Step_Started is
+      Result : Run_Event_V1_Run_Step_Started;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Run_Step_Completed_Type (Value : String) return Run_Event_V1_Run_Step_Completed_Type is
+   begin
+      if Value = "run.step_completed" then
+         return (Kind => Run_Event_V1_Run_Step_Completed_Type_Run_Step_Completed, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Step_Completed_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Step_Completed_Type;
+
+   function To_Run_Event_V1_Run_Step_Completed_Type (Kind : Run_Event_V1_Run_Step_Completed_Type_Kind) return Run_Event_V1_Run_Step_Completed_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Step_Completed_Type_Run_Step_Completed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.step_completed"));
+         when Run_Event_V1_Run_Step_Completed_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Step_Completed_Type;
+
+   function Image (Model : Run_Event_V1_Run_Step_Completed_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Step_Completed_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Step_Completed_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Step_Completed_Type is
+      (To_Run_Event_V1_Run_Step_Completed_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Run_Step_Completed_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "step_index", JS.JSON.Create (Model.Step_Index));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Has_Tool_Calls then
+         JS.Set (Result, "has_tool_calls", JS.JSON.Create (Model.Has_Tool_Calls));
+      end if;
+      if Model.Has_Tool_Names then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Tool_Names loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "tool_names", Items);
+         end;
+      end if;
+      if Model.Has_Done then
+         JS.Set (Result, "done", JS.JSON.Create (Model.Done));
+      end if;
+      if Model.Has_Duration_Ms then
+         JS.Set (Result, "duration_ms", JS.JSON.Create (Model.Duration_Ms));
+      end if;
+      if Model.Has_Input_Tokens then
+         JS.Set (Result, "input_tokens", JS.JSON.Create (Model.Input_Tokens));
+      end if;
+      if Model.Has_Output_Tokens then
+         JS.Set (Result, "output_tokens", JS.JSON.Create (Model.Output_Tokens));
+      end if;
+      if Model.Has_Thinking_Tokens then
+         JS.Set (Result, "thinking_tokens", JS.JSON.Create (Model.Thinking_Tokens));
+      end if;
+      if Model.Has_LLM_Calls_Count then
+         JS.Set (Result, "llm_calls_count", JS.JSON.Create (Model.LLM_Calls_Count));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Step_Completed_Payload is
+      Result : Run_Event_V1_Run_Step_Completed_Payload;
+   begin
+      if JS.Present (Node, "step_index") then
+         Result.Step_Index := JS.As_Integer (JS.Get_Value (Node, "step_index"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "has_tool_calls") then
+         Result.Has_Has_Tool_Calls := True;
+         Result.Has_Tool_Calls := JS.As_Boolean (JS.Get_Value (Node, "has_tool_calls"));
+      end if;
+      if JS.Present (Node, "tool_names") then
+         Result.Has_Tool_Names := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "tool_names");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Tool_Names.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "done") then
+         Result.Has_Done := True;
+         Result.Done := JS.As_Boolean (JS.Get_Value (Node, "done"));
+      end if;
+      if JS.Present (Node, "duration_ms") then
+         Result.Has_Duration_Ms := True;
+         Result.Duration_Ms := JS.As_Integer (JS.Get_Value (Node, "duration_ms"));
+      end if;
+      if JS.Present (Node, "input_tokens") then
+         Result.Has_Input_Tokens := True;
+         Result.Input_Tokens := JS.As_Integer (JS.Get_Value (Node, "input_tokens"));
+      end if;
+      if JS.Present (Node, "output_tokens") then
+         Result.Has_Output_Tokens := True;
+         Result.Output_Tokens := JS.As_Integer (JS.Get_Value (Node, "output_tokens"));
+      end if;
+      if JS.Present (Node, "thinking_tokens") then
+         Result.Has_Thinking_Tokens := True;
+         Result.Thinking_Tokens := JS.As_Integer (JS.Get_Value (Node, "thinking_tokens"));
+      end if;
+      if JS.Present (Node, "llm_calls_count") then
+         Result.Has_LLM_Calls_Count := True;
+         Result.LLM_Calls_Count := JS.As_Integer (JS.Get_Value (Node, "llm_calls_count"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Run_Step_Completed) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Step_Completed is
+      Result : Run_Event_V1_Run_Step_Completed;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Step_Plan_Type (Value : String) return Run_Event_V1_Step_Plan_Type is
+   begin
+      if Value = "step.plan" then
+         return (Kind => Run_Event_V1_Step_Plan_Type_Step_Plan, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Step_Plan_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Step_Plan_Type;
+
+   function To_Run_Event_V1_Step_Plan_Type (Kind : Run_Event_V1_Step_Plan_Type_Kind) return Run_Event_V1_Step_Plan_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Step_Plan_Type_Step_Plan =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("step.plan"));
+         when Run_Event_V1_Step_Plan_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Step_Plan_Type;
+
+   function Image (Model : Run_Event_V1_Step_Plan_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Step_Plan_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Step_Plan_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Plan_Type is
+      (To_Run_Event_V1_Step_Plan_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Step_Plan_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Effort then
+         JS.Set (Result, "effort", JS.JSON.Create (Model.Effort));
+      end if;
+      if Model.Has_Skipped then
+         JS.Set (Result, "skipped", JS.JSON.Create (Model.Skipped));
+      end if;
+      if Model.Has_Skip_Reason then
+         JS.Set (Result, "skip_reason", JS.JSON.Create (Model.Skip_Reason));
+      end if;
+      if Model.Has_Plan_Content then
+         JS.Set (Result, "plan_content", JS.JSON.Create (Model.Plan_Content));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Plan_Payload is
+      Result : Run_Event_V1_Step_Plan_Payload;
+   begin
+      if JS.Present (Node, "effort") then
+         Result.Has_Effort := True;
+         Result.Effort := JS.As_Text (JS.Get_Value (Node, "effort"));
+      end if;
+      if JS.Present (Node, "skipped") then
+         Result.Has_Skipped := True;
+         Result.Skipped := JS.As_Boolean (JS.Get_Value (Node, "skipped"));
+      end if;
+      if JS.Present (Node, "skip_reason") then
+         Result.Has_Skip_Reason := True;
+         Result.Skip_Reason := JS.As_Text (JS.Get_Value (Node, "skip_reason"));
+      end if;
+      if JS.Present (Node, "plan_content") then
+         Result.Has_Plan_Content := True;
+         Result.Plan_Content := JS.As_Text (JS.Get_Value (Node, "plan_content"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Step_Plan) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Plan is
+      Result : Run_Event_V1_Step_Plan;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Step_Evaluate_Type (Value : String) return Run_Event_V1_Step_Evaluate_Type is
+   begin
+      if Value = "step.evaluate" then
+         return (Kind => Run_Event_V1_Step_Evaluate_Type_Step_Evaluate, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Step_Evaluate_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Step_Evaluate_Type;
+
+   function To_Run_Event_V1_Step_Evaluate_Type (Kind : Run_Event_V1_Step_Evaluate_Type_Kind) return Run_Event_V1_Step_Evaluate_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Step_Evaluate_Type_Step_Evaluate =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("step.evaluate"));
+         when Run_Event_V1_Step_Evaluate_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Step_Evaluate_Type;
+
+   function Image (Model : Run_Event_V1_Step_Evaluate_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Step_Evaluate_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Step_Evaluate_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Evaluate_Type is
+      (To_Run_Event_V1_Step_Evaluate_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Step_Evaluate_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "passed", JS.JSON.Create (Model.Passed));
+      if Model.Has_Feedback then
+         JS.Set (Result, "feedback", JS.JSON.Create (Model.Feedback));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Evaluate_Payload is
+      Result : Run_Event_V1_Step_Evaluate_Payload;
+   begin
+      if JS.Present (Node, "passed") then
+         Result.Passed := JS.As_Boolean (JS.Get_Value (Node, "passed"));
+      end if;
+      if JS.Present (Node, "feedback") then
+         Result.Has_Feedback := True;
+         Result.Feedback := JS.As_Text (JS.Get_Value (Node, "feedback"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Step_Evaluate) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Evaluate is
+      Result : Run_Event_V1_Step_Evaluate;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Step_Act_Type (Value : String) return Run_Event_V1_Step_Act_Type is
+   begin
+      if Value = "step.act" then
+         return (Kind => Run_Event_V1_Step_Act_Type_Step_Act, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Step_Act_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Step_Act_Type;
+
+   function To_Run_Event_V1_Step_Act_Type (Kind : Run_Event_V1_Step_Act_Type_Kind) return Run_Event_V1_Step_Act_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Step_Act_Type_Step_Act =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("step.act"));
+         when Run_Event_V1_Step_Act_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Step_Act_Type;
+
+   function Image (Model : Run_Event_V1_Step_Act_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Step_Act_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Step_Act_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Act_Type is
+      (To_Run_Event_V1_Step_Act_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Step_Act_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Message then
+         JS.Set (Result, "message", JS.JSON.Create (Model.Message));
+      end if;
+      if Model.Has_Code then
+         JS.Set (Result, "code", JS.JSON.Create (Model.Code));
+      end if;
+      if Model.Has_Params then
+         JS.Set (Result, "params", Model.Params);
+      end if;
+      if Model.Has_Input_Tokens then
+         JS.Set (Result, "input_tokens", JS.JSON.Create (Model.Input_Tokens));
+      end if;
+      if Model.Has_Output_Tokens then
+         JS.Set (Result, "output_tokens", JS.JSON.Create (Model.Output_Tokens));
+      end if;
+      if Model.Has_Metrics then
+         JS.Set (Result, "metrics", Model.Metrics);
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Act_Payload is
+      Result : Run_Event_V1_Step_Act_Payload;
+   begin
+      if JS.Present (Node, "message") then
+         Result.Has_Message := True;
+         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
+      end if;
+      if JS.Present (Node, "code") then
+         Result.Has_Code := True;
+         Result.Code := JS.As_Text (JS.Get_Value (Node, "code"));
+      end if;
+      if JS.Present (Node, "params") then
+         Result.Has_Params := True;
+         Result.Params := JS.Get_Value (Node, "params");
+      end if;
+      if JS.Present (Node, "input_tokens") then
+         Result.Has_Input_Tokens := True;
+         Result.Input_Tokens := JS.As_Integer (JS.Get_Value (Node, "input_tokens"));
+      end if;
+      if JS.Present (Node, "output_tokens") then
+         Result.Has_Output_Tokens := True;
+         Result.Output_Tokens := JS.As_Integer (JS.Get_Value (Node, "output_tokens"));
+      end if;
+      if JS.Present (Node, "metrics") then
+         Result.Has_Metrics := True;
+         Result.Metrics := JS.Get_Value (Node, "metrics");
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Step_Act) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Step_Act is
+      Result : Run_Event_V1_Step_Act;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Team_Delegate_Type (Value : String) return Run_Event_V1_Team_Delegate_Type is
+   begin
+      if Value = "team.delegate" then
+         return (Kind => Run_Event_V1_Team_Delegate_Type_Team_Delegate, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Team_Delegate_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Team_Delegate_Type;
+
+   function To_Run_Event_V1_Team_Delegate_Type (Kind : Run_Event_V1_Team_Delegate_Type_Kind) return Run_Event_V1_Team_Delegate_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Team_Delegate_Type_Team_Delegate =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("team.delegate"));
+         when Run_Event_V1_Team_Delegate_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Team_Delegate_Type;
+
+   function Image (Model : Run_Event_V1_Team_Delegate_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Team_Delegate_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Team_Delegate_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Team_Delegate_Type is
+      (To_Run_Event_V1_Team_Delegate_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Run_Event_V1_Team_Delegate_Payload_Topology (Value : String) return Run_Event_V1_Team_Delegate_Payload_Topology is
+   begin
+      if Value = "addressed" then
+         return (Kind => Run_Event_V1_Team_Delegate_Payload_Topology_Addressed, Raw => UARP.Types."+" (Value));
+      elsif Value = "supervisor" then
+         return (Kind => Run_Event_V1_Team_Delegate_Payload_Topology_Supervisor, Raw => UARP.Types."+" (Value));
+      elsif Value = "pipeline" then
+         return (Kind => Run_Event_V1_Team_Delegate_Payload_Topology_Pipeline, Raw => UARP.Types."+" (Value));
+      elsif Value = "swarm" then
+         return (Kind => Run_Event_V1_Team_Delegate_Payload_Topology_Swarm, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Team_Delegate_Payload_Topology_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Team_Delegate_Payload_Topology;
+
+   function To_Run_Event_V1_Team_Delegate_Payload_Topology (Kind : Run_Event_V1_Team_Delegate_Payload_Topology_Kind) return Run_Event_V1_Team_Delegate_Payload_Topology is
+   begin
+      case Kind is
+         when Run_Event_V1_Team_Delegate_Payload_Topology_Addressed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("addressed"));
+         when Run_Event_V1_Team_Delegate_Payload_Topology_Supervisor =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("supervisor"));
+         when Run_Event_V1_Team_Delegate_Payload_Topology_Pipeline =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("pipeline"));
+         when Run_Event_V1_Team_Delegate_Payload_Topology_Swarm =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("swarm"));
+         when Run_Event_V1_Team_Delegate_Payload_Topology_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Team_Delegate_Payload_Topology;
+
+   function Image (Model : Run_Event_V1_Team_Delegate_Payload_Topology) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Team_Delegate_Payload_Topology (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Team_Delegate_Payload_Topology) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Team_Delegate_Payload_Topology is
+      (To_Run_Event_V1_Team_Delegate_Payload_Topology (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Team_Delegate_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "topology", To_JSON (Model.Topology));
+      if Model.Has_Mode then
+         JS.Set (Result, "mode", JS.JSON.Create (Model.Mode));
+      end if;
+      if Model.Has_Round then
+         JS.Set (Result, "round", JS.JSON.Create (Model.Round));
+      end if;
+      if Model.Has_Step then
+         JS.Set (Result, "step", JS.JSON.Create (Model.Step));
+      end if;
+      if Model.Has_Handoff_Index then
+         JS.Set (Result, "handoff_index", JS.JSON.Create (Model.Handoff_Index));
+      end if;
+      if Model.Has_From then
+         JS.Set (Result, "from", JS.JSON.Create (Model.From));
+      end if;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.To loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "to", Items);
+      end;
+      if Model.Has_Worker_Count then
+         JS.Set (Result, "worker_count", JS.JSON.Create (Model.Worker_Count));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Team_Delegate_Payload is
+      Result : Run_Event_V1_Team_Delegate_Payload;
+   begin
+      if JS.Present (Node, "topology") then
+         Result.Topology := From_JSON (JS.Get_Value (Node, "topology"));
+      end if;
+      if JS.Present (Node, "mode") then
+         Result.Has_Mode := True;
+         Result.Mode := JS.As_Text (JS.Get_Value (Node, "mode"));
+      end if;
+      if JS.Present (Node, "round") then
+         Result.Has_Round := True;
+         Result.Round := JS.As_Integer (JS.Get_Value (Node, "round"));
+      end if;
+      if JS.Present (Node, "step") then
+         Result.Has_Step := True;
+         Result.Step := JS.As_Integer (JS.Get_Value (Node, "step"));
+      end if;
+      if JS.Present (Node, "handoff_index") then
+         Result.Has_Handoff_Index := True;
+         Result.Handoff_Index := JS.As_Integer (JS.Get_Value (Node, "handoff_index"));
+      end if;
+      if JS.Present (Node, "from") then
+         Result.Has_From := True;
+         Result.From := JS.As_Text (JS.Get_Value (Node, "from"));
+      end if;
+      if JS.Present (Node, "to") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "to");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.To.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "worker_count") then
+         Result.Has_Worker_Count := True;
+         Result.Worker_Count := JS.As_Integer (JS.Get_Value (Node, "worker_count"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Team_Delegate) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Team_Delegate is
+      Result : Run_Event_V1_Team_Delegate;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Child_Run_Completed_Type (Value : String) return Run_Event_V1_Child_Run_Completed_Type is
+   begin
+      if Value = "child_run.completed" then
+         return (Kind => Run_Event_V1_Child_Run_Completed_Type_Child_Run_Completed, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Child_Run_Completed_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Child_Run_Completed_Type;
+
+   function To_Run_Event_V1_Child_Run_Completed_Type (Kind : Run_Event_V1_Child_Run_Completed_Type_Kind) return Run_Event_V1_Child_Run_Completed_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Child_Run_Completed_Type_Child_Run_Completed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("child_run.completed"));
+         when Run_Event_V1_Child_Run_Completed_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Child_Run_Completed_Type;
+
+   function Image (Model : Run_Event_V1_Child_Run_Completed_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Child_Run_Completed_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Child_Run_Completed_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Child_Run_Completed_Type is
+      (To_Run_Event_V1_Child_Run_Completed_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Child_Run_Completed_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "child_run_id", JS.JSON.Create (Model.Child_Run_Id));
+      JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
+      if Model.Has_Agent_Name then
+         JS.Set (Result, "agent_name", JS.JSON.Create (Model.Agent_Name));
+      end if;
+      JS.Set (Result, "status", JS.JSON.Create (Model.Status));
+      if Model.Has_Output_Preview then
+         JS.Set (Result, "output_preview", JS.JSON.Create (Model.Output_Preview));
+      end if;
+      if Model.Has_Duration_Ms then
+         JS.Set (Result, "duration_ms", JS.JSON.Create (Model.Duration_Ms));
+      end if;
+      if Model.Has_Execution_Mode then
+         JS.Set (Result, "execution_mode", JS.JSON.Create (Model.Execution_Mode));
+      end if;
+      if Model.Has_Cost_Usd then
+         JS.Set (Result, "cost_usd", JS.JSON.Create (Model.Cost_Usd));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Child_Run_Completed_Payload is
+      Result : Run_Event_V1_Child_Run_Completed_Payload;
+   begin
+      if JS.Present (Node, "child_run_id") then
+         Result.Child_Run_Id := JS.As_Text (JS.Get_Value (Node, "child_run_id"));
+      end if;
+      if JS.Present (Node, "agent_id") then
+         Result.Agent_Id := JS.As_Text (JS.Get_Value (Node, "agent_id"));
+      end if;
+      if JS.Present (Node, "agent_name") then
+         Result.Has_Agent_Name := True;
+         Result.Agent_Name := JS.As_Text (JS.Get_Value (Node, "agent_name"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := JS.As_Text (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "output_preview") then
+         Result.Has_Output_Preview := True;
+         Result.Output_Preview := JS.As_Text (JS.Get_Value (Node, "output_preview"));
+      end if;
+      if JS.Present (Node, "duration_ms") then
+         Result.Has_Duration_Ms := True;
+         Result.Duration_Ms := JS.As_Integer (JS.Get_Value (Node, "duration_ms"));
+      end if;
+      if JS.Present (Node, "execution_mode") then
+         Result.Has_Execution_Mode := True;
+         Result.Execution_Mode := JS.As_Text (JS.Get_Value (Node, "execution_mode"));
+      end if;
+      if JS.Present (Node, "cost_usd") then
+         Result.Has_Cost_Usd := True;
+         Result.Cost_Usd := JS.As_Float (JS.Get_Value (Node, "cost_usd"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Child_Run_Completed) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Child_Run_Completed is
+      Result : Run_Event_V1_Child_Run_Completed;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Child_Run_Failed_Type (Value : String) return Run_Event_V1_Child_Run_Failed_Type is
+   begin
+      if Value = "child_run.failed" then
+         return (Kind => Run_Event_V1_Child_Run_Failed_Type_Child_Run_Failed, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Child_Run_Failed_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Child_Run_Failed_Type;
+
+   function To_Run_Event_V1_Child_Run_Failed_Type (Kind : Run_Event_V1_Child_Run_Failed_Type_Kind) return Run_Event_V1_Child_Run_Failed_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Child_Run_Failed_Type_Child_Run_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("child_run.failed"));
+         when Run_Event_V1_Child_Run_Failed_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Child_Run_Failed_Type;
+
+   function Image (Model : Run_Event_V1_Child_Run_Failed_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Child_Run_Failed_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Child_Run_Failed_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Child_Run_Failed_Type is
+      (To_Run_Event_V1_Child_Run_Failed_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Child_Run_Failed_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "child_run_id", JS.JSON.Create (Model.Child_Run_Id));
+      JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
+      if Model.Has_Agent_Name then
+         JS.Set (Result, "agent_name", JS.JSON.Create (Model.Agent_Name));
+      end if;
+      JS.Set (Result, "status", JS.JSON.Create (Model.Status));
+      if Model.Has_Error then
+         JS.Set (Result, "error", JS.JSON.Create (Model.Error));
+      end if;
+      if Model.Has_Execution_Mode then
+         JS.Set (Result, "execution_mode", JS.JSON.Create (Model.Execution_Mode));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Child_Run_Failed_Payload is
+      Result : Run_Event_V1_Child_Run_Failed_Payload;
+   begin
+      if JS.Present (Node, "child_run_id") then
+         Result.Child_Run_Id := JS.As_Text (JS.Get_Value (Node, "child_run_id"));
+      end if;
+      if JS.Present (Node, "agent_id") then
+         Result.Agent_Id := JS.As_Text (JS.Get_Value (Node, "agent_id"));
+      end if;
+      if JS.Present (Node, "agent_name") then
+         Result.Has_Agent_Name := True;
+         Result.Agent_Name := JS.As_Text (JS.Get_Value (Node, "agent_name"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := JS.As_Text (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "error") then
+         Result.Has_Error := True;
+         Result.Error := JS.As_Text (JS.Get_Value (Node, "error"));
+      end if;
+      if JS.Present (Node, "execution_mode") then
+         Result.Has_Execution_Mode := True;
+         Result.Execution_Mode := JS.As_Text (JS.Get_Value (Node, "execution_mode"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Child_Run_Failed) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Child_Run_Failed is
+      Result : Run_Event_V1_Child_Run_Failed;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Session_Context_Compacted_Type (Value : String) return Run_Event_V1_Session_Context_Compacted_Type is
+   begin
+      if Value = "session.context_compacted" then
+         return (Kind => Run_Event_V1_Session_Context_Compacted_Type_Session_Context_Compacted, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Session_Context_Compacted_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Session_Context_Compacted_Type;
+
+   function To_Run_Event_V1_Session_Context_Compacted_Type (Kind : Run_Event_V1_Session_Context_Compacted_Type_Kind) return Run_Event_V1_Session_Context_Compacted_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Session_Context_Compacted_Type_Session_Context_Compacted =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("session.context_compacted"));
+         when Run_Event_V1_Session_Context_Compacted_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Session_Context_Compacted_Type;
+
+   function Image (Model : Run_Event_V1_Session_Context_Compacted_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Session_Context_Compacted_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Session_Context_Compacted_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Session_Context_Compacted_Type is
+      (To_Run_Event_V1_Session_Context_Compacted_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Session_Context_Compacted_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Step_Index then
+         JS.Set (Result, "step_index", JS.JSON.Create (Model.Step_Index));
+      end if;
+      if Model.Has_Strategy then
+         JS.Set (Result, "strategy", JS.JSON.Create (Model.Strategy));
+      end if;
+      if Model.Has_Removed_Count then
+         JS.Set (Result, "removed_count", JS.JSON.Create (Model.Removed_Count));
+      end if;
+      if Model.Has_Tokens_Saved then
+         JS.Set (Result, "tokens_saved", JS.JSON.Create (Model.Tokens_Saved));
+      end if;
+      if Model.Has_Context_Tokens_Before then
+         JS.Set (Result, "context_tokens_before", JS.JSON.Create (Model.Context_Tokens_Before));
+      end if;
+      if Model.Has_Context_Tokens_After then
+         JS.Set (Result, "context_tokens_after", JS.JSON.Create (Model.Context_Tokens_After));
+      end if;
+      if Model.Has_Max_Context_Tokens then
+         JS.Set (Result, "max_context_tokens", JS.JSON.Create (Model.Max_Context_Tokens));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Session_Context_Compacted_Payload is
+      Result : Run_Event_V1_Session_Context_Compacted_Payload;
+   begin
+      if JS.Present (Node, "step_index") then
+         Result.Has_Step_Index := True;
+         Result.Step_Index := JS.As_Integer (JS.Get_Value (Node, "step_index"));
+      end if;
+      if JS.Present (Node, "strategy") then
+         Result.Has_Strategy := True;
+         Result.Strategy := JS.As_Text (JS.Get_Value (Node, "strategy"));
+      end if;
+      if JS.Present (Node, "removed_count") then
+         Result.Has_Removed_Count := True;
+         Result.Removed_Count := JS.As_Integer (JS.Get_Value (Node, "removed_count"));
+      end if;
+      if JS.Present (Node, "tokens_saved") then
+         Result.Has_Tokens_Saved := True;
+         Result.Tokens_Saved := JS.As_Integer (JS.Get_Value (Node, "tokens_saved"));
+      end if;
+      if JS.Present (Node, "context_tokens_before") then
+         Result.Has_Context_Tokens_Before := True;
+         Result.Context_Tokens_Before := JS.As_Integer (JS.Get_Value (Node, "context_tokens_before"));
+      end if;
+      if JS.Present (Node, "context_tokens_after") then
+         Result.Has_Context_Tokens_After := True;
+         Result.Context_Tokens_After := JS.As_Integer (JS.Get_Value (Node, "context_tokens_after"));
+      end if;
+      if JS.Present (Node, "max_context_tokens") then
+         Result.Has_Max_Context_Tokens := True;
+         Result.Max_Context_Tokens := JS.As_Integer (JS.Get_Value (Node, "max_context_tokens"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Session_Context_Compacted) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Session_Context_Compacted is
+      Result : Run_Event_V1_Session_Context_Compacted;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Event_V1_Session_Context_Type (Value : String) return Run_Event_V1_Session_Context_Type is
+   begin
+      if Value = "session.context" then
+         return (Kind => Run_Event_V1_Session_Context_Type_Session_Context, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Session_Context_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Session_Context_Type;
+
+   function To_Run_Event_V1_Session_Context_Type (Kind : Run_Event_V1_Session_Context_Type_Kind) return Run_Event_V1_Session_Context_Type is
+   begin
+      case Kind is
+         when Run_Event_V1_Session_Context_Type_Session_Context =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("session.context"));
+         when Run_Event_V1_Session_Context_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Session_Context_Type;
+
+   function Image (Model : Run_Event_V1_Session_Context_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Session_Context_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Session_Context_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Session_Context_Type is
+      (To_Run_Event_V1_Session_Context_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_V1_Session_Context_Payload) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      if Model.Has_Window_Tokens then
+         JS.Set (Result, "window_tokens", JS.JSON.Create (Model.Window_Tokens));
+      end if;
+      if Model.Has_Used_Tokens then
+         JS.Set (Result, "used_tokens", JS.JSON.Create (Model.Used_Tokens));
+      end if;
+      if Model.Has_Percent then
+         JS.Set (Result, "percent", JS.JSON.Create (Model.Percent));
+      end if;
+      JS.Set (Result, "source", To_JSON (Model.Source));
+      JS.Set (Result, "updated_at", JS.JSON.Create (Model.Updated_At));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Session_Context_Payload is
+      Result : Run_Event_V1_Session_Context_Payload;
+   begin
+      if JS.Present (Node, "session_id") then
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "window_tokens") then
+         Result.Has_Window_Tokens := True;
+         Result.Window_Tokens := JS.As_Integer (JS.Get_Value (Node, "window_tokens"));
+      end if;
+      if JS.Present (Node, "used_tokens") then
+         Result.Has_Used_Tokens := True;
+         Result.Used_Tokens := JS.As_Integer (JS.Get_Value (Node, "used_tokens"));
+      end if;
+      if JS.Present (Node, "percent") then
+         Result.Has_Percent := True;
+         Result.Percent := JS.As_Float (JS.Get_Value (Node, "percent"));
+      end if;
+      if JS.Present (Node, "source") then
+         Result.Source := From_JSON (JS.Get_Value (Node, "source"));
+      end if;
+      if JS.Present (Node, "updated_at") then
+         Result.Updated_At := JS.As_Text (JS.Get_Value (Node, "updated_at"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event_V1_Session_Context) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", To_JSON (Model.Payload));
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Session_Context is
+      Result : Run_Event_V1_Session_Context;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := From_JSON (JS.Get_Value (Node, "payload"));
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Run_Feedback_List_Feedback) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -82631,48 +86867,6 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_Run_Stream_Event_Stream_Type (Value : String) return Run_Stream_Event_Stream_Type is
-   begin
-      if Value = "lifecycle" then
-         return (Kind => Run_Stream_Event_Stream_Type_Lifecycle, Raw => UARP.Types."+" (Value));
-      elsif Value = "assistant" then
-         return (Kind => Run_Stream_Event_Stream_Type_Assistant, Raw => UARP.Types."+" (Value));
-      elsif Value = "tool" then
-         return (Kind => Run_Stream_Event_Stream_Type_Tool, Raw => UARP.Types."+" (Value));
-      elsif Value = "other" then
-         return (Kind => Run_Stream_Event_Stream_Type_Other, Raw => UARP.Types."+" (Value));
-      else
-         return (Kind => Run_Stream_Event_Stream_Type_Unrecognized, Raw => UARP.Types."+" (Value));
-      end if;
-   end To_Run_Stream_Event_Stream_Type;
-
-   function To_Run_Stream_Event_Stream_Type (Kind : Run_Stream_Event_Stream_Type_Kind) return Run_Stream_Event_Stream_Type is
-   begin
-      case Kind is
-         when Run_Stream_Event_Stream_Type_Lifecycle =>
-            return (Kind => Kind, Raw => UARP.Types."+" ("lifecycle"));
-         when Run_Stream_Event_Stream_Type_Assistant =>
-            return (Kind => Kind, Raw => UARP.Types."+" ("assistant"));
-         when Run_Stream_Event_Stream_Type_Tool =>
-            return (Kind => Kind, Raw => UARP.Types."+" ("tool"));
-         when Run_Stream_Event_Stream_Type_Other =>
-            return (Kind => Kind, Raw => UARP.Types."+" ("other"));
-         when Run_Stream_Event_Stream_Type_Unrecognized =>
-            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
-      end case;
-   end To_Run_Stream_Event_Stream_Type;
-
-   function Image (Model : Run_Stream_Event_Stream_Type) return String is
-      (if UARP.Types.SU.Length (Model.Raw) > 0
-         then UARP.Types.SU.To_String (Model.Raw)
-         else UARP.Types.SU.To_String (To_Run_Stream_Event_Stream_Type (Model.Kind).Raw));
-
-   function To_JSON (Model : Run_Stream_Event_Stream_Type) return UARP.JSON_Support.JSON_Value is
-      (JS.JSON.Create (Image (Model)));
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Event_Stream_Type is
-      (To_Run_Stream_Event_Stream_Type (UARP.Types."+" (JS.As_Text (Node))));
-
    function To_JSON (Model : Run_Stream_Event) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -82772,6 +86966,573 @@ package body UARP.Models is
       if JS.Present (Node, "_guardrail_violation") then
          Result.Has_Guardrail_Violation := True;
          Result.Guardrail_Violation := JS.Get_Value (Node, "_guardrail_violation");
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Connected) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      JS.Set (Result, "status", JS.JSON.Create (Model.Status));
+      if Model.Has_Connected_At then
+         JS.Set (Result, "connected_at", JS.JSON.Create (Model.Connected_At));
+      end if;
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Connected is
+      Result : Run_Stream_Frame_V1_Connected;
+   begin
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := JS.As_Text (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "connected_at") then
+         Result.Has_Connected_At := True;
+         Result.Connected_At := JS.As_Text (JS.Get_Value (Node, "connected_at"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Done_Metrics) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Duration_Ms then
+         JS.Set (Result, "duration_ms", JS.JSON.Create (Model.Duration_Ms));
+      end if;
+      if Model.Has_Steps_Count then
+         JS.Set (Result, "steps_count", JS.JSON.Create (Model.Steps_Count));
+      end if;
+      if Model.Has_Input_Tokens then
+         JS.Set (Result, "input_tokens", JS.JSON.Create (Model.Input_Tokens));
+      end if;
+      if Model.Has_Output_Tokens then
+         JS.Set (Result, "output_tokens", JS.JSON.Create (Model.Output_Tokens));
+      end if;
+      if Model.Has_Thinking_Tokens then
+         JS.Set (Result, "thinking_tokens", JS.JSON.Create (Model.Thinking_Tokens));
+      end if;
+      if Model.Has_Cached_Tokens then
+         JS.Set (Result, "cached_tokens", JS.JSON.Create (Model.Cached_Tokens));
+      end if;
+      if Model.Has_Tool_Calls_Count then
+         JS.Set (Result, "tool_calls_count", JS.JSON.Create (Model.Tool_Calls_Count));
+      end if;
+      if Model.Has_LLM_Calls_Count then
+         JS.Set (Result, "llm_calls_count", JS.JSON.Create (Model.LLM_Calls_Count));
+      end if;
+      if Model.Has_Guardrail_Checks then
+         JS.Set (Result, "guardrail_checks", JS.JSON.Create (Model.Guardrail_Checks));
+      end if;
+      if Model.Has_Guardrail_Violations then
+         JS.Set (Result, "guardrail_violations", JS.JSON.Create (Model.Guardrail_Violations));
+      end if;
+      if Model.Has_Memory_Retrievals then
+         JS.Set (Result, "memory_retrievals", JS.JSON.Create (Model.Memory_Retrievals));
+      end if;
+      if Model.Has_Memory_Extractions then
+         JS.Set (Result, "memory_extractions", JS.JSON.Create (Model.Memory_Extractions));
+      end if;
+      if Model.Has_Total_Cost_Usd then
+         JS.Set (Result, "total_cost_usd", JS.JSON.Create (Model.Total_Cost_Usd));
+      end if;
+      if Model.Has_Fallback_Used then
+         JS.Set (Result, "fallback_used", JS.JSON.Create (Model.Fallback_Used));
+      end if;
+      if Model.Has_Pricing_Confidence then
+         JS.Set (Result, "pricing_confidence", To_JSON (Model.Pricing_Confidence));
+      end if;
+      if Model.Has_Cost_Attribution then
+         JS.Set (Result, "cost_attribution", To_JSON (Model.Cost_Attribution));
+      end if;
+      if Model.Has_Files_Modified then
+         JS.Set (Result, "files_modified", JS.JSON.Create (Model.Files_Modified));
+      end if;
+      if Model.Has_Commands_Executed then
+         JS.Set (Result, "commands_executed", JS.JSON.Create (Model.Commands_Executed));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Done_Metrics is
+      Result : Run_Stream_Frame_V1_Done_Metrics;
+   begin
+      if JS.Present (Node, "duration_ms") then
+         Result.Has_Duration_Ms := True;
+         Result.Duration_Ms := JS.As_Integer (JS.Get_Value (Node, "duration_ms"));
+      end if;
+      if JS.Present (Node, "steps_count") then
+         Result.Has_Steps_Count := True;
+         Result.Steps_Count := JS.As_Integer (JS.Get_Value (Node, "steps_count"));
+      end if;
+      if JS.Present (Node, "input_tokens") then
+         Result.Has_Input_Tokens := True;
+         Result.Input_Tokens := JS.As_Integer (JS.Get_Value (Node, "input_tokens"));
+      end if;
+      if JS.Present (Node, "output_tokens") then
+         Result.Has_Output_Tokens := True;
+         Result.Output_Tokens := JS.As_Integer (JS.Get_Value (Node, "output_tokens"));
+      end if;
+      if JS.Present (Node, "thinking_tokens") then
+         Result.Has_Thinking_Tokens := True;
+         Result.Thinking_Tokens := JS.As_Integer (JS.Get_Value (Node, "thinking_tokens"));
+      end if;
+      if JS.Present (Node, "cached_tokens") then
+         Result.Has_Cached_Tokens := True;
+         Result.Cached_Tokens := JS.As_Integer (JS.Get_Value (Node, "cached_tokens"));
+      end if;
+      if JS.Present (Node, "tool_calls_count") then
+         Result.Has_Tool_Calls_Count := True;
+         Result.Tool_Calls_Count := JS.As_Integer (JS.Get_Value (Node, "tool_calls_count"));
+      end if;
+      if JS.Present (Node, "llm_calls_count") then
+         Result.Has_LLM_Calls_Count := True;
+         Result.LLM_Calls_Count := JS.As_Integer (JS.Get_Value (Node, "llm_calls_count"));
+      end if;
+      if JS.Present (Node, "guardrail_checks") then
+         Result.Has_Guardrail_Checks := True;
+         Result.Guardrail_Checks := JS.As_Integer (JS.Get_Value (Node, "guardrail_checks"));
+      end if;
+      if JS.Present (Node, "guardrail_violations") then
+         Result.Has_Guardrail_Violations := True;
+         Result.Guardrail_Violations := JS.As_Integer (JS.Get_Value (Node, "guardrail_violations"));
+      end if;
+      if JS.Present (Node, "memory_retrievals") then
+         Result.Has_Memory_Retrievals := True;
+         Result.Memory_Retrievals := JS.As_Integer (JS.Get_Value (Node, "memory_retrievals"));
+      end if;
+      if JS.Present (Node, "memory_extractions") then
+         Result.Has_Memory_Extractions := True;
+         Result.Memory_Extractions := JS.As_Integer (JS.Get_Value (Node, "memory_extractions"));
+      end if;
+      if JS.Present (Node, "total_cost_usd") then
+         Result.Has_Total_Cost_Usd := True;
+         Result.Total_Cost_Usd := JS.As_Float (JS.Get_Value (Node, "total_cost_usd"));
+      end if;
+      if JS.Present (Node, "fallback_used") then
+         Result.Has_Fallback_Used := True;
+         Result.Fallback_Used := JS.As_Boolean (JS.Get_Value (Node, "fallback_used"));
+      end if;
+      if JS.Present (Node, "pricing_confidence") then
+         Result.Has_Pricing_Confidence := True;
+         Result.Pricing_Confidence := From_JSON (JS.Get_Value (Node, "pricing_confidence"));
+      end if;
+      if JS.Present (Node, "cost_attribution") then
+         Result.Has_Cost_Attribution := True;
+         Result.Cost_Attribution := From_JSON (JS.Get_Value (Node, "cost_attribution"));
+      end if;
+      if JS.Present (Node, "files_modified") then
+         Result.Has_Files_Modified := True;
+         Result.Files_Modified := JS.As_Integer (JS.Get_Value (Node, "files_modified"));
+      end if;
+      if JS.Present (Node, "commands_executed") then
+         Result.Has_Commands_Executed := True;
+         Result.Commands_Executed := JS.As_Integer (JS.Get_Value (Node, "commands_executed"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Done) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      JS.Set (Result, "status", JS.JSON.Create (Model.Status));
+      if Model.Has_Metrics then
+         JS.Set (Result, "metrics", To_JSON (Model.Metrics));
+      end if;
+      if Model.Has_Output then
+         JS.Set (Result, "output", Model.Output);
+      end if;
+      if Model.Has_Error then
+         JS.Set (Result, "error", JS.JSON.Create (Model.Error));
+      end if;
+      if Model.Has_Cost_Usd then
+         JS.Set (Result, "cost_usd", JS.JSON.Create (Model.Cost_Usd));
+      end if;
+      if Model.Has_Guardrail_Blocked then
+         JS.Set (Result, "guardrail_blocked", JS.JSON.Create (Model.Guardrail_Blocked));
+      end if;
+      if Model.Has_Guardrail_Violation then
+         JS.Set (Result, "_guardrail_violation", Model.Guardrail_Violation);
+      end if;
+      if Model.Has_Stream_Type then
+         JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      end if;
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Done is
+      Result : Run_Stream_Frame_V1_Done;
+   begin
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := JS.As_Text (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "metrics") then
+         Result.Has_Metrics := True;
+         Result.Metrics := From_JSON (JS.Get_Value (Node, "metrics"));
+      end if;
+      if JS.Present (Node, "output") then
+         Result.Has_Output := True;
+         Result.Output := JS.Get_Value (Node, "output");
+      end if;
+      if JS.Present (Node, "error") then
+         Result.Has_Error := True;
+         Result.Error := JS.As_Text (JS.Get_Value (Node, "error"));
+      end if;
+      if JS.Present (Node, "cost_usd") then
+         Result.Has_Cost_Usd := True;
+         Result.Cost_Usd := JS.As_Float (JS.Get_Value (Node, "cost_usd"));
+      end if;
+      if JS.Present (Node, "guardrail_blocked") then
+         Result.Has_Guardrail_Blocked := True;
+         Result.Guardrail_Blocked := JS.As_Boolean (JS.Get_Value (Node, "guardrail_blocked"));
+      end if;
+      if JS.Present (Node, "_guardrail_violation") then
+         Result.Has_Guardrail_Violation := True;
+         Result.Guardrail_Violation := JS.Get_Value (Node, "_guardrail_violation");
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Has_Stream_Type := True;
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Stream_Frame_V1_Error_Variant1code (Value : String) return Run_Stream_Frame_V1_Error_Variant1code is
+   begin
+      if Value = "RUN_NOT_FOUND" then
+         return (Kind => Run_Stream_Frame_V1_Error_Variant1code_Run_Not_Found, Raw => UARP.Types."+" (Value));
+      elsif Value = "STREAM_ERROR" then
+         return (Kind => Run_Stream_Frame_V1_Error_Variant1code_Stream_Error, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Stream_Frame_V1_Error_Variant1code_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Stream_Frame_V1_Error_Variant1code;
+
+   function To_Run_Stream_Frame_V1_Error_Variant1code (Kind : Run_Stream_Frame_V1_Error_Variant1code_Kind) return Run_Stream_Frame_V1_Error_Variant1code is
+   begin
+      case Kind is
+         when Run_Stream_Frame_V1_Error_Variant1code_Run_Not_Found =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("RUN_NOT_FOUND"));
+         when Run_Stream_Frame_V1_Error_Variant1code_Stream_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("STREAM_ERROR"));
+         when Run_Stream_Frame_V1_Error_Variant1code_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Stream_Frame_V1_Error_Variant1code;
+
+   function Image (Model : Run_Stream_Frame_V1_Error_Variant1code) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Stream_Frame_V1_Error_Variant1code (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Error_Variant1code) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Error_Variant1code is
+      (To_Run_Stream_Frame_V1_Error_Variant1code (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Error_Variant1) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "error", JS.JSON.Create (Model.Error));
+      JS.Set (Result, "code", To_JSON (Model.Code));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Error_Variant1 is
+      Result : Run_Stream_Frame_V1_Error_Variant1;
+   begin
+      if JS.Present (Node, "error") then
+         Result.Error := JS.As_Text (JS.Get_Value (Node, "error"));
+      end if;
+      if JS.Present (Node, "code") then
+         Result.Code := From_JSON (JS.Get_Value (Node, "code"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Stream_Frame_V1_Error_Variant2type (Value : String) return Run_Stream_Frame_V1_Error_Variant2type is
+   begin
+      if Value = "error" then
+         return (Kind => Run_Stream_Frame_V1_Error_Variant2type_Error, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Stream_Frame_V1_Error_Variant2type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Stream_Frame_V1_Error_Variant2type;
+
+   function To_Run_Stream_Frame_V1_Error_Variant2type (Kind : Run_Stream_Frame_V1_Error_Variant2type_Kind) return Run_Stream_Frame_V1_Error_Variant2type is
+   begin
+      case Kind is
+         when Run_Stream_Frame_V1_Error_Variant2type_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("error"));
+         when Run_Stream_Frame_V1_Error_Variant2type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Stream_Frame_V1_Error_Variant2type;
+
+   function Image (Model : Run_Stream_Frame_V1_Error_Variant2type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Stream_Frame_V1_Error_Variant2type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Error_Variant2type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Error_Variant2type is
+      (To_Run_Stream_Frame_V1_Error_Variant2type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Run_Stream_Frame_V1_Error_Variant2code (Value : String) return Run_Stream_Frame_V1_Error_Variant2code is
+   begin
+      if Value = "STREAM_BUFFER_EXCEEDED" then
+         return (Kind => Run_Stream_Frame_V1_Error_Variant2code_Stream_Buffer_Exceeded, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Stream_Frame_V1_Error_Variant2code_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Stream_Frame_V1_Error_Variant2code;
+
+   function To_Run_Stream_Frame_V1_Error_Variant2code (Kind : Run_Stream_Frame_V1_Error_Variant2code_Kind) return Run_Stream_Frame_V1_Error_Variant2code is
+   begin
+      case Kind is
+         when Run_Stream_Frame_V1_Error_Variant2code_Stream_Buffer_Exceeded =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("STREAM_BUFFER_EXCEEDED"));
+         when Run_Stream_Frame_V1_Error_Variant2code_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Stream_Frame_V1_Error_Variant2code;
+
+   function Image (Model : Run_Stream_Frame_V1_Error_Variant2code) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Stream_Frame_V1_Error_Variant2code (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Error_Variant2code) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Error_Variant2code is
+      (To_Run_Stream_Frame_V1_Error_Variant2code (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Error_Variant2) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
+      JS.Set (Result, "code", To_JSON (Model.Code));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Error_Variant2 is
+      Result : Run_Stream_Frame_V1_Error_Variant2;
+   begin
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "message") then
+         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
+      end if;
+      if JS.Present (Node, "code") then
+         Result.Code := From_JSON (JS.Get_Value (Node, "code"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Gap) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Gap is
+      Result : Run_Stream_Frame_V1_Gap;
+   begin
+      if JS.Present (Node, "message") then
+         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source (Value : String) return Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source is
+   begin
+      if Value = "stream" then
+         return (Kind => Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source_Stream, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source;
+
+   function To_Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source (Kind : Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source_Kind) return Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source is
+   begin
+      case Kind is
+         when Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source_Stream =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("stream"));
+         when Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source;
+
+   function Image (Model : Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source is
+      (To_Run_Stream_Frame_V1_Guardrail_Violation_Violation_Source (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Stream_Frame_V1_Guardrail_Violation) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Guardrail_Violation then
+         JS.Set (Result, "_guardrail_violation", Model.Guardrail_Violation);
+      end if;
+      JS.Set (Result, "violation_source", To_JSON (Model.Violation_Source));
+      if Model.Has_Event_Id then
+         JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      end if;
+      if Model.Has_Run_Id then
+         JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      end if;
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      if Model.Has_Type then
+         JS.Set (Result, "type", JS.JSON.Create (Model.Type_K));
+      end if;
+      if Model.Has_Seq then
+         JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      end if;
+      if Model.Has_Payload then
+         JS.Set (Result, "payload", Model.Payload);
+      end if;
+      if Model.Has_Timestamp then
+         JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      end if;
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      if Model.Has_Stream_Type then
+         JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      end if;
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Frame_V1_Guardrail_Violation is
+      Result : Run_Stream_Frame_V1_Guardrail_Violation;
+   begin
+      if JS.Present (Node, "_guardrail_violation") then
+         Result.Has_Guardrail_Violation := True;
+         Result.Guardrail_Violation := JS.Get_Value (Node, "_guardrail_violation");
+      end if;
+      if JS.Present (Node, "violation_source") then
+         Result.Violation_Source := From_JSON (JS.Get_Value (Node, "violation_source"));
+      end if;
+      if JS.Present (Node, "event_id") then
+         Result.Has_Event_Id := True;
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Has_Run_Id := True;
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Has_Type := True;
+         Result.Type_K := JS.As_Text (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Has_Seq := True;
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Has_Payload := True;
+         Result.Payload := JS.Get_Value (Node, "payload");
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Has_Timestamp := True;
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Has_Stream_Type := True;
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
       end if;
       return Result;
    end From_JSON;
@@ -84257,6 +89018,307 @@ package body UARP.Models is
                Result.Messages.Append (From_JSON (JS.JSON.Get (Items, Index)));
             end loop;
          end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Connected) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      if Model.Has_Connected_At then
+         JS.Set (Result, "connected_at", JS.JSON.Create (Model.Connected_At));
+      end if;
+      if Model.Has_Runs then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Runs loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "runs", Items);
+         end;
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Connected is
+      Result : Session_Stream_Frame_V1_Connected;
+   begin
+      if JS.Present (Node, "session_id") then
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "connected_at") then
+         Result.Has_Connected_At := True;
+         Result.Connected_At := JS.As_Text (JS.Get_Value (Node, "connected_at"));
+      end if;
+      if JS.Present (Node, "runs") then
+         Result.Has_Runs := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "runs");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Runs.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Session_Stream_Frame_V1_Error_Code (Value : String) return Session_Stream_Frame_V1_Error_Code is
+   begin
+      if Value = "SESSION_NOT_FOUND" then
+         return (Kind => Session_Stream_Frame_V1_Error_Code_Session_Not_Found, Raw => UARP.Types."+" (Value));
+      elsif Value = "STREAM_ERROR" then
+         return (Kind => Session_Stream_Frame_V1_Error_Code_Stream_Error, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Session_Stream_Frame_V1_Error_Code_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Session_Stream_Frame_V1_Error_Code;
+
+   function To_Session_Stream_Frame_V1_Error_Code (Kind : Session_Stream_Frame_V1_Error_Code_Kind) return Session_Stream_Frame_V1_Error_Code is
+   begin
+      case Kind is
+         when Session_Stream_Frame_V1_Error_Code_Session_Not_Found =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SESSION_NOT_FOUND"));
+         when Session_Stream_Frame_V1_Error_Code_Stream_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("STREAM_ERROR"));
+         when Session_Stream_Frame_V1_Error_Code_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Session_Stream_Frame_V1_Error_Code;
+
+   function Image (Model : Session_Stream_Frame_V1_Error_Code) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Session_Stream_Frame_V1_Error_Code (Model.Kind).Raw));
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Error_Code) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Error_Code is
+      (To_Session_Stream_Frame_V1_Error_Code (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Error) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "error", JS.JSON.Create (Model.Error));
+      JS.Set (Result, "code", To_JSON (Model.Code));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Error is
+      Result : Session_Stream_Frame_V1_Error;
+   begin
+      if JS.Present (Node, "error") then
+         Result.Error := JS.As_Text (JS.Get_Value (Node, "error"));
+      end if;
+      if JS.Present (Node, "code") then
+         Result.Code := From_JSON (JS.Get_Value (Node, "code"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Run_Added) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Run_Added is
+      Result : Session_Stream_Frame_V1_Run_Added;
+   begin
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Run_Done_Metrics) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Duration_Ms then
+         JS.Set (Result, "duration_ms", JS.JSON.Create (Model.Duration_Ms));
+      end if;
+      if Model.Has_Steps_Count then
+         JS.Set (Result, "steps_count", JS.JSON.Create (Model.Steps_Count));
+      end if;
+      if Model.Has_Input_Tokens then
+         JS.Set (Result, "input_tokens", JS.JSON.Create (Model.Input_Tokens));
+      end if;
+      if Model.Has_Output_Tokens then
+         JS.Set (Result, "output_tokens", JS.JSON.Create (Model.Output_Tokens));
+      end if;
+      if Model.Has_Thinking_Tokens then
+         JS.Set (Result, "thinking_tokens", JS.JSON.Create (Model.Thinking_Tokens));
+      end if;
+      if Model.Has_Cached_Tokens then
+         JS.Set (Result, "cached_tokens", JS.JSON.Create (Model.Cached_Tokens));
+      end if;
+      if Model.Has_Tool_Calls_Count then
+         JS.Set (Result, "tool_calls_count", JS.JSON.Create (Model.Tool_Calls_Count));
+      end if;
+      if Model.Has_LLM_Calls_Count then
+         JS.Set (Result, "llm_calls_count", JS.JSON.Create (Model.LLM_Calls_Count));
+      end if;
+      if Model.Has_Guardrail_Checks then
+         JS.Set (Result, "guardrail_checks", JS.JSON.Create (Model.Guardrail_Checks));
+      end if;
+      if Model.Has_Guardrail_Violations then
+         JS.Set (Result, "guardrail_violations", JS.JSON.Create (Model.Guardrail_Violations));
+      end if;
+      if Model.Has_Memory_Retrievals then
+         JS.Set (Result, "memory_retrievals", JS.JSON.Create (Model.Memory_Retrievals));
+      end if;
+      if Model.Has_Memory_Extractions then
+         JS.Set (Result, "memory_extractions", JS.JSON.Create (Model.Memory_Extractions));
+      end if;
+      if Model.Has_Total_Cost_Usd then
+         JS.Set (Result, "total_cost_usd", JS.JSON.Create (Model.Total_Cost_Usd));
+      end if;
+      if Model.Has_Fallback_Used then
+         JS.Set (Result, "fallback_used", JS.JSON.Create (Model.Fallback_Used));
+      end if;
+      if Model.Has_Pricing_Confidence then
+         JS.Set (Result, "pricing_confidence", To_JSON (Model.Pricing_Confidence));
+      end if;
+      if Model.Has_Cost_Attribution then
+         JS.Set (Result, "cost_attribution", To_JSON (Model.Cost_Attribution));
+      end if;
+      if Model.Has_Files_Modified then
+         JS.Set (Result, "files_modified", JS.JSON.Create (Model.Files_Modified));
+      end if;
+      if Model.Has_Commands_Executed then
+         JS.Set (Result, "commands_executed", JS.JSON.Create (Model.Commands_Executed));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Run_Done_Metrics is
+      Result : Session_Stream_Frame_V1_Run_Done_Metrics;
+   begin
+      if JS.Present (Node, "duration_ms") then
+         Result.Has_Duration_Ms := True;
+         Result.Duration_Ms := JS.As_Integer (JS.Get_Value (Node, "duration_ms"));
+      end if;
+      if JS.Present (Node, "steps_count") then
+         Result.Has_Steps_Count := True;
+         Result.Steps_Count := JS.As_Integer (JS.Get_Value (Node, "steps_count"));
+      end if;
+      if JS.Present (Node, "input_tokens") then
+         Result.Has_Input_Tokens := True;
+         Result.Input_Tokens := JS.As_Integer (JS.Get_Value (Node, "input_tokens"));
+      end if;
+      if JS.Present (Node, "output_tokens") then
+         Result.Has_Output_Tokens := True;
+         Result.Output_Tokens := JS.As_Integer (JS.Get_Value (Node, "output_tokens"));
+      end if;
+      if JS.Present (Node, "thinking_tokens") then
+         Result.Has_Thinking_Tokens := True;
+         Result.Thinking_Tokens := JS.As_Integer (JS.Get_Value (Node, "thinking_tokens"));
+      end if;
+      if JS.Present (Node, "cached_tokens") then
+         Result.Has_Cached_Tokens := True;
+         Result.Cached_Tokens := JS.As_Integer (JS.Get_Value (Node, "cached_tokens"));
+      end if;
+      if JS.Present (Node, "tool_calls_count") then
+         Result.Has_Tool_Calls_Count := True;
+         Result.Tool_Calls_Count := JS.As_Integer (JS.Get_Value (Node, "tool_calls_count"));
+      end if;
+      if JS.Present (Node, "llm_calls_count") then
+         Result.Has_LLM_Calls_Count := True;
+         Result.LLM_Calls_Count := JS.As_Integer (JS.Get_Value (Node, "llm_calls_count"));
+      end if;
+      if JS.Present (Node, "guardrail_checks") then
+         Result.Has_Guardrail_Checks := True;
+         Result.Guardrail_Checks := JS.As_Integer (JS.Get_Value (Node, "guardrail_checks"));
+      end if;
+      if JS.Present (Node, "guardrail_violations") then
+         Result.Has_Guardrail_Violations := True;
+         Result.Guardrail_Violations := JS.As_Integer (JS.Get_Value (Node, "guardrail_violations"));
+      end if;
+      if JS.Present (Node, "memory_retrievals") then
+         Result.Has_Memory_Retrievals := True;
+         Result.Memory_Retrievals := JS.As_Integer (JS.Get_Value (Node, "memory_retrievals"));
+      end if;
+      if JS.Present (Node, "memory_extractions") then
+         Result.Has_Memory_Extractions := True;
+         Result.Memory_Extractions := JS.As_Integer (JS.Get_Value (Node, "memory_extractions"));
+      end if;
+      if JS.Present (Node, "total_cost_usd") then
+         Result.Has_Total_Cost_Usd := True;
+         Result.Total_Cost_Usd := JS.As_Float (JS.Get_Value (Node, "total_cost_usd"));
+      end if;
+      if JS.Present (Node, "fallback_used") then
+         Result.Has_Fallback_Used := True;
+         Result.Fallback_Used := JS.As_Boolean (JS.Get_Value (Node, "fallback_used"));
+      end if;
+      if JS.Present (Node, "pricing_confidence") then
+         Result.Has_Pricing_Confidence := True;
+         Result.Pricing_Confidence := From_JSON (JS.Get_Value (Node, "pricing_confidence"));
+      end if;
+      if JS.Present (Node, "cost_attribution") then
+         Result.Has_Cost_Attribution := True;
+         Result.Cost_Attribution := From_JSON (JS.Get_Value (Node, "cost_attribution"));
+      end if;
+      if JS.Present (Node, "files_modified") then
+         Result.Has_Files_Modified := True;
+         Result.Files_Modified := JS.As_Integer (JS.Get_Value (Node, "files_modified"));
+      end if;
+      if JS.Present (Node, "commands_executed") then
+         Result.Has_Commands_Executed := True;
+         Result.Commands_Executed := JS.As_Integer (JS.Get_Value (Node, "commands_executed"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Run_Done) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      JS.Set (Result, "status", JS.JSON.Create (Model.Status));
+      if Model.Has_Metrics then
+         JS.Set (Result, "metrics", To_JSON (Model.Metrics));
+      end if;
+      if Model.Has_Cost_Usd then
+         JS.Set (Result, "cost_usd", JS.JSON.Create (Model.Cost_Usd));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Run_Done is
+      Result : Session_Stream_Frame_V1_Run_Done;
+   begin
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := JS.As_Text (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "metrics") then
+         Result.Has_Metrics := True;
+         Result.Metrics := From_JSON (JS.Get_Value (Node, "metrics"));
+      end if;
+      if JS.Present (Node, "cost_usd") then
+         Result.Has_Cost_Usd := True;
+         Result.Cost_Usd := JS.As_Float (JS.Get_Value (Node, "cost_usd"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Session_Stream_Frame_V1_Session_Closed) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session_Stream_Frame_V1_Session_Closed is
+      Result : Session_Stream_Frame_V1_Session_Closed;
+   begin
+      if JS.Present (Node, "session_id") then
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
       end if;
       return Result;
    end From_JSON;

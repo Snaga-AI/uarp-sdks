@@ -675,6 +675,39 @@ async fn does_not_retry_a_write_that_carries_no_idempotency_key() {
 }
 
 #[tokio::test]
+async fn does_not_retry_a_conflict_even_on_a_keyed_write() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/agents"))
+        .and(header_exists("idempotency-key"))
+        .respond_with(
+            ResponseTemplate::new(409)
+                .insert_header("retry-after", "0")
+                .set_body_json(json!({"title": "Conflict", "status": 409, "code": "CLIENT_REQUEST_CONFLICT"})),
+        )
+        //  A conflict is the server's answer about the resource's state; the
+        //  same request meets the same state.
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = Client::builder()
+        .api_key("k")
+        .base_url(server.uri())
+        .max_retries(3)
+        .build()
+        .unwrap();
+    let error = client
+        .raw::<serde_json::Value>(reqwest::Method::POST, "/api/v1/agents", Some(&json!({"name": "demo"})))
+        .await
+        .expect_err("must fail");
+    match error {
+        Error::Api(api) => assert!(!api.is_retryable()),
+        other => panic!("unexpected error: {other:?}"),
+    }
+}
+
+#[tokio::test]
 async fn reuses_a_caller_supplied_idempotency_key() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))

@@ -307,6 +307,22 @@ test('returns undefined for 204 responses', async () => {
   assert.equal(result, undefined);
 });
 
+test('does not retry a conflict, even on a write that carries a key', async () => {
+  // A conflict is the server's answer about the resource's state; the same
+  // request meets the same state. It used to be sent four times here.
+  const { client, calls } = clientWith(
+    [problem(409, { title: 'Conflict', code: 'CLIENT_REQUEST_CONFLICT' }, { 'retry-after': '0' })],
+    { maxRetries: 3 },
+  );
+
+  await assert.rejects(
+    () => client.agents.create({ name: 'demo' }),
+    (error: unknown) => error instanceof APIError && error.status === 409,
+  );
+  assert.equal(calls.length, 1);
+  assert.ok(new Headers(calls[0]?.init.headers).get('idempotency-key'));
+});
+
 test('does not retry a write that carries no idempotency key', async () => {
   const { client, calls } = clientWith(
     [problem(500, { title: 'boom' }, { 'retry-after': '0' })],

@@ -27,8 +27,18 @@ export function words(input: string): string[] {
     const next = input[i + 1];
     const isUpper = /[A-Z]/.test(ch);
     // Boundary before an uppercase run that starts a new word (fooBar, HTTPServer).
-    // Digits never start a boundary, so `A2A` and `v1` survive as single words.
-    if (isUpper && prev && (/[a-z]/.test(prev) || (/[A-Z]/.test(prev) && next && /[a-z]/.test(next)))) {
+    // Digits never start a boundary, so `A2A` and `v1` survive as single words —
+    // except after a version tag: `RunEventV1RunStarted` is `run event v1 run
+    // started`, not `... v1run started`, and `RunEventV1LLMChunk` keeps its `llm`.
+    // Only a digit that follows a capital counts, so names already shipped
+    // (`ContentVariant2item`) keep their spelling, and `A2A` stays one word.
+    const tag = `${input[i - 2] ?? ''}${prev ?? ''}${ch}`;
+    const afterTag = /^[A-Z][0-9][A-Z]$/.test(tag) && !ACRONYMS.has(tag.toLowerCase());
+    if (
+      isUpper &&
+      prev &&
+      (/[a-z]/.test(prev) || (/[A-Z]/.test(prev) && next && /[a-z]/.test(next)) || afterTag)
+    ) {
       flush();
     }
     buf += ch;

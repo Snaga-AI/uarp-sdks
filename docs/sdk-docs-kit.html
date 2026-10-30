@@ -238,7 +238,7 @@ let page = client.agents().list(&amp;Default::default()).await?;</code></pre>
     <div class="lang">
       <header><span class="chip">Swift</span><span class="meta">SwiftPM · async/await</span></header>
       <div class="body">
-<pre><code>.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.12.0")</code></pre>
+<pre><code>.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.13.0")</code></pre>
 <pre><code>import UARP
 
 let client = try UARPClient.fromEnvironment()
@@ -251,7 +251,7 @@ let page = try await client.agents.list(limit: 100)</code></pre>
     <div class="lang">
       <header><span class="chip">Kotlin / Android</span><span class="meta">Maven Central · coroutines</span></header>
       <div class="body">
-<pre><code>implementation("ai.snaga:uarp-sdk:0.12.0")</code></pre>
+<pre><code>implementation("ai.snaga:uarp-sdk:0.13.0")</code></pre>
 <pre><code>import ai.snaga.uarp.UarpClient
 import ai.snaga.uarp.api.agents
 import ai.snaga.uarp.models.CreateAgentRequest
@@ -292,7 +292,7 @@ Page   : constant UARP.Models.List_Agents_Response :=
     <h3>Idempotency and retries</h3>
     <p>Every mutating <code>/api/v1/*</code> call carries an <code>Idempotency-Key</code>, which
       is also what makes a write safe to retry. Transient failures — <code>408</code>,
-      <code>409</code>, <code>429</code>, <code>500</code>, <code>502</code>, <code>503</code>,
+      <code>429</code>, <code>500</code>, <code>502</code>, <code>503</code>,
       <code>504</code>, dropped connections — are retried with
       full-jitter backoff, honouring <code>Retry-After</code> and the
       <code>X-Should-Retry: false</code> opt-out. Reads always retry; writes only when they carry

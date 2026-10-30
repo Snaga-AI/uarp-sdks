@@ -183,7 +183,7 @@ await client.agents.create(body, {
 });
 ```
 
-**Retries.** `408`, `409`, `429`, `500`, `502`, `503` and `504`, plus connection errors, are retried
+**Retries.** `408`, `429`, `500`, `502`, `503` and `504`, plus connection errors, are retried
 with full-jitter backoff (500 ms → 8 s), honouring `Retry-After`. Reads always
 retry; writes only when they carry an idempotency key — which every mutating
 `/api/v1/*` call does automatically.

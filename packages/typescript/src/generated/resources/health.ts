@@ -5,7 +5,7 @@ import type { RequestOptions } from '../../core/transport.js';
 import type { EventStream } from '../../core/sse.js';
 import type {
   GetHealthResponse,
-  HealthCheckV1aliasResponse,
+  HealthCheckV1AliasResponse,
   HealthLiveResponse,
   HealthzAliasResponse,
   ReadinessReport,
@@ -88,7 +88,7 @@ export class HealthResource extends APIResource {
    *
    * `GET /api/v1/health`
    */
-  healthCheckV1alias(options?: RequestOptions): Promise<HealthCheckV1aliasResponse> {
+  healthCheckV1Alias(options?: RequestOptions): Promise<HealthCheckV1AliasResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/health',
