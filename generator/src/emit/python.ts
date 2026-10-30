@@ -575,7 +575,9 @@ function bodyExpr(op: Operation): string {
       return `_Body(body, ${str('multipart')}, (${parts.join('')}))`;
     }
     case 'binary':
-      return `_Body(body, ${str('binary')})`;
+      return body.contentType && body.contentType !== 'application/octet-stream'
+        ? `_Body(body, ${str('binary')}, content_type=${str(body.contentType)})`
+        : `_Body(body, ${str('binary')})`;
     default:
       //  A text body goes on the wire as a JSON string, as in every other SDK.
       return '_Body(body)';

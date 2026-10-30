@@ -1238,7 +1238,8 @@ export class PublicResource extends APIResource {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}/upload`,
-      body,
+      binary: body,
+      contentType: 'image/*',
       idempotent: true,
       options,
     });

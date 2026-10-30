@@ -351,10 +351,18 @@ function emitOperation(w: Writer, op: Operation): void {
   }, '}');
 }
 
-type CallKind = 'json' | 'empty' | 'bytes' | 'text' | 'multipart' | 'form' | 'stream';
+type CallKind = 'json' | 'empty' | 'bytes' | 'text' | 'multipart' | 'form' | 'binary' | 'stream';
 
 function callKind(op: Operation): CallKind {
   if (op.body?.encoding === 'multipart') return 'multipart';
+  if (op.body?.encoding === 'binary') {
+    //  Like a form: the raw-body transport decodes JSON (or nothing).
+    const response = op.response.type;
+    if (response && (op.response.encoding === 'text' || (response.kind === 'prim' && response.prim === 'binary'))) {
+      throw new Error(`${op.id}: a raw body with a non-JSON response is not supported yet.`);
+    }
+    return 'binary';
+  }
   if (op.body?.encoding === 'form') {
     //  The form transport decodes JSON (or nothing). A form answered with
     //  bytes or text would need its own call; refuse rather than mis-decode.
@@ -431,6 +439,32 @@ function emitCall(w: Writer, op: Operation, kind: CallKind): void {
 
   if (kind === 'form') {
     emitFormCall(w, op, query, headers);
+    return;
+  }
+
+  if (kind === 'binary') {
+    //  The bytes go on the wire as they are, under the part's own type or the
+    //  one the operation declares. Before 0.13.1 they were serialised as JSON.
+    w.line('self.client');
+    w.indent(() => {
+      w.line('.request_binary(');
+      w.indent(() => {
+        w.line('Request {');
+        w.indent(() => {
+          w.line(`method: Method::${op.httpMethod.toUpperCase()},`);
+          w.line(`path: ${pathExpr(op)},`);
+          w.line(`query: ${query},`);
+          w.line('body: NO_BODY,');
+          w.line(headers === 'headers' ? 'headers,' : `headers: ${headers},`);
+          w.line(`idempotent: ${op.idempotent},`);
+        });
+        w.line('},');
+        w.line('body,');
+        w.line(`"${escape(op.body?.contentType ?? 'application/octet-stream')}",`);
+      });
+      w.line(')');
+      w.line('.await');
+    });
     return;
   }
 

@@ -621,7 +621,7 @@ function bodyExpr(op: Operation, args: Arg[]): string {
   const label = args[op.pathParams.length]!.label;
   if (body.encoding === 'multipart') return '.multipart(parts)';
   if (body.encoding === 'form') return body.required ? '.form(fields)' : `${label} == nil ? nil : .form(fields)`;
-  if (body.encoding === 'binary') return `.raw(${label}, contentType: "application/octet-stream")`;
+  if (body.encoding === 'binary') return `.raw(${label}, contentType: "${body.contentType ?? 'application/octet-stream'}")`;
   if (body.encoding === 'text') return `.raw(Data(${label}.utf8), contentType: "text/plain")`;
   return body.required ? `try client.encode(${label})` : 'encodedBody';
 }

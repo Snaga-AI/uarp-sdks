@@ -68,6 +68,11 @@ export interface RequestSpec {
   /** Multipart parts; `FileInput` values become file parts, the rest are fields. */
   multipart?: object;
   binary?: BinaryInput;
+  /**
+   * The media type a `binary` body is declared with; `application/octet-stream`
+   * when absent. A range (`image/*`) gives way to a `Blob`'s own type inside it.
+   */
+  contentType?: string;
   /** Attach an `Idempotency-Key`, which also makes the call safe to retry. */
   idempotent?: boolean;
   responseType?: ResponseType;
@@ -347,7 +352,7 @@ function encodeBody(spec: RequestSpec, headers: Headers): BodyInit | undefined {
     return params;
   }
   if (spec.binary !== undefined) {
-    if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/octet-stream');
+    if (!headers.has('Content-Type')) headers.set('Content-Type', binaryContentType(spec.binary, spec.contentType));
     return toBodyInit(spec.binary);
   }
   if (spec.body !== undefined) {
@@ -461,3 +466,16 @@ function readEnv(): (name: string) => string | undefined {
 }
 
 export { APIError };
+
+/**
+ * The `Content-Type` of a raw body: a `Blob`'s own type when it falls inside the
+ * declared range, else the declared type itself. An `image/*` upload of bare
+ * bytes goes out as `image/*`; the server reads the real type from the bytes.
+ */
+function binaryContentType(body: BinaryInput, declared = 'application/octet-stream'): string {
+  const own = typeof Blob !== 'undefined' && body instanceof Blob ? body.type.split(';')[0]!.trim().toLowerCase() : '';
+  if (!own) return declared;
+  const [range, sub] = declared.toLowerCase().split('/');
+  const fits = range === '*' || (own.startsWith(`${range}/`) && (sub === '*' || own === declared.toLowerCase()));
+  return fits ? own : declared;
+}

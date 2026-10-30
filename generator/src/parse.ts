@@ -616,13 +616,27 @@ class Parser {
     }
     const binary = pick('application/octet-stream');
     if (binary) {
-      return { encoding: 'binary', type: { kind: 'prim', prim: 'binary' }, required, description: node.description };
+      return {
+        encoding: 'binary',
+        type: PRIM_BINARY,
+        required,
+        description: node.description,
+        contentType: 'application/octet-stream',
+      };
     }
     const text = pick('text/plain');
     if (text) return { encoding: 'text', type: PRIM_STRING, required, description: node.description };
 
-    // Unknown media type: send raw JSON rather than dropping the body entirely.
-    const first = Object.values<Json>(content)[0];
+    const [media, first] = Object.entries<Json>(content)[0] ?? [];
+    // Any other media type is raw bytes under that type — `image/*` for a
+    // public session's upload. It used to fall through to JSON, so every SDK
+    // serialised the caller's bytes as a JSON value, and the server answers
+    // anything not `image/*` with 415.
+    if (media && !/[/+]json$/.test(media) && !media.startsWith('text/')) {
+      return { encoding: 'binary', type: PRIM_BINARY, required, description: node.description, contentType: media };
+    }
+    // A JSON flavour (`application/merge-patch+json`) or an unknown text type:
+    // send JSON rather than dropping the body.
     return {
       encoding: 'json' as BodyEncoding,
       type: this.#schemaType(first?.schema, `${opName}Request`),

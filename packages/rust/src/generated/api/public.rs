@@ -1328,14 +1328,18 @@ impl PublicApi {
     /// `POST /api/v1/public/sessions/{sessionId}/upload`
     pub async fn upload_public_session_image(&self, session_id: &str, body: &FilePart) -> Result<models::UploadPublicSessionImageResponse> {
         self.client
-            .request_json(Request {
-                method: Method::POST,
-                path: format!("/api/v1/public/sessions/{}/upload", encode_path(session_id)),
-                query: NO_QUERY,
-                body: Some(body),
-                headers: Vec::new(),
-                idempotent: true,
-            })
+            .request_binary(
+                Request {
+                    method: Method::POST,
+                    path: format!("/api/v1/public/sessions/{}/upload", encode_path(session_id)),
+                    query: NO_QUERY,
+                    body: NO_BODY,
+                    headers: Vec::new(),
+                    idempotent: true,
+                },
+                body,
+                "image/*",
+            )
             .await
     }
 }

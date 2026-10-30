@@ -486,7 +486,7 @@ function bodyExpr(op: Operation, args: Arg[]): string {
   const body = op.body!;
   const label = args[op.pathParams.length]!.name;
   if (body.encoding === 'multipart') return 'Body.Multipart(parts)';
-  if (body.encoding === 'binary') return `Body.Raw(${label}, "application/octet-stream")`;
+  if (body.encoding === 'binary') return `Body.Raw(${label}, "${body.contentType ?? 'application/octet-stream'}")`;
   if (body.encoding === 'text') return `Body.Raw(${label}.toByteArray(), "text/plain")`;
   //  The model's fields in schema order, encoded by the runtime the way
   //  `URLSearchParams` does. Never JSON: that would put the wrong content type

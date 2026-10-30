@@ -1056,3 +1056,13 @@ test('a stream frame schema that no event name reaches stops the build', () => {
   const orphan = doc({ SessionStreamFrameV1Orphan: { type: 'object', properties: {} } });
   assert.throws(() => parse(orphan), /SessionStreamFrameV1Orphan is not sent under any event name/);
 });
+
+test('a body of any non-JSON media type is raw bytes under that type', () => {
+  // `image/*` fell through to JSON, so every SDK serialised the caller's bytes
+  // as a JSON value; the server answers anything not `image/*` with 415.
+  const upload = operation(productionSpec(), 'uploadPublicSessionImage');
+  assert.equal(upload.body?.encoding, 'binary');
+  assert.equal(upload.body?.contentType, 'image/*');
+  assert.deepEqual(upload.body?.type, { kind: 'prim', prim: 'binary' });
+});
+

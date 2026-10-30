@@ -1166,12 +1166,12 @@ public class PublicApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/public/sessions/{sessionId}/upload`
      */
-    public suspend fun uploadPublicSessionImage(sessionId: String, body: FilePart, options: RequestOptions = RequestOptions()): UploadPublicSessionImageResponse {
+    public suspend fun uploadPublicSessionImage(sessionId: String, body: ByteArray, options: RequestOptions = RequestOptions()): UploadPublicSessionImageResponse {
         return client.request<UploadPublicSessionImageResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/public/sessions/${encodePathSegment(sessionId)}/upload",
-                body = Body.Json(uarpJson.encodeToString(body)),
+                body = Body.Raw(body, "image/*"),
                 idempotent = true,
                 options = options,
             )

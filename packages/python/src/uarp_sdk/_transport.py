@@ -93,6 +93,9 @@ class Body:
     #: For a form: the field names in schema order. For multipart: each part's
     #: name and whether it is a file.
     fields: Sequence[Any] = ()
+    #: For a raw body: the media type the operation declares (`image/*`). A
+    #: `FilePart`'s own type takes its place.
+    content_type: Optional[str] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -133,11 +136,14 @@ def _encode_body(body: Optional[Body]) -> _Encoded:
         return _multipart(body)
     if body.encoding == "binary":
         value = body.value
+        declared = body.content_type or "application/octet-stream"
         if isinstance(value, FilePart):
-            return _Encoded(bytes(value.data), value.content_type or "application/octet-stream")
+            return _Encoded(bytes(value.data), value.content_type or declared)
         if isinstance(value, str):
             value = value.encode("utf-8")
-        return _Encoded(bytes(value), "application/octet-stream")
+        #  Bare bytes of an `image/*` upload go out as `image/*`; the server
+        #  reads the real type from the bytes.
+        return _Encoded(bytes(value), declared)
     raise EncodeError(f"unknown body encoding {body.encoding!r}")
 
 

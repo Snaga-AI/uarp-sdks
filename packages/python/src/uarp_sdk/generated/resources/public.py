@@ -931,7 +931,7 @@ class PublicResource:
             request_options=request_options,
         )
 
-    def upload_public_session_image(self, session_id: str, body: FileInput, *, request_options: Optional[RequestOptions] = None) -> _m.UploadPublicSessionImageResponse:
+    def upload_public_session_image(self, session_id: str, body: Union[bytes, FilePart], *, request_options: Optional[RequestOptions] = None) -> _m.UploadPublicSessionImageResponse:
         """Attach an image to this chat
 
         The body is the raw image bytes — not multipart, not JSON — with its media type in
@@ -946,7 +946,7 @@ class PublicResource:
         return _cast("_m.UploadPublicSessionImageResponse", self._client._request(
             "POST",
             f"/api/v1/public/sessions/{_segment(session_id)}/upload",
-            body=_Body(body),
+            body=_Body(body, "binary", content_type="image/*"),
             idempotent=True,
             response=_Response(type=_m.UploadPublicSessionImageResponse),
             request_options=request_options,
@@ -1857,7 +1857,7 @@ class AsyncPublicResource:
             request_options=request_options,
         )
 
-    async def upload_public_session_image(self, session_id: str, body: FileInput, *, request_options: Optional[RequestOptions] = None) -> _m.UploadPublicSessionImageResponse:
+    async def upload_public_session_image(self, session_id: str, body: Union[bytes, FilePart], *, request_options: Optional[RequestOptions] = None) -> _m.UploadPublicSessionImageResponse:
         """Attach an image to this chat
 
         The body is the raw image bytes — not multipart, not JSON — with its media type in
@@ -1872,7 +1872,7 @@ class AsyncPublicResource:
         return _cast("_m.UploadPublicSessionImageResponse", await self._client._request(
             "POST",
             f"/api/v1/public/sessions/{_segment(session_id)}/upload",
-            body=_Body(body),
+            body=_Body(body, "binary", content_type="image/*"),
             idempotent=True,
             response=_Response(type=_m.UploadPublicSessionImageResponse),
             request_options=request_options,
