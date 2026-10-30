@@ -42,7 +42,8 @@ const PUBLISHED = VERSION;
  * 2026-09-23, pushed by hand from the v0.7.0 tag with the release job's own
  * steps, because the replacement token still could not write. Since 0.8.0 the
  * release job pushes it with a deploy key; 0.9.0 arrived that way on
- * 2026-10-11, 0.10.0 on 2026-10-12, 0.11.0 and 0.12.0 on 2026-10-18. Measured against the mirror's tags, not taken from the release
+ * 2026-10-11, 0.10.0 on 2026-10-12, 0.11.0 and 0.12.0 on 2026-10-18, 0.13.0 on
+ * 2026-10-30. Measured against the mirror's tags, not taken from the release
  * notes.
  *
  * Keep it separate from `PUBLISHED` for that reason: `from: "${PUBLISHED}"`
@@ -50,7 +51,7 @@ const PUBLISHED = VERSION;
  * mirror has the tag, and not before — a snippet a person cannot run is worse
  * than a snippet that gives them an older SDK.
  */
-const SWIFT_MIRROR = '0.12.0';
+const SWIFT_MIRROR = '0.13.0';
 
 /** The install line, and what it needs. */
 export const INSTALL: Record<LanguageId, { command: string; shell: boolean; needs: string }> = {
