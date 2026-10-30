@@ -297,6 +297,18 @@ def test_a_copy_never_pins_one_idempotency_key_on_every_write(server: Server) ->
     assert first.headers["idempotency-key"] != second.headers["idempotency-key"]
 
 
+def test_an_image_upload_sends_raw_bytes_under_an_image_type(server: Server) -> None:
+    #  It went out as JSON, which the server refuses with 415.
+    server.route = lambda request: Reply.json({"file_id": "f1", "mime_type": "image/png", "size": 8}, 201)
+    client = client_for(server)
+    png = b"\x89PNG\r\n\x1a\n"
+    client.public.upload_public_session_image("s1", png)
+    client.public.upload_public_session_image("s1", FilePart(png, "a.png", "image/png"))
+    bare, typed = server.received
+    assert (bare.headers["content-type"], bare.body) == ("image/*", png)
+    assert (typed.headers["content-type"], typed.body) == ("image/png", png)
+
+
 def test_a_copy_can_turn_retries_off(server: Server) -> None:
     server.route = lambda request: Reply.json({"status": 503}, 503, (("Retry-After", "0"),))
     client = client_for(server, max_retries=2)

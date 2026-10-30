@@ -14,6 +14,7 @@ use url::Url;
 use crate::error::{ApiError, Error, Problem, Result};
 use crate::form::{encode_form, FORM_CONTENT_TYPE};
 use crate::generated::meta::DEFAULT_BASE_URL;
+use crate::multipart::FilePart;
 use crate::sse::{EventStream, StreamOptions};
 use crate::util::encode_query_component;
 
@@ -268,6 +269,34 @@ impl Client {
         let response = self
             .run(&req, &move |builder: RequestBuilder| {
                 Ok(builder.multipart(make_form()?))
+            })
+            .await?;
+        decode_json(response).await
+    }
+
+    /// Send a raw body and decode a JSON response body.
+    ///
+    /// The `Content-Type` is the part's own when it has one, else `declared`,
+    /// the media type the operation names (`image/*`, which the server
+    /// narrows by reading the bytes). The same bytes are sent on a retry.
+    pub async fn request_binary<Q, R>(
+        &self,
+        req: Request<'_, Q, ()>,
+        part: &FilePart,
+        declared: &'static str,
+    ) -> Result<R>
+    where
+        Q: Serialize + ?Sized + Sync,
+        R: DeserializeOwned,
+    {
+        let content_type = HeaderValue::from_str(part.content_type.as_deref().unwrap_or(declared))
+            .map_err(|_| Error::Encode(format!("not a media type: {:?}", part.content_type)))?;
+        let data = part.data.clone();
+        let response = self
+            .run(&req, &move |builder: RequestBuilder| {
+                let mut headers = HeaderMap::new();
+                headers.insert(reqwest::header::CONTENT_TYPE, content_type.clone());
+                Ok(builder.headers(headers).body(data.clone()))
             })
             .await?;
         decode_json(response).await

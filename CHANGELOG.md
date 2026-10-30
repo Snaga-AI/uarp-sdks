@@ -6,6 +6,30 @@ All six SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.13.1 — 2026-10-30
+
+Build `3d07d69d`, digest `fb3b20d469827b43` — the document 0.13.0 was cut from.
+
+### Fixed — an image upload goes out as an image, in every SDK
+
+`uploadPublicSessionImage` (`POST /public/sessions/{sessionId}/upload`, body
+`image/*`) sent the caller's bytes as a JSON value with `Content-Type:
+application/json`, which the server refuses with 415. The generator knew raw
+bodies only as `application/octet-stream` and sent every other media type as
+JSON; any non-JSON, non-text media type is now a raw body under its own type.
+Found by the Varta pilot.
+
+- The bytes go on the wire as they are, under the declared `image/*` unless the
+  caller's value says which image it is: a `Blob`'s type (TypeScript), a
+  `FilePart`'s `content_type` (Python, Rust), or `Content_Type` (Ada). The
+  server reads the real type from the bytes either way.
+- The parameter changes type where it was wrong: `Data` in Swift and
+  `ByteArray` in Kotlin instead of a `FilePart` serialised as JSON; `bytes` or
+  `FilePart` in Python; a `String` of bytes in Ada instead of a JSON value.
+  TypeScript keeps `BinaryInput`, Rust keeps `&FilePart`.
+- Rust gains `Client::request_binary`, and Ada a raw-body path; neither had
+  one.
+
 ## 0.13.0 — 2026-10-30
 
 Build `3d07d69d`, canonical digest `fb3b20d469827b43`. Against 0.12.0: 653

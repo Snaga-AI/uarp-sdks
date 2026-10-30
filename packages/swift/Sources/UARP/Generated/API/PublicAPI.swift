@@ -1014,11 +1014,11 @@ public struct PublicAPI: Sendable {
     /// (public-served-forms_test.ts, 2026-09-10).
     ///
     /// `POST /api/v1/public/sessions/{sessionId}/upload`
-    public func uploadPublicSessionImage(sessionId: String, body: FilePart, options: RequestOptions = .init()) async throws -> UploadPublicSessionImageResponse {
+    public func uploadPublicSessionImage(sessionId: String, body: Data, options: RequestOptions = .init()) async throws -> UploadPublicSessionImageResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/public/sessions/\(encodePathSegment(sessionId))/upload",
-            body: try client.encode(body),
+            body: .raw(body, contentType: "image/*"),
             idempotent: true,
             options: options
         ))

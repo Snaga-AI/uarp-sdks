@@ -6,7 +6,7 @@ import Foundation
 public let specVersion = "0.4.0"
 
 /// Version of this SDK.
-public let sdkVersion = "0.13.0"
+public let sdkVersion = "0.13.1"
 
 /// Production base URL.
 public let defaultBaseURL = "https://api.snaga.ai"

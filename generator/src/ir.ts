@@ -85,6 +85,12 @@ export interface RequestBody {
   description?: string;
   /** For multipart: the individual parts, so emitters can build a form. */
   parts?: MultipartPart[];
+  /**
+   * For a raw body: the media type the document declares (`image/*`,
+   * `application/octet-stream`). A range is sent as declared unless the
+   * caller's bytes say which member of it they are.
+   */
+  contentType?: string;
 }
 
 export interface MultipartPart {

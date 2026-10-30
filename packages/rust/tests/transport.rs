@@ -6,7 +6,7 @@ use futures_util::StreamExt;
 use serde_json::json;
 use uarp_sdk::api::{ListAgentsParams, StreamRunEventsParams};
 use uarp_sdk::{ApiErrorKind, Client, Error, StreamOptions, StreamState};
-use wiremock::matchers::{body_json, header, header_exists, method, path, query_param};
+use wiremock::matchers::{body_bytes, body_json, header, header_exists, method, path, query_param};
 use wiremock::{Mock, MockServer, Request, ResponseTemplate};
 
 /// A complete `Agent` payload — the model decodes strictly, so every field the
@@ -705,6 +705,35 @@ async fn does_not_retry_a_conflict_even_on_a_keyed_write() {
         Error::Api(api) => assert!(!api.is_retryable()),
         other => panic!("unexpected error: {other:?}"),
     }
+}
+
+#[tokio::test]
+async fn an_image_upload_sends_raw_bytes_under_an_image_type() {
+    //  It went out as JSON, which the server refuses with 415.
+    let png: Vec<u8> = vec![0x89, b'P', b'N', b'G'];
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/public/sessions/s1/upload"))
+        .and(header("content-type", "image/*"))
+        .and(body_bytes(png.clone()))
+        .respond_with(ResponseTemplate::new(201).set_body_json(json!({"file_id": "f1", "mime_type": "image/png", "size": 4})))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/public/sessions/s1/upload"))
+        .and(header("content-type", "image/png"))
+        .and(body_bytes(png.clone()))
+        .respond_with(ResponseTemplate::new(201).set_body_json(json!({"file_id": "f2", "mime_type": "image/png", "size": 4})))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let bare = uarp_sdk::FilePart::new("a", png.clone());
+    client.public().upload_public_session_image("s1", &bare).await.expect("bare bytes upload");
+    let typed = uarp_sdk::FilePart::new("a.png", png).content_type("image/png");
+    client.public().upload_public_session_image("s1", &typed).await.expect("typed upload");
 }
 
 #[tokio::test]

@@ -3,7 +3,6 @@
 --  Unauthenticated public-facing endpoints
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.SSE;
 with UARP.Types;
@@ -928,7 +927,8 @@ package UARP.API.Public is
    function Upload_Public_Session_Image
      (Self : Client_Type;
       Session_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : String;
+      Content_Type : String := "image/*";
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Upload_Public_Session_Image_Response;
 

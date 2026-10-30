@@ -288,7 +288,12 @@ function emitRequestCall(w: Writer, op: Operation, kind: 'request' | 'stream', f
     }
     if (op.body) {
       if (op.body.encoding === 'multipart') w.line('multipart: body,');
-      else if (op.body.encoding === 'binary') w.line('binary: body,');
+      else if (op.body.encoding === 'binary') {
+        w.line('binary: body,');
+        // Only a type other than the transport's default is spelled out.
+        const type = op.body.contentType;
+        if (type && type !== 'application/octet-stream') w.line(`contentType: '${escapeString(type)}',`);
+      }
       else if (op.body.encoding === 'form' && form) {
         // Schema order, not the caller's key order: a form body is compared
         // as bytes, and every SDK sends its fields in the order declared.

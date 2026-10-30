@@ -846,6 +846,11 @@ function argumentList(op: Operation): string[] {
   if (op.body) {
     args.push(`Payload : ${payloadType(op)}`);
     if (!op.body.required) args.push('Include_Payload : Boolean := True');
+    //  Each character of a raw body is one byte; its type defaults to the one
+    //  the operation declares (`image/*`, narrowed by the server from the bytes).
+    if (op.body.encoding === 'binary') {
+      args.push(`Content_Type : String := "${escape(op.body.contentType ?? 'application/octet-stream')}"`);
+    }
   }
   if (paramBag(op).length > 0) {
     args.push(`Params : ${paramsType(op)} := No_${paramsType(op)}`);
@@ -1178,6 +1183,14 @@ function emitCall(w: Writer, op: Operation, isFunction: boolean): void {
     return;
   }
 
+  //  A raw body goes out byte for byte under its own type. Before 0.13.1 it
+  //  was a JSON value, and the server refuses anything but `image/*`.
+  if (op.body?.encoding === 'binary') {
+    emitRawBodyCall(w, op, args.flatMap((a) =>
+      a.startsWith('Has_Payload =>') ? [a, 'Content_Type => Content_Type'] : [a]));
+    return;
+  }
+
   //  Text and binary responses come back verbatim rather than as JSON.
   const raw = returnType(op) === 'UARP.Types.Text';
   if (raw) {
@@ -1318,6 +1331,7 @@ function emitPaginatedBody(w: Writer, op: Operation, group: Group): void {
  * body is a bare scalar, array or free-form object take raw JSON instead.
  */
 function payloadType(op: Operation): string {
+  if (op.body!.encoding === 'binary') return 'String';
   return op.body!.type.kind === 'named' ? adaType(op.body!.type) : 'UARP.JSON_Support.JSON_Value';
 }
 

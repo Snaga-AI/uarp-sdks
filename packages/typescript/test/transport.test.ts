@@ -323,6 +323,20 @@ test('does not retry a conflict, even on a write that carries a key', async () =
   assert.ok(new Headers(calls[0]?.init.headers).get('idempotency-key'));
 });
 
+test('an image upload sends raw bytes under an image type', async () => {
+  // It went out as JSON, which the server refuses with 415.
+  const { client, calls } = clientWith([json({ file_id: 'f1', mime_type: 'image/png', size: 4 }, 201), json({ file_id: 'f2', mime_type: 'image/png', size: 4 }, 201)]);
+  const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+
+  await client.public.uploadPublicSessionImage('s1', bytes);
+  await client.public.uploadPublicSessionImage('s1', new Blob([bytes], { type: 'image/png' }));
+
+  const [bare, typed] = calls;
+  assert.equal(new Headers(bare!.init.headers).get('content-type'), 'image/*');
+  assert.deepEqual(new Uint8Array(await new Response(bare!.init.body as BodyInit).arrayBuffer()), bytes);
+  assert.equal(new Headers(typed!.init.headers).get('content-type'), 'image/png');
+});
+
 test('does not retry a write that carries no idempotency key', async () => {
   const { client, calls } = clientWith(
     [problem(500, { title: 'boom' }, { 'retry-after': '0' })],
