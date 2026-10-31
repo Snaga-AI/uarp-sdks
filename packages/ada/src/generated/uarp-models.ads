@@ -8955,6 +8955,14 @@ package UARP.Models is
       Summary : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Fields : Boolean := False;
       Fields : UARP.Types.Text_Vectors.Vector;
+      --  The proposal this row applied, on a proposal-sourced row (since 2026-10-31).
+      Has_Proposal_Id : Boolean := False;
+      Proposal_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The change kept the company version - an applied budget, public-profile or pause proposal -
+      --  so `version` is the version it happened at, not a new one, and it is not listed in
+      --  /company/versions. Absent on a row that made a version (since 2026-10-31).
+      Has_Version_Unchanged : Boolean := False;
+      Version_Unchanged : Standard.Boolean := False;
    end record;
 
    function To_JSON (Model : Company_Change) return UARP.JSON_Support.JSON_Value;
@@ -10361,6 +10369,11 @@ package UARP.Models is
       Reject_Reason : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Applied : Boolean := False;
       Applied : UARP.Models.Company_Proposal_Step_Vectors.Vector;
+      --  Set when a newer proposal the same agent made in the same conversation, or one it applied
+      --  there, closed this one: `status` is then `rejected`, `decided_by` is `system:superseded` and
+      --  `reject_reason` names the newer proposal (since 2026-10-31).
+      Has_Superseded_By : Boolean := False;
+      Superseded_By : UARP.Types.Text := UARP.Types.Empty_Text;
       --  Present when the Chief of Staff applied it in the conversation on the person's answer (since
       --  2026-10-31); `decided_by` is that person.
       Has_Applied_Via : Boolean := False;

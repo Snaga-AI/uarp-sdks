@@ -5,7 +5,7 @@ Every operation the API describes, built on `reqwest`, `serde` and `tokio`.
 
 ```toml
 [dependencies]
-uarp-sdk = "0.13.3"
+uarp-sdk = "0.13.4"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 futures-util = "0.3"   # only if you use streams
 ```

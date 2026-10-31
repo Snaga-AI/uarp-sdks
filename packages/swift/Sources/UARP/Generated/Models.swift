@@ -11057,14 +11057,22 @@ public struct CompanyChange: Codable, Hashable, Sendable {
     public var source: CompanyChangeSource
     public var summary: String
     public var fields: [String]?
+    /// The proposal this row applied, on a proposal-sourced row (since 2026-10-31).
+    public var proposalId: String?
+    /// The change kept the company version — an applied budget, public-profile or pause proposal —
+    /// so `version` is the version it happened at, not a new one, and it is not listed in
+    /// /company/versions. Absent on a row that made a version (since 2026-10-31).
+    public var versionUnchanged: Bool?
 
-    public init(version: Int, at: String, actor: String, source: CompanyChangeSource, summary: String, fields: [String]? = nil) {
+    public init(version: Int, at: String, actor: String, source: CompanyChangeSource, summary: String, fields: [String]? = nil, proposalId: String? = nil, versionUnchanged: Bool? = nil) {
         self.version = version
         self.at = at
         self.actor = actor
         self.source = source
         self.summary = summary
         self.fields = fields
+        self.proposalId = proposalId
+        self.versionUnchanged = versionUnchanged
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -11074,6 +11082,8 @@ public struct CompanyChange: Codable, Hashable, Sendable {
         case source = "source"
         case summary = "summary"
         case fields = "fields"
+        case proposalId = "proposal_id"
+        case versionUnchanged = "version_unchanged"
     }
 }
 
@@ -11802,6 +11812,10 @@ public struct CompanyProposal: Codable, Hashable, Sendable {
     public var decidedBy: String?
     public var rejectReason: String?
     public var applied: [CompanyProposalStep]?
+    /// Set when a newer proposal the same agent made in the same conversation, or one it applied
+    /// there, closed this one: `status` is then `rejected`, `decided_by` is `system:superseded` and
+    /// `reject_reason` names the newer proposal (since 2026-10-31).
+    public var supersededBy: String?
     /// Present when the Chief of Staff applied it in the conversation on the person's answer (since
     /// 2026-10-31); `decided_by` is that person.
     public var appliedVia: CompanyProposalAppliedVia?
@@ -11815,7 +11829,7 @@ public struct CompanyProposal: Codable, Hashable, Sendable {
     /// The company version after a successful apply.
     public var version: Int?
 
-    public init(proposalId: String, status: CompanyProposalStatus, summary: String, rationale: String? = nil, operations: [ProposalOperation], baseVersion: Int, diff: [CompanyProposalDiffItem], requiredRole: CompanyProposalRequiredRole, proposedBy: CompanyProposalProposedBy, template: CompanyProposalTemplate? = nil, estimatedMonthlyCostUsd: Double? = nil, createdAt: String, expiresAt: String, decidedAt: String? = nil, decidedBy: String? = nil, rejectReason: String? = nil, applied: [CompanyProposalStep]? = nil, appliedVia: CompanyProposalAppliedVia? = nil, rolledBack: [CompanyProposalStep]? = nil, rollbackFailed: [CompanyProposalStep]? = nil, failure: CompanyProposalFailure? = nil, version: Int? = nil) {
+    public init(proposalId: String, status: CompanyProposalStatus, summary: String, rationale: String? = nil, operations: [ProposalOperation], baseVersion: Int, diff: [CompanyProposalDiffItem], requiredRole: CompanyProposalRequiredRole, proposedBy: CompanyProposalProposedBy, template: CompanyProposalTemplate? = nil, estimatedMonthlyCostUsd: Double? = nil, createdAt: String, expiresAt: String, decidedAt: String? = nil, decidedBy: String? = nil, rejectReason: String? = nil, applied: [CompanyProposalStep]? = nil, supersededBy: String? = nil, appliedVia: CompanyProposalAppliedVia? = nil, rolledBack: [CompanyProposalStep]? = nil, rollbackFailed: [CompanyProposalStep]? = nil, failure: CompanyProposalFailure? = nil, version: Int? = nil) {
         self.proposalId = proposalId
         self.status = status
         self.summary = summary
@@ -11833,6 +11847,7 @@ public struct CompanyProposal: Codable, Hashable, Sendable {
         self.decidedBy = decidedBy
         self.rejectReason = rejectReason
         self.applied = applied
+        self.supersededBy = supersededBy
         self.appliedVia = appliedVia
         self.rolledBack = rolledBack
         self.rollbackFailed = rollbackFailed
@@ -11858,6 +11873,7 @@ public struct CompanyProposal: Codable, Hashable, Sendable {
         case decidedBy = "decided_by"
         case rejectReason = "reject_reason"
         case applied = "applied"
+        case supersededBy = "superseded_by"
         case appliedVia = "applied_via"
         case rolledBack = "rolled_back"
         case rollbackFailed = "rollback_failed"

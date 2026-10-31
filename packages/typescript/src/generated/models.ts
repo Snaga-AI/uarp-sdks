@@ -4691,6 +4691,16 @@ export interface CompanyChange {
   source: CompanyChangeSource;
   summary: string;
   fields?: string[];
+  /**
+   * The proposal this row applied, on a proposal-sourced row (since 2026-10-31).
+   */
+  proposal_id?: string;
+  /**
+   * The change kept the company version — an applied budget, public-profile or pause proposal —
+   * so `version` is the version it happened at, not a new one, and it is not listed in
+   * /company/versions. Absent on a row that made a version (since 2026-10-31).
+   */
+  version_unchanged?: boolean;
 }
 
 export type CompanyChangeSource = 'api' | 'proposal' | 'template' | 'pause' | 'launch';
@@ -5007,6 +5017,12 @@ export interface CompanyProposal {
   decided_by?: string;
   reject_reason?: string;
   applied?: CompanyProposalStep[];
+  /**
+   * Set when a newer proposal the same agent made in the same conversation, or one it applied
+   * there, closed this one: `status` is then `rejected`, `decided_by` is `system:superseded` and
+   * `reject_reason` names the newer proposal (since 2026-10-31).
+   */
+  superseded_by?: string;
   /**
    * Present when the Chief of Staff applied it in the conversation on the person's answer (since
    * 2026-10-31); `decided_by` is that person.
