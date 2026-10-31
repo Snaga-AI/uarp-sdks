@@ -6,7 +6,7 @@ coverage of every operation the API describes, HTTP over libcurl, JSON via GNATC
 ```toml
 # alire.toml
 [[depends-on]]
-uarp_sdk = "^0.13.2"
+uarp_sdk = "^0.13.3"
 ```
 
 Needs GNAT (Ada 2022), GNATCOLL, and **libcurl** on the system:

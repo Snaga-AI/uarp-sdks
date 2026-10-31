@@ -21,6 +21,8 @@ import type {
   RunMissionResponse,
   StartMissionRequest,
   UpdateMissionObjectiveRequest,
+  UpdateMissionScheduleRequest,
+  UpdateMissionScheduleResponse,
 } from '../models.js';
 
 /**
@@ -35,6 +37,11 @@ export interface ListMissionsParams {
    * Capped at 200; a non-numeric or non-positive value falls back to 50.
    */
   limit?: number;
+  /**
+   * Tenant-wide list only: the previous answer's `next_before` (`<created_at>|<mission_id>`);
+   * the page starts after that mission. Since 2026-10-30.
+   */
+  before?: string;
 }
 
 /**
@@ -187,7 +194,11 @@ export class MissionsResource extends APIResource {
   /**
    * List missions
    *
-   * Most recent first. Without `session_id` this is the tenant-wide list.
+   * Most recent first. Without `session_id` this is the tenant-wide list: since 2026-10-30 it
+   * reads the whole mission prefix (up to 20 000 rows of records, checkpoints and AARs) and
+   * orders by `created_at` then `mission_id`, newest first; before that it sorted only the first
+   * `limit × 8` rows, so a busy tenant got neither its newest missions nor a sign that more
+   * existed. It pages with `before` = the previous answer's `next_before`.
    *
    * MEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When
    * either is off the route answers **404** with a plain body — deliberately the same answer as
@@ -201,7 +212,7 @@ export class MissionsResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/missions',
-      query: pick(params, ['session_id', 'limit']),
+      query: pick(params, ['session_id', 'limit', 'before']),
       options,
     });
   }
@@ -442,6 +453,31 @@ export class MissionsResource extends APIResource {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/missions/${encodeURIComponent(String(missionId))}/objectives/${encodeURIComponent(String(objectiveId))}`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Change a mission schedule
+   *
+   * WRITE SEMANTICS: merges — each field present replaces that field; an absent field keeps its
+   * value, and the plan is never touched. Moves, renames, pauses or resumes a schedule and keeps
+   * its plan, id and history — before this the only way was delete and recreate. `status:
+   * paused` stops the fires and clears `next_fire_at`; `active` computes it again from `cron`
+   * and `timezone`. `404` when no mission schedule has that id, `422` for an invalid cron, time
+   * zone or status, `409` when the schedule changed between the read and the write. Since
+   * 2026-10-30.
+   *
+   * `PATCH /api/v1/missions/schedules/{scheduleId}`
+   *
+   * Required scopes: `agents:write`.
+   */
+  updateMissionSchedule(scheduleId: string, body: UpdateMissionScheduleRequest, options?: RequestOptions): Promise<UpdateMissionScheduleResponse> {
+    return this._client.request({
+      method: 'PATCH',
+      path: `/api/v1/missions/schedules/${encodeURIComponent(String(scheduleId))}`,
       body,
       idempotent: true,
       options,

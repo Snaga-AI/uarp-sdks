@@ -1078,6 +1078,14 @@ class EmergencyStateMode(UarpEnum):
     BOOTSTRAP = "bootstrap"
 
 
+class EnforcedLimitScope(UarpEnum):
+    """`EnforcedLimitScope` enumeration."""
+
+    TENANT = "tenant"
+    AGENT = "agent"
+    TEAM = "team"
+
+
 class EnrolMfaRequestAlgorithm(UarpEnum):
     """`EnrolMfaRequestAlgorithm` enumeration."""
 
@@ -2520,6 +2528,18 @@ class ProposalOpAddSquadOp(UarpEnum):
     ADD_SQUAD = "add_squad"
 
 
+class ProposalOpPauseCompanyOp(UarpEnum):
+    """`ProposalOpPauseCompanyOp` enumeration."""
+
+    PAUSE_COMPANY = "pause_company"
+
+
+class ProposalOpPublishAgentOp(UarpEnum):
+    """`ProposalOpPublishAgentOp` enumeration."""
+
+    PUBLISH_AGENT = "publish_agent"
+
+
 class ProposalOpRemoveAgentOp(UarpEnum):
     """`ProposalOpRemoveAgentOp` enumeration."""
 
@@ -2530,6 +2550,12 @@ class ProposalOpRemoveMissionScheduleOp(UarpEnum):
     """`ProposalOpRemoveMissionScheduleOp` enumeration."""
 
     REMOVE_MISSION_SCHEDULE = "remove_mission_schedule"
+
+
+class ProposalOpResumeCompanyOp(UarpEnum):
+    """`ProposalOpResumeCompanyOp` enumeration."""
+
+    RESUME_COMPANY = "resume_company"
 
 
 class ProposalOpSetAgentScheduleOp(UarpEnum):
@@ -2556,6 +2582,12 @@ class ProposalOpSetSquadMembersOp(UarpEnum):
     SET_SQUAD_MEMBERS = "set_squad_members"
 
 
+class ProposalOpUnpublishAgentOp(UarpEnum):
+    """`ProposalOpUnpublishAgentOp` enumeration."""
+
+    UNPUBLISH_AGENT = "unpublish_agent"
+
+
 class ProposalOpUpdateAgentOp(UarpEnum):
     """`ProposalOpUpdateAgentOp` enumeration."""
 
@@ -2566,6 +2598,12 @@ class ProposalOpUpdateCompanyOp(UarpEnum):
     """`ProposalOpUpdateCompanyOp` enumeration."""
 
     UPDATE_COMPANY = "update_company"
+
+
+class ProposalOpUpdatePublicProfileOp(UarpEnum):
+    """`ProposalOpUpdatePublicProfileOp` enumeration."""
+
+    UPDATE_PUBLIC_PROFILE = "update_public_profile"
 
 
 class PublicPlanQueueTier(UarpEnum):
@@ -3875,6 +3913,13 @@ class UpdateFeedbackReportStatusRequestStatus(UarpEnum):
     NEW = "new"
 
 
+class UpdateMissionScheduleRequestStatus(UarpEnum):
+    """`UpdateMissionScheduleRequestStatus` enumeration."""
+
+    ACTIVE = "active"
+    PAUSED = "paused"
+
+
 class UploadWorkspaceFileIfNoneMatch(UarpEnum):
     """`UploadWorkspaceFileIfNoneMatch` enumeration."""
 
@@ -3892,6 +3937,13 @@ class UsageQuotaCounterKind(UarpEnum):
     TEAMS = "teams"
     KNOWLEDGE_BASES = "knowledge_bases"
     WORKSPACES = "workspaces"
+
+
+class UsageQuotaPerResourceLimitScope(UarpEnum):
+    """`UsageQuotaPerResourceLimitScope` enumeration."""
+
+    AGENT = "agent"
+    TEAM = "team"
 
 
 class VetoRecordTargetType(UarpEnum):
@@ -6662,8 +6714,26 @@ class Agent(Model):
     2026-10-12.
     """
 
+    ignored_fields: Optional[List[AgentIgnoredField]] = None
+    """On the answer to POST /agents and PATCH/PUT /agents/{id} only: request fields that were not
+    applied, each with why. Today only `prompts.system` — the system prompt is managed by the
+    Chief of Staff (update_agent), and HTTP does not set it; put the role in
+    `prompts.developer`. Absent when everything sent was applied. Since 2026-10-30.
+    """
+
+    base_specs_declined: Optional[List[str]] = None
+    """Base-package SPECs a person removed from this agent (any of @platform/now-time,
+    simple-tools, files, net, research-toolkit, document-suite, visual-creator, code-companion,
+    memory). The platform issues the base package on every read; one on this list stays off.
+    Server-managed: a PATCH/PUT whose `specs` leaves out a base SPEC the agent had adds it, and
+    one that includes it again removes it. `@platform/core` is never declined. Absent until the
+    first such removal. Since 2026-10-30.
+    """
+
     specs: Optional[List[AgentSpec]] = None
-    """SPECs installed on this agent, with version pin and granted permissions."""
+    """SPECs installed on this agent, with version pin and granted permissions. The base package is
+    added back on every read unless listed in `base_specs_declined`.
+    """
 
     core_memory: Optional[AgentCoreMemory] = None
     """Always-visible memory blocks placed in the system prompt (CoreMemoryConfig)."""
@@ -7140,6 +7210,15 @@ class AgentHire(Model):
     it keeps the time of the last sighting, so a screen can say when the agent was last alive.
     Added 2026-10-20.
     """
+
+
+@_dataclass(kw_only=True)
+class AgentIgnoredField(Model):
+    """`AgentIgnoredField` model."""
+
+    field: str
+
+    reason: str
 
 
 @_dataclass(kw_only=True)
@@ -10192,6 +10271,10 @@ class CompanyExportCompany(Model):
     template: Optional[JsonObject] = None
 
     launched_at: Optional[str] = None
+    """When the company went through POST /tenants/me/company/launch. Null for a company that never
+    did: every tenant starts `active` without a launch, and resume does not launch — so null
+    with `status: active` means active without a launch, not a missing value.
+    """
 
     plan: Optional[str] = None
 
@@ -10364,6 +10447,10 @@ class CompanyProfile(Model):
     template: Optional[CompanyProfileTemplate] = None
 
     launched_at: Optional[str] = None
+    """When the company went through POST /tenants/me/company/launch. Null for a company that never
+    did: every tenant starts `active` without a launch, and resume does not launch — so null
+    with `status: active` means active without a launch, not a missing value.
+    """
 
     paused_at: Optional[str] = None
 
@@ -10425,6 +10512,13 @@ class CompanyProposal(Model):
     applied: Optional[List[CompanyProposalStep]] = None
 
     rolled_back: Optional[List[CompanyProposalStep]] = None
+    """Steps whose undo succeeded."""
+
+    rollback_failed: Optional[List[CompanyProposalStep]] = None
+    """Steps whose undo the route refused: their change is still in place and needs a person.
+    Absent when every undo succeeded. Before 2026-10-30 such steps were listed under
+    `rolled_back`.
+    """
 
     failure: Optional[CompanyProposalFailure] = None
 
@@ -14123,6 +14217,32 @@ class EndpointRateLimit(Model):
 
 
 @_dataclass(kw_only=True)
+class EnforcedLimit(Model):
+    """Every plan limit the platform enforces, read as its enforcement site reads it
+    (api/lib/plan-terms.ts). `limit: null` means the code applies no cap; a number, 0 included,
+    is the cap it applies — 0 is a cap of zero where the gate treats it so (videos, images, team
+    runs, MCP servers, workers) and null where the gate treats 0 as uncapped (tokens, runs, tool
+    calls, storage, sessions, memory). `scope` says what it counts against: the tenant, or each
+    agent or squad. Since 2026-10-30.
+    """
+
+    kind: str
+    """tokens, runs, tokens_daily, tool_calls, tool_calls_daily, images, images_daily, videos,
+    storage_bytes, active_sessions, concurrent_team_runs, mcp_servers, workers, memory_entries,
+    memory_storage_bytes, agent_versions. Open: a later release may add a kind.
+    """
+
+    quota: str
+    """The TenantQuotas field it is read from."""
+
+    scope: EnforcedLimitScope
+
+    period: Optional[str]
+
+    limit: Optional[float]
+
+
+@_dataclass(kw_only=True)
 class EnforcementResult(Model):
     """`EnforcementResult` model."""
 
@@ -17399,6 +17519,10 @@ class GetTenantBlueprintResponseDeploymentState(Model):
     status: Optional[CompanyProfileStatus] = None
 
     launched_at: Optional[str] = None
+    """When the company went through POST /tenants/me/company/launch. Null for a company that never
+    did: every tenant starts `active` without a launch, and resume does not launch — so null
+    with `status: active` means active without a launch, not a missing value.
+    """
 
     paused_at: Optional[str] = None
 
@@ -17530,11 +17654,13 @@ class GetTenantCompanyOverviewResponse(Model):
     `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
     method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
     setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
-    then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
-    with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
-    `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
-    as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
-    else applies.
+    an `active` company with no agent besides its Chief of Staff → its first readiness blocker
+    (`kind` setup, since 2026-10-30); then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the
+    newest failure in the window, with `run_id`, `agent_id`, `agent_name` — null when the agent
+    is gone — and `error_code`), `MISSION_STOPPED` (a mission the platform stopped, with
+    `mission_id` and its `result_code` as `error_code`), `NEXT_RUN` (with `name`,
+    `next_fire_at`; only a schedule that fires — active and enabled — at an instant not more
+    than an hour past, since 2026-10-30), and `ALL_QUIET` when nothing else applies.
     """
 
     generated_at: str
@@ -17543,8 +17669,14 @@ class GetTenantCompanyOverviewResponse(Model):
 
     company: GetTenantCompanyOverviewResponseCompany
 
+    month_spend_usd: Optional[float] = None
+    """What the calendar month (UTC) cost so far, cap or no cap — the same number as GET /usage
+    `total_cost`. Null only when the usage read failed. Since 2026-10-30; `spend` below is null
+    whenever no cap is set, however much was spent.
+    """
+
     spend: Optional[GetTenantCompanyOverviewResponseSpend]
-    """Null when no cap is set."""
+    """Null when no cap is set — even with spend this month; read `month_spend_usd` for the amount."""
 
     decisions: GetTenantCompanyOverviewResponseDecisions
 
@@ -17602,6 +17734,10 @@ class GetTenantCompanyOverviewResponseCompany(Model):
     version: Optional[int] = None
 
     launched_at: Optional[str] = None
+    """When the company went through POST /tenants/me/company/launch. Null for a company that never
+    did: every tenant starts `active` without a launch, and resume does not launch — so null
+    with `status: active` means active without a launch, not a missing value.
+    """
 
     paused_at: Optional[str] = None
 
@@ -17648,11 +17784,13 @@ class GetTenantCompanyOverviewResponseNextStep(Model):
     `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
     method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
     setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
-    then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
-    with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
-    `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
-    as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
-    else applies.
+    an `active` company with no agent besides its Chief of Staff → its first readiness blocker
+    (`kind` setup, since 2026-10-30); then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the
+    newest failure in the window, with `run_id`, `agent_id`, `agent_name` — null when the agent
+    is gone — and `error_code`), `MISSION_STOPPED` (a mission the platform stopped, with
+    `mission_id` and its `result_code` as `error_code`), `NEXT_RUN` (with `name`,
+    `next_fire_at`; only a schedule that fires — active and enabled — at an instant not more
+    than an hour past, since 2026-10-30), and `ALL_QUIET` when nothing else applies.
     """
 
     kind: GetTenantCompanyOverviewResponseNextStepKind
@@ -17787,7 +17925,7 @@ class GetTenantCompanyOverviewResponseResult(Model):
 
 @_dataclass(kw_only=True)
 class GetTenantCompanyOverviewResponseSpend(Model):
-    """Null when no cap is set."""
+    """Null when no cap is set — even with spend this month; read `month_spend_usd` for the amount."""
 
     limit_usd: Optional[float] = None
 
@@ -19800,6 +19938,25 @@ class ListBillingPlansResponsePlan(Model):
     name: Optional[str] = None
 
     limits: Optional[JsonObject] = None
+    """Six of the plan's limits, kept as they were for their readers. The full set is `quotas` and
+    `enforced_limits`.
+    """
+
+    queue_tier: Optional[PublicPlanQueueTier] = None
+
+    effective_concurrent_runs: Optional[int] = None
+    """Runs at a time the plan really gets — the plan's figure clamped to the live platform
+    ceiling.
+    """
+
+    reset: Optional[ListBillingPlansResponsePlanReset] = None
+
+    overage: Optional[ListBillingPlansResponsePlanOverage] = None
+    """Pay-as-you-go beyond the quota; `null` on free."""
+
+    quotas: Optional[JsonObject] = None
+
+    enforced_limits: Optional[List[EnforcedLimit]] = None
 
     current: Optional[bool] = None
 
@@ -19826,6 +19983,35 @@ class ListBillingPlansResponsePlan(Model):
     """Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval`
     is null or `one_time`.
     """
+
+
+@_dataclass(kw_only=True)
+class ListBillingPlansResponsePlanOverage(Model):
+    """Pay-as-you-go beyond the quota; `null` on free."""
+
+    available: Optional[bool] = None
+
+    requires_cap: Optional[bool] = None
+
+    price_per_million_usd: Optional[ListBillingPlansResponsePlanOveragePricePerMillionUsd] = None
+
+
+@_dataclass(kw_only=True)
+class ListBillingPlansResponsePlanOveragePricePerMillionUsd(Model):
+    """`ListBillingPlansResponsePlanOveragePricePerMillionUsd` model."""
+
+    input: Optional[float] = None
+
+    output: Optional[float] = None
+
+
+@_dataclass(kw_only=True)
+class ListBillingPlansResponsePlanReset(Model):
+    """`ListBillingPlansResponsePlanReset` model."""
+
+    period: Optional[PublicPlanResetPeriod] = None
+
+    at: Optional[str] = None
 
 
 @_dataclass(kw_only=True)
@@ -20236,6 +20422,24 @@ class ListMissionsResponse(Model):
 
     total: int
     """Length of `items` in this response, not a tenant-wide count."""
+
+    total_missions: Optional[int] = None
+    """Tenant-wide list only: how many missions the tenant has (all of them, not this page). Since
+    2026-10-30.
+    """
+
+    has_more: Optional[bool] = None
+    """Tenant-wide list only: more missions follow this page. Since 2026-10-30."""
+
+    next_before: Optional[str] = None
+    """Tenant-wide list only: pass as `before` for the next page; null when `has_more` is false.
+    Since 2026-10-30.
+    """
+
+    truncated: Optional[bool] = None
+    """Present (true) only when the 20 000-row scan cap, not the end of the list, stopped the read:
+    `total_missions` is then a lower bound.
+    """
 
 
 @_dataclass(kw_only=True)
@@ -22073,6 +22277,12 @@ class Mission(Model):
 
     metrics: Optional[MissionMetrics] = None
 
+    metrics_complete: Optional[bool] = None
+    """On GET /missions/{missionId}: false when an objective that ran predates the recording of run
+    time and model calls (2026-10-30), so `metrics.total_duration_ms` and `metrics.llm_calls`
+    undercount. Cost, tokens and retries are whole either way. Since 2026-10-30.
+    """
+
     outcome: Optional[MissionOutcome] = None
     """Terminal outcome. `partial` means some objectives verified and some did not."""
 
@@ -22117,8 +22327,11 @@ class Mission(Model):
 
 @_dataclass(kw_only=True)
 class MissionMetrics(Model):
-    """Aggregated spend for the whole mission. Written on the terminal transition, so it is absent
-    while the mission is still running.
+    """Aggregated spend for the whole mission. It was documented as written on the terminal
+    transition and was written by nothing; since 2026-10-30 GET /missions/{missionId} sums it
+    from the mission's objectives on every read — cost, tokens and runs as recorded per strike,
+    so it is present while the mission runs too. `retries` is every strike past an objective's
+    first. Run time and model calls were recorded only from 2026-10-30: see `metrics_complete`.
     """
 
     total_cost_usd: float
@@ -23364,6 +23577,10 @@ class PauseTenantCompanyResponse(Model):
     template: Optional[PauseTenantCompanyResponseTemplate] = None
 
     launched_at: Optional[str] = None
+    """When the company went through POST /tenants/me/company/launch. Null for a company that never
+    did: every tenant starts `active` without a launch, and resume does not launch — so null
+    with `status: active` means active without a launch, not a missing value.
+    """
 
     paused_at: Optional[str] = None
 
@@ -24214,6 +24431,38 @@ class ProposalOpAddSquad(Model):
 
 
 @_dataclass(kw_only=True)
+class ProposalOpPauseCompany(Model):
+    """Pause the company — an owner-only switch the Chief of Staff can only propose. Its diff's
+    `after.stops` is the scope GET /tenants/me/company/pause-scope states. Applied through POST
+    /tenants/me/company/pause with the applier's rights. Since 2026-10-30.
+    """
+
+    op: ProposalOpPauseCompanyOp
+
+    reason: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class ProposalOpPublishAgent(Model):
+    """Put one agent on the public page. Sets the agent's `visibility: public` and
+    `public_config.enabled` (PATCH /agents/{id}) and, when the company keeps an allow-list, adds
+    it to `published_agent_ids` (an absent allow-list already lists every public-capable agent
+    and is left absent); `primary` also makes it `public_agent_id`. When the profile is public
+    the apply then reads GET /public/tenants/{slug} and fails with `PUBLIC_PAGE_MISMATCH`,
+    rolling back, unless the agent is listed. Refused at plan time when the company has no slug.
+    Since 2026-10-30.
+    """
+
+    op: ProposalOpPublishAgentOp
+
+    agent_id: str
+
+    primary: Optional[bool] = None
+
+    greeting: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
 class ProposalOpRemoveAgent(Model):
     """`ProposalOpRemoveAgent` model."""
 
@@ -24231,6 +24480,15 @@ class ProposalOpRemoveMissionSchedule(Model):
 
     schedule_id: str
     """An id, or `$ref:<name>` of an earlier operation."""
+
+
+@_dataclass(kw_only=True)
+class ProposalOpResumeCompany(Model):
+    """Resume the company, through POST /tenants/me/company/resume with the applier's rights. Since
+    2026-10-30.
+    """
+
+    op: ProposalOpResumeCompanyOp
 
 
 @_dataclass(kw_only=True)
@@ -24302,6 +24560,19 @@ class ProposalOpSetSquadMembers(Model):
 
 
 @_dataclass(kw_only=True)
+class ProposalOpUnpublishAgent(Model):
+    """Take one agent off the public page: removes it from `published_agent_ids` when the company
+    keeps an allow-list, otherwise turns its `public_config.enabled` off; clears
+    `public_agent_id` when it was this agent. Verified against GET /public/tenants/{slug} like
+    `publish_agent`. Since 2026-10-30.
+    """
+
+    op: ProposalOpUnpublishAgentOp
+
+    agent_id: str
+
+
+@_dataclass(kw_only=True)
 class ProposalOpUpdateAgent(Model):
     """`ProposalOpUpdateAgent` model."""
 
@@ -24336,6 +24607,57 @@ class ProposalOpUpdateCompanyChanges(Model):
     target_customer: Optional[str] = None
 
     timezone: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class ProposalOpUpdatePublicProfile(Model):
+    """Change the company's public profile, through PATCH /tenants/me with the applier's rights
+    (owner). The profile is not the marketplace listing: setting `public: true` on a company not
+    listed yet ALSO lists it in the marketplace, and the diff summary says so. Undo on a later
+    failure restores each named field; a slug the company never had is not unset. Since
+    2026-10-30.
+    """
+
+    op: ProposalOpUpdatePublicProfileOp
+
+    changes: ProposalOpUpdatePublicProfileChanges
+
+
+@_dataclass(kw_only=True)
+class ProposalOpUpdatePublicProfileChanges(Model):
+    """`ProposalOpUpdatePublicProfileChanges` model."""
+
+    public: Optional[bool] = None
+
+    slug: Optional[str] = None
+
+    description: Optional[str] = None
+
+    logo_url: Optional[str] = None
+
+    public_agent_id: Optional[str] = None
+
+    published_agent_ids: Optional[List[str]] = None
+    """null removes the allow-list: every public-capable agent is listed."""
+
+    public_settings: Optional[ProposalOpUpdatePublicProfileChangesPublicSettings] = None
+
+
+@_dataclass(kw_only=True)
+class ProposalOpUpdatePublicProfileChangesPublicSettings(Model):
+    """`ProposalOpUpdatePublicProfileChangesPublicSettings` model."""
+
+    max_messages_per_session: Optional[int] = None
+
+    max_tokens_per_session: Optional[int] = None
+
+    allow_tool_calls: Optional[bool] = None
+
+    allow_file_uploads: Optional[bool] = None
+
+    rate_limit_per_ip_per_hour: Optional[int] = None
+
+    require_auth: Optional[bool] = None
 
 
 @_dataclass(kw_only=True)
@@ -24744,6 +25066,14 @@ class PublicPlan(Model):
     """
 
     quotas: JsonObject
+    """Every quota field the plan stores, `null` where it sets none (since 2026-10-30 the full set,
+    not seven fields). Read `enforced_limits` for what a value means.
+    """
+
+    enforced_limits: Optional[List[EnforcedLimit]] = None
+    """Every limit the plan enforces, read as its gate reads it — the same list GET /billing/plans
+    states. Since 2026-10-30.
+    """
 
     queue_tier: Optional[PublicPlanQueueTier] = None
     """The queue the plan's runs wait in: `standard` on free, `priority` on paid plans. A public
@@ -30046,10 +30376,21 @@ class ScheduleSummary(Model):
     enabled: bool
 
     status: str
-    """`paused` or `error`, or accumulated failures, is what a “silently dead cron” looks like."""
+    """`paused` or `error`, or accumulated failures, is what a “silently dead cron” looks like. A
+    schedule switched off can still read `active` here — read `fires`.
+    """
+
+    fires: Optional[bool] = None
+    """Whether the scheduler will fire this schedule: `status` is `active` AND `enabled` is true.
+    The one answer to "is this on" when `enabled: false` and `status: active` disagree. Since
+    2026-10-30.
+    """
 
     next_fire_at: Optional[str] = None
-    """`null` when there is no next fire; never an empty string."""
+    """`null` when there is no next fire — including (since 2026-10-30) every schedule with `fires:
+    false`, which used to keep the instant it had when it was switched off; never an empty
+    string.
+    """
 
 
 @_dataclass(kw_only=True)
@@ -32468,8 +32809,19 @@ class TenantOverviewRuns(Model):
     recent: List[TenantOverviewRunsRecentItem]
 
     scanned: int
-    """How many run records the aggregate actually looked at. The scan is capped, so a busy
-    tenant's numbers describe the scanned window, not all history.
+    """How many run records the aggregate actually looked at: the newest `scan_limit` at most,
+    whatever `days` says. `by_status`, `active_count`, `failed_24h`, `cost_24h_usd` and `recent`
+    describe those runs, not the `days` window — for the window read `window`.
+    """
+
+    scan_limit: Optional[int] = None
+    """The cap on `scanned` (500). Since 2026-10-30."""
+
+    window: Optional[TenantOverviewRunsWindow] = None
+    """The scanned runs that fall inside the requested `days` (UTC dates, today included — the
+    dates `cost` uses). `complete` is true when the scan held every run there is or reached past
+    `since`; false means the window has more runs than the scan saw, so a rate from `by_status`
+    is the newest part of the window only. Since 2026-10-30.
     """
 
 
@@ -32511,6 +32863,25 @@ class TenantOverviewRunsRecentItem(Model):
     client supplied at run creation and has never been stored on production (measured 2026-09-10
     over 8605 run records: absent 7738, bridge 867, async 0).
     """
+
+
+@_dataclass(kw_only=True)
+class TenantOverviewRunsWindow(Model):
+    """The scanned runs that fall inside the requested `days` (UTC dates, today included — the
+    dates `cost` uses). `complete` is true when the scan held every run there is or reached past
+    `since`; false means the window has more runs than the scan saw, so a rate from `by_status`
+    is the newest part of the window only. Since 2026-10-30.
+    """
+
+    days: int
+
+    since: str
+
+    by_status: JsonObject
+
+    counted: int
+
+    complete: bool
 
 
 @_dataclass(kw_only=True)
@@ -32665,6 +33036,68 @@ class TenantPlanFitSuggestion(Model):
     message: Optional[str] = None
 
     plan: Optional[str] = None
+
+
+@_dataclass(kw_only=True)
+class TenantPublicProfile(Model):
+    """`TenantPublicProfile` model."""
+
+    public: bool
+
+    slug: Optional[str]
+
+    name: Optional[str]
+
+    description: Optional[str]
+
+    logo_url: Optional[str]
+
+    public_agent_id: Optional[str]
+
+    published_agent_ids: Optional[List[str]]
+    """null: no allow-list — every public-capable agent is listed."""
+
+    public_settings: JsonObject
+
+    marketplace_listed: bool
+
+    public_page: TenantPublicProfilePublicPage
+
+    agents: List[TenantPublicProfileAgent]
+
+    agents_truncated: bool
+
+
+@_dataclass(kw_only=True)
+class TenantPublicProfileAgent(Model):
+    """`TenantPublicProfileAgent` model."""
+
+    agent_id: str
+
+    name: str
+
+    public_capable: bool
+
+    published: bool
+
+    on_public_page: bool
+
+
+@_dataclass(kw_only=True)
+class TenantPublicProfilePublicPage(Model):
+    """`TenantPublicProfilePublicPage` model."""
+
+    path: Optional[str]
+
+    status: Optional[int]
+    """null when the company has no slug, so no page."""
+
+    shows_this_company: bool
+    """False when the page at this slug belongs to another company; `agent_ids` is then empty."""
+
+    agent_ids: List[str]
+
+    primary_agent_id: Optional[str]
 
 
 @_dataclass(kw_only=True)
@@ -34922,6 +35355,37 @@ class UpdateMissionObjectiveRequestBudget(Model):
 
 
 @_dataclass(kw_only=True)
+class UpdateMissionScheduleRequest(Model):
+    """`UpdateMissionScheduleRequest` model."""
+
+    cron: Optional[str] = None
+
+    timezone: Optional[str] = None
+    """IANA time zone; empty for UTC."""
+
+    name: Optional[str] = None
+
+    status: Optional[UpdateMissionScheduleRequestStatus] = None
+
+
+@_dataclass(kw_only=True)
+class UpdateMissionScheduleResponse(Model):
+    """`UpdateMissionScheduleResponse` model."""
+
+    schedule_id: str
+
+    name: Optional[str] = None
+
+    cron: str
+
+    timezone: str
+
+    status: UpdateMissionScheduleRequestStatus
+
+    next_fire_at: Optional[str]
+
+
+@_dataclass(kw_only=True)
 class UpdateMyEmailPreferencesRequest(Model):
     """`UpdateMyEmailPreferencesRequest` model."""
 
@@ -35655,8 +36119,48 @@ class UsageQuota(Model):
     midnight.
     """
 
+    enforced_counters: Optional[List[UsageQuotaEnforcedCounter]] = None
+    """The complete list of tenant-wide limits with what is used against each, `{kind, used, limit,
+    period, resets_at}`: the eight `counters` kinds plus tool_calls_daily, images, images_daily,
+    videos, storage_bytes (every file and knowledge-base document stored now — what the upload
+    gate sums), active_sessions, concurrent_team_runs and concurrent_runs (the limit the
+    scheduler applies: the plan's, clamped by the platform ceiling). Each limit is read as
+    `EnforcedLimit` describes; `counters` stays as published, with its closed `kind` enum.
+    `kind` here is open. Since 2026-10-30.
+    """
+
+    per_resource_limits: Optional[List[UsageQuotaPerResourceLimit]] = None
+    """Limits that bind each agent or squad rather than the tenant (mcp_servers, workers,
+    memory_entries, memory_storage_bytes, agent_versions). There is no tenant-wide `used` for
+    them. Since 2026-10-30.
+    """
+
+    billing_period: Optional[UsageQuotaBillingPeriod] = None
+    """Two different dates, said apart: the allowance resets on the calendar month (UTC); the
+    subscription renews on Stripe's cycle. `renews_at` is null when no subscription event
+    recorded a period end — a plan granted without a Stripe subscription has none. Since
+    2026-10-30.
+    """
+
+    plan_quotas: Optional[JsonObject] = None
+
     resource_usage: UsageQuotaResourceUsage
     """api/lib/resource-usage.ts TenantResourceUsage."""
+
+
+@_dataclass(kw_only=True)
+class UsageQuotaBillingPeriod(Model):
+    """Two different dates, said apart: the allowance resets on the calendar month (UTC); the
+    subscription renews on Stripe's cycle. `renews_at` is null when no subscription event
+    recorded a period end — a plan granted without a Stripe subscription has none. Since
+    2026-10-30.
+    """
+
+    quota_resets_at: str
+
+    renews_at: Optional[str]
+
+    cancel_at_period_end: Optional[bool]
 
 
 @_dataclass(kw_only=True)
@@ -35691,6 +36195,21 @@ class UsageQuotaDaily(Model):
 
 
 @_dataclass(kw_only=True)
+class UsageQuotaEnforcedCounter(Model):
+    """`UsageQuotaEnforcedCounter` model."""
+
+    kind: str
+
+    used: float
+
+    limit: Optional[float]
+
+    period: Optional[str]
+
+    resets_at: Optional[str]
+
+
+@_dataclass(kw_only=True)
 class UsageQuotaLimits(Model):
     """`UsageQuotaLimits` model."""
 
@@ -35707,6 +36226,17 @@ class UsageQuotaLimits(Model):
     max_knowledge_bases: float
 
     max_workspaces: float
+
+
+@_dataclass(kw_only=True)
+class UsageQuotaPerResourceLimit(Model):
+    """`UsageQuotaPerResourceLimit` model."""
+
+    kind: str
+
+    scope: UsageQuotaPerResourceLimitScope
+
+    limit: Optional[float]
 
 
 @_dataclass(kw_only=True)
@@ -35750,6 +36280,10 @@ class UsageQuotaUsage(Model):
     tool_calls_count: float
 
     storage_bytes: float
+    """Bytes of run artifacts written this period — NOT what is stored now, and not what the
+    storage limit counts. The stored total the upload gate compares is the `storage_bytes` entry
+    of `enforced_counters`.
+    """
 
     total_cost: float
 
@@ -35793,8 +36327,13 @@ class UsageSummary(Model):
     tool_calls_count: int
 
     bridge_tasks: Optional[int] = None
+    """Bridge tasks completed this period. Each is also counted in `runs_count`."""
 
     storage_bytes: int
+    """Bytes of run artifacts written this period — not what is stored now, and not what the
+    storage limit counts; for that read `enforced_counters` (`storage_bytes`) on GET
+    /usage/quota.
+    """
 
     total_cost: float
     """What the tenant is billed, in USD, to six decimals — as are `provider_cost`, `non_run_cost`
@@ -35809,6 +36348,18 @@ class UsageSummary(Model):
     """
 
     non_run_cost: float
+    """The part of `total_cost` with no run record behind it: LLM-proxy calls, memory extraction,
+    embeddings, web search, speech, images and video. `total_cost - non_run_cost` is what runs
+    cost. Split by `non_run_cost_by_kind`.
+    """
+
+    non_run_cost_by_kind: Optional[List[UsageSummaryNonRunCostByKindItem]] = None
+    """`non_run_cost` split by what it bought, largest first. `kind`: llm_proxy, memory_extraction,
+    embeddings, web_search, stt, tts, image, video, or `unattributed` — spend recorded before
+    kinds were (2026-10-30) or by a writer that names none — so the costs add up to
+    `non_run_cost`. Always present; `unattributed` always included. `kind` is open: a later
+    release may add one.
+    """
 
     margin_summary: Optional[UsageMarginSummary] = None
     """Platform administrator only; absent for every other caller (since 2026-09-29). Whole or
@@ -35869,6 +36420,15 @@ class UsageSummaryBySourceItem(Model):
     input_tokens: int
 
     output_tokens: int
+
+
+@_dataclass(kw_only=True)
+class UsageSummaryNonRunCostByKindItem(Model):
+    """`UsageSummaryNonRunCostByKindItem` model."""
+
+    kind: str
+
+    cost: float
 
 
 @_dataclass(kw_only=True)
@@ -36687,6 +37247,9 @@ Anchor: TypeAlias = JsonValue
 #: `events_failed`, `reconnects`, `heartbeat_failures`, `ws_handshakes`. Keys are client-chosen
 #: `[a-z0-9_]{1,64}`, at most 32, finite numbers only; absent when the client sent none.
 BridgeAgentStats: TypeAlias = JsonObject
+#: The plan's quota fields as stored, `null` where the plan sets none. Raw values — read
+#: `enforced_limits` for what each one means.
+PlanQuotaFields: TypeAlias = JsonObject
 #: One change a proposal makes, discriminated by `op`.
 ProposalOperation: TypeAlias = JsonValue
 QualificationConfirmedRetentionRule: TypeAlias = JsonValue
@@ -36926,6 +37489,7 @@ __all__ = [
     "AgentExecutionMode",
     "AgentHire",
     "AgentHireStatus",
+    "AgentIgnoredField",
     "AgentIntegration",
     "AgentLineage",
     "AgentMessage",
@@ -37422,6 +37986,8 @@ __all__ = [
     "EmergencyStateMode",
     "EmptyWorkspaceTrashResponse",
     "EndpointRateLimit",
+    "EnforcedLimit",
+    "EnforcedLimitScope",
     "EnforcementResult",
     "EnforcementResultCheckResult",
     "EnforcementResultCheckResult2",
@@ -37817,6 +38383,9 @@ __all__ = [
     "ListBillingPlansResponse",
     "ListBillingPlansResponsePlan",
     "ListBillingPlansResponsePlanAppStoreProductId",
+    "ListBillingPlansResponsePlanOverage",
+    "ListBillingPlansResponsePlanOveragePricePerMillionUsd",
+    "ListBillingPlansResponsePlanReset",
     "ListBillingSpecPackagesResponse",
     "ListBuilderRequestsResponse",
     "ListCompaniesResponse",
@@ -38083,6 +38652,7 @@ __all__ = [
     "PlannedMission",
     "PlannedObjective",
     "PlannedObjectiveBudget",
+    "PlanQuotaFields",
     "PlatformEconomics",
     "PlatformEconomicsCache",
     "PlatformEconomicsCosts",
@@ -38120,10 +38690,16 @@ __all__ = [
     "ProposalOpAddSquad",
     "ProposalOpAddSquadOp",
     "ProposalOperation",
+    "ProposalOpPauseCompany",
+    "ProposalOpPauseCompanyOp",
+    "ProposalOpPublishAgent",
+    "ProposalOpPublishAgentOp",
     "ProposalOpRemoveAgent",
     "ProposalOpRemoveAgentOp",
     "ProposalOpRemoveMissionSchedule",
     "ProposalOpRemoveMissionScheduleOp",
+    "ProposalOpResumeCompany",
+    "ProposalOpResumeCompanyOp",
     "ProposalOpSetAgentSchedule",
     "ProposalOpSetAgentScheduleOp",
     "ProposalOpSetApprovalPolicy",
@@ -38133,11 +38709,17 @@ __all__ = [
     "ProposalOpSetBudgetOp",
     "ProposalOpSetSquadMembers",
     "ProposalOpSetSquadMembersOp",
+    "ProposalOpUnpublishAgent",
+    "ProposalOpUnpublishAgentOp",
     "ProposalOpUpdateAgent",
     "ProposalOpUpdateAgentOp",
     "ProposalOpUpdateCompany",
     "ProposalOpUpdateCompanyChanges",
     "ProposalOpUpdateCompanyOp",
+    "ProposalOpUpdatePublicProfile",
+    "ProposalOpUpdatePublicProfileChanges",
+    "ProposalOpUpdatePublicProfileChangesPublicSettings",
+    "ProposalOpUpdatePublicProfileOp",
     "PublicAgentCard",
     "PublicAgentCardSpec",
     "PublicBlogPost",
@@ -38734,6 +39316,7 @@ __all__ = [
     "TenantOverviewFleetByExecutionMode",
     "TenantOverviewRuns",
     "TenantOverviewRunsRecentItem",
+    "TenantOverviewRunsWindow",
     "TenantOverviewSchedules",
     "TenantOverviewSystem",
     "TenantOverviewUsage",
@@ -38744,6 +39327,9 @@ __all__ = [
     "TenantPlanFitRunProfile",
     "TenantPlanFitSchedule",
     "TenantPlanFitSuggestion",
+    "TenantPublicProfile",
+    "TenantPublicProfileAgent",
+    "TenantPublicProfilePublicPage",
     "TenantPublicSettings",
     "TenantQuotaOverrides",
     "TenantQuotas",
@@ -38910,6 +39496,9 @@ __all__ = [
     "UpdateMCPServerRequest",
     "UpdateMissionObjectiveRequest",
     "UpdateMissionObjectiveRequestBudget",
+    "UpdateMissionScheduleRequest",
+    "UpdateMissionScheduleRequestStatus",
+    "UpdateMissionScheduleResponse",
     "UpdateMyEmailPreferencesRequest",
     "UpdateMyEmailPreferencesResponse",
     "UpdateMyPreferencesRequest",
@@ -38955,16 +39544,21 @@ __all__ = [
     "UpsertPromoCodeResponse",
     "UsageMarginSummary",
     "UsageQuota",
+    "UsageQuotaBillingPeriod",
     "UsageQuotaCounter",
     "UsageQuotaCounterKind",
     "UsageQuotaDaily",
+    "UsageQuotaEnforcedCounter",
     "UsageQuotaLimits",
+    "UsageQuotaPerResourceLimit",
+    "UsageQuotaPerResourceLimitScope",
     "UsageQuotaResetsAt",
     "UsageQuotaResourceUsage",
     "UsageQuotaUsage",
     "UsageSummary",
     "UsageSummaryByModelItem",
     "UsageSummaryBySourceItem",
+    "UsageSummaryNonRunCostByKindItem",
     "UserPreferences",
     "ValidationCriterion",
     "ValidationPolicy",

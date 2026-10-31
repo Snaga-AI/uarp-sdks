@@ -120,6 +120,20 @@ package body UARP.API.Tenants is
              Options => Options));
    end Get_Tenant_Domain_Health;
 
+   function Get_Tenant_Public_Profile
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Tenant_Public_Profile
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/tenants/me/public-profile",
+             Options => Options));
+   end Get_Tenant_Public_Profile;
+
    function Leave_Tenant
      (Self : Client_Type;
       Tenant_Id : String;

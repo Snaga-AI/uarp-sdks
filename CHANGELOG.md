@@ -6,6 +6,31 @@ All six SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.13.3 — 2026-10-31
+
+Build `cc26d5ce`, digest `6727e638f0dedd7f`. Against 0.13.2: 654 paths (+1), 873
+operations (+2), 510 schemas (+8), 2348 named types (+31); nothing removed. No
+`event_schema=1` type changes.
+
+### Added
+
+- `GET /tenants/me/public-profile` (`TenantPublicProfile`) and
+  `PATCH /missions/schedules/{scheduleId}`.
+- Five more proposal operations in the `ProposalOperation` union:
+  `ProposalOpUpdatePublicProfile`, `ProposalOpPublishAgent`,
+  `ProposalOpUnpublishAgent`, `ProposalOpPauseCompany`, `ProposalOpResumeCompany`.
+  `CompanyProposal` gains `rollback_failed`.
+- Quotas and plans: `EnforcedLimit` and `PlanQuotaFields`; `GET /usage/quota` gains
+  `enforced_counters`, `per_resource_limits`, `billing_period` and `plan_quotas`;
+  a billing plan carries the same terms as a public plan (`quotas`,
+  `enforced_limits`, `queue_tier`, …); `GET /usage` gains `non_run_cost_by_kind`.
+- `fires` on a schedule summary, `ignored_fields` and `base_specs_declined` on an
+  agent, `metrics_complete` on a mission, and `total_missions`, `has_more`,
+  `next_before` and `truncated` on `GET /missions`.
+
+`PublicPlan.quotas` now names `PlanQuotaFields` — a map of numbers or `null` that
+every SDK renders as the same JSON object type as before, so no code changes.
+
 ## 0.13.2 — 2026-10-30
 
 Build `bd5dc091`, digest `c3fe74da6c53bef8`. Same 653 paths, 871 operations and

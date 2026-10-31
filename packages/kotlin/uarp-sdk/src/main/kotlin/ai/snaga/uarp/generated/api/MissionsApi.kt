@@ -182,7 +182,11 @@ public class MissionsApi internal constructor(private val client: UarpClient) {
     /**
      * List missions
      *
-     * Most recent first. Without `session_id` this is the tenant-wide list.
+     * Most recent first. Without `session_id` this is the tenant-wide list: since 2026-10-30 it
+     * reads the whole mission prefix (up to 20 000 rows of records, checkpoints and AARs) and
+     * orders by `created_at` then `mission_id`, newest first; before that it sorted only the first
+     * `limit × 8` rows, so a busy tenant got neither its newest missions nor a sign that more
+     * existed. It pages with `before` = the previous answer's `next_before`.
      *
      * MEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When
      * either is off the route answers **404** with a plain body — deliberately the same answer as
@@ -192,10 +196,11 @@ public class MissionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun list(sessionId: String? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): ListMissionsResponse {
+    public suspend fun list(sessionId: String? = null, limit: Long? = null, before: String? = null, options: RequestOptions = RequestOptions()): ListMissionsResponse {
         val query = buildList {
             if (sessionId != null) add("session_id" to sessionId)
             if (limit != null) add("limit" to limit.toString())
+            if (before != null) add("before" to before)
         }
         return client.request<ListMissionsResponse>(
             RequestSpec(
@@ -460,6 +465,33 @@ public class MissionsApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "PATCH",
                 path = "/api/v1/missions/${encodePathSegment(missionId)}/objectives/${encodePathSegment(objectiveId)}",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Change a mission schedule
+     *
+     * WRITE SEMANTICS: merges — each field present replaces that field; an absent field keeps its
+     * value, and the plan is never touched. Moves, renames, pauses or resumes a schedule and keeps
+     * its plan, id and history — before this the only way was delete and recreate. `status:
+     * paused` stops the fires and clears `next_fire_at`; `active` computes it again from `cron`
+     * and `timezone`. `404` when no mission schedule has that id, `422` for an invalid cron, time
+     * zone or status, `409` when the schedule changed between the read and the write. Since
+     * 2026-10-30.
+     *
+     * `PATCH /api/v1/missions/schedules/{scheduleId}`
+     *
+     * Required scopes: `agents:write`.
+     */
+    public suspend fun updateMissionSchedule(scheduleId: String, body: UpdateMissionScheduleRequest, options: RequestOptions = RequestOptions()): UpdateMissionScheduleResponse {
+        return client.request<UpdateMissionScheduleResponse>(
+            RequestSpec(
+                method = "PATCH",
+                path = "/api/v1/missions/schedules/${encodePathSegment(scheduleId)}",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,

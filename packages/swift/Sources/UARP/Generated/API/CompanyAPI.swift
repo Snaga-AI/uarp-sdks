@@ -66,8 +66,10 @@ public struct CompanyAPI: Sendable {
     /// `add_squad {ref?, squad}` (body of POST /squads) · `set_squad_members {squad_id, workers[]}`
     /// · `update_company {changes}` · `set_budget {limit_usd, period?, soft_threshold?,
     /// hard_threshold?}` · `add_mission_schedule {ref?, schedule}` (body of POST
-    /// /missions/schedules) · `remove_mission_schedule {schedule_id}`. A string `$ref:<name>`
-    /// anywhere stands for the id an earlier operation with `ref: <name>` creates.
+    /// /missions/schedules) · `remove_mission_schedule {schedule_id}` · `pause_company {reason?}` ·
+    /// `resume_company` (both since 2026-10-30: the owner's lifecycle switches, which the Chief of
+    /// Staff proposes and a person applies). A string `$ref:<name>` anywhere stands for the id an
+    /// earlier operation with `ref: <name>` creates.
     ///
     /// `POST /api/v1/tenants/me/proposals`
     ///
