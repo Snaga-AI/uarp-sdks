@@ -11802,6 +11802,9 @@ public struct CompanyProposal: Codable, Hashable, Sendable {
     public var decidedBy: String?
     public var rejectReason: String?
     public var applied: [CompanyProposalStep]?
+    /// Present when the Chief of Staff applied it in the conversation on the person's answer (since
+    /// 2026-10-31); `decided_by` is that person.
+    public var appliedVia: CompanyProposalAppliedVia?
     /// Steps whose undo succeeded.
     public var rolledBack: [CompanyProposalStep]?
     /// Steps whose undo the route refused: their change is still in place and needs a person.
@@ -11812,7 +11815,7 @@ public struct CompanyProposal: Codable, Hashable, Sendable {
     /// The company version after a successful apply.
     public var version: Int?
 
-    public init(proposalId: String, status: CompanyProposalStatus, summary: String, rationale: String? = nil, operations: [ProposalOperation], baseVersion: Int, diff: [CompanyProposalDiffItem], requiredRole: CompanyProposalRequiredRole, proposedBy: CompanyProposalProposedBy, template: CompanyProposalTemplate? = nil, estimatedMonthlyCostUsd: Double? = nil, createdAt: String, expiresAt: String, decidedAt: String? = nil, decidedBy: String? = nil, rejectReason: String? = nil, applied: [CompanyProposalStep]? = nil, rolledBack: [CompanyProposalStep]? = nil, rollbackFailed: [CompanyProposalStep]? = nil, failure: CompanyProposalFailure? = nil, version: Int? = nil) {
+    public init(proposalId: String, status: CompanyProposalStatus, summary: String, rationale: String? = nil, operations: [ProposalOperation], baseVersion: Int, diff: [CompanyProposalDiffItem], requiredRole: CompanyProposalRequiredRole, proposedBy: CompanyProposalProposedBy, template: CompanyProposalTemplate? = nil, estimatedMonthlyCostUsd: Double? = nil, createdAt: String, expiresAt: String, decidedAt: String? = nil, decidedBy: String? = nil, rejectReason: String? = nil, applied: [CompanyProposalStep]? = nil, appliedVia: CompanyProposalAppliedVia? = nil, rolledBack: [CompanyProposalStep]? = nil, rollbackFailed: [CompanyProposalStep]? = nil, failure: CompanyProposalFailure? = nil, version: Int? = nil) {
         self.proposalId = proposalId
         self.status = status
         self.summary = summary
@@ -11830,6 +11833,7 @@ public struct CompanyProposal: Codable, Hashable, Sendable {
         self.decidedBy = decidedBy
         self.rejectReason = rejectReason
         self.applied = applied
+        self.appliedVia = appliedVia
         self.rolledBack = rolledBack
         self.rollbackFailed = rollbackFailed
         self.failure = failure
@@ -11854,11 +11858,60 @@ public struct CompanyProposal: Codable, Hashable, Sendable {
         case decidedBy = "decided_by"
         case rejectReason = "reject_reason"
         case applied = "applied"
+        case appliedVia = "applied_via"
         case rolledBack = "rolled_back"
         case rollbackFailed = "rollback_failed"
         case failure = "failure"
         case version = "version"
     }
+}
+
+/// Present when the Chief of Staff applied it in the conversation on the person's answer (since
+/// 2026-10-31); `decided_by` is that person.
+public struct CompanyProposalAppliedVia: Codable, Hashable, Sendable {
+    public var kind: CompanyProposalAppliedViaKind
+    public var agentId: String
+    public var runId: String
+    public var sessionId: String
+    public var personUserId: String
+
+    public init(kind: CompanyProposalAppliedViaKind, agentId: String, runId: String, sessionId: String, personUserId: String) {
+        self.kind = kind
+        self.agentId = agentId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.personUserId = personUserId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case agentId = "agent_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case personUserId = "person_user_id"
+    }
+}
+
+/// `CompanyProposalAppliedViaKind` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct CompanyProposalAppliedViaKind: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let conversation = CompanyProposalAppliedViaKind(rawValue: "conversation")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [CompanyProposalAppliedViaKind] = [.conversation]
 }
 
 /// `CompanyProposalDiffItem` model.
@@ -24924,18 +24977,26 @@ public struct GetTenantCompanyOverviewResponseActivity: Codable, Hashable, Senda
 public struct GetTenantCompanyOverviewResponseActivityByDayItem: Codable, Hashable, Sendable {
     public var date: String?
     public var runs: Int?
+    /// Runs that failed or timed out, lifecycle refusals excluded (since 2026-10-31; before, a
+    /// paused company's refusals were counted here).
     public var failed: Int?
+    /// A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+    /// INITIATIVE_BUDGET_EXHAUSTED) is not a failure: it is counted here, apart. `runs` = every run
+    /// created that day, refused ones included. Since 2026-10-31.
+    public var refused: Int?
 
-    public init(date: String? = nil, runs: Int? = nil, failed: Int? = nil) {
+    public init(date: String? = nil, runs: Int? = nil, failed: Int? = nil, refused: Int? = nil) {
         self.date = date
         self.runs = runs
         self.failed = failed
+        self.refused = refused
     }
 
     private enum CodingKeys: String, CodingKey {
         case date = "date"
         case runs = "runs"
         case failed = "failed"
+        case refused = "refused"
     }
 }
 
@@ -25113,7 +25174,13 @@ public struct GetTenantCompanyOverviewResponseNextStepKind: RawRepresentable, Co
 
 /// `GetTenantCompanyOverviewResponseProblems` model.
 public struct GetTenantCompanyOverviewResponseProblems: Codable, Hashable, Sendable {
+    /// Failed or timed-out runs in the window, lifecycle refusals excluded; `recent` and next_step
+    /// RUN_FAILED read the same list (since 2026-10-31).
     public var failedRuns: Int?
+    /// A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+    /// INITIATIVE_BUDGET_EXHAUSTED) is not a failure; this counts them in the window. Since
+    /// 2026-10-31.
+    public var refusedRuns: Int?
     public var recent: [GetTenantCompanyOverviewResponseProblemsRecentItem]?
     /// Missions in the window the PLATFORM stopped (`aborted` or `failed`, not
     /// `aborted_by_operator`) — the watchdog, a failed plan, failed objectives. Since 2026-10-15.
@@ -25126,8 +25193,9 @@ public struct GetTenantCompanyOverviewResponseProblems: Codable, Hashable, Senda
     /// The newest 5 of them.
     public var missions: [GetTenantCompanyOverviewResponseProblemsMission]?
 
-    public init(failedRuns: Int? = nil, recent: [GetTenantCompanyOverviewResponseProblemsRecentItem]? = nil, stoppedMissions: Int? = nil, quotaGatedSchedules: GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedules? = nil, missions: [GetTenantCompanyOverviewResponseProblemsMission]? = nil) {
+    public init(failedRuns: Int? = nil, refusedRuns: Int? = nil, recent: [GetTenantCompanyOverviewResponseProblemsRecentItem]? = nil, stoppedMissions: Int? = nil, quotaGatedSchedules: GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedules? = nil, missions: [GetTenantCompanyOverviewResponseProblemsMission]? = nil) {
         self.failedRuns = failedRuns
+        self.refusedRuns = refusedRuns
         self.recent = recent
         self.stoppedMissions = stoppedMissions
         self.quotaGatedSchedules = quotaGatedSchedules
@@ -25136,6 +25204,7 @@ public struct GetTenantCompanyOverviewResponseProblems: Codable, Hashable, Senda
 
     private enum CodingKeys: String, CodingKey {
         case failedRuns = "failed_runs"
+        case refusedRuns = "refused_runs"
         case recent = "recent"
         case stoppedMissions = "stopped_missions"
         case quotaGatedSchedules = "quota_gated_schedules"
@@ -54750,13 +54819,22 @@ public struct TenantPublicProfile: Codable, Hashable, Sendable {
 
 /// `TenantPublicProfileAgent` model.
 public struct TenantPublicProfileAgent: Codable, Hashable, Sendable {
+    /// The one thing that keeps the agent off the page, first match wins: `on_page`;
+    /// `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the
+    /// allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private,
+    /// has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+    /// live, yet not listed — publish_agent rewrites its index row). Show this, not the three
+    /// booleans together: with no allow-list every agent is `published` while none may be on the
+    /// page. Since 2026-10-31.
+    public var standing: TenantPublicProfileAgentStanding
     public var agentId: String
     public var name: String
     public var publicCapable: Bool
     public var published: Bool
     public var onPublicPage: Bool
 
-    public init(agentId: String, name: String, publicCapable: Bool, published: Bool, onPublicPage: Bool) {
+    public init(standing: TenantPublicProfileAgentStanding, agentId: String, name: String, publicCapable: Bool, published: Bool, onPublicPage: Bool) {
+        self.standing = standing
         self.agentId = agentId
         self.name = name
         self.publicCapable = publicCapable
@@ -54765,12 +54843,45 @@ public struct TenantPublicProfileAgent: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case standing = "standing"
         case agentId = "agent_id"
         case name = "name"
         case publicCapable = "public_capable"
         case published = "published"
         case onPublicPage = "on_public_page"
     }
+}
+
+/// The one thing that keeps the agent off the page, first match wins: `on_page`;
+/// `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the
+/// allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private,
+/// has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+/// live, yet not listed — publish_agent rewrites its index row). Show this, not the three
+/// booleans together: with no allow-list every agent is `published` while none may be on the
+/// page. Since 2026-10-31.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct TenantPublicProfileAgentStanding: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let onPage = TenantPublicProfileAgentStanding(rawValue: "on_page")
+    public static let agentNotPublic = TenantPublicProfileAgentStanding(rawValue: "agent_not_public")
+    public static let leftOutOfList = TenantPublicProfileAgentStanding(rawValue: "left_out_of_list")
+    public static let pageNotLive = TenantPublicProfileAgentStanding(rawValue: "page_not_live")
+    public static let missingFromPage = TenantPublicProfileAgentStanding(rawValue: "missing_from_page")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [TenantPublicProfileAgentStanding] = [.onPage, .agentNotPublic, .leftOutOfList, .pageNotLive, .missingFromPage]
 }
 
 /// `TenantPublicProfilePublicPage` model.
@@ -60100,6 +60211,9 @@ public struct UsageQuota: Codable, Hashable, Sendable {
 /// 2026-10-30.
 public struct UsageQuotaBillingPeriod: Codable, Hashable, Sendable {
     public var quotaResetsAt: String
+    /// The end of the current Stripe billing period, as Stripe's subscription webhook recorded it.
+    /// null: no Stripe subscription backs this company (a free plan, or a plan an administrator
+    /// set) — there is no card renewal to show. It is never pending.
     public var renewsAt: String?
     public var cancelAtPeriodEnd: Bool?
 

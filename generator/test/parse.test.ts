@@ -774,7 +774,9 @@ test('parses the production document into the expected shape', () => {
   // schemas (EnforcedLimit, PlanQuotaFields, TenantPublicProfile and five
   // ProposalOp* members of the ProposalOperation union), the two operations'
   // hoisted shapes, and the quota, billing-plan, usage and mission fields.
-  assert.equal(spec.types.length, 2348);
+  // 2348 -> 2351 on 2026-10-31 (build af3b029e): a proposal's `applied_via`,
+  // and a public-profile agent's `standing` with its enum.
+  assert.equal(spec.types.length, 2351);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);

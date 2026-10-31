@@ -24972,6 +24972,68 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Company_Proposal_Applied_Via_Kind (Value : String) return Company_Proposal_Applied_Via_Kind is
+   begin
+      if Value = "conversation" then
+         return (Kind => Company_Proposal_Applied_Via_Kind_Conversation, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Company_Proposal_Applied_Via_Kind_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Company_Proposal_Applied_Via_Kind;
+
+   function To_Company_Proposal_Applied_Via_Kind (Kind : Company_Proposal_Applied_Via_Kind_Kind) return Company_Proposal_Applied_Via_Kind is
+   begin
+      case Kind is
+         when Company_Proposal_Applied_Via_Kind_Conversation =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("conversation"));
+         when Company_Proposal_Applied_Via_Kind_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Company_Proposal_Applied_Via_Kind;
+
+   function Image (Model : Company_Proposal_Applied_Via_Kind) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Company_Proposal_Applied_Via_Kind (Model.Kind).Raw));
+
+   function To_JSON (Model : Company_Proposal_Applied_Via_Kind) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Company_Proposal_Applied_Via_Kind is
+      (To_Company_Proposal_Applied_Via_Kind (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Company_Proposal_Applied_Via) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "kind", To_JSON (Model.Kind));
+      JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      JS.Set (Result, "person_user_id", JS.JSON.Create (Model.Person_User_Id));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Company_Proposal_Applied_Via is
+      Result : Company_Proposal_Applied_Via;
+   begin
+      if JS.Present (Node, "kind") then
+         Result.Kind := From_JSON (JS.Get_Value (Node, "kind"));
+      end if;
+      if JS.Present (Node, "agent_id") then
+         Result.Agent_Id := JS.As_Text (JS.Get_Value (Node, "agent_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "person_user_id") then
+         Result.Person_User_Id := JS.As_Text (JS.Get_Value (Node, "person_user_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Company_Proposal_Failure) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -25081,6 +25143,9 @@ package body UARP.Models is
             JS.Set (Result, "applied", Items);
          end;
       end if;
+      if Model.Has_Applied_Via then
+         JS.Set (Result, "applied_via", To_JSON (Model.Applied_Via));
+      end if;
       if Model.Has_Rolled_Back then
          declare
             Items : JS.JSON_Array := JS.JSON.Empty_Array;
@@ -25188,6 +25253,10 @@ package body UARP.Models is
                Result.Applied.Append (From_JSON (JS.JSON.Get (Items, Index)));
             end loop;
          end;
+      end if;
+      if JS.Present (Node, "applied_via") then
+         Result.Has_Applied_Via := True;
+         Result.Applied_Via := From_JSON (JS.Get_Value (Node, "applied_via"));
       end if;
       if JS.Present (Node, "rolled_back") then
          Result.Has_Rolled_Back := True;
@@ -52004,6 +52073,9 @@ package body UARP.Models is
       if Model.Has_Failed_Runs then
          JS.Set (Result, "failed_runs", JS.JSON.Create (Model.Failed_Runs));
       end if;
+      if Model.Has_Refused_Runs then
+         JS.Set (Result, "refused_runs", JS.JSON.Create (Model.Refused_Runs));
+      end if;
       if Model.Has_Recent then
          declare
             Items : JS.JSON_Array := JS.JSON.Empty_Array;
@@ -52039,6 +52111,10 @@ package body UARP.Models is
       if JS.Present (Node, "failed_runs") then
          Result.Has_Failed_Runs := True;
          Result.Failed_Runs := JS.As_Integer (JS.Get_Value (Node, "failed_runs"));
+      end if;
+      if JS.Present (Node, "refused_runs") then
+         Result.Has_Refused_Runs := True;
+         Result.Refused_Runs := JS.As_Integer (JS.Get_Value (Node, "refused_runs"));
       end if;
       if JS.Present (Node, "recent") then
          Result.Has_Recent := True;
@@ -52083,6 +52159,9 @@ package body UARP.Models is
       if Model.Has_Failed then
          JS.Set (Result, "failed", JS.JSON.Create (Model.Failed));
       end if;
+      if Model.Has_Refused then
+         JS.Set (Result, "refused", JS.JSON.Create (Model.Refused));
+      end if;
       return Result;
    end To_JSON;
 
@@ -52100,6 +52179,10 @@ package body UARP.Models is
       if JS.Present (Node, "failed") then
          Result.Has_Failed := True;
          Result.Failed := JS.As_Integer (JS.Get_Value (Node, "failed"));
+      end if;
+      if JS.Present (Node, "refused") then
+         Result.Has_Refused := True;
+         Result.Refused := JS.As_Integer (JS.Get_Value (Node, "refused"));
       end if;
       return Result;
    end From_JSON;
@@ -94516,9 +94599,56 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Tenant_Public_Profile_Agent_Standing (Value : String) return Tenant_Public_Profile_Agent_Standing is
+   begin
+      if Value = "on_page" then
+         return (Kind => Tenant_Public_Profile_Agent_Standing_On_Page, Raw => UARP.Types."+" (Value));
+      elsif Value = "agent_not_public" then
+         return (Kind => Tenant_Public_Profile_Agent_Standing_Agent_Not_Public, Raw => UARP.Types."+" (Value));
+      elsif Value = "left_out_of_list" then
+         return (Kind => Tenant_Public_Profile_Agent_Standing_Left_Out_Of_List, Raw => UARP.Types."+" (Value));
+      elsif Value = "page_not_live" then
+         return (Kind => Tenant_Public_Profile_Agent_Standing_Page_Not_Live, Raw => UARP.Types."+" (Value));
+      elsif Value = "missing_from_page" then
+         return (Kind => Tenant_Public_Profile_Agent_Standing_Missing_From_Page, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Tenant_Public_Profile_Agent_Standing_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Tenant_Public_Profile_Agent_Standing;
+
+   function To_Tenant_Public_Profile_Agent_Standing (Kind : Tenant_Public_Profile_Agent_Standing_Kind) return Tenant_Public_Profile_Agent_Standing is
+   begin
+      case Kind is
+         when Tenant_Public_Profile_Agent_Standing_On_Page =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("on_page"));
+         when Tenant_Public_Profile_Agent_Standing_Agent_Not_Public =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("agent_not_public"));
+         when Tenant_Public_Profile_Agent_Standing_Left_Out_Of_List =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("left_out_of_list"));
+         when Tenant_Public_Profile_Agent_Standing_Page_Not_Live =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("page_not_live"));
+         when Tenant_Public_Profile_Agent_Standing_Missing_From_Page =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("missing_from_page"));
+         when Tenant_Public_Profile_Agent_Standing_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Tenant_Public_Profile_Agent_Standing;
+
+   function Image (Model : Tenant_Public_Profile_Agent_Standing) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Tenant_Public_Profile_Agent_Standing (Model.Kind).Raw));
+
+   function To_JSON (Model : Tenant_Public_Profile_Agent_Standing) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Public_Profile_Agent_Standing is
+      (To_Tenant_Public_Profile_Agent_Standing (UARP.Types."+" (JS.As_Text (Node))));
+
    function To_JSON (Model : Tenant_Public_Profile_Agent) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
+      JS.Set (Result, "standing", To_JSON (Model.Standing));
       JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
       JS.Set (Result, "name", JS.JSON.Create (Model.Name));
       JS.Set (Result, "public_capable", JS.JSON.Create (Model.Public_Capable));
@@ -94530,6 +94660,9 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Public_Profile_Agent is
       Result : Tenant_Public_Profile_Agent;
    begin
+      if JS.Present (Node, "standing") then
+         Result.Standing := From_JSON (JS.Get_Value (Node, "standing"));
+      end if;
       if JS.Present (Node, "agent_id") then
          Result.Agent_Id := JS.As_Text (JS.Get_Value (Node, "agent_id"));
       end if;

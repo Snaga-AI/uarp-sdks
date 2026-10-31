@@ -9089,6 +9089,12 @@ public data class CompanyProposal(
     public val rejectReason: String? = null,
     public val applied: List<CompanyProposalStep>? = null,
     /**
+     * Present when the Chief of Staff applied it in the conversation on the person's answer (since
+     * 2026-10-31); `decided_by` is that person.
+     */
+    @SerialName("applied_via")
+    public val appliedVia: CompanyProposalAppliedVia? = null,
+    /**
      * Steps whose undo succeeded.
      */
     @SerialName("rolled_back")
@@ -9106,6 +9112,50 @@ public data class CompanyProposal(
      */
     public val version: Long? = null,
 )
+
+/**
+ * Present when the Chief of Staff applied it in the conversation on the person's answer (since
+ * 2026-10-31); `decided_by` is that person.
+ */
+@Serializable
+public data class CompanyProposalAppliedVia(
+    public val kind: CompanyProposalAppliedViaKind,
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String,
+    @SerialName("person_user_id")
+    public val personUserId: String,
+)
+
+/**
+ * `CompanyProposalAppliedViaKind` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = CompanyProposalAppliedViaKindSerializer::class)
+@JvmInline
+public value class CompanyProposalAppliedViaKind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val CONVERSATION: CompanyProposalAppliedViaKind = CompanyProposalAppliedViaKind("conversation")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<CompanyProposalAppliedViaKind> = listOf(CONVERSATION)
+    }
+}
+
+public object CompanyProposalAppliedViaKindSerializer : KSerializer<CompanyProposalAppliedViaKind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CompanyProposalAppliedViaKind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: CompanyProposalAppliedViaKind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): CompanyProposalAppliedViaKind = CompanyProposalAppliedViaKind(decoder.decodeString())
+}
 
 /**
  * `CompanyProposalDiffItem` model.
@@ -18876,7 +18926,17 @@ public data class GetTenantCompanyOverviewResponseActivity(
 public data class GetTenantCompanyOverviewResponseActivityByDayItem(
     public val date: String? = null,
     public val runs: Long? = null,
+    /**
+     * Runs that failed or timed out, lifecycle refusals excluded (since 2026-10-31; before, a
+     * paused company's refusals were counted here).
+     */
     public val failed: Long? = null,
+    /**
+     * A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+     * INITIATIVE_BUDGET_EXHAUSTED) is not a failure: it is counted here, apart. `runs` = every run
+     * created that day, refused ones included. Since 2026-10-31.
+     */
+    public val refused: Long? = null,
 )
 
 /**
@@ -19004,8 +19064,19 @@ public object GetTenantCompanyOverviewResponseNextStepKindSerializer : KSerializ
  */
 @Serializable
 public data class GetTenantCompanyOverviewResponseProblems(
+    /**
+     * Failed or timed-out runs in the window, lifecycle refusals excluded; `recent` and next_step
+     * RUN_FAILED read the same list (since 2026-10-31).
+     */
     @SerialName("failed_runs")
     public val failedRuns: Long? = null,
+    /**
+     * A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+     * INITIATIVE_BUDGET_EXHAUSTED) is not a failure; this counts them in the window. Since
+     * 2026-10-31.
+     */
+    @SerialName("refused_runs")
+    public val refusedRuns: Long? = null,
     public val recent: List<GetTenantCompanyOverviewResponseProblemsRecentItem>? = null,
     /**
      * Missions in the window the PLATFORM stopped (`aborted` or `failed`, not
@@ -42709,6 +42780,16 @@ public data class TenantPublicProfile(
  */
 @Serializable
 public data class TenantPublicProfileAgent(
+    /**
+     * The one thing that keeps the agent off the page, first match wins: `on_page`;
+     * `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the
+     * allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private,
+     * has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+     * live, yet not listed — publish_agent rewrites its index row). Show this, not the three
+     * booleans together: with no allow-list every agent is `published` while none may be on the
+     * page. Since 2026-10-31.
+     */
+    public val standing: TenantPublicProfileAgentStanding,
     @SerialName("agent_id")
     public val agentId: String,
     public val name: String,
@@ -42718,6 +42799,43 @@ public data class TenantPublicProfileAgent(
     @SerialName("on_public_page")
     public val onPublicPage: Boolean,
 )
+
+/**
+ * The one thing that keeps the agent off the page, first match wins: `on_page`;
+ * `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the
+ * allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private,
+ * has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+ * live, yet not listed — publish_agent rewrites its index row). Show this, not the three
+ * booleans together: with no allow-list every agent is `published` while none may be on the
+ * page. Since 2026-10-31.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TenantPublicProfileAgentStandingSerializer::class)
+@JvmInline
+public value class TenantPublicProfileAgentStanding(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ON_PAGE: TenantPublicProfileAgentStanding = TenantPublicProfileAgentStanding("on_page")
+        public val AGENT_NOT_PUBLIC: TenantPublicProfileAgentStanding = TenantPublicProfileAgentStanding("agent_not_public")
+        public val LEFT_OUT_OF_LIST: TenantPublicProfileAgentStanding = TenantPublicProfileAgentStanding("left_out_of_list")
+        public val PAGE_NOT_LIVE: TenantPublicProfileAgentStanding = TenantPublicProfileAgentStanding("page_not_live")
+        public val MISSING_FROM_PAGE: TenantPublicProfileAgentStanding = TenantPublicProfileAgentStanding("missing_from_page")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TenantPublicProfileAgentStanding> = listOf(ON_PAGE, AGENT_NOT_PUBLIC, LEFT_OUT_OF_LIST, PAGE_NOT_LIVE, MISSING_FROM_PAGE)
+    }
+}
+
+public object TenantPublicProfileAgentStandingSerializer : KSerializer<TenantPublicProfileAgentStanding> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TenantPublicProfileAgentStanding", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TenantPublicProfileAgentStanding): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TenantPublicProfileAgentStanding = TenantPublicProfileAgentStanding(decoder.decodeString())
+}
 
 /**
  * `TenantPublicProfilePublicPage` model.
@@ -46480,6 +46598,11 @@ public data class UsageQuota(
 public data class UsageQuotaBillingPeriod(
     @SerialName("quota_resets_at")
     public val quotaResetsAt: String,
+    /**
+     * The end of the current Stripe billing period, as Stripe's subscription webhook recorded it.
+     * null: no Stripe subscription backs this company (a free plan, or a plan an administrator
+     * set) — there is no card renewal to show. It is never pending.
+     */
     @SerialName("renews_at")
     public val renewsAt: String? = null,
     @SerialName("cancel_at_period_end")

@@ -8,18 +8,22 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.13.3 — 2026-10-31
 
-Build `cc26d5ce`, digest `6727e638f0dedd7f`. Against 0.13.2: 654 paths (+1), 873
-operations (+2), 510 schemas (+8), 2348 named types (+31); nothing removed. No
+Build `af3b029e`, digest `829444e7550303b1`. Against 0.13.2: 654 paths (+1), 873
+operations (+2), 510 schemas (+8), 2351 named types (+34); nothing removed. No
 `event_schema=1` type changes.
 
 ### Added
 
-- `GET /tenants/me/public-profile` (`TenantPublicProfile`) and
-  `PATCH /missions/schedules/{scheduleId}`.
+- `GET /tenants/me/public-profile` (`TenantPublicProfile`, each agent with its
+  `standing`: `on_page`, `agent_not_public`, `left_out_of_list`, `page_not_live`
+  or `missing_from_page`) and `PATCH /missions/schedules/{scheduleId}`.
 - Five more proposal operations in the `ProposalOperation` union:
   `ProposalOpUpdatePublicProfile`, `ProposalOpPublishAgent`,
   `ProposalOpUnpublishAgent`, `ProposalOpPauseCompany`, `ProposalOpResumeCompany`.
-  `CompanyProposal` gains `rollback_failed`.
+  `CompanyProposal` gains `rollback_failed` and `applied_via` (the conversation,
+  agent, run, session and person a proposal was applied through).
+- The tenant overview counts refused runs: `problems.refused_runs` and
+  `activity.by_day[].refused`.
 - Quotas and plans: `EnforcedLimit` and `PlanQuotaFields`; `GET /usage/quota` gains
   `enforced_counters`, `per_resource_limits`, `billing_period` and `plan_quotas`;
   a billing plan carries the same terms as a public plan (`quotas`,

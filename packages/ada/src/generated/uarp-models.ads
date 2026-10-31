@@ -10277,6 +10277,37 @@ package UARP.Models is
    package Company_Proposal_Step_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Company_Proposal_Step);
 
+   --  Values of `CompanyProposalAppliedViaKind`.
+   --  A value the API introduces later decodes as Company_Proposal_Applied_Via_Kind_Unrecognized
+   --  with the original text kept in Raw.
+   type Company_Proposal_Applied_Via_Kind_Kind is
+     (Company_Proposal_Applied_Via_Kind_Conversation,
+   Company_Proposal_Applied_Via_Kind_Unrecognized);
+
+   type Company_Proposal_Applied_Via_Kind is record
+      Kind : Company_Proposal_Applied_Via_Kind_Kind := Company_Proposal_Applied_Via_Kind_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Company_Proposal_Applied_Via_Kind (Value : String) return Company_Proposal_Applied_Via_Kind;
+   function To_Company_Proposal_Applied_Via_Kind (Kind : Company_Proposal_Applied_Via_Kind_Kind) return Company_Proposal_Applied_Via_Kind;
+   function Image (Model : Company_Proposal_Applied_Via_Kind) return String;
+   function To_JSON (Model : Company_Proposal_Applied_Via_Kind) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Company_Proposal_Applied_Via_Kind;
+
+   --  Present when the Chief of Staff applied it in the conversation on the person's answer (since
+   --  2026-10-31); `decided_by` is that person.
+   type Company_Proposal_Applied_Via is record
+      Kind : UARP.Models.Company_Proposal_Applied_Via_Kind;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Person_User_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Company_Proposal_Applied_Via) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Company_Proposal_Applied_Via;
+
    --  `CompanyProposalFailure` model.
    type Company_Proposal_Failure is record
       Has_Index : Boolean := False;
@@ -10330,6 +10361,10 @@ package UARP.Models is
       Reject_Reason : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Applied : Boolean := False;
       Applied : UARP.Models.Company_Proposal_Step_Vectors.Vector;
+      --  Present when the Chief of Staff applied it in the conversation on the person's answer (since
+      --  2026-10-31); `decided_by` is that person.
+      Has_Applied_Via : Boolean := False;
+      Applied_Via : UARP.Models.Company_Proposal_Applied_Via;
       --  Steps whose undo succeeded.
       Has_Rolled_Back : Boolean := False;
       Rolled_Back : UARP.Models.Company_Proposal_Step_Vectors.Vector;
@@ -20890,8 +20925,15 @@ package UARP.Models is
 
    --  `GetTenantCompanyOverviewResponseProblems` model.
    type Get_Tenant_Company_Overview_Response_Problems is record
+      --  Failed or timed-out runs in the window, lifecycle refusals excluded; `recent` and next_step
+      --  RUN_FAILED read the same list (since 2026-10-31).
       Has_Failed_Runs : Boolean := False;
       Failed_Runs : UARP.Types.Integer_Value := 0;
+      --  A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+      --  INITIATIVE_BUDGET_EXHAUSTED) is not a failure; this counts them in the window. Since
+      --  2026-10-31.
+      Has_Refused_Runs : Boolean := False;
+      Refused_Runs : UARP.Types.Integer_Value := 0;
       Has_Recent : Boolean := False;
       Recent : UARP.Models.Get_Tenant_Company_Overview_Response_Problems_Recent_Item_Vectors.Vector;
       --  Missions in the window the PLATFORM stopped (`aborted` or `failed`, not
@@ -20918,8 +20960,15 @@ package UARP.Models is
       Date : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Runs : Boolean := False;
       Runs : UARP.Types.Integer_Value := 0;
+      --  Runs that failed or timed out, lifecycle refusals excluded (since 2026-10-31; before, a
+      --  paused company's refusals were counted here).
       Has_Failed : Boolean := False;
       Failed : UARP.Types.Integer_Value := 0;
+      --  A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+      --  INITIATIVE_BUDGET_EXHAUSTED) is not a failure: it is counted here, apart. `runs` = every run
+      --  created that day, refused ones included. Since 2026-10-31.
+      Has_Refused : Boolean := False;
+      Refused : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : Get_Tenant_Company_Overview_Response_Activity_By_Day_Item) return UARP.JSON_Support.JSON_Value;
@@ -37694,8 +37743,44 @@ package UARP.Models is
    function To_JSON (Model : Tenant_Public_Profile_Public_Page) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Public_Profile_Public_Page;
 
+   --  The one thing that keeps the agent off the page, first match wins: `on_page`;
+   --  `agent_not_public` (its own switch is off - publish_agent sets it); `left_out_of_list` (the
+   --  allow-list leaves it out - publish_agent adds it); `page_not_live` (the profile is private,
+   --  has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+   --  live, yet not listed - publish_agent rewrites its index row). Show this, not the three
+   --  booleans together: with no allow-list every agent is `published` while none may be on the
+   --  page. Since 2026-10-31.
+   --  A value the API introduces later decodes as Tenant_Public_Profile_Agent_Standing_Unrecognized
+   --  with the original text kept in Raw.
+   type Tenant_Public_Profile_Agent_Standing_Kind is
+     (Tenant_Public_Profile_Agent_Standing_On_Page,
+   Tenant_Public_Profile_Agent_Standing_Agent_Not_Public,
+   Tenant_Public_Profile_Agent_Standing_Left_Out_Of_List,
+   Tenant_Public_Profile_Agent_Standing_Page_Not_Live,
+   Tenant_Public_Profile_Agent_Standing_Missing_From_Page,
+   Tenant_Public_Profile_Agent_Standing_Unrecognized);
+
+   type Tenant_Public_Profile_Agent_Standing is record
+      Kind : Tenant_Public_Profile_Agent_Standing_Kind := Tenant_Public_Profile_Agent_Standing_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Tenant_Public_Profile_Agent_Standing (Value : String) return Tenant_Public_Profile_Agent_Standing;
+   function To_Tenant_Public_Profile_Agent_Standing (Kind : Tenant_Public_Profile_Agent_Standing_Kind) return Tenant_Public_Profile_Agent_Standing;
+   function Image (Model : Tenant_Public_Profile_Agent_Standing) return String;
+   function To_JSON (Model : Tenant_Public_Profile_Agent_Standing) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Public_Profile_Agent_Standing;
+
    --  `TenantPublicProfileAgent` model.
    type Tenant_Public_Profile_Agent is record
+      --  The one thing that keeps the agent off the page, first match wins: `on_page`;
+      --  `agent_not_public` (its own switch is off - publish_agent sets it); `left_out_of_list` (the
+      --  allow-list leaves it out - publish_agent adds it); `page_not_live` (the profile is private,
+      --  has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+      --  live, yet not listed - publish_agent rewrites its index row). Show this, not the three
+      --  booleans together: with no allow-list every agent is `published` while none may be on the
+      --  page. Since 2026-10-31.
+      Standing : UARP.Models.Tenant_Public_Profile_Agent_Standing;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Public_Capable : Standard.Boolean := False;
@@ -40785,6 +40870,9 @@ package UARP.Models is
    --  2026-10-30.
    type Usage_Quota_Billing_Period is record
       Quota_Resets_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The end of the current Stripe billing period, as Stripe's subscription webhook recorded it.
+      --  null: no Stripe subscription backs this company (a free plan, or a plan an administrator
+      --  set) - there is no card renewal to show. It is never pending.
       Has_Renews_At : Boolean := False;
       Renews_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Cancel_At_Period_End : Boolean := False;

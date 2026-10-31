@@ -5008,6 +5008,11 @@ export interface CompanyProposal {
   reject_reason?: string;
   applied?: CompanyProposalStep[];
   /**
+   * Present when the Chief of Staff applied it in the conversation on the person's answer (since
+   * 2026-10-31); `decided_by` is that person.
+   */
+  applied_via?: CompanyProposalAppliedVia;
+  /**
    * Steps whose undo succeeded.
    */
   rolled_back?: CompanyProposalStep[];
@@ -5023,6 +5028,22 @@ export interface CompanyProposal {
    */
   version?: number;
 }
+
+/**
+ * Present when the Chief of Staff applied it in the conversation on the person's answer (since
+ * 2026-10-31); `decided_by` is that person.
+ */
+export interface CompanyProposalAppliedVia {
+  kind: CompanyProposalAppliedViaKind;
+  agent_id: string;
+  run_id: string;
+  session_id: string;
+  person_user_id: string;
+}
+
+export type CompanyProposalAppliedViaKind = 'conversation';
+
+export const COMPANY_PROPOSAL_APPLIED_VIA_KIND_VALUES = ['conversation'] as const;
 
 export interface CompanyProposalDiffItem {
   index: number;
@@ -10464,7 +10485,17 @@ export interface GetTenantCompanyOverviewResponseActivity {
 export interface GetTenantCompanyOverviewResponseActivityByDayItem {
   date?: string;
   runs?: number;
+  /**
+   * Runs that failed or timed out, lifecycle refusals excluded (since 2026-10-31; before, a
+   * paused company's refusals were counted here).
+   */
   failed?: number;
+  /**
+   * A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+   * INITIATIVE_BUDGET_EXHAUSTED) is not a failure: it is counted here, apart. `runs` = every run
+   * created that day, refused ones included. Since 2026-10-31.
+   */
+  refused?: number;
 }
 
 export interface GetTenantCompanyOverviewResponseCompany {
@@ -10537,7 +10568,17 @@ export type GetTenantCompanyOverviewResponseNextStepKind = 'setup' | 'resume' | 
 export const GET_TENANT_COMPANY_OVERVIEW_RESPONSE_NEXT_STEP_KIND_VALUES = ['setup', 'resume', 'decide', 'problem', 'wait'] as const;
 
 export interface GetTenantCompanyOverviewResponseProblems {
+  /**
+   * Failed or timed-out runs in the window, lifecycle refusals excluded; `recent` and next_step
+   * RUN_FAILED read the same list (since 2026-10-31).
+   */
   failed_runs?: number;
+  /**
+   * A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+   * INITIATIVE_BUDGET_EXHAUSTED) is not a failure; this counts them in the window. Since
+   * 2026-10-31.
+   */
+  refused_runs?: number;
   recent?: GetTenantCompanyOverviewResponseProblemsRecentItem[];
   /**
    * Missions in the window the PLATFORM stopped (`aborted` or `failed`, not
@@ -22815,12 +22856,35 @@ export interface TenantPublicProfile {
 }
 
 export interface TenantPublicProfileAgent {
+  /**
+   * The one thing that keeps the agent off the page, first match wins: `on_page`;
+   * `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the
+   * allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private,
+   * has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+   * live, yet not listed — publish_agent rewrites its index row). Show this, not the three
+   * booleans together: with no allow-list every agent is `published` while none may be on the
+   * page. Since 2026-10-31.
+   */
+  standing: TenantPublicProfileAgentStanding;
   agent_id: string;
   name: string;
   public_capable: boolean;
   published: boolean;
   on_public_page: boolean;
 }
+
+/**
+ * The one thing that keeps the agent off the page, first match wins: `on_page`;
+ * `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the
+ * allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private,
+ * has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+ * live, yet not listed — publish_agent rewrites its index row). Show this, not the three
+ * booleans together: with no allow-list every agent is `published` while none may be on the
+ * page. Since 2026-10-31.
+ */
+export type TenantPublicProfileAgentStanding = 'on_page' | 'agent_not_public' | 'left_out_of_list' | 'page_not_live' | 'missing_from_page';
+
+export const TENANT_PUBLIC_PROFILE_AGENT_STANDING_VALUES = ['on_page', 'agent_not_public', 'left_out_of_list', 'page_not_live', 'missing_from_page'] as const;
 
 export interface TenantPublicProfilePublicPage {
   path: string | null;
@@ -24853,6 +24917,11 @@ export interface UsageQuota {
  */
 export interface UsageQuotaBillingPeriod {
   quota_resets_at: string;
+  /**
+   * The end of the current Stripe billing period, as Stripe's subscription webhook recorded it.
+   * null: no Stripe subscription backs this company (a free plan, or a plan an administrator
+   * set) — there is no card renewal to show. It is never pending.
+   */
   renews_at: string | null;
   cancel_at_period_end: boolean | null;
 }

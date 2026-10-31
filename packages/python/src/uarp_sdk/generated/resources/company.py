@@ -69,7 +69,13 @@ class CompanyResource:
         `resource_limit_reached`): the proposal stays `pending` with `failure` beside it, so the
         person can upgrade (`failure.details` names the resource, used, limit and current_plan) and
         apply the SAME proposal (since 2026-10-14). Company fields are written once, at the end,
-        with one version bump. An agent's credential is refused (403) even with an owner's role.
+        with one version bump. An agent's credential is refused (403) even with an owner's role —
+        with one exception (since 2026-10-31, owner's decision): the Chief of Staff may apply a
+        proposal it made itself, in the same conversation, on a turn a person started there after
+        the proposal, when that person is an active owner or admin. It is then applied with that
+        person's rights (narrowed to their key's scopes), `decided_by` is the person and
+        `applied_via` records the conversation. Any other agent apply is 403. Whether the person's
+        message was a yes is the agent's reading; it is told to apply only on an explicit yes.
         Applying an applied proposal answers it again (200) and changes nothing. Admin or owner.
 
         `POST /api/v1/tenants/me/proposals/{proposalId}/apply`
@@ -595,7 +601,13 @@ class AsyncCompanyResource:
         `resource_limit_reached`): the proposal stays `pending` with `failure` beside it, so the
         person can upgrade (`failure.details` names the resource, used, limit and current_plan) and
         apply the SAME proposal (since 2026-10-14). Company fields are written once, at the end,
-        with one version bump. An agent's credential is refused (403) even with an owner's role.
+        with one version bump. An agent's credential is refused (403) even with an owner's role —
+        with one exception (since 2026-10-31, owner's decision): the Chief of Staff may apply a
+        proposal it made itself, in the same conversation, on a turn a person started there after
+        the proposal, when that person is an active owner or admin. It is then applied with that
+        person's rights (narrowed to their key's scopes), `decided_by` is the person and
+        `applied_via` records the conversation. Any other agent apply is 403. Whether the person's
+        message was a yes is the agent's reading; it is told to apply only on an explicit yes.
         Applying an applied proposal answers it again (200) and changes nothing. Admin or owner.
 
         `POST /api/v1/tenants/me/proposals/{proposalId}/apply`

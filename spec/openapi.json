@@ -4076,7 +4076,8 @@
                                     "string",
                                     "null"
                                 ],
-                                "format": "date-time"
+                                "format": "date-time",
+                                "description": "The end of the current Stripe billing period, as Stripe's subscription webhook recorded it. null: no Stripe subscription backs this company (a free plan, or a plan an administrator set) — there is no card renewal to show. It is never pending."
                             },
                             "cancel_at_period_end": {
                                 "type": [
@@ -21275,9 +21276,21 @@
                                 "name",
                                 "public_capable",
                                 "published",
-                                "on_public_page"
+                                "on_public_page",
+                                "standing"
                             ],
                             "properties": {
+                                "standing": {
+                                    "type": "string",
+                                    "enum": [
+                                        "on_page",
+                                        "agent_not_public",
+                                        "left_out_of_list",
+                                        "page_not_live",
+                                        "missing_from_page"
+                                    ],
+                                    "description": "The one thing that keeps the agent off the page, first match wins: `on_page`; `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private, has no slug, or the slug shows another company); `missing_from_page` (ready and the page is live, yet not listed — publish_agent rewrites its index row). Show this, not the three booleans together: with no allow-list every agent is `published` while none may be on the page. Since 2026-10-31."
+                                },
                                 "agent_id": {
                                     "type": "string"
                                 },
@@ -21720,6 +21733,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/CompanyProposalStep"
+                        }
+                    },
+                    "applied_via": {
+                        "type": "object",
+                        "description": "Present when the Chief of Staff applied it in the conversation on the person's answer (since 2026-10-31); `decided_by` is that person.",
+                        "required": [
+                            "kind",
+                            "agent_id",
+                            "run_id",
+                            "session_id",
+                            "person_user_id"
+                        ],
+                        "properties": {
+                            "kind": {
+                                "type": "string",
+                                "enum": [
+                                    "conversation"
+                                ]
+                            },
+                            "agent_id": {
+                                "type": "string"
+                            },
+                            "run_id": {
+                                "type": "string"
+                            },
+                            "session_id": {
+                                "type": "string"
+                            },
+                            "person_user_id": {
+                                "type": "string"
+                            }
                         }
                     },
                     "rolled_back": {
@@ -44561,7 +44605,7 @@
                     "Company"
                 ],
                 "summary": "Apply a proposal — a person only",
-                "description": "Runs each operation through the route a person would call, with the caller's rights (validation, plan quotas, schedule floors). Removals run last. If a step fails, what the proposal created is deleted and what it changed is restored; the answer is 422 with `status: failed`, `failure` and `rolled_back`. The one exception is a plan ceiling (`failure.code` = `resource_limit_reached`): the proposal stays `pending` with `failure` beside it, so the person can upgrade (`failure.details` names the resource, used, limit and current_plan) and apply the SAME proposal (since 2026-10-14). Company fields are written once, at the end, with one version bump. An agent's credential is refused (403) even with an owner's role. Applying an applied proposal answers it again (200) and changes nothing. Admin or owner.",
+                "description": "Runs each operation through the route a person would call, with the caller's rights (validation, plan quotas, schedule floors). Removals run last. If a step fails, what the proposal created is deleted and what it changed is restored; the answer is 422 with `status: failed`, `failure` and `rolled_back`. The one exception is a plan ceiling (`failure.code` = `resource_limit_reached`): the proposal stays `pending` with `failure` beside it, so the person can upgrade (`failure.details` names the resource, used, limit and current_plan) and apply the SAME proposal (since 2026-10-14). Company fields are written once, at the end, with one version bump. An agent's credential is refused (403) even with an owner's role — with one exception (since 2026-10-31, owner's decision): the Chief of Staff may apply a proposal it made itself, in the same conversation, on a turn a person started there after the proposal, when that person is an active owner or admin. It is then applied with that person's rights (narrowed to their key's scopes), `decided_by` is the person and `applied_via` records the conversation. Any other agent apply is 403. Whether the person's message was a yes is the agent's reading; it is told to apply only on an explicit yes. Applying an applied proposal answers it again (200) and changes nothing. Admin or owner.",
                 "security": [
                     {
                         "bearerAuth": []
@@ -45394,7 +45438,12 @@
                                             "type": "object",
                                             "properties": {
                                                 "failed_runs": {
-                                                    "type": "integer"
+                                                    "type": "integer",
+                                                    "description": "Failed or timed-out runs in the window, lifecycle refusals excluded; `recent` and next_step RUN_FAILED read the same list (since 2026-10-31)."
+                                                },
+                                                "refused_runs": {
+                                                    "type": "integer",
+                                                    "description": "A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or INITIATIVE_BUDGET_EXHAUSTED) is not a failure; this counts them in the window. Since 2026-10-31."
                                                 },
                                                 "recent": {
                                                     "type": "array",
@@ -45543,7 +45592,12 @@
                                                                 "type": "integer"
                                                             },
                                                             "failed": {
-                                                                "type": "integer"
+                                                                "type": "integer",
+                                                                "description": "Runs that failed or timed out, lifecycle refusals excluded (since 2026-10-31; before, a paused company's refusals were counted here)."
+                                                            },
+                                                            "refused": {
+                                                                "type": "integer",
+                                                                "description": "A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or INITIATIVE_BUDGET_EXHAUSTED) is not a failure: it is counted here, apart. `runs` = every run created that day, refused ones included. Since 2026-10-31."
                                                             }
                                                         }
                                                     }
@@ -119599,7 +119653,7 @@
                 "tags": [
                     "Analytics"
                 ],
-                "description": "Approvals, input requests, paused and failed runs, each with a one-line summary of what is being asked — and, in `reviews`, mission results waiting for a person's verdict — tool names, the question, or the error.\n\n**Limits.** One page reads one SCAN WINDOW of the tenant's 500 newest run records (newest first), sorts every waiting run in it by urgency (approval, input, paused, failed; newest first inside each) and returns at most `limit` of them (1–200, default 50). `counts` is computed over the window, not over `items`, so a short page still reports the window's backlog. Failed runs count only for 24 hours after they were created.\n\n**Paging** (since 2026-10-19). When the window held more waiting runs than `limit`, or older runs exist past it (`truncated`), the answer carries `has_more: true` and a `cursor`. Pass it back unchanged as `?cursor=` (with any `limit`) to continue: first through the rest of the same window, then into the next 500 runs, and so on — every waiting run is reached exactly once, however old. A continuation page whose window holds nothing to show reads on, up to 4 windows (2 000 runs) per request, before answering. A first page whose window holds nothing looks on the same way (since 2026-10-29) to decide `has_more`: when no waiting run exists until the oldest run, it answers `has_more: false` with no `cursor` — nobody is waiting — and when one does, the `cursor` starts at that run's window rather than at the empty ones in between. On a continuation page `counts` and `scanned` describe that page's span only, and `reviews`/`proposals` — complete lists, not windowed — are empty: read them from the first page. A run that changes status between pages can be seen twice or not at all, and a run created between pages can shift the first window by one. A cursor this endpoint did not issue is 400.\n\nWithout `cursor` the items, `counts` and `scanned` are the first window's, exactly as before paging existed; `has_more`/`cursor` are additive.",
+                "description": "Approvals, input requests, paused and failed runs, each with a one-line summary of what is being asked — and, in `reviews`, mission results waiting for a person's verdict — tool names, the question, or the error.\n\n**Limits.** One page reads one SCAN WINDOW of the tenant's 500 newest run records (newest first), sorts every waiting run in it by urgency (approval, input, paused, failed; newest first inside each) and returns at most `limit` of them (1–200, default 50). `counts` is computed over the window, not over `items`, so a short page still reports the window's backlog. Failed runs count only for 24 hours after they were created. A run a person rejected (`approval_rejected`) and a run the company's lifecycle refused (`COMPANY_PAUSED`, `INITIATIVE_PAUSED`, `INITIATIVE_BUDGET_EXHAUSTED`, since 2026-10-31) are not in the inbox: nothing failed and nothing is left to do.\n\n**Paging** (since 2026-10-19). When the window held more waiting runs than `limit`, or older runs exist past it (`truncated`), the answer carries `has_more: true` and a `cursor`. Pass it back unchanged as `?cursor=` (with any `limit`) to continue: first through the rest of the same window, then into the next 500 runs, and so on — every waiting run is reached exactly once, however old. A continuation page whose window holds nothing to show reads on, up to 4 windows (2 000 runs) per request, before answering. A first page whose window holds nothing looks on the same way (since 2026-10-29) to decide `has_more`: when no waiting run exists until the oldest run, it answers `has_more: false` with no `cursor` — nobody is waiting — and when one does, the `cursor` starts at that run's window rather than at the empty ones in between. On a continuation page `counts` and `scanned` describe that page's span only, and `reviews`/`proposals` — complete lists, not windowed — are empty: read them from the first page. A run that changes status between pages can be seen twice or not at all, and a run created between pages can shift the first window by one. A cursor this endpoint did not issue is 400.\n\nWithout `cursor` the items, `counts` and `scanned` are the first window's, exactly as before paging existed; `has_more`/`cursor` are additive.",
                 "parameters": [
                     {
                         "name": "limit",
