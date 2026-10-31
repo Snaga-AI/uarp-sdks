@@ -886,7 +886,7 @@ class SessionsResource:
             request_options=request_options,
         ))
 
-    def stream_session_events(self, session_id: str, *, token: Optional[str] = None, event_schema: Optional[int] = None, last_event_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> EventStream:
+    def stream_session_events(self, session_id: str, *, token: Optional[str] = None, resume: Optional[str] = None, event_schema: Optional[int] = None, last_event_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> EventStream:
         """Stream session events (SSE)
 
         Server-Sent Events of the session: `connected`, `run_added`, every run event by type,
@@ -907,7 +907,7 @@ class SessionsResource:
         """
         return self._client._stream(
             f"/api/v1/sessions/{_segment(session_id)}/events",
-            query=[("token", token), ("event_schema", event_schema)],
+            query=[("token", token), ("resume", resume), ("event_schema", event_schema)],
             headers=[("Last-Event-ID", last_event_id)],
             request_options=request_options,
         )
@@ -1854,7 +1854,7 @@ class AsyncSessionsResource:
             request_options=request_options,
         ))
 
-    def stream_session_events(self, session_id: str, *, token: Optional[str] = None, event_schema: Optional[int] = None, last_event_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> AsyncEventStream:
+    def stream_session_events(self, session_id: str, *, token: Optional[str] = None, resume: Optional[str] = None, event_schema: Optional[int] = None, last_event_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> AsyncEventStream:
         """Stream session events (SSE)
 
         Server-Sent Events of the session: `connected`, `run_added`, every run event by type,
@@ -1875,7 +1875,7 @@ class AsyncSessionsResource:
         """
         return self._client._stream(
             f"/api/v1/sessions/{_segment(session_id)}/events",
-            query=[("token", token), ("event_schema", event_schema)],
+            query=[("token", token), ("resume", resume), ("event_schema", event_schema)],
             headers=[("Last-Event-ID", last_event_id)],
             request_options=request_options,
         )

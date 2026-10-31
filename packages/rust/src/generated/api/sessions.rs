@@ -132,6 +132,13 @@ pub struct StreamSessionEventsParams {
     /// Used by browser EventSource which cannot set Authorization header.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
+    /// Where the client stopped in EVERY run it was following: comma-separated `runId:seq` pairs,
+    /// e.g. `resume=runA:12,runB:7`; pairs past the 200th are ignored. Each run resumes after its
+    /// seq; a run not named replays from the start. `Last-Event-ID` carries one frame's id, so
+    /// alone it resumes only that one run. When both name a run, the larger seq wins. Malformed
+    /// pairs are ignored. Omitting it is the old behaviour. Since 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resume: Option<String>,
     /// The version of the event schemas the client parses strictly (since 2026-10-30). Every frame
     /// is then sent in exactly that version's shape — `RunEventV\<N\>` for run events,
     /// `RunStreamFrameV\<N\>*` / `SessionStreamFrameV\<N\>*` for the stream's own frames — and a

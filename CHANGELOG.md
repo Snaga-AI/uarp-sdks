@@ -8,7 +8,7 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.13.3 — 2026-10-31
 
-Build `af3b029e`, digest `829444e7550303b1`. Against 0.13.2: 654 paths (+1), 873
+Build `b9cb29ac`, digest `4230cb6348e0e48a`. Against 0.13.2: 654 paths (+1), 873
 operations (+2), 510 schemas (+8), 2351 named types (+34); nothing removed. No
 `event_schema=1` type changes.
 
@@ -24,6 +24,11 @@ operations (+2), 510 schemas (+8), 2351 named types (+34); nothing removed. No
   agent, run, session and person a proposal was applied through).
 - The tenant overview counts refused runs: `problems.refused_runs` and
   `activity.by_day[].refused`.
+- The session event stream takes `resume`: comma-separated `runId:seq` pairs,
+  one per run being followed, so a reconnect resumes every run where it stopped
+  rather than only the one `Last-Event-ID` names. A run not named replays from
+  its start; when both name a run, the larger seq wins. It takes its place before
+  `eventSchema` in Kotlin, so a positional `eventSchema` there needs its name.
 - Quotas and plans: `EnforcedLimit` and `PlanQuotaFields`; `GET /usage/quota` gains
   `enforced_counters`, `per_resource_limits`, `billing_period` and `plan_quotas`;
   a billing plan carries the same terms as a public plan (`quotas`,

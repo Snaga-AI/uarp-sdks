@@ -38828,6 +38828,17 @@
                         "$ref": "#/components/parameters/LastEventId"
                     },
                     {
+                        "name": "resume",
+                        "in": "query",
+                        "required": false,
+                        "description": "Where the client stopped in EVERY run it was following: comma-separated `runId:seq` pairs, e.g. `resume=runA:12,runB:7`; pairs past the 200th are ignored. Each run resumes after its seq; a run not named replays from the start. `Last-Event-ID` carries one frame's id, so alone it resumes only that one run. When both name a run, the larger seq wins. Malformed pairs are ignored. Omitting it is the old behaviour. Since 2026-10-30.",
+                        "schema": {
+                            "type": "string",
+                            "example": "runA:12,runB:7",
+                            "maxLength": 65536
+                        }
+                    },
+                    {
                         "$ref": "#/components/parameters/EventSchema"
                     }
                 ],

@@ -193,6 +193,14 @@ export interface StreamSessionEventsParams {
    */
   token?: string;
   /**
+   * Where the client stopped in EVERY run it was following: comma-separated `runId:seq` pairs,
+   * e.g. `resume=runA:12,runB:7`; pairs past the 200th are ignored. Each run resumes after its
+   * seq; a run not named replays from the start. `Last-Event-ID` carries one frame's id, so
+   * alone it resumes only that one run. When both name a run, the larger seq wins. Malformed
+   * pairs are ignored. Omitting it is the old behaviour. Since 2026-10-30.
+   */
+  resume?: string;
+  /**
    * The version of the event schemas the client parses strictly (since 2026-10-30). Every frame
    * is then sent in exactly that version's shape — `RunEventV<N>` for run events,
    * `RunStreamFrameV<N>*` / `SessionStreamFrameV<N>*` for the stream's own frames — and a frame
@@ -1127,7 +1135,7 @@ export class SessionsResource extends APIResource {
     return this._client.stream({
       method: 'GET',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/events`,
-      query: pick(params, ['token', 'event_schema']),
+      query: pick(params, ['token', 'resume', 'event_schema']),
       headers: pick(params, ['Last-Event-ID']),
       options,
     });
