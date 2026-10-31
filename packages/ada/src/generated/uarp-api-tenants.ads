@@ -129,6 +129,23 @@ package UARP.API.Tenants is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Tenant_Domain_Health_Response;
 
+   --  The public profile as configured and as the public page shows it
+   --
+   --  The profile fields, each agent's standing (`public_capable` = visibility public and
+   --  public_config.enabled; `published` = in the allow-list or no allow-list defined;
+   --  `on_public_page` = listed now), and `public_page`: what GET /public/tenants/{slug} answers,
+   --  read through that route's own handler. The public profile is not the marketplace listing;
+   --  `marketplace_listed` reports the listing apart. Change it through a proposal
+   --  (`update_public_profile`, `publish_agent`, `unpublish_agent`). Since 2026-10-30.
+   --
+   --  GET /api/v1/tenants/me/public-profile
+   --
+   --  Required scopes: agents:read.
+   function Get_Tenant_Public_Profile
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Tenant_Public_Profile;
+
    --  Leave a tenant
    --
    --  Removes the caller's own membership. The user-record cascade matches an admin-driven

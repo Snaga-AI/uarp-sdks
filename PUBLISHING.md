@@ -35,7 +35,7 @@ So the release copies `packages/swift` into `Snaga-AI/uarp-swift`, a repository
 that exists only to be depended upon, and tags it there:
 
 ```swift
-.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.13.2")
+.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.13.3")
 ```
 
 The mirror is cloned and updated rather than recreated, because its tags *are*

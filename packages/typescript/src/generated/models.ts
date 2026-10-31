@@ -1898,7 +1898,24 @@ export interface Agent {
    */
   initiative_id?: string;
   /**
-   * SPECs installed on this agent, with version pin and granted permissions.
+   * On the answer to POST /agents and PATCH/PUT /agents/{id} only: request fields that were not
+   * applied, each with why. Today only `prompts.system` — the system prompt is managed by the
+   * Chief of Staff (update_agent), and HTTP does not set it; put the role in
+   * `prompts.developer`. Absent when everything sent was applied. Since 2026-10-30.
+   */
+  ignored_fields?: AgentIgnoredField[];
+  /**
+   * Base-package SPECs a person removed from this agent (any of @platform/now-time,
+   * simple-tools, files, net, research-toolkit, document-suite, visual-creator, code-companion,
+   * memory). The platform issues the base package on every read; one on this list stays off.
+   * Server-managed: a PATCH/PUT whose `specs` leaves out a base SPEC the agent had adds it, and
+   * one that includes it again removes it. `@platform/core` is never declined. Absent until the
+   * first such removal. Since 2026-10-30.
+   */
+  base_specs_declined?: string[];
+  /**
+   * SPECs installed on this agent, with version pin and granted permissions. The base package is
+   * added back on every read unless listed in `base_specs_declined`.
    */
   specs?: AgentSpec[];
   /**
@@ -2339,6 +2356,11 @@ export interface AgentHire {
 export type AgentHireStatus = 'pending' | 'connected' | 'disconnected';
 
 export const AGENT_HIRE_STATUS_VALUES = ['pending', 'connected', 'disconnected'] as const;
+
+export interface AgentIgnoredField {
+  field: string;
+  reason: string;
+}
 
 /**
  * Agent-scoped integration (connection) instance
@@ -4808,6 +4830,11 @@ export interface CompanyExportCompany {
   status?: CompanyProfileStatus;
   version?: number;
   template?: JsonObject;
+  /**
+   * When the company went through POST /tenants/me/company/launch. Null for a company that never
+   * did: every tenant starts `active` without a launch, and resume does not launch — so null
+   * with `status: active` means active without a launch, not a missing value.
+   */
   launched_at?: string;
   plan?: string | null;
 }
@@ -4929,6 +4956,11 @@ export interface CompanyProfile {
    */
   version: number;
   template?: CompanyProfileTemplate;
+  /**
+   * When the company went through POST /tenants/me/company/launch. Null for a company that never
+   * did: every tenant starts `active` without a launch, and resume does not launch — so null
+   * with `status: active` means active without a launch, not a missing value.
+   */
   launched_at?: string;
   paused_at?: string;
   pause_reason?: string;
@@ -4975,13 +5007,43 @@ export interface CompanyProposal {
   decided_by?: string;
   reject_reason?: string;
   applied?: CompanyProposalStep[];
+  /**
+   * Present when the Chief of Staff applied it in the conversation on the person's answer (since
+   * 2026-10-31); `decided_by` is that person.
+   */
+  applied_via?: CompanyProposalAppliedVia;
+  /**
+   * Steps whose undo succeeded.
+   */
   rolled_back?: CompanyProposalStep[];
+  /**
+   * Steps whose undo the route refused: their change is still in place and needs a person.
+   * Absent when every undo succeeded. Before 2026-10-30 such steps were listed under
+   * `rolled_back`.
+   */
+  rollback_failed?: CompanyProposalStep[];
   failure?: CompanyProposalFailure;
   /**
    * The company version after a successful apply.
    */
   version?: number;
 }
+
+/**
+ * Present when the Chief of Staff applied it in the conversation on the person's answer (since
+ * 2026-10-31); `decided_by` is that person.
+ */
+export interface CompanyProposalAppliedVia {
+  kind: CompanyProposalAppliedViaKind;
+  agent_id: string;
+  run_id: string;
+  session_id: string;
+  person_user_id: string;
+}
+
+export type CompanyProposalAppliedViaKind = 'conversation';
+
+export const COMPANY_PROPOSAL_APPLIED_VIA_KIND_VALUES = ['conversation'] as const;
 
 export interface CompanyProposalDiffItem {
   index: number;
@@ -7786,6 +7848,34 @@ export interface EndpointRateLimit {
   window_sec: number;
 }
 
+/**
+ * Every plan limit the platform enforces, read as its enforcement site reads it
+ * (api/lib/plan-terms.ts). `limit: null` means the code applies no cap; a number, 0 included,
+ * is the cap it applies — 0 is a cap of zero where the gate treats it so (videos, images, team
+ * runs, MCP servers, workers) and null where the gate treats 0 as uncapped (tokens, runs, tool
+ * calls, storage, sessions, memory). `scope` says what it counts against: the tenant, or each
+ * agent or squad. Since 2026-10-30.
+ */
+export interface EnforcedLimit {
+  /**
+   * tokens, runs, tokens_daily, tool_calls, tool_calls_daily, images, images_daily, videos,
+   * storage_bytes, active_sessions, concurrent_team_runs, mcp_servers, workers, memory_entries,
+   * memory_storage_bytes, agent_versions. Open: a later release may add a kind.
+   */
+  kind: string;
+  /**
+   * The TenantQuotas field it is read from.
+   */
+  quota: string;
+  scope: EnforcedLimitScope;
+  period: string | null;
+  limit: number | null;
+}
+
+export type EnforcedLimitScope = 'tenant' | 'agent' | 'team';
+
+export const ENFORCED_LIMIT_SCOPE_VALUES = ['tenant', 'agent', 'team'] as const;
+
 export interface EnforcementResult {
   /**
    * False when any matched rule carries a blocking penalty.
@@ -10240,6 +10330,11 @@ export interface GetTenantBlueprintResponseDepartmentMember {
 
 export interface GetTenantBlueprintResponseDeploymentState {
   status?: CompanyProfileStatus;
+  /**
+   * When the company went through POST /tenants/me/company/launch. Null for a company that never
+   * did: every tenant starts `active` without a launch, and resume does not launch — so null
+   * with `status: active` means active without a launch, not a missing value.
+   */
   launched_at?: string | null;
   paused_at?: string | null;
 }
@@ -10338,18 +10433,26 @@ export interface GetTenantCompanyOverviewResponse {
    * `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
    * method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
    * setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
-   * then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
-   * with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
-   * `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
-   * as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
-   * else applies.
+   * an `active` company with no agent besides its Chief of Staff → its first readiness blocker
+   * (`kind` setup, since 2026-10-30); then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the
+   * newest failure in the window, with `run_id`, `agent_id`, `agent_name` — null when the agent
+   * is gone — and `error_code`), `MISSION_STOPPED` (a mission the platform stopped, with
+   * `mission_id` and its `result_code` as `error_code`), `NEXT_RUN` (with `name`,
+   * `next_fire_at`; only a schedule that fires — active and enabled — at an instant not more
+   * than an hour past, since 2026-10-30), and `ALL_QUIET` when nothing else applies.
    */
   next_step?: GetTenantCompanyOverviewResponseNextStep;
   generated_at: string;
   window_days: number;
   company: GetTenantCompanyOverviewResponseCompany;
   /**
-   * Null when no cap is set.
+   * What the calendar month (UTC) cost so far, cap or no cap — the same number as GET /usage
+   * `total_cost`. Null only when the usage read failed. Since 2026-10-30; `spend` below is null
+   * whenever no cap is set, however much was spent.
+   */
+  month_spend_usd?: number | null;
+  /**
+   * Null when no cap is set — even with spend this month; read `month_spend_usd` for the amount.
    */
   spend: GetTenantCompanyOverviewResponseSpend | null;
   decisions: GetTenantCompanyOverviewResponseDecisions;
@@ -10382,7 +10485,17 @@ export interface GetTenantCompanyOverviewResponseActivity {
 export interface GetTenantCompanyOverviewResponseActivityByDayItem {
   date?: string;
   runs?: number;
+  /**
+   * Runs that failed or timed out, lifecycle refusals excluded (since 2026-10-31; before, a
+   * paused company's refusals were counted here).
+   */
   failed?: number;
+  /**
+   * A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+   * INITIATIVE_BUDGET_EXHAUSTED) is not a failure: it is counted here, apart. `runs` = every run
+   * created that day, refused ones included. Since 2026-10-31.
+   */
+  refused?: number;
 }
 
 export interface GetTenantCompanyOverviewResponseCompany {
@@ -10394,6 +10507,11 @@ export interface GetTenantCompanyOverviewResponseCompany {
   objective?: string | null;
   status?: CompanyProfileStatus;
   version?: number;
+  /**
+   * When the company went through POST /tenants/me/company/launch. Null for a company that never
+   * did: every tenant starts `active` without a launch, and resume does not launch — so null
+   * with `status: active` means active without a launch, not a missing value.
+   */
   launched_at?: string | null;
   paused_at?: string | null;
   chief_of_staff_agent_id?: string | null;
@@ -10423,11 +10541,13 @@ export interface GetTenantCompanyOverviewResponseNextItem {
  * `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
  * method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
  * setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
- * then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
- * with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
- * `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
- * as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
- * else applies.
+ * an `active` company with no agent besides its Chief of Staff → its first readiness blocker
+ * (`kind` setup, since 2026-10-30); then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the
+ * newest failure in the window, with `run_id`, `agent_id`, `agent_name` — null when the agent
+ * is gone — and `error_code`), `MISSION_STOPPED` (a mission the platform stopped, with
+ * `mission_id` and its `result_code` as `error_code`), `NEXT_RUN` (with `name`,
+ * `next_fire_at`; only a schedule that fires — active and enabled — at an instant not more
+ * than an hour past, since 2026-10-30), and `ALL_QUIET` when nothing else applies.
  */
 export interface GetTenantCompanyOverviewResponseNextStep {
   kind: GetTenantCompanyOverviewResponseNextStepKind;
@@ -10448,7 +10568,17 @@ export type GetTenantCompanyOverviewResponseNextStepKind = 'setup' | 'resume' | 
 export const GET_TENANT_COMPANY_OVERVIEW_RESPONSE_NEXT_STEP_KIND_VALUES = ['setup', 'resume', 'decide', 'problem', 'wait'] as const;
 
 export interface GetTenantCompanyOverviewResponseProblems {
+  /**
+   * Failed or timed-out runs in the window, lifecycle refusals excluded; `recent` and next_step
+   * RUN_FAILED read the same list (since 2026-10-31).
+   */
   failed_runs?: number;
+  /**
+   * A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+   * INITIATIVE_BUDGET_EXHAUSTED) is not a failure; this counts them in the window. Since
+   * 2026-10-31.
+   */
+  refused_runs?: number;
   recent?: GetTenantCompanyOverviewResponseProblemsRecentItem[];
   /**
    * Missions in the window the PLATFORM stopped (`aborted` or `failed`, not
@@ -10531,7 +10661,7 @@ export interface GetTenantCompanyOverviewResponseResult {
 }
 
 /**
- * Null when no cap is set.
+ * Null when no cap is set — even with spend this month; read `month_spend_usd` for the amount.
  */
 export interface GetTenantCompanyOverviewResponseSpend {
   limit_usd?: number;
@@ -12220,7 +12350,24 @@ export interface ListBillingPlansResponse {
 export interface ListBillingPlansResponsePlan {
   id?: string;
   name?: string;
+  /**
+   * Six of the plan's limits, kept as they were for their readers. The full set is `quotas` and
+   * `enforced_limits`.
+   */
   limits?: JsonObject;
+  queue_tier?: PublicPlanQueueTier;
+  /**
+   * Runs at a time the plan really gets — the plan's figure clamped to the live platform
+   * ceiling.
+   */
+  effective_concurrent_runs?: number;
+  reset?: ListBillingPlansResponsePlanReset;
+  /**
+   * Pay-as-you-go beyond the quota; `null` on free.
+   */
+  overage?: ListBillingPlansResponsePlanOverage | null;
+  quotas?: PlanQuotaFields;
+  enforced_limits?: EnforcedLimit[];
   current?: boolean;
   checkout_available?: boolean;
   /**
@@ -12253,6 +12400,25 @@ export interface ListBillingPlansResponsePlan {
 export type ListBillingPlansResponsePlanAppStoreProductId = 'ai.snaga.starter.monthly' | 'ai.snaga.pro.monthly';
 
 export const LIST_BILLING_PLANS_RESPONSE_PLAN_APP_STORE_PRODUCT_ID_VALUES = ['ai.snaga.starter.monthly', 'ai.snaga.pro.monthly'] as const;
+
+/**
+ * Pay-as-you-go beyond the quota; `null` on free.
+ */
+export interface ListBillingPlansResponsePlanOverage {
+  available?: boolean;
+  requires_cap?: boolean;
+  price_per_million_usd?: ListBillingPlansResponsePlanOveragePricePerMillionUsd | null;
+}
+
+export interface ListBillingPlansResponsePlanOveragePricePerMillionUsd {
+  input?: number;
+  output?: number;
+}
+
+export interface ListBillingPlansResponsePlanReset {
+  period?: PublicPlanResetPeriod;
+  at?: string;
+}
 
 export interface ListBillingSpecPackagesResponse {
   packages: JsonObject[];
@@ -12533,6 +12699,25 @@ export interface ListMissionsResponse {
    * Length of `items` in this response, not a tenant-wide count.
    */
   total: number;
+  /**
+   * Tenant-wide list only: how many missions the tenant has (all of them, not this page). Since
+   * 2026-10-30.
+   */
+  total_missions?: number;
+  /**
+   * Tenant-wide list only: more missions follow this page. Since 2026-10-30.
+   */
+  has_more?: boolean;
+  /**
+   * Tenant-wide list only: pass as `before` for the next page; null when `has_more` is false.
+   * Since 2026-10-30.
+   */
+  next_before?: string | null;
+  /**
+   * Present (true) only when the 20 000-row scan cap, not the end of the list, stopped the read:
+   * `total_missions` is then a lower bound.
+   */
+  truncated?: boolean;
 }
 
 export interface ListModelsResponse {
@@ -14004,6 +14189,12 @@ export interface Mission {
   aar_id?: string;
   metrics?: MissionMetrics;
   /**
+   * On GET /missions/{missionId}: false when an objective that ran predates the recording of run
+   * time and model calls (2026-10-30), so `metrics.total_duration_ms` and `metrics.llm_calls`
+   * undercount. Cost, tokens and retries are whole either way. Since 2026-10-30.
+   */
+  metrics_complete?: boolean;
+  /**
    * Terminal outcome. `partial` means some objectives verified and some did not.
    */
   outcome?: MissionOutcome;
@@ -14057,8 +14248,11 @@ export type MissionClassification = 'quick_reply' | 'mission';
 export const MISSION_CLASSIFICATION_VALUES = ['quick_reply', 'mission'] as const;
 
 /**
- * Aggregated spend for the whole mission. Written on the terminal transition, so it is absent
- * while the mission is still running.
+ * Aggregated spend for the whole mission. It was documented as written on the terminal
+ * transition and was written by nothing; since 2026-10-30 GET /missions/{missionId} sums it
+ * from the mission's objectives on every read — cost, tokens and runs as recorded per strike,
+ * so it is present while the mission runs too. `retries` is every strike past an objective's
+ * first. Run time and model calls were recorded only from 2026-10-30: see `metrics_complete`.
  */
 export interface MissionMetrics {
   total_cost_usd: number;
@@ -15275,6 +15469,11 @@ export interface PauseTenantCompanyResponse {
    */
   version: number;
   template?: PauseTenantCompanyResponseTemplate;
+  /**
+   * When the company went through POST /tenants/me/company/launch. Null for a company that never
+   * did: every tenant starts `active` without a launch, and resume does not launch — so null
+   * with `status: active` means active without a launch, not a missing value.
+   */
   launched_at?: string;
   paused_at?: string;
   pause_reason?: string;
@@ -15486,6 +15685,12 @@ export interface PlannedObjectiveBudget {
   max_tokens: number;
   max_cost_usd: number;
 }
+
+/**
+ * The plan's quota fields as stored, `null` where the plan sets none. Raw values — read
+ * `enforced_limits` for what each one means.
+ */
+export type PlanQuotaFields = JsonObject;
 
 /**
  * Platform profit and loss: Stripe revenue against real host spend and the LLM provider bill.
@@ -16041,7 +16246,41 @@ export const PROPOSAL_OP_ADD_SQUAD_OP_VALUES = ['add_squad'] as const;
 /**
  * One change a proposal makes, discriminated by `op`.
  */
-export type ProposalOperation = ProposalOpAddAgent | ProposalOpUpdateAgent | ProposalOpRemoveAgent | ProposalOpSetAgentSchedule | ProposalOpSetApprovalPolicy | ProposalOpAddSquad | ProposalOpSetSquadMembers | ProposalOpUpdateCompany | ProposalOpSetBudget | ProposalOpAddMissionSchedule | ProposalOpRemoveMissionSchedule;
+export type ProposalOperation = ProposalOpAddAgent | ProposalOpUpdateAgent | ProposalOpRemoveAgent | ProposalOpSetAgentSchedule | ProposalOpSetApprovalPolicy | ProposalOpAddSquad | ProposalOpSetSquadMembers | ProposalOpUpdateCompany | ProposalOpSetBudget | ProposalOpAddMissionSchedule | ProposalOpRemoveMissionSchedule | ProposalOpPauseCompany | ProposalOpResumeCompany | ProposalOpUpdatePublicProfile | ProposalOpPublishAgent | ProposalOpUnpublishAgent;
+
+/**
+ * Pause the company — an owner-only switch the Chief of Staff can only propose. Its diff's
+ * `after.stops` is the scope GET /tenants/me/company/pause-scope states. Applied through POST
+ * /tenants/me/company/pause with the applier's rights. Since 2026-10-30.
+ */
+export interface ProposalOpPauseCompany {
+  op: ProposalOpPauseCompanyOp;
+  reason?: string;
+}
+
+export type ProposalOpPauseCompanyOp = 'pause_company';
+
+export const PROPOSAL_OP_PAUSE_COMPANY_OP_VALUES = ['pause_company'] as const;
+
+/**
+ * Put one agent on the public page. Sets the agent's `visibility: public` and
+ * `public_config.enabled` (PATCH /agents/{id}) and, when the company keeps an allow-list, adds
+ * it to `published_agent_ids` (an absent allow-list already lists every public-capable agent
+ * and is left absent); `primary` also makes it `public_agent_id`. When the profile is public
+ * the apply then reads GET /public/tenants/{slug} and fails with `PUBLIC_PAGE_MISMATCH`,
+ * rolling back, unless the agent is listed. Refused at plan time when the company has no slug.
+ * Since 2026-10-30.
+ */
+export interface ProposalOpPublishAgent {
+  op: ProposalOpPublishAgentOp;
+  agent_id: string;
+  primary?: boolean;
+  greeting?: string;
+}
+
+export type ProposalOpPublishAgentOp = 'publish_agent';
+
+export const PROPOSAL_OP_PUBLISH_AGENT_OP_VALUES = ['publish_agent'] as const;
 
 export interface ProposalOpRemoveAgent {
   op: ProposalOpRemoveAgentOp;
@@ -16066,6 +16305,18 @@ export interface ProposalOpRemoveMissionSchedule {
 export type ProposalOpRemoveMissionScheduleOp = 'remove_mission_schedule';
 
 export const PROPOSAL_OP_REMOVE_MISSION_SCHEDULE_OP_VALUES = ['remove_mission_schedule'] as const;
+
+/**
+ * Resume the company, through POST /tenants/me/company/resume with the applier's rights. Since
+ * 2026-10-30.
+ */
+export interface ProposalOpResumeCompany {
+  op: ProposalOpResumeCompanyOp;
+}
+
+export type ProposalOpResumeCompanyOp = 'resume_company';
+
+export const PROPOSAL_OP_RESUME_COMPANY_OP_VALUES = ['resume_company'] as const;
 
 export interface ProposalOpSetAgentSchedule {
   op: ProposalOpSetAgentScheduleOp;
@@ -16127,6 +16378,21 @@ export type ProposalOpSetSquadMembersOp = 'set_squad_members';
 
 export const PROPOSAL_OP_SET_SQUAD_MEMBERS_OP_VALUES = ['set_squad_members'] as const;
 
+/**
+ * Take one agent off the public page: removes it from `published_agent_ids` when the company
+ * keeps an allow-list, otherwise turns its `public_config.enabled` off; clears
+ * `public_agent_id` when it was this agent. Verified against GET /public/tenants/{slug} like
+ * `publish_agent`. Since 2026-10-30.
+ */
+export interface ProposalOpUnpublishAgent {
+  op: ProposalOpUnpublishAgentOp;
+  agent_id: string;
+}
+
+export type ProposalOpUnpublishAgentOp = 'unpublish_agent';
+
+export const PROPOSAL_OP_UNPUBLISH_AGENT_OP_VALUES = ['unpublish_agent'] as const;
+
 export interface ProposalOpUpdateAgent {
   op: ProposalOpUpdateAgentOp;
   /**
@@ -16159,6 +16425,44 @@ export interface ProposalOpUpdateCompanyChanges {
 export type ProposalOpUpdateCompanyOp = 'update_company';
 
 export const PROPOSAL_OP_UPDATE_COMPANY_OP_VALUES = ['update_company'] as const;
+
+/**
+ * Change the company's public profile, through PATCH /tenants/me with the applier's rights
+ * (owner). The profile is not the marketplace listing: setting `public: true` on a company not
+ * listed yet ALSO lists it in the marketplace, and the diff summary says so. Undo on a later
+ * failure restores each named field; a slug the company never had is not unset. Since
+ * 2026-10-30.
+ */
+export interface ProposalOpUpdatePublicProfile {
+  op: ProposalOpUpdatePublicProfileOp;
+  changes: ProposalOpUpdatePublicProfileChanges;
+}
+
+export interface ProposalOpUpdatePublicProfileChanges {
+  public?: boolean;
+  slug?: string;
+  description?: string | null;
+  logo_url?: string | null;
+  public_agent_id?: string | null;
+  /**
+   * null removes the allow-list: every public-capable agent is listed.
+   */
+  published_agent_ids?: string[] | null;
+  public_settings?: ProposalOpUpdatePublicProfileChangesPublicSettings;
+}
+
+export interface ProposalOpUpdatePublicProfileChangesPublicSettings {
+  max_messages_per_session?: number;
+  max_tokens_per_session?: number;
+  allow_tool_calls?: boolean;
+  allow_file_uploads?: boolean;
+  rate_limit_per_ip_per_hour?: number;
+  require_auth?: boolean;
+}
+
+export type ProposalOpUpdatePublicProfileOp = 'update_public_profile';
+
+export const PROPOSAL_OP_UPDATE_PUBLIC_PROFILE_OP_VALUES = ['update_public_profile'] as const;
 
 /**
  * public.ts GET /public/agents/{agentId} — a hand-built projection, not the Agent record. Keys
@@ -16466,7 +16770,16 @@ export interface PublicPlan {
    * is null or `one_time`.
    */
   price_interval_count?: number | null;
-  quotas: JsonObject;
+  /**
+   * Every quota field the plan stores, `null` where it sets none (since 2026-10-30 the full set,
+   * not seven fields). Read `enforced_limits` for what a value means.
+   */
+  quotas: PlanQuotaFields;
+  /**
+   * Every limit the plan enforces, read as its gate reads it — the same list GET /billing/plans
+   * states. Since 2026-10-30.
+   */
+  enforced_limits?: EnforcedLimit[];
   /**
    * The queue the plan's runs wait in: `standard` on free, `priority` on paid plans. A public
    * word, not the scheduler's internal tier.
@@ -20383,11 +20696,20 @@ export interface ScheduleSummary {
   cron: string;
   enabled: boolean;
   /**
-   * `paused` or `error`, or accumulated failures, is what a “silently dead cron” looks like.
+   * `paused` or `error`, or accumulated failures, is what a “silently dead cron” looks like. A
+   * schedule switched off can still read `active` here — read `fires`.
    */
   status: string;
   /**
-   * `null` when there is no next fire; never an empty string.
+   * Whether the scheduler will fire this schedule: `status` is `active` AND `enabled` is true.
+   * The one answer to "is this on" when `enabled: false` and `status: active` disagree. Since
+   * 2026-10-30.
+   */
+  fires?: boolean;
+  /**
+   * `null` when there is no next fire — including (since 2026-10-30) every schedule with `fires:
+   * false`, which used to keep the instant it had when it was switched off; never an empty
+   * string.
    */
   next_fire_at?: string | null;
 }
@@ -22354,10 +22676,22 @@ export interface TenantOverviewRuns {
   cost_24h_usd?: number;
   recent: TenantOverviewRunsRecentItem[];
   /**
-   * How many run records the aggregate actually looked at. The scan is capped, so a busy
-   * tenant's numbers describe the scanned window, not all history.
+   * How many run records the aggregate actually looked at: the newest `scan_limit` at most,
+   * whatever `days` says. `by_status`, `active_count`, `failed_24h`, `cost_24h_usd` and `recent`
+   * describe those runs, not the `days` window — for the window read `window`.
    */
   scanned: number;
+  /**
+   * The cap on `scanned` (500). Since 2026-10-30.
+   */
+  scan_limit?: number;
+  /**
+   * The scanned runs that fall inside the requested `days` (UTC dates, today included — the
+   * dates `cost` uses). `complete` is true when the scan held every run there is or reached past
+   * `since`; false means the window has more runs than the scan saw, so a rate from `by_status`
+   * is the newest part of the window only. Since 2026-10-30.
+   */
+  window?: TenantOverviewRunsWindow;
 }
 
 export interface TenantOverviewRunsRecentItem {
@@ -22391,6 +22725,20 @@ export interface TenantOverviewRunsRecentItem {
    * over 8605 run records: absent 7738, bridge 867, async 0).
    */
   execution_mode?: RunExecutionMode;
+}
+
+/**
+ * The scanned runs that fall inside the requested `days` (UTC dates, today included — the
+ * dates `cost` uses). `complete` is true when the scan held every run there is or reached past
+ * `since`; false means the window has more runs than the scan saw, so a rate from `by_status`
+ * is the newest part of the window only. Since 2026-10-30.
+ */
+export interface TenantOverviewRunsWindow {
+  days: number;
+  since: string;
+  by_status: JsonObject;
+  counted: number;
+  complete: boolean;
 }
 
 export interface TenantOverviewSchedules {
@@ -22487,6 +22835,69 @@ export interface TenantPlanFitSuggestion {
   code?: string;
   message?: string;
   plan?: string;
+}
+
+export interface TenantPublicProfile {
+  public: boolean;
+  slug: string | null;
+  name: string | null;
+  description: string | null;
+  logo_url: string | null;
+  public_agent_id: string | null;
+  /**
+   * null: no allow-list — every public-capable agent is listed.
+   */
+  published_agent_ids: string[] | null;
+  public_settings: JsonObject;
+  marketplace_listed: boolean;
+  public_page: TenantPublicProfilePublicPage;
+  agents: TenantPublicProfileAgent[];
+  agents_truncated: boolean;
+}
+
+export interface TenantPublicProfileAgent {
+  /**
+   * The one thing that keeps the agent off the page, first match wins: `on_page`;
+   * `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the
+   * allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private,
+   * has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+   * live, yet not listed — publish_agent rewrites its index row). Show this, not the three
+   * booleans together: with no allow-list every agent is `published` while none may be on the
+   * page. Since 2026-10-31.
+   */
+  standing: TenantPublicProfileAgentStanding;
+  agent_id: string;
+  name: string;
+  public_capable: boolean;
+  published: boolean;
+  on_public_page: boolean;
+}
+
+/**
+ * The one thing that keeps the agent off the page, first match wins: `on_page`;
+ * `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the
+ * allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private,
+ * has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+ * live, yet not listed — publish_agent rewrites its index row). Show this, not the three
+ * booleans together: with no allow-list every agent is `published` while none may be on the
+ * page. Since 2026-10-31.
+ */
+export type TenantPublicProfileAgentStanding = 'on_page' | 'agent_not_public' | 'left_out_of_list' | 'page_not_live' | 'missing_from_page';
+
+export const TENANT_PUBLIC_PROFILE_AGENT_STANDING_VALUES = ['on_page', 'agent_not_public', 'left_out_of_list', 'page_not_live', 'missing_from_page'] as const;
+
+export interface TenantPublicProfilePublicPage {
+  path: string | null;
+  /**
+   * null when the company has no slug, so no page.
+   */
+  status: number | null;
+  /**
+   * False when the page at this slug belongs to another company; `agent_ids` is then empty.
+   */
+  shows_this_company: boolean;
+  agent_ids: string[];
+  primary_agent_id: string | null;
 }
 
 export interface TenantPublicSettings {
@@ -23957,6 +24368,29 @@ export interface UpdateMissionObjectiveRequestBudget {
   max_cost_usd?: number;
 }
 
+export interface UpdateMissionScheduleRequest {
+  cron?: string;
+  /**
+   * IANA time zone; empty for UTC.
+   */
+  timezone?: string;
+  name?: string;
+  status?: UpdateMissionScheduleRequestStatus;
+}
+
+export type UpdateMissionScheduleRequestStatus = 'active' | 'paused';
+
+export const UPDATE_MISSION_SCHEDULE_REQUEST_STATUS_VALUES = ['active', 'paused'] as const;
+
+export interface UpdateMissionScheduleResponse {
+  schedule_id: string;
+  name?: string;
+  cron: string;
+  timezone: string;
+  status: UpdateMissionScheduleRequestStatus;
+  next_fire_at: string | null;
+}
+
 export interface UpdateMyEmailPreferencesRequest {
   locale?: GetHireCatalogLocale;
   weekly_digest?: boolean;
@@ -24446,9 +24880,50 @@ export interface UsageQuota {
    */
   counters?: UsageQuotaCounter[];
   /**
+   * The complete list of tenant-wide limits with what is used against each, `{kind, used, limit,
+   * period, resets_at}`: the eight `counters` kinds plus tool_calls_daily, images, images_daily,
+   * videos, storage_bytes (every file and knowledge-base document stored now — what the upload
+   * gate sums), active_sessions, concurrent_team_runs and concurrent_runs (the limit the
+   * scheduler applies: the plan's, clamped by the platform ceiling). Each limit is read as
+   * `EnforcedLimit` describes; `counters` stays as published, with its closed `kind` enum.
+   * `kind` here is open. Since 2026-10-30.
+   */
+  enforced_counters?: UsageQuotaEnforcedCounter[];
+  /**
+   * Limits that bind each agent or squad rather than the tenant (mcp_servers, workers,
+   * memory_entries, memory_storage_bytes, agent_versions). There is no tenant-wide `used` for
+   * them. Since 2026-10-30.
+   */
+  per_resource_limits?: UsageQuotaPerResourceLimit[];
+  /**
+   * Two different dates, said apart: the allowance resets on the calendar month (UTC); the
+   * subscription renews on Stripe's cycle. `renews_at` is null when no subscription event
+   * recorded a period end — a plan granted without a Stripe subscription has none. Since
+   * 2026-10-30.
+   */
+  billing_period?: UsageQuotaBillingPeriod;
+  plan_quotas?: PlanQuotaFields;
+  /**
    * api/lib/resource-usage.ts TenantResourceUsage.
    */
   resource_usage: UsageQuotaResourceUsage;
+}
+
+/**
+ * Two different dates, said apart: the allowance resets on the calendar month (UTC); the
+ * subscription renews on Stripe's cycle. `renews_at` is null when no subscription event
+ * recorded a period end — a plan granted without a Stripe subscription has none. Since
+ * 2026-10-30.
+ */
+export interface UsageQuotaBillingPeriod {
+  quota_resets_at: string;
+  /**
+   * The end of the current Stripe billing period, as Stripe's subscription webhook recorded it.
+   * null: no Stripe subscription backs this company (a free plan, or a plan an administrator
+   * set) — there is no card renewal to show. It is never pending.
+   */
+  renews_at: string | null;
+  cancel_at_period_end: boolean | null;
 }
 
 export interface UsageQuotaCounter {
@@ -24474,6 +24949,14 @@ export interface UsageQuotaDaily {
   resets_at: string;
 }
 
+export interface UsageQuotaEnforcedCounter {
+  kind: string;
+  used: number;
+  limit: number | null;
+  period: string | null;
+  resets_at: string | null;
+}
+
 export interface UsageQuotaLimits {
   max_monthly_tokens: number;
   max_monthly_runs: number;
@@ -24483,6 +24966,16 @@ export interface UsageQuotaLimits {
   max_knowledge_bases: number;
   max_workspaces: number;
 }
+
+export interface UsageQuotaPerResourceLimit {
+  kind: string;
+  scope: UsageQuotaPerResourceLimitScope;
+  limit: number | null;
+}
+
+export type UsageQuotaPerResourceLimitScope = 'agent' | 'team';
+
+export const USAGE_QUOTA_PER_RESOURCE_LIMIT_SCOPE_VALUES = ['agent', 'team'] as const;
 
 export interface UsageQuotaResetsAt {
   day: string;
@@ -24510,6 +25003,11 @@ export interface UsageQuotaUsage {
   total_tokens: number;
   runs_count: number;
   tool_calls_count: number;
+  /**
+   * Bytes of run artifacts written this period — NOT what is stored now, and not what the
+   * storage limit counts. The stored total the upload gate compares is the `storage_bytes` entry
+   * of `enforced_counters`.
+   */
   storage_bytes: number;
   total_cost: number;
   /**
@@ -24543,7 +25041,15 @@ export interface UsageSummary {
   total_tokens: number;
   runs_count: number;
   tool_calls_count: number;
+  /**
+   * Bridge tasks completed this period. Each is also counted in `runs_count`.
+   */
   bridge_tasks?: number;
+  /**
+   * Bytes of run artifacts written this period — not what is stored now, and not what the
+   * storage limit counts; for that read `enforced_counters` (`storage_bytes`) on GET
+   * /usage/quota.
+   */
   storage_bytes: number;
   /**
    * What the tenant is billed, in USD, to six decimals — as are `provider_cost`, `non_run_cost`
@@ -24557,7 +25063,20 @@ export interface UsageSummary {
    * read it as a cost.
    */
   provider_cost: number;
+  /**
+   * The part of `total_cost` with no run record behind it: LLM-proxy calls, memory extraction,
+   * embeddings, web search, speech, images and video. `total_cost - non_run_cost` is what runs
+   * cost. Split by `non_run_cost_by_kind`.
+   */
   non_run_cost: number;
+  /**
+   * `non_run_cost` split by what it bought, largest first. `kind`: llm_proxy, memory_extraction,
+   * embeddings, web_search, stt, tts, image, video, or `unattributed` — spend recorded before
+   * kinds were (2026-10-30) or by a writer that names none — so the costs add up to
+   * `non_run_cost`. Always present; `unattributed` always included. `kind` is open: a later
+   * release may add one.
+   */
+  non_run_cost_by_kind?: UsageSummaryNonRunCostByKindItem[];
   /**
    * Platform administrator only; absent for every other caller (since 2026-09-29). Whole or
    * absent, never partial.
@@ -24612,6 +25131,11 @@ export interface UsageSummaryBySourceItem {
   tokens: number;
   input_tokens: number;
   output_tokens: number;
+}
+
+export interface UsageSummaryNonRunCostByKindItem {
+  kind: string;
+  cost: number;
 }
 
 /**

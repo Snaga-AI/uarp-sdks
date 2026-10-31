@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "uarp-sdk"
-version = "0.13.2"
+version = "0.13.3"
 description = "Python client for the UARP (Snaga) Universal Agent Runtime Platform API"
 readme = "README.md"
 license = "MIT"

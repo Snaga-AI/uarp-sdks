@@ -383,10 +383,12 @@ class BillingResource:
         """List available billing plans
 
         Lists the four built-in billing plans with the admin's name and price overrides merged in,
-        the per-plan limits taken from the same merged quotas the platform enforces, a `current`
-        flag marking the caller's effective plan, and `checkout_available` — false for `free` and
-        for any plan with no Stripe price wired, which is what a client should read before offering
-        the upgrade button. Requires the `billing:read` permission and scope.
+        the per-plan limits taken from the same merged quotas the platform enforces — since
+        2026-10-30 with the same terms GET /public/plans states (queue tier, clamped concurrency,
+        overage price, reset, every quota field and every enforced limit, from one builder), a
+        `current` flag marking the caller's effective plan, and `checkout_available` — false for
+        `free` and for any plan with no Stripe price wired, which is what a client should read
+        before offering the upgrade button. Requires the `billing:read` permission and scope.
 
         `GET /api/v1/billing/plans`
 
@@ -837,10 +839,12 @@ class AsyncBillingResource:
         """List available billing plans
 
         Lists the four built-in billing plans with the admin's name and price overrides merged in,
-        the per-plan limits taken from the same merged quotas the platform enforces, a `current`
-        flag marking the caller's effective plan, and `checkout_available` — false for `free` and
-        for any plan with no Stripe price wired, which is what a client should read before offering
-        the upgrade button. Requires the `billing:read` permission and scope.
+        the per-plan limits taken from the same merged quotas the platform enforces — since
+        2026-10-30 with the same terms GET /public/plans states (queue tier, clamped concurrency,
+        overage price, reset, every quota field and every enforced limit, from one builder), a
+        `current` flag marking the caller's effective plan, and `checkout_available` — false for
+        `free` and for any plan with no Stripe price wired, which is what a client should read
+        before offering the upgrade button. Requires the `billing:read` permission and scope.
 
         `GET /api/v1/billing/plans`
 

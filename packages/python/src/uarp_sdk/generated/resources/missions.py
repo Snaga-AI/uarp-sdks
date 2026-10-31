@@ -175,10 +175,14 @@ class MissionsResource:
             request_options=request_options,
         ))
 
-    def list(self, *, session_id: Optional[str] = None, limit: Optional[int] = None, request_options: Optional[RequestOptions] = None) -> _m.ListMissionsResponse:
+    def list(self, *, session_id: Optional[str] = None, limit: Optional[int] = None, before: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> _m.ListMissionsResponse:
         """List missions
 
-        Most recent first. Without `session_id` this is the tenant-wide list.
+        Most recent first. Without `session_id` this is the tenant-wide list: since 2026-10-30 it
+        reads the whole mission prefix (up to 20 000 rows of records, checkpoints and AARs) and
+        orders by `created_at` then `mission_id`, newest first; before that it sorted only the first
+        `limit × 8` rows, so a busy tenant got neither its newest missions nor a sign that more
+        existed. It pages with `before` = the previous answer's `next_before`.
 
         MEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When
         either is off the route answers **404** with a plain body — deliberately the same answer as
@@ -191,7 +195,7 @@ class MissionsResource:
         return _cast("_m.ListMissionsResponse", self._client._request(
             "GET",
             "/api/v1/missions",
-            query=[("session_id", session_id), ("limit", limit)],
+            query=[("session_id", session_id), ("limit", limit), ("before", before)],
             response=_Response(type=_m.ListMissionsResponse),
             request_options=request_options,
         ))
@@ -427,6 +431,30 @@ class MissionsResource:
             request_options=request_options,
         ))
 
+    def update_mission_schedule(self, schedule_id: str, body: Union[_m.UpdateMissionScheduleRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.UpdateMissionScheduleResponse:
+        """Change a mission schedule
+
+        WRITE SEMANTICS: merges — each field present replaces that field; an absent field keeps its
+        value, and the plan is never touched. Moves, renames, pauses or resumes a schedule and keeps
+        its plan, id and history — before this the only way was delete and recreate. `status:
+        paused` stops the fires and clears `next_fire_at`; `active` computes it again from `cron`
+        and `timezone`. `404` when no mission schedule has that id, `422` for an invalid cron, time
+        zone or status, `409` when the schedule changed between the read and the write. Since
+        2026-10-30.
+
+        `PATCH /api/v1/missions/schedules/{scheduleId}`
+
+        Required scopes: `agents:write`.
+        """
+        return _cast("_m.UpdateMissionScheduleResponse", self._client._request(
+            "PATCH",
+            f"/api/v1/missions/schedules/{_segment(schedule_id)}",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.UpdateMissionScheduleResponse),
+            request_options=request_options,
+        ))
+
 
 class AsyncMissionsResource:
     """Mission Execution Framework: goal → objectives → authorization gate → execution →
@@ -572,10 +600,14 @@ class AsyncMissionsResource:
             request_options=request_options,
         ))
 
-    async def list(self, *, session_id: Optional[str] = None, limit: Optional[int] = None, request_options: Optional[RequestOptions] = None) -> _m.ListMissionsResponse:
+    async def list(self, *, session_id: Optional[str] = None, limit: Optional[int] = None, before: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> _m.ListMissionsResponse:
         """List missions
 
-        Most recent first. Without `session_id` this is the tenant-wide list.
+        Most recent first. Without `session_id` this is the tenant-wide list: since 2026-10-30 it
+        reads the whole mission prefix (up to 20 000 rows of records, checkpoints and AARs) and
+        orders by `created_at` then `mission_id`, newest first; before that it sorted only the first
+        `limit × 8` rows, so a busy tenant got neither its newest missions nor a sign that more
+        existed. It pages with `before` = the previous answer's `next_before`.
 
         MEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When
         either is off the route answers **404** with a plain body — deliberately the same answer as
@@ -588,7 +620,7 @@ class AsyncMissionsResource:
         return _cast("_m.ListMissionsResponse", await self._client._request(
             "GET",
             "/api/v1/missions",
-            query=[("session_id", session_id), ("limit", limit)],
+            query=[("session_id", session_id), ("limit", limit), ("before", before)],
             response=_Response(type=_m.ListMissionsResponse),
             request_options=request_options,
         ))
@@ -821,5 +853,29 @@ class AsyncMissionsResource:
             body=_Body(body),
             idempotent=True,
             response=_Response(type=_m.Objective),
+            request_options=request_options,
+        ))
+
+    async def update_mission_schedule(self, schedule_id: str, body: Union[_m.UpdateMissionScheduleRequest, Dict[str, Any]], *, request_options: Optional[RequestOptions] = None) -> _m.UpdateMissionScheduleResponse:
+        """Change a mission schedule
+
+        WRITE SEMANTICS: merges — each field present replaces that field; an absent field keeps its
+        value, and the plan is never touched. Moves, renames, pauses or resumes a schedule and keeps
+        its plan, id and history — before this the only way was delete and recreate. `status:
+        paused` stops the fires and clears `next_fire_at`; `active` computes it again from `cron`
+        and `timezone`. `404` when no mission schedule has that id, `422` for an invalid cron, time
+        zone or status, `409` when the schedule changed between the read and the write. Since
+        2026-10-30.
+
+        `PATCH /api/v1/missions/schedules/{scheduleId}`
+
+        Required scopes: `agents:write`.
+        """
+        return _cast("_m.UpdateMissionScheduleResponse", await self._client._request(
+            "PATCH",
+            f"/api/v1/missions/schedules/{_segment(schedule_id)}",
+            body=_Body(body),
+            idempotent=True,
+            response=_Response(type=_m.UpdateMissionScheduleResponse),
             request_options=request_options,
         ))

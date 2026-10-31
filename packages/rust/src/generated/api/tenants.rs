@@ -195,6 +195,31 @@ impl TenantsApi {
             .await
     }
 
+    /// The public profile as configured and as the public page shows it
+    ///
+    /// The profile fields, each agent's standing (`public_capable` = visibility public and
+    /// public_config.enabled; `published` = in the allow-list or no allow-list defined;
+    /// `on_public_page` = listed now), and `public_page`: what GET /public/tenants/{slug} answers,
+    /// read through that route's own handler. The public profile is not the marketplace listing;
+    /// `marketplace_listed` reports the listing apart. Change it through a proposal
+    /// (`update_public_profile`, `publish_agent`, `unpublish_agent`). Since 2026-10-30.
+    ///
+    /// `GET /api/v1/tenants/me/public-profile`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn get_tenant_public_profile(&self) -> Result<models::TenantPublicProfile> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/tenants/me/public-profile".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Leave a tenant
     ///
     /// Removes the caller's own membership. The user-record cascade matches an admin-driven

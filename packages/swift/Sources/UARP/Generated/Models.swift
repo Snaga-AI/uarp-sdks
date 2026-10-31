@@ -4618,7 +4618,20 @@ public struct Agent: Codable, Hashable, Sendable {
     /// inherit it. Set on create (must exist, else 422) or PATCH (`null` removes it). Since
     /// 2026-10-12.
     public var initiativeId: String?
-    /// SPECs installed on this agent, with version pin and granted permissions.
+    /// On the answer to POST /agents and PATCH/PUT /agents/{id} only: request fields that were not
+    /// applied, each with why. Today only `prompts.system` — the system prompt is managed by the
+    /// Chief of Staff (update_agent), and HTTP does not set it; put the role in
+    /// `prompts.developer`. Absent when everything sent was applied. Since 2026-10-30.
+    public var ignoredFields: [AgentIgnoredField]?
+    /// Base-package SPECs a person removed from this agent (any of @platform/now-time,
+    /// simple-tools, files, net, research-toolkit, document-suite, visual-creator, code-companion,
+    /// memory). The platform issues the base package on every read; one on this list stays off.
+    /// Server-managed: a PATCH/PUT whose `specs` leaves out a base SPEC the agent had adds it, and
+    /// one that includes it again removes it. `@platform/core` is never declined. Absent until the
+    /// first such removal. Since 2026-10-30.
+    public var baseSpecsDeclined: [String]?
+    /// SPECs installed on this agent, with version pin and granted permissions. The base package is
+    /// added back on every read unless listed in `base_specs_declined`.
     public var specs: [AgentSpec]?
     /// Always-visible memory blocks placed in the system prompt (CoreMemoryConfig).
     public var coreMemory: AgentCoreMemory?
@@ -4744,9 +4757,11 @@ public struct Agent: Codable, Hashable, Sendable {
     public var createdAt: String
     public var updatedAt: String?
 
-    public init(bridgeFingerprint: String? = nil, initiativeId: String? = nil, specs: [AgentSpec]? = nil, coreMemory: AgentCoreMemory? = nil, autoApproveTools: [String]? = nil, commandRelationships: AgentCommandRelationships? = nil, accessControl: AgentAccessControl? = nil, metadata: AgentMetadata? = nil, agentId: String, tenantId: String, name: String, `description`: String? = nil, version: String? = nil, model: AgentModelConfig, prompts: AgentPrompts? = nil, mcp: JSONObject? = nil, policies: JSONObject? = nil, thinking: JSONObject? = nil, effortPolicy: JSONObject? = nil, resourceLimits: JSONObject? = nil, memory: JSONObject? = nil, guardrails: JSONObject? = nil, approvalRequiredTools: [String]? = nil, builtInTools: [String]? = nil, imageGeneration: JSONObject? = nil, knowledgeBaseId: String? = nil, knowledgeBaseIds: [String]? = nil, visibility: AgentUpdateVisibility? = nil, status: AgentStatus? = nil, statusChangedAt: String? = nil, statusReason: String? = nil, statusReasonCode: AgentStatusReasonCode? = nil, statusReasonDetails: JSONObject? = nil, autonomy: AgentAutonomy? = nil, toolOverrides: [AgentToolOverride]? = nil, publicConfig: AgentPublicConfig? = nil, bridge: AgentBridgeState? = nil, fallbackModel: JSONObject? = nil, executionMode: AgentExecutionMode? = nil, bridgeServed: Bool? = nil, bridgeDisconnectedAt: String? = nil, bridgeApp: String? = nil, parentAgentId: String? = nil, childrenCount: Int? = nil, bridgeStatus: AgentBridgeStatus? = nil, hire: AgentHire? = nil, workerReuse: Bool? = nil, schedule: JSONObject? = nil, a2a: JSONObject? = nil, riskClassification: JSONObject? = nil, workspaceId: String? = nil, contextStrategy: AgentContextStrategy? = nil, contextWindowSize: Int? = nil, createdAt: String, updatedAt: String? = nil) {
+    public init(bridgeFingerprint: String? = nil, initiativeId: String? = nil, ignoredFields: [AgentIgnoredField]? = nil, baseSpecsDeclined: [String]? = nil, specs: [AgentSpec]? = nil, coreMemory: AgentCoreMemory? = nil, autoApproveTools: [String]? = nil, commandRelationships: AgentCommandRelationships? = nil, accessControl: AgentAccessControl? = nil, metadata: AgentMetadata? = nil, agentId: String, tenantId: String, name: String, `description`: String? = nil, version: String? = nil, model: AgentModelConfig, prompts: AgentPrompts? = nil, mcp: JSONObject? = nil, policies: JSONObject? = nil, thinking: JSONObject? = nil, effortPolicy: JSONObject? = nil, resourceLimits: JSONObject? = nil, memory: JSONObject? = nil, guardrails: JSONObject? = nil, approvalRequiredTools: [String]? = nil, builtInTools: [String]? = nil, imageGeneration: JSONObject? = nil, knowledgeBaseId: String? = nil, knowledgeBaseIds: [String]? = nil, visibility: AgentUpdateVisibility? = nil, status: AgentStatus? = nil, statusChangedAt: String? = nil, statusReason: String? = nil, statusReasonCode: AgentStatusReasonCode? = nil, statusReasonDetails: JSONObject? = nil, autonomy: AgentAutonomy? = nil, toolOverrides: [AgentToolOverride]? = nil, publicConfig: AgentPublicConfig? = nil, bridge: AgentBridgeState? = nil, fallbackModel: JSONObject? = nil, executionMode: AgentExecutionMode? = nil, bridgeServed: Bool? = nil, bridgeDisconnectedAt: String? = nil, bridgeApp: String? = nil, parentAgentId: String? = nil, childrenCount: Int? = nil, bridgeStatus: AgentBridgeStatus? = nil, hire: AgentHire? = nil, workerReuse: Bool? = nil, schedule: JSONObject? = nil, a2a: JSONObject? = nil, riskClassification: JSONObject? = nil, workspaceId: String? = nil, contextStrategy: AgentContextStrategy? = nil, contextWindowSize: Int? = nil, createdAt: String, updatedAt: String? = nil) {
         self.bridgeFingerprint = bridgeFingerprint
         self.initiativeId = initiativeId
+        self.ignoredFields = ignoredFields
+        self.baseSpecsDeclined = baseSpecsDeclined
         self.specs = specs
         self.coreMemory = coreMemory
         self.autoApproveTools = autoApproveTools
@@ -4805,6 +4820,8 @@ public struct Agent: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case bridgeFingerprint = "bridge_fingerprint"
         case initiativeId = "initiative_id"
+        case ignoredFields = "ignored_fields"
+        case baseSpecsDeclined = "base_specs_declined"
         case specs = "specs"
         case coreMemory = "core_memory"
         case autoApproveTools = "auto_approve_tools"
@@ -5452,6 +5469,22 @@ public struct AgentHireStatus: RawRepresentable, Codable, Hashable, Sendable, Ex
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [AgentHireStatus] = [.pending, .connected, .disconnected]
+}
+
+/// `AgentIgnoredField` model.
+public struct AgentIgnoredField: Codable, Hashable, Sendable {
+    public var field: String
+    public var reason: String
+
+    public init(field: String, reason: String) {
+        self.field = field
+        self.reason = reason
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case field = "field"
+        case reason = "reason"
+    }
 }
 
 /// Agent-scoped integration (connection) instance
@@ -11396,6 +11429,9 @@ public struct CompanyExportCompany: Codable, Hashable, Sendable {
     public var status: CompanyProfileStatus?
     public var version: Int?
     public var template: JSONObject?
+    /// When the company went through POST /tenants/me/company/launch. Null for a company that never
+    /// did: every tenant starts `active` without a launch, and resume does not launch — so null
+    /// with `status: active` means active without a launch, not a missing value.
     public var launchedAt: String?
     public var plan: String?
 
@@ -11656,6 +11692,9 @@ public struct CompanyProfile: Codable, Hashable, Sendable {
     /// Bumped on every accepted change; send it back as `expected_version`.
     public var version: Int
     public var template: CompanyProfileTemplate?
+    /// When the company went through POST /tenants/me/company/launch. Null for a company that never
+    /// did: every tenant starts `active` without a launch, and resume does not launch — so null
+    /// with `status: active` means active without a launch, not a missing value.
     public var launchedAt: String?
     public var pausedAt: String?
     public var pauseReason: String?
@@ -11763,12 +11802,20 @@ public struct CompanyProposal: Codable, Hashable, Sendable {
     public var decidedBy: String?
     public var rejectReason: String?
     public var applied: [CompanyProposalStep]?
+    /// Present when the Chief of Staff applied it in the conversation on the person's answer (since
+    /// 2026-10-31); `decided_by` is that person.
+    public var appliedVia: CompanyProposalAppliedVia?
+    /// Steps whose undo succeeded.
     public var rolledBack: [CompanyProposalStep]?
+    /// Steps whose undo the route refused: their change is still in place and needs a person.
+    /// Absent when every undo succeeded. Before 2026-10-30 such steps were listed under
+    /// `rolled_back`.
+    public var rollbackFailed: [CompanyProposalStep]?
     public var failure: CompanyProposalFailure?
     /// The company version after a successful apply.
     public var version: Int?
 
-    public init(proposalId: String, status: CompanyProposalStatus, summary: String, rationale: String? = nil, operations: [ProposalOperation], baseVersion: Int, diff: [CompanyProposalDiffItem], requiredRole: CompanyProposalRequiredRole, proposedBy: CompanyProposalProposedBy, template: CompanyProposalTemplate? = nil, estimatedMonthlyCostUsd: Double? = nil, createdAt: String, expiresAt: String, decidedAt: String? = nil, decidedBy: String? = nil, rejectReason: String? = nil, applied: [CompanyProposalStep]? = nil, rolledBack: [CompanyProposalStep]? = nil, failure: CompanyProposalFailure? = nil, version: Int? = nil) {
+    public init(proposalId: String, status: CompanyProposalStatus, summary: String, rationale: String? = nil, operations: [ProposalOperation], baseVersion: Int, diff: [CompanyProposalDiffItem], requiredRole: CompanyProposalRequiredRole, proposedBy: CompanyProposalProposedBy, template: CompanyProposalTemplate? = nil, estimatedMonthlyCostUsd: Double? = nil, createdAt: String, expiresAt: String, decidedAt: String? = nil, decidedBy: String? = nil, rejectReason: String? = nil, applied: [CompanyProposalStep]? = nil, appliedVia: CompanyProposalAppliedVia? = nil, rolledBack: [CompanyProposalStep]? = nil, rollbackFailed: [CompanyProposalStep]? = nil, failure: CompanyProposalFailure? = nil, version: Int? = nil) {
         self.proposalId = proposalId
         self.status = status
         self.summary = summary
@@ -11786,7 +11833,9 @@ public struct CompanyProposal: Codable, Hashable, Sendable {
         self.decidedBy = decidedBy
         self.rejectReason = rejectReason
         self.applied = applied
+        self.appliedVia = appliedVia
         self.rolledBack = rolledBack
+        self.rollbackFailed = rollbackFailed
         self.failure = failure
         self.version = version
     }
@@ -11809,10 +11858,60 @@ public struct CompanyProposal: Codable, Hashable, Sendable {
         case decidedBy = "decided_by"
         case rejectReason = "reject_reason"
         case applied = "applied"
+        case appliedVia = "applied_via"
         case rolledBack = "rolled_back"
+        case rollbackFailed = "rollback_failed"
         case failure = "failure"
         case version = "version"
     }
+}
+
+/// Present when the Chief of Staff applied it in the conversation on the person's answer (since
+/// 2026-10-31); `decided_by` is that person.
+public struct CompanyProposalAppliedVia: Codable, Hashable, Sendable {
+    public var kind: CompanyProposalAppliedViaKind
+    public var agentId: String
+    public var runId: String
+    public var sessionId: String
+    public var personUserId: String
+
+    public init(kind: CompanyProposalAppliedViaKind, agentId: String, runId: String, sessionId: String, personUserId: String) {
+        self.kind = kind
+        self.agentId = agentId
+        self.runId = runId
+        self.sessionId = sessionId
+        self.personUserId = personUserId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case agentId = "agent_id"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case personUserId = "person_user_id"
+    }
+}
+
+/// `CompanyProposalAppliedViaKind` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct CompanyProposalAppliedViaKind: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let conversation = CompanyProposalAppliedViaKind(rawValue: "conversation")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [CompanyProposalAppliedViaKind] = [.conversation]
 }
 
 /// `CompanyProposalDiffItem` model.
@@ -18557,6 +18656,64 @@ public struct EndpointRateLimit: Codable, Hashable, Sendable {
     }
 }
 
+/// Every plan limit the platform enforces, read as its enforcement site reads it
+/// (api/lib/plan-terms.ts). `limit: null` means the code applies no cap; a number, 0 included,
+/// is the cap it applies — 0 is a cap of zero where the gate treats it so (videos, images, team
+/// runs, MCP servers, workers) and null where the gate treats 0 as uncapped (tokens, runs, tool
+/// calls, storage, sessions, memory). `scope` says what it counts against: the tenant, or each
+/// agent or squad. Since 2026-10-30.
+public struct EnforcedLimit: Codable, Hashable, Sendable {
+    /// tokens, runs, tokens_daily, tool_calls, tool_calls_daily, images, images_daily, videos,
+    /// storage_bytes, active_sessions, concurrent_team_runs, mcp_servers, workers, memory_entries,
+    /// memory_storage_bytes, agent_versions. Open: a later release may add a kind.
+    public var kind: String
+    /// The TenantQuotas field it is read from.
+    public var quota: String
+    public var scope: EnforcedLimitScope
+    public var period: String?
+    public var limit: Double?
+
+    public init(kind: String, quota: String, scope: EnforcedLimitScope, period: String? = nil, limit: Double? = nil) {
+        self.kind = kind
+        self.quota = quota
+        self.scope = scope
+        self.period = period
+        self.limit = limit
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case quota = "quota"
+        case scope = "scope"
+        case period = "period"
+        case limit = "limit"
+    }
+}
+
+/// `EnforcedLimitScope` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct EnforcedLimitScope: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let tenant = EnforcedLimitScope(rawValue: "tenant")
+    public static let agent = EnforcedLimitScope(rawValue: "agent")
+    public static let team = EnforcedLimitScope(rawValue: "team")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [EnforcedLimitScope] = [.tenant, .agent, .team]
+}
+
 /// `EnforcementResult` model.
 public struct EnforcementResult: Codable, Hashable, Sendable {
     /// False when any matched rule carries a blocking penalty.
@@ -24423,6 +24580,9 @@ public struct GetTenantBlueprintResponseDepartmentMember: Codable, Hashable, Sen
 /// `GetTenantBlueprintResponseDeploymentState` model.
 public struct GetTenantBlueprintResponseDeploymentState: Codable, Hashable, Sendable {
     public var status: CompanyProfileStatus?
+    /// When the company went through POST /tenants/me/company/launch. Null for a company that never
+    /// did: every tenant starts `active` without a launch, and resume does not launch — so null
+    /// with `status: active` means active without a launch, not a missing value.
     public var launchedAt: String?
     public var pausedAt: String?
 
@@ -24736,16 +24896,22 @@ public struct GetTenantCompanyOverviewResponse: Codable, Hashable, Sendable {
     /// `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
     /// method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
     /// setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
-    /// then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
-    /// with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
-    /// `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
-    /// as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
-    /// else applies.
+    /// an `active` company with no agent besides its Chief of Staff → its first readiness blocker
+    /// (`kind` setup, since 2026-10-30); then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the
+    /// newest failure in the window, with `run_id`, `agent_id`, `agent_name` — null when the agent
+    /// is gone — and `error_code`), `MISSION_STOPPED` (a mission the platform stopped, with
+    /// `mission_id` and its `result_code` as `error_code`), `NEXT_RUN` (with `name`,
+    /// `next_fire_at`; only a schedule that fires — active and enabled — at an instant not more
+    /// than an hour past, since 2026-10-30), and `ALL_QUIET` when nothing else applies.
     public var nextStep: GetTenantCompanyOverviewResponseNextStep?
     public var generatedAt: String
     public var windowDays: Int
     public var company: GetTenantCompanyOverviewResponseCompany
-    /// Null when no cap is set.
+    /// What the calendar month (UTC) cost so far, cap or no cap — the same number as GET /usage
+    /// `total_cost`. Null only when the usage read failed. Since 2026-10-30; `spend` below is null
+    /// whenever no cap is set, however much was spent.
+    public var monthSpendUsd: Double?
+    /// Null when no cap is set — even with spend this month; read `month_spend_usd` for the amount.
     public var spend: GetTenantCompanyOverviewResponseSpend?
     public var decisions: GetTenantCompanyOverviewResponseDecisions
     /// The `GET /analytics/missions?days=` body for the same window.
@@ -24759,11 +24925,12 @@ public struct GetTenantCompanyOverviewResponse: Codable, Hashable, Sendable {
     /// Up to 5 next scheduled runs, soonest first.
     public var next: [GetTenantCompanyOverviewResponseNextItem]
 
-    public init(nextStep: GetTenantCompanyOverviewResponseNextStep? = nil, generatedAt: String, windowDays: Int, company: GetTenantCompanyOverviewResponseCompany, spend: GetTenantCompanyOverviewResponseSpend? = nil, decisions: GetTenantCompanyOverviewResponseDecisions, work: JSONObject, results: [GetTenantCompanyOverviewResponseResult], problems: GetTenantCompanyOverviewResponseProblems, activity: GetTenantCompanyOverviewResponseActivity, next: [GetTenantCompanyOverviewResponseNextItem]) {
+    public init(nextStep: GetTenantCompanyOverviewResponseNextStep? = nil, generatedAt: String, windowDays: Int, company: GetTenantCompanyOverviewResponseCompany, monthSpendUsd: Double? = nil, spend: GetTenantCompanyOverviewResponseSpend? = nil, decisions: GetTenantCompanyOverviewResponseDecisions, work: JSONObject, results: [GetTenantCompanyOverviewResponseResult], problems: GetTenantCompanyOverviewResponseProblems, activity: GetTenantCompanyOverviewResponseActivity, next: [GetTenantCompanyOverviewResponseNextItem]) {
         self.nextStep = nextStep
         self.generatedAt = generatedAt
         self.windowDays = windowDays
         self.company = company
+        self.monthSpendUsd = monthSpendUsd
         self.spend = spend
         self.decisions = decisions
         self.work = work
@@ -24778,6 +24945,7 @@ public struct GetTenantCompanyOverviewResponse: Codable, Hashable, Sendable {
         case generatedAt = "generated_at"
         case windowDays = "window_days"
         case company = "company"
+        case monthSpendUsd = "month_spend_usd"
         case spend = "spend"
         case decisions = "decisions"
         case work = "work"
@@ -24809,18 +24977,26 @@ public struct GetTenantCompanyOverviewResponseActivity: Codable, Hashable, Senda
 public struct GetTenantCompanyOverviewResponseActivityByDayItem: Codable, Hashable, Sendable {
     public var date: String?
     public var runs: Int?
+    /// Runs that failed or timed out, lifecycle refusals excluded (since 2026-10-31; before, a
+    /// paused company's refusals were counted here).
     public var failed: Int?
+    /// A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+    /// INITIATIVE_BUDGET_EXHAUSTED) is not a failure: it is counted here, apart. `runs` = every run
+    /// created that day, refused ones included. Since 2026-10-31.
+    public var refused: Int?
 
-    public init(date: String? = nil, runs: Int? = nil, failed: Int? = nil) {
+    public init(date: String? = nil, runs: Int? = nil, failed: Int? = nil, refused: Int? = nil) {
         self.date = date
         self.runs = runs
         self.failed = failed
+        self.refused = refused
     }
 
     private enum CodingKeys: String, CodingKey {
         case date = "date"
         case runs = "runs"
         case failed = "failed"
+        case refused = "refused"
     }
 }
 
@@ -24832,6 +25008,9 @@ public struct GetTenantCompanyOverviewResponseCompany: Codable, Hashable, Sendab
     public var objective: String?
     public var status: CompanyProfileStatus?
     public var version: Int?
+    /// When the company went through POST /tenants/me/company/launch. Null for a company that never
+    /// did: every tenant starts `active` without a launch, and resume does not launch — so null
+    /// with `status: active` means active without a launch, not a missing value.
     public var launchedAt: String?
     public var pausedAt: String?
     public var chiefOfStaffAgentId: String?
@@ -24918,11 +25097,13 @@ public struct GetTenantCompanyOverviewResponseNextItem: Codable, Hashable, Senda
 /// `next_step ?? <the same rule computed locally>`. Localize from `code`; act on `fix` (a
 /// method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
 /// setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
-/// then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
-/// with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
-/// `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
-/// as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
-/// else applies.
+/// an `active` company with no agent besides its Chief of Staff → its first readiness blocker
+/// (`kind` setup, since 2026-10-30); then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the
+/// newest failure in the window, with `run_id`, `agent_id`, `agent_name` — null when the agent
+/// is gone — and `error_code`), `MISSION_STOPPED` (a mission the platform stopped, with
+/// `mission_id` and its `result_code` as `error_code`), `NEXT_RUN` (with `name`,
+/// `next_fire_at`; only a schedule that fires — active and enabled — at an instant not more
+/// than an hour past, since 2026-10-30), and `ALL_QUIET` when nothing else applies.
 public struct GetTenantCompanyOverviewResponseNextStep: Codable, Hashable, Sendable {
     public var kind: GetTenantCompanyOverviewResponseNextStepKind
     public var code: String
@@ -24993,7 +25174,13 @@ public struct GetTenantCompanyOverviewResponseNextStepKind: RawRepresentable, Co
 
 /// `GetTenantCompanyOverviewResponseProblems` model.
 public struct GetTenantCompanyOverviewResponseProblems: Codable, Hashable, Sendable {
+    /// Failed or timed-out runs in the window, lifecycle refusals excluded; `recent` and next_step
+    /// RUN_FAILED read the same list (since 2026-10-31).
     public var failedRuns: Int?
+    /// A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+    /// INITIATIVE_BUDGET_EXHAUSTED) is not a failure; this counts them in the window. Since
+    /// 2026-10-31.
+    public var refusedRuns: Int?
     public var recent: [GetTenantCompanyOverviewResponseProblemsRecentItem]?
     /// Missions in the window the PLATFORM stopped (`aborted` or `failed`, not
     /// `aborted_by_operator`) — the watchdog, a failed plan, failed objectives. Since 2026-10-15.
@@ -25006,8 +25193,9 @@ public struct GetTenantCompanyOverviewResponseProblems: Codable, Hashable, Senda
     /// The newest 5 of them.
     public var missions: [GetTenantCompanyOverviewResponseProblemsMission]?
 
-    public init(failedRuns: Int? = nil, recent: [GetTenantCompanyOverviewResponseProblemsRecentItem]? = nil, stoppedMissions: Int? = nil, quotaGatedSchedules: GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedules? = nil, missions: [GetTenantCompanyOverviewResponseProblemsMission]? = nil) {
+    public init(failedRuns: Int? = nil, refusedRuns: Int? = nil, recent: [GetTenantCompanyOverviewResponseProblemsRecentItem]? = nil, stoppedMissions: Int? = nil, quotaGatedSchedules: GetTenantCompanyOverviewResponseProblemsQuotaGatedSchedules? = nil, missions: [GetTenantCompanyOverviewResponseProblemsMission]? = nil) {
         self.failedRuns = failedRuns
+        self.refusedRuns = refusedRuns
         self.recent = recent
         self.stoppedMissions = stoppedMissions
         self.quotaGatedSchedules = quotaGatedSchedules
@@ -25016,6 +25204,7 @@ public struct GetTenantCompanyOverviewResponseProblems: Codable, Hashable, Senda
 
     private enum CodingKeys: String, CodingKey {
         case failedRuns = "failed_runs"
+        case refusedRuns = "refused_runs"
         case recent = "recent"
         case stoppedMissions = "stopped_missions"
         case quotaGatedSchedules = "quota_gated_schedules"
@@ -25176,7 +25365,7 @@ public struct GetTenantCompanyOverviewResponseResult: Codable, Hashable, Sendabl
     }
 }
 
-/// Null when no cap is set.
+/// Null when no cap is set — even with spend this month; read `month_spend_usd` for the amount.
 public struct GetTenantCompanyOverviewResponseSpend: Codable, Hashable, Sendable {
     public var limitUsd: Double?
     public var spentUsd: Double?
@@ -29295,7 +29484,18 @@ public struct ListBillingPlansResponse: Codable, Hashable, Sendable {
 public struct ListBillingPlansResponsePlan: Codable, Hashable, Sendable {
     public var id: String?
     public var name: String?
+    /// Six of the plan's limits, kept as they were for their readers. The full set is `quotas` and
+    /// `enforced_limits`.
     public var limits: JSONObject?
+    public var queueTier: PublicPlanQueueTier?
+    /// Runs at a time the plan really gets — the plan's figure clamped to the live platform
+    /// ceiling.
+    public var effectiveConcurrentRuns: Int?
+    public var reset: ListBillingPlansResponsePlanReset?
+    /// Pay-as-you-go beyond the quota; `null` on free.
+    public var overage: ListBillingPlansResponsePlanOverage?
+    public var quotas: PlanQuotaFields?
+    public var enforcedLimits: [EnforcedLimit]?
     public var current: Bool?
     public var checkoutAvailable: Bool?
     /// The App Store auto-renewable product that buys this plan in the iOS app. Present on starter
@@ -29313,10 +29513,16 @@ public struct ListBillingPlansResponsePlan: Codable, Hashable, Sendable {
     /// is null or `one_time`.
     public var priceIntervalCount: Int?
 
-    public init(id: String? = nil, name: String? = nil, limits: JSONObject? = nil, current: Bool? = nil, checkoutAvailable: Bool? = nil, appStoreProductId: ListBillingPlansResponsePlanAppStoreProductId? = nil, priceAmountCents: Int? = nil, priceCurrency: String? = nil, priceInterval: String? = nil, priceIntervalCount: Int? = nil) {
+    public init(id: String? = nil, name: String? = nil, limits: JSONObject? = nil, queueTier: PublicPlanQueueTier? = nil, effectiveConcurrentRuns: Int? = nil, reset: ListBillingPlansResponsePlanReset? = nil, overage: ListBillingPlansResponsePlanOverage? = nil, quotas: PlanQuotaFields? = nil, enforcedLimits: [EnforcedLimit]? = nil, current: Bool? = nil, checkoutAvailable: Bool? = nil, appStoreProductId: ListBillingPlansResponsePlanAppStoreProductId? = nil, priceAmountCents: Int? = nil, priceCurrency: String? = nil, priceInterval: String? = nil, priceIntervalCount: Int? = nil) {
         self.id = id
         self.name = name
         self.limits = limits
+        self.queueTier = queueTier
+        self.effectiveConcurrentRuns = effectiveConcurrentRuns
+        self.reset = reset
+        self.overage = overage
+        self.quotas = quotas
+        self.enforcedLimits = enforcedLimits
         self.current = current
         self.checkoutAvailable = checkoutAvailable
         self.appStoreProductId = appStoreProductId
@@ -29330,6 +29536,12 @@ public struct ListBillingPlansResponsePlan: Codable, Hashable, Sendable {
         case id = "id"
         case name = "name"
         case limits = "limits"
+        case queueTier = "queue_tier"
+        case effectiveConcurrentRuns = "effective_concurrent_runs"
+        case reset = "reset"
+        case overage = "overage"
+        case quotas = "quotas"
+        case enforcedLimits = "enforced_limits"
         case current = "current"
         case checkoutAvailable = "checkout_available"
         case appStoreProductId = "app_store_product_id"
@@ -29363,6 +29575,57 @@ public struct ListBillingPlansResponsePlanAppStoreProductId: RawRepresentable, C
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [ListBillingPlansResponsePlanAppStoreProductId] = [.aiSnagaStarterMonthly, .aiSnagaProMonthly]
+}
+
+/// Pay-as-you-go beyond the quota; `null` on free.
+public struct ListBillingPlansResponsePlanOverage: Codable, Hashable, Sendable {
+    public var available: Bool?
+    public var requiresCap: Bool?
+    public var pricePerMillionUsd: ListBillingPlansResponsePlanOveragePricePerMillionUsd?
+
+    public init(available: Bool? = nil, requiresCap: Bool? = nil, pricePerMillionUsd: ListBillingPlansResponsePlanOveragePricePerMillionUsd? = nil) {
+        self.available = available
+        self.requiresCap = requiresCap
+        self.pricePerMillionUsd = pricePerMillionUsd
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case available = "available"
+        case requiresCap = "requires_cap"
+        case pricePerMillionUsd = "price_per_million_usd"
+    }
+}
+
+/// `ListBillingPlansResponsePlanOveragePricePerMillionUsd` model.
+public struct ListBillingPlansResponsePlanOveragePricePerMillionUsd: Codable, Hashable, Sendable {
+    public var input: Double?
+    public var output: Double?
+
+    public init(input: Double? = nil, output: Double? = nil) {
+        self.input = input
+        self.output = output
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case input = "input"
+        case output = "output"
+    }
+}
+
+/// `ListBillingPlansResponsePlanReset` model.
+public struct ListBillingPlansResponsePlanReset: Codable, Hashable, Sendable {
+    public var period: PublicPlanResetPeriod?
+    public var at: String?
+
+    public init(period: PublicPlanResetPeriod? = nil, at: String? = nil) {
+        self.period = period
+        self.at = at
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case period = "period"
+        case at = "at"
+    }
 }
 
 /// `ListBillingSpecPackagesResponse` model.
@@ -30030,15 +30293,34 @@ public struct ListMissionsResponse: Codable, Hashable, Sendable {
     public var items: [Mission]
     /// Length of `items` in this response, not a tenant-wide count.
     public var total: Int
+    /// Tenant-wide list only: how many missions the tenant has (all of them, not this page). Since
+    /// 2026-10-30.
+    public var totalMissions: Int?
+    /// Tenant-wide list only: more missions follow this page. Since 2026-10-30.
+    public var hasMore: Bool?
+    /// Tenant-wide list only: pass as `before` for the next page; null when `has_more` is false.
+    /// Since 2026-10-30.
+    public var nextBefore: String?
+    /// Present (true) only when the 20 000-row scan cap, not the end of the list, stopped the read:
+    /// `total_missions` is then a lower bound.
+    public var truncated: Bool?
 
-    public init(items: [Mission], total: Int) {
+    public init(items: [Mission], total: Int, totalMissions: Int? = nil, hasMore: Bool? = nil, nextBefore: String? = nil, truncated: Bool? = nil) {
         self.items = items
         self.total = total
+        self.totalMissions = totalMissions
+        self.hasMore = hasMore
+        self.nextBefore = nextBefore
+        self.truncated = truncated
     }
 
     private enum CodingKeys: String, CodingKey {
         case items = "items"
         case total = "total"
+        case totalMissions = "total_missions"
+        case hasMore = "has_more"
+        case nextBefore = "next_before"
+        case truncated = "truncated"
     }
 }
 
@@ -33411,6 +33693,10 @@ public struct Mission: Codable, Hashable, Sendable {
     /// Set once the after-action review is finalized — see GET /missions/{missionId}/aar.
     public var aarId: String?
     public var metrics: MissionMetrics?
+    /// On GET /missions/{missionId}: false when an objective that ran predates the recording of run
+    /// time and model calls (2026-10-30), so `metrics.total_duration_ms` and `metrics.llm_calls`
+    /// undercount. Cost, tokens and retries are whole either way. Since 2026-10-30.
+    public var metricsComplete: Bool?
     /// Terminal outcome. `partial` means some objectives verified and some did not.
     public var outcome: MissionOutcome?
     /// English prose. For a client that branches or translates, read `result_code`.
@@ -33440,7 +33726,7 @@ public struct Mission: Codable, Hashable, Sendable {
     /// Set when the status becomes terminal.
     public var completedAt: String?
 
-    public init(missionId: String, tenantId: String, sessionId: String, createdBy: String, goal: String, classification: MissionClassification, status: MissionStatus, objectiveIds: [String], checkpointIds: [String], aarId: String? = nil, metrics: MissionMetrics? = nil, outcome: MissionOutcome? = nil, resultSummary: String? = nil, resultCode: MissionResultCode? = nil, resultDetails: JSONObject? = nil, failedObjectiveIds: [String]? = nil, deadline: String? = nil, createdAt: String, updatedAt: String, startedAt: String? = nil, completedAt: String? = nil) {
+    public init(missionId: String, tenantId: String, sessionId: String, createdBy: String, goal: String, classification: MissionClassification, status: MissionStatus, objectiveIds: [String], checkpointIds: [String], aarId: String? = nil, metrics: MissionMetrics? = nil, metricsComplete: Bool? = nil, outcome: MissionOutcome? = nil, resultSummary: String? = nil, resultCode: MissionResultCode? = nil, resultDetails: JSONObject? = nil, failedObjectiveIds: [String]? = nil, deadline: String? = nil, createdAt: String, updatedAt: String, startedAt: String? = nil, completedAt: String? = nil) {
         self.missionId = missionId
         self.tenantId = tenantId
         self.sessionId = sessionId
@@ -33452,6 +33738,7 @@ public struct Mission: Codable, Hashable, Sendable {
         self.checkpointIds = checkpointIds
         self.aarId = aarId
         self.metrics = metrics
+        self.metricsComplete = metricsComplete
         self.outcome = outcome
         self.resultSummary = resultSummary
         self.resultCode = resultCode
@@ -33476,6 +33763,7 @@ public struct Mission: Codable, Hashable, Sendable {
         case checkpointIds = "checkpoint_ids"
         case aarId = "aar_id"
         case metrics = "metrics"
+        case metricsComplete = "metrics_complete"
         case outcome = "outcome"
         case resultSummary = "result_summary"
         case resultCode = "result_code"
@@ -33512,8 +33800,11 @@ public struct MissionClassification: RawRepresentable, Codable, Hashable, Sendab
     public static let knownValues: [MissionClassification] = [.quickReply, .mission]
 }
 
-/// Aggregated spend for the whole mission. Written on the terminal transition, so it is absent
-/// while the mission is still running.
+/// Aggregated spend for the whole mission. It was documented as written on the terminal
+/// transition and was written by nothing; since 2026-10-30 GET /missions/{missionId} sums it
+/// from the mission's objectives on every read — cost, tokens and runs as recorded per strike,
+/// so it is present while the mission runs too. `retries` is every strike past an objective's
+/// first. Run time and model calls were recorded only from 2026-10-30: see `metrics_complete`.
 public struct MissionMetrics: Codable, Hashable, Sendable {
     public var totalCostUsd: Double
     public var totalTokens: Int
@@ -36097,6 +36388,9 @@ public struct PauseTenantCompanyResponse: Codable, Hashable, Sendable {
     /// Bumped on every accepted change; send it back as `expected_version`.
     public var version: Int
     public var template: PauseTenantCompanyResponseTemplate?
+    /// When the company went through POST /tenants/me/company/launch. Null for a company that never
+    /// did: every tenant starts `active` without a launch, and resume does not launch — so null
+    /// with `status: active` means active without a launch, not a missing value.
     public var launchedAt: String?
     public var pausedAt: String?
     public var pauseReason: String?
@@ -36525,6 +36819,10 @@ public struct PlannedObjectiveBudget: Codable, Hashable, Sendable {
         case maxCostUsd = "max_cost_usd"
     }
 }
+
+/// The plan's quota fields as stored, `null` where the plan sets none. Raw values — read
+/// `enforced_limits` for what each one means.
+public typealias PlanQuotaFields = JSONObject
 
 /// Platform profit and loss: Stripe revenue against real host spend and the LLM provider bill.
 /// Super-admin only. Served from a short-lived cache — `cache` says which.
@@ -37631,6 +37929,96 @@ public struct ProposalOpAddSquadOp: RawRepresentable, Codable, Hashable, Sendabl
 /// One change a proposal makes, discriminated by `op`.
 public typealias ProposalOperation = JSONValue
 
+/// Pause the company — an owner-only switch the Chief of Staff can only propose. Its diff's
+/// `after.stops` is the scope GET /tenants/me/company/pause-scope states. Applied through POST
+/// /tenants/me/company/pause with the applier's rights. Since 2026-10-30.
+public struct ProposalOpPauseCompany: Codable, Hashable, Sendable {
+    public var op: ProposalOpPauseCompanyOp
+    public var reason: String?
+
+    public init(op: ProposalOpPauseCompanyOp, reason: String? = nil) {
+        self.op = op
+        self.reason = reason
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case op = "op"
+        case reason = "reason"
+    }
+}
+
+/// `ProposalOpPauseCompanyOp` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct ProposalOpPauseCompanyOp: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let pauseCompany = ProposalOpPauseCompanyOp(rawValue: "pause_company")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [ProposalOpPauseCompanyOp] = [.pauseCompany]
+}
+
+/// Put one agent on the public page. Sets the agent's `visibility: public` and
+/// `public_config.enabled` (PATCH /agents/{id}) and, when the company keeps an allow-list, adds
+/// it to `published_agent_ids` (an absent allow-list already lists every public-capable agent
+/// and is left absent); `primary` also makes it `public_agent_id`. When the profile is public
+/// the apply then reads GET /public/tenants/{slug} and fails with `PUBLIC_PAGE_MISMATCH`,
+/// rolling back, unless the agent is listed. Refused at plan time when the company has no slug.
+/// Since 2026-10-30.
+public struct ProposalOpPublishAgent: Codable, Hashable, Sendable {
+    public var op: ProposalOpPublishAgentOp
+    public var agentId: String
+    public var primary: Bool?
+    public var greeting: String?
+
+    public init(op: ProposalOpPublishAgentOp, agentId: String, primary: Bool? = nil, greeting: String? = nil) {
+        self.op = op
+        self.agentId = agentId
+        self.primary = primary
+        self.greeting = greeting
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case op = "op"
+        case agentId = "agent_id"
+        case primary = "primary"
+        case greeting = "greeting"
+    }
+}
+
+/// `ProposalOpPublishAgentOp` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct ProposalOpPublishAgentOp: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let publishAgent = ProposalOpPublishAgentOp(rawValue: "publish_agent")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [ProposalOpPublishAgentOp] = [.publishAgent]
+}
+
 /// `ProposalOpRemoveAgent` model.
 public struct ProposalOpRemoveAgent: Codable, Hashable, Sendable {
     public var op: ProposalOpRemoveAgentOp
@@ -37707,6 +38095,42 @@ public struct ProposalOpRemoveMissionScheduleOp: RawRepresentable, Codable, Hash
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [ProposalOpRemoveMissionScheduleOp] = [.removeMissionSchedule]
+}
+
+/// Resume the company, through POST /tenants/me/company/resume with the applier's rights. Since
+/// 2026-10-30.
+public struct ProposalOpResumeCompany: Codable, Hashable, Sendable {
+    public var op: ProposalOpResumeCompanyOp
+
+    public init(op: ProposalOpResumeCompanyOp) {
+        self.op = op
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case op = "op"
+    }
+}
+
+/// `ProposalOpResumeCompanyOp` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct ProposalOpResumeCompanyOp: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let resumeCompany = ProposalOpResumeCompanyOp(rawValue: "resume_company")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [ProposalOpResumeCompanyOp] = [.resumeCompany]
 }
 
 /// `ProposalOpSetAgentSchedule` model.
@@ -37910,6 +38334,47 @@ public struct ProposalOpSetSquadMembersOp: RawRepresentable, Codable, Hashable, 
     public static let knownValues: [ProposalOpSetSquadMembersOp] = [.setSquadMembers]
 }
 
+/// Take one agent off the public page: removes it from `published_agent_ids` when the company
+/// keeps an allow-list, otherwise turns its `public_config.enabled` off; clears
+/// `public_agent_id` when it was this agent. Verified against GET /public/tenants/{slug} like
+/// `publish_agent`. Since 2026-10-30.
+public struct ProposalOpUnpublishAgent: Codable, Hashable, Sendable {
+    public var op: ProposalOpUnpublishAgentOp
+    public var agentId: String
+
+    public init(op: ProposalOpUnpublishAgentOp, agentId: String) {
+        self.op = op
+        self.agentId = agentId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case op = "op"
+        case agentId = "agent_id"
+    }
+}
+
+/// `ProposalOpUnpublishAgentOp` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct ProposalOpUnpublishAgentOp: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let unpublishAgent = ProposalOpUnpublishAgentOp(rawValue: "unpublish_agent")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [ProposalOpUnpublishAgentOp] = [.unpublishAgent]
+}
+
 /// `ProposalOpUpdateAgent` model.
 public struct ProposalOpUpdateAgent: Codable, Hashable, Sendable {
     public var op: ProposalOpUpdateAgentOp
@@ -38014,6 +38479,108 @@ public struct ProposalOpUpdateCompanyOp: RawRepresentable, Codable, Hashable, Se
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [ProposalOpUpdateCompanyOp] = [.updateCompany]
+}
+
+/// Change the company's public profile, through PATCH /tenants/me with the applier's rights
+/// (owner). The profile is not the marketplace listing: setting `public: true` on a company not
+/// listed yet ALSO lists it in the marketplace, and the diff summary says so. Undo on a later
+/// failure restores each named field; a slug the company never had is not unset. Since
+/// 2026-10-30.
+public struct ProposalOpUpdatePublicProfile: Codable, Hashable, Sendable {
+    public var op: ProposalOpUpdatePublicProfileOp
+    public var changes: ProposalOpUpdatePublicProfileChanges
+
+    public init(op: ProposalOpUpdatePublicProfileOp, changes: ProposalOpUpdatePublicProfileChanges) {
+        self.op = op
+        self.changes = changes
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case op = "op"
+        case changes = "changes"
+    }
+}
+
+/// `ProposalOpUpdatePublicProfileChanges` model.
+public struct ProposalOpUpdatePublicProfileChanges: Codable, Hashable, Sendable {
+    public var `public`: Bool?
+    public var slug: String?
+    public var `description`: String?
+    public var logoURL: String?
+    public var publicAgentId: String?
+    /// null removes the allow-list: every public-capable agent is listed.
+    public var publishedAgentIds: [String]?
+    public var publicSettings: ProposalOpUpdatePublicProfileChangesPublicSettings?
+
+    public init(`public`: Bool? = nil, slug: String? = nil, `description`: String? = nil, logoURL: String? = nil, publicAgentId: String? = nil, publishedAgentIds: [String]? = nil, publicSettings: ProposalOpUpdatePublicProfileChangesPublicSettings? = nil) {
+        self.`public` = `public`
+        self.slug = slug
+        self.`description` = `description`
+        self.logoURL = logoURL
+        self.publicAgentId = publicAgentId
+        self.publishedAgentIds = publishedAgentIds
+        self.publicSettings = publicSettings
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case `public` = "public"
+        case slug = "slug"
+        case `description` = "description"
+        case logoURL = "logo_url"
+        case publicAgentId = "public_agent_id"
+        case publishedAgentIds = "published_agent_ids"
+        case publicSettings = "public_settings"
+    }
+}
+
+/// `ProposalOpUpdatePublicProfileChangesPublicSettings` model.
+public struct ProposalOpUpdatePublicProfileChangesPublicSettings: Codable, Hashable, Sendable {
+    public var maxMessagesPerSession: Int?
+    public var maxTokensPerSession: Int?
+    public var allowToolCalls: Bool?
+    public var allowFileUploads: Bool?
+    public var rateLimitPerIpPerHour: Int?
+    public var requireAuth: Bool?
+
+    public init(maxMessagesPerSession: Int? = nil, maxTokensPerSession: Int? = nil, allowToolCalls: Bool? = nil, allowFileUploads: Bool? = nil, rateLimitPerIpPerHour: Int? = nil, requireAuth: Bool? = nil) {
+        self.maxMessagesPerSession = maxMessagesPerSession
+        self.maxTokensPerSession = maxTokensPerSession
+        self.allowToolCalls = allowToolCalls
+        self.allowFileUploads = allowFileUploads
+        self.rateLimitPerIpPerHour = rateLimitPerIpPerHour
+        self.requireAuth = requireAuth
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxMessagesPerSession = "max_messages_per_session"
+        case maxTokensPerSession = "max_tokens_per_session"
+        case allowToolCalls = "allow_tool_calls"
+        case allowFileUploads = "allow_file_uploads"
+        case rateLimitPerIpPerHour = "rate_limit_per_ip_per_hour"
+        case requireAuth = "require_auth"
+    }
+}
+
+/// `ProposalOpUpdatePublicProfileOp` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct ProposalOpUpdatePublicProfileOp: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let updatePublicProfile = ProposalOpUpdatePublicProfileOp(rawValue: "update_public_profile")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [ProposalOpUpdatePublicProfileOp] = [.updatePublicProfile]
 }
 
 /// public.ts GET /public/agents/{agentId} — a hand-built projection, not the Agent record. Keys
@@ -38616,7 +39183,12 @@ public struct PublicPlan: Codable, Hashable, Sendable {
     /// Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval`
     /// is null or `one_time`.
     public var priceIntervalCount: Int?
-    public var quotas: JSONObject
+    /// Every quota field the plan stores, `null` where it sets none (since 2026-10-30 the full set,
+    /// not seven fields). Read `enforced_limits` for what a value means.
+    public var quotas: PlanQuotaFields
+    /// Every limit the plan enforces, read as its gate reads it — the same list GET /billing/plans
+    /// states. Since 2026-10-30.
+    public var enforcedLimits: [EnforcedLimit]?
     /// The queue the plan's runs wait in: `standard` on free, `priority` on paid plans. A public
     /// word, not the scheduler's internal tier.
     public var queueTier: PublicPlanQueueTier?
@@ -38627,7 +39199,7 @@ public struct PublicPlan: Codable, Hashable, Sendable {
     /// Pay-as-you-go beyond the quota; `null` when the plan has none (free).
     public var overage: PublicPlanOverage?
 
-    public init(id: String, name: String, priceAmountCents: Int, priceCurrency: String, priceInterval: String? = nil, priceIntervalCount: Int? = nil, quotas: JSONObject, queueTier: PublicPlanQueueTier? = nil, effectiveConcurrentRuns: Int? = nil, reset: PublicPlanReset? = nil, overage: PublicPlanOverage? = nil) {
+    public init(id: String, name: String, priceAmountCents: Int, priceCurrency: String, priceInterval: String? = nil, priceIntervalCount: Int? = nil, quotas: PlanQuotaFields, enforcedLimits: [EnforcedLimit]? = nil, queueTier: PublicPlanQueueTier? = nil, effectiveConcurrentRuns: Int? = nil, reset: PublicPlanReset? = nil, overage: PublicPlanOverage? = nil) {
         self.id = id
         self.name = name
         self.priceAmountCents = priceAmountCents
@@ -38635,6 +39207,7 @@ public struct PublicPlan: Codable, Hashable, Sendable {
         self.priceInterval = priceInterval
         self.priceIntervalCount = priceIntervalCount
         self.quotas = quotas
+        self.enforcedLimits = enforcedLimits
         self.queueTier = queueTier
         self.effectiveConcurrentRuns = effectiveConcurrentRuns
         self.reset = reset
@@ -38649,6 +39222,7 @@ public struct PublicPlan: Codable, Hashable, Sendable {
         case priceInterval = "price_interval"
         case priceIntervalCount = "price_interval_count"
         case quotas = "quotas"
+        case enforcedLimits = "enforced_limits"
         case queueTier = "queue_tier"
         case effectiveConcurrentRuns = "effective_concurrent_runs"
         case reset = "reset"
@@ -49237,17 +49811,25 @@ public struct ScheduleSummary: Codable, Hashable, Sendable {
     public var agentName: String?
     public var cron: String
     public var enabled: Bool
-    /// `paused` or `error`, or accumulated failures, is what a “silently dead cron” looks like.
+    /// `paused` or `error`, or accumulated failures, is what a “silently dead cron” looks like. A
+    /// schedule switched off can still read `active` here — read `fires`.
     public var status: String
-    /// `null` when there is no next fire; never an empty string.
+    /// Whether the scheduler will fire this schedule: `status` is `active` AND `enabled` is true.
+    /// The one answer to "is this on" when `enabled: false` and `status: active` disagree. Since
+    /// 2026-10-30.
+    public var fires: Bool?
+    /// `null` when there is no next fire — including (since 2026-10-30) every schedule with `fires:
+    /// false`, which used to keep the instant it had when it was switched off; never an empty
+    /// string.
     public var nextFireAt: String?
 
-    public init(agentId: String, agentName: String? = nil, cron: String, enabled: Bool, status: String, nextFireAt: String? = nil) {
+    public init(agentId: String, agentName: String? = nil, cron: String, enabled: Bool, status: String, fires: Bool? = nil, nextFireAt: String? = nil) {
         self.agentId = agentId
         self.agentName = agentName
         self.cron = cron
         self.enabled = enabled
         self.status = status
+        self.fires = fires
         self.nextFireAt = nextFireAt
     }
 
@@ -49257,6 +49839,7 @@ public struct ScheduleSummary: Codable, Hashable, Sendable {
         case cron = "cron"
         case enabled = "enabled"
         case status = "status"
+        case fires = "fires"
         case nextFireAt = "next_fire_at"
     }
 }
@@ -53824,17 +54407,27 @@ public struct TenantOverviewRuns: Codable, Hashable, Sendable {
     /// health); clients must tolerate absence. v1 serves it.
     public var cost24hUsd: Double?
     public var recent: [TenantOverviewRunsRecentItem]
-    /// How many run records the aggregate actually looked at. The scan is capped, so a busy
-    /// tenant's numbers describe the scanned window, not all history.
+    /// How many run records the aggregate actually looked at: the newest `scan_limit` at most,
+    /// whatever `days` says. `by_status`, `active_count`, `failed_24h`, `cost_24h_usd` and `recent`
+    /// describe those runs, not the `days` window — for the window read `window`.
     public var scanned: Int
+    /// The cap on `scanned` (500). Since 2026-10-30.
+    public var scanLimit: Int?
+    /// The scanned runs that fall inside the requested `days` (UTC dates, today included — the
+    /// dates `cost` uses). `complete` is true when the scan held every run there is or reached past
+    /// `since`; false means the window has more runs than the scan saw, so a rate from `by_status`
+    /// is the newest part of the window only. Since 2026-10-30.
+    public var window: TenantOverviewRunsWindow?
 
-    public init(byStatus: JSONObject, activeCount: Int, failed24h: Int, cost24hUsd: Double? = nil, recent: [TenantOverviewRunsRecentItem], scanned: Int) {
+    public init(byStatus: JSONObject, activeCount: Int, failed24h: Int, cost24hUsd: Double? = nil, recent: [TenantOverviewRunsRecentItem], scanned: Int, scanLimit: Int? = nil, window: TenantOverviewRunsWindow? = nil) {
         self.byStatus = byStatus
         self.activeCount = activeCount
         self.failed24h = failed24h
         self.cost24hUsd = cost24hUsd
         self.recent = recent
         self.scanned = scanned
+        self.scanLimit = scanLimit
+        self.window = window
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -53844,6 +54437,8 @@ public struct TenantOverviewRuns: Codable, Hashable, Sendable {
         case cost24hUsd = "cost_24h_usd"
         case recent = "recent"
         case scanned = "scanned"
+        case scanLimit = "scan_limit"
+        case window = "window"
     }
 }
 
@@ -53896,6 +54491,34 @@ public struct TenantOverviewRunsRecentItem: Codable, Hashable, Sendable {
         case errorCode = "error_code"
         case errorDetails = "error_details"
         case executionMode = "execution_mode"
+    }
+}
+
+/// The scanned runs that fall inside the requested `days` (UTC dates, today included — the
+/// dates `cost` uses). `complete` is true when the scan held every run there is or reached past
+/// `since`; false means the window has more runs than the scan saw, so a rate from `by_status`
+/// is the newest part of the window only. Since 2026-10-30.
+public struct TenantOverviewRunsWindow: Codable, Hashable, Sendable {
+    public var days: Int
+    public var since: String
+    public var byStatus: JSONObject
+    public var counted: Int
+    public var complete: Bool
+
+    public init(days: Int, since: String, byStatus: JSONObject, counted: Int, complete: Bool) {
+        self.days = days
+        self.since = since
+        self.byStatus = byStatus
+        self.counted = counted
+        self.complete = complete
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case days = "days"
+        case since = "since"
+        case byStatus = "by_status"
+        case counted = "counted"
+        case complete = "complete"
     }
 }
 
@@ -54144,6 +54767,147 @@ public struct TenantPlanFitSuggestion: Codable, Hashable, Sendable {
         case code = "code"
         case message = "message"
         case plan = "plan"
+    }
+}
+
+/// `TenantPublicProfile` model.
+public struct TenantPublicProfile: Codable, Hashable, Sendable {
+    public var `public`: Bool
+    public var slug: String?
+    public var name: String?
+    public var `description`: String?
+    public var logoURL: String?
+    public var publicAgentId: String?
+    /// null: no allow-list — every public-capable agent is listed.
+    public var publishedAgentIds: [String]?
+    public var publicSettings: JSONObject
+    public var marketplaceListed: Bool
+    public var publicPage: TenantPublicProfilePublicPage
+    public var agents: [TenantPublicProfileAgent]
+    public var agentsTruncated: Bool
+
+    public init(`public`: Bool, slug: String? = nil, name: String? = nil, `description`: String? = nil, logoURL: String? = nil, publicAgentId: String? = nil, publishedAgentIds: [String]? = nil, publicSettings: JSONObject, marketplaceListed: Bool, publicPage: TenantPublicProfilePublicPage, agents: [TenantPublicProfileAgent], agentsTruncated: Bool) {
+        self.`public` = `public`
+        self.slug = slug
+        self.name = name
+        self.`description` = `description`
+        self.logoURL = logoURL
+        self.publicAgentId = publicAgentId
+        self.publishedAgentIds = publishedAgentIds
+        self.publicSettings = publicSettings
+        self.marketplaceListed = marketplaceListed
+        self.publicPage = publicPage
+        self.agents = agents
+        self.agentsTruncated = agentsTruncated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case `public` = "public"
+        case slug = "slug"
+        case name = "name"
+        case `description` = "description"
+        case logoURL = "logo_url"
+        case publicAgentId = "public_agent_id"
+        case publishedAgentIds = "published_agent_ids"
+        case publicSettings = "public_settings"
+        case marketplaceListed = "marketplace_listed"
+        case publicPage = "public_page"
+        case agents = "agents"
+        case agentsTruncated = "agents_truncated"
+    }
+}
+
+/// `TenantPublicProfileAgent` model.
+public struct TenantPublicProfileAgent: Codable, Hashable, Sendable {
+    /// The one thing that keeps the agent off the page, first match wins: `on_page`;
+    /// `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the
+    /// allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private,
+    /// has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+    /// live, yet not listed — publish_agent rewrites its index row). Show this, not the three
+    /// booleans together: with no allow-list every agent is `published` while none may be on the
+    /// page. Since 2026-10-31.
+    public var standing: TenantPublicProfileAgentStanding
+    public var agentId: String
+    public var name: String
+    public var publicCapable: Bool
+    public var published: Bool
+    public var onPublicPage: Bool
+
+    public init(standing: TenantPublicProfileAgentStanding, agentId: String, name: String, publicCapable: Bool, published: Bool, onPublicPage: Bool) {
+        self.standing = standing
+        self.agentId = agentId
+        self.name = name
+        self.publicCapable = publicCapable
+        self.published = published
+        self.onPublicPage = onPublicPage
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case standing = "standing"
+        case agentId = "agent_id"
+        case name = "name"
+        case publicCapable = "public_capable"
+        case published = "published"
+        case onPublicPage = "on_public_page"
+    }
+}
+
+/// The one thing that keeps the agent off the page, first match wins: `on_page`;
+/// `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the
+/// allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private,
+/// has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+/// live, yet not listed — publish_agent rewrites its index row). Show this, not the three
+/// booleans together: with no allow-list every agent is `published` while none may be on the
+/// page. Since 2026-10-31.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct TenantPublicProfileAgentStanding: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let onPage = TenantPublicProfileAgentStanding(rawValue: "on_page")
+    public static let agentNotPublic = TenantPublicProfileAgentStanding(rawValue: "agent_not_public")
+    public static let leftOutOfList = TenantPublicProfileAgentStanding(rawValue: "left_out_of_list")
+    public static let pageNotLive = TenantPublicProfileAgentStanding(rawValue: "page_not_live")
+    public static let missingFromPage = TenantPublicProfileAgentStanding(rawValue: "missing_from_page")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [TenantPublicProfileAgentStanding] = [.onPage, .agentNotPublic, .leftOutOfList, .pageNotLive, .missingFromPage]
+}
+
+/// `TenantPublicProfilePublicPage` model.
+public struct TenantPublicProfilePublicPage: Codable, Hashable, Sendable {
+    public var path: String?
+    /// null when the company has no slug, so no page.
+    public var status: Int?
+    /// False when the page at this slug belongs to another company; `agent_ids` is then empty.
+    public var showsThisCompany: Bool
+    public var agentIds: [String]
+    public var primaryAgentId: String?
+
+    public init(path: String? = nil, status: Int? = nil, showsThisCompany: Bool, agentIds: [String], primaryAgentId: String? = nil) {
+        self.path = path
+        self.status = status
+        self.showsThisCompany = showsThisCompany
+        self.agentIds = agentIds
+        self.primaryAgentId = primaryAgentId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case path = "path"
+        case status = "status"
+        case showsThisCompany = "shows_this_company"
+        case agentIds = "agent_ids"
+        case primaryAgentId = "primary_agent_id"
     }
 }
 
@@ -58157,6 +58921,80 @@ public struct UpdateMissionObjectiveRequestBudget: Codable, Hashable, Sendable {
     }
 }
 
+/// `UpdateMissionScheduleRequest` model.
+public struct UpdateMissionScheduleRequest: Codable, Hashable, Sendable {
+    public var cron: String?
+    /// IANA time zone; empty for UTC.
+    public var timezone: String?
+    public var name: String?
+    public var status: UpdateMissionScheduleRequestStatus?
+
+    public init(cron: String? = nil, timezone: String? = nil, name: String? = nil, status: UpdateMissionScheduleRequestStatus? = nil) {
+        self.cron = cron
+        self.timezone = timezone
+        self.name = name
+        self.status = status
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case cron = "cron"
+        case timezone = "timezone"
+        case name = "name"
+        case status = "status"
+    }
+}
+
+/// `UpdateMissionScheduleRequestStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct UpdateMissionScheduleRequestStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let active = UpdateMissionScheduleRequestStatus(rawValue: "active")
+    public static let paused = UpdateMissionScheduleRequestStatus(rawValue: "paused")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [UpdateMissionScheduleRequestStatus] = [.active, .paused]
+}
+
+/// `UpdateMissionScheduleResponse` model.
+public struct UpdateMissionScheduleResponse: Codable, Hashable, Sendable {
+    public var scheduleId: String
+    public var name: String?
+    public var cron: String
+    public var timezone: String
+    public var status: UpdateMissionScheduleRequestStatus
+    public var nextFireAt: String?
+
+    public init(scheduleId: String, name: String? = nil, cron: String, timezone: String, status: UpdateMissionScheduleRequestStatus, nextFireAt: String? = nil) {
+        self.scheduleId = scheduleId
+        self.name = name
+        self.cron = cron
+        self.timezone = timezone
+        self.status = status
+        self.nextFireAt = nextFireAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case scheduleId = "schedule_id"
+        case name = "name"
+        case cron = "cron"
+        case timezone = "timezone"
+        case status = "status"
+        case nextFireAt = "next_fire_at"
+    }
+}
+
 /// `UpdateMyEmailPreferencesRequest` model.
 public struct UpdateMyEmailPreferencesRequest: Codable, Hashable, Sendable {
     public var locale: GetHireCatalogLocale?
@@ -59313,10 +60151,28 @@ public struct UsageQuota: Codable, Hashable, Sendable {
     /// of 0". `period`/`resets_at` are null for standing counts like agents, which do not reset at
     /// midnight.
     public var counters: [UsageQuotaCounter]?
+    /// The complete list of tenant-wide limits with what is used against each, `{kind, used, limit,
+    /// period, resets_at}`: the eight `counters` kinds plus tool_calls_daily, images, images_daily,
+    /// videos, storage_bytes (every file and knowledge-base document stored now — what the upload
+    /// gate sums), active_sessions, concurrent_team_runs and concurrent_runs (the limit the
+    /// scheduler applies: the plan's, clamped by the platform ceiling). Each limit is read as
+    /// `EnforcedLimit` describes; `counters` stays as published, with its closed `kind` enum.
+    /// `kind` here is open. Since 2026-10-30.
+    public var enforcedCounters: [UsageQuotaEnforcedCounter]?
+    /// Limits that bind each agent or squad rather than the tenant (mcp_servers, workers,
+    /// memory_entries, memory_storage_bytes, agent_versions). There is no tenant-wide `used` for
+    /// them. Since 2026-10-30.
+    public var perResourceLimits: [UsageQuotaPerResourceLimit]?
+    /// Two different dates, said apart: the allowance resets on the calendar month (UTC); the
+    /// subscription renews on Stripe's cycle. `renews_at` is null when no subscription event
+    /// recorded a period end — a plan granted without a Stripe subscription has none. Since
+    /// 2026-10-30.
+    public var billingPeriod: UsageQuotaBillingPeriod?
+    public var planQuotas: PlanQuotaFields?
     /// api/lib/resource-usage.ts TenantResourceUsage.
     public var resourceUsage: UsageQuotaResourceUsage
 
-    public init(plan: String, allowed: Bool, reason: String? = nil, usage: UsageQuotaUsage, daily: UsageQuotaDaily, resetsAt: UsageQuotaResetsAt, limits: UsageQuotaLimits, counters: [UsageQuotaCounter]? = nil, resourceUsage: UsageQuotaResourceUsage) {
+    public init(plan: String, allowed: Bool, reason: String? = nil, usage: UsageQuotaUsage, daily: UsageQuotaDaily, resetsAt: UsageQuotaResetsAt, limits: UsageQuotaLimits, counters: [UsageQuotaCounter]? = nil, enforcedCounters: [UsageQuotaEnforcedCounter]? = nil, perResourceLimits: [UsageQuotaPerResourceLimit]? = nil, billingPeriod: UsageQuotaBillingPeriod? = nil, planQuotas: PlanQuotaFields? = nil, resourceUsage: UsageQuotaResourceUsage) {
         self.plan = plan
         self.allowed = allowed
         self.reason = reason
@@ -59325,6 +60181,10 @@ public struct UsageQuota: Codable, Hashable, Sendable {
         self.resetsAt = resetsAt
         self.limits = limits
         self.counters = counters
+        self.enforcedCounters = enforcedCounters
+        self.perResourceLimits = perResourceLimits
+        self.billingPeriod = billingPeriod
+        self.planQuotas = planQuotas
         self.resourceUsage = resourceUsage
     }
 
@@ -59337,7 +60197,36 @@ public struct UsageQuota: Codable, Hashable, Sendable {
         case resetsAt = "resets_at"
         case limits = "limits"
         case counters = "counters"
+        case enforcedCounters = "enforced_counters"
+        case perResourceLimits = "per_resource_limits"
+        case billingPeriod = "billing_period"
+        case planQuotas = "plan_quotas"
         case resourceUsage = "resource_usage"
+    }
+}
+
+/// Two different dates, said apart: the allowance resets on the calendar month (UTC); the
+/// subscription renews on Stripe's cycle. `renews_at` is null when no subscription event
+/// recorded a period end — a plan granted without a Stripe subscription has none. Since
+/// 2026-10-30.
+public struct UsageQuotaBillingPeriod: Codable, Hashable, Sendable {
+    public var quotaResetsAt: String
+    /// The end of the current Stripe billing period, as Stripe's subscription webhook recorded it.
+    /// null: no Stripe subscription backs this company (a free plan, or a plan an administrator
+    /// set) — there is no card renewal to show. It is never pending.
+    public var renewsAt: String?
+    public var cancelAtPeriodEnd: Bool?
+
+    public init(quotaResetsAt: String, renewsAt: String? = nil, cancelAtPeriodEnd: Bool? = nil) {
+        self.quotaResetsAt = quotaResetsAt
+        self.renewsAt = renewsAt
+        self.cancelAtPeriodEnd = cancelAtPeriodEnd
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case quotaResetsAt = "quota_resets_at"
+        case renewsAt = "renews_at"
+        case cancelAtPeriodEnd = "cancel_at_period_end"
     }
 }
 
@@ -59419,6 +60308,31 @@ public struct UsageQuotaDaily: Codable, Hashable, Sendable {
     }
 }
 
+/// `UsageQuotaEnforcedCounter` model.
+public struct UsageQuotaEnforcedCounter: Codable, Hashable, Sendable {
+    public var kind: String
+    public var used: Double
+    public var limit: Double?
+    public var period: String?
+    public var resetsAt: String?
+
+    public init(kind: String, used: Double, limit: Double? = nil, period: String? = nil, resetsAt: String? = nil) {
+        self.kind = kind
+        self.used = used
+        self.limit = limit
+        self.period = period
+        self.resetsAt = resetsAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case used = "used"
+        case limit = "limit"
+        case period = "period"
+        case resetsAt = "resets_at"
+    }
+}
+
 /// `UsageQuotaLimits` model.
 public struct UsageQuotaLimits: Codable, Hashable, Sendable {
     public var maxMonthlyTokens: Double
@@ -59448,6 +60362,48 @@ public struct UsageQuotaLimits: Codable, Hashable, Sendable {
         case maxKnowledgeBases = "max_knowledge_bases"
         case maxWorkspaces = "max_workspaces"
     }
+}
+
+/// `UsageQuotaPerResourceLimit` model.
+public struct UsageQuotaPerResourceLimit: Codable, Hashable, Sendable {
+    public var kind: String
+    public var scope: UsageQuotaPerResourceLimitScope
+    public var limit: Double?
+
+    public init(kind: String, scope: UsageQuotaPerResourceLimitScope, limit: Double? = nil) {
+        self.kind = kind
+        self.scope = scope
+        self.limit = limit
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case scope = "scope"
+        case limit = "limit"
+    }
+}
+
+/// `UsageQuotaPerResourceLimitScope` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct UsageQuotaPerResourceLimitScope: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let agent = UsageQuotaPerResourceLimitScope(rawValue: "agent")
+    public static let team = UsageQuotaPerResourceLimitScope(rawValue: "team")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [UsageQuotaPerResourceLimitScope] = [.agent, .team]
 }
 
 /// `UsageQuotaResetsAt` model.
@@ -59499,6 +60455,9 @@ public struct UsageQuotaUsage: Codable, Hashable, Sendable {
     public var totalTokens: Double
     public var runsCount: Double
     public var toolCallsCount: Double
+    /// Bytes of run artifacts written this period — NOT what is stored now, and not what the
+    /// storage limit counts. The stored total the upload gate compares is the `storage_bytes` entry
+    /// of `enforced_counters`.
     public var storageBytes: Double
     public var totalCost: Double
     /// Platform administrator only; every other caller receives 0 (since 2026-09-29). Kept as a key
@@ -59552,7 +60511,11 @@ public struct UsageSummary: Codable, Hashable, Sendable {
     public var totalTokens: Int
     public var runsCount: Int
     public var toolCallsCount: Int
+    /// Bridge tasks completed this period. Each is also counted in `runs_count`.
     public var bridgeTasks: Int?
+    /// Bytes of run artifacts written this period — not what is stored now, and not what the
+    /// storage limit counts; for that read `enforced_counters` (`storage_bytes`) on GET
+    /// /usage/quota.
     public var storageBytes: Int
     /// What the tenant is billed, in USD, to six decimals — as are `provider_cost`, `non_run_cost`
     /// and the `cost` of every `by_model` and `by_source` entry (four until 2026-09-29).
@@ -59562,7 +60525,16 @@ public struct UsageSummary: Codable, Hashable, Sendable {
     /// books, not the tenant's bill. Kept as a key because clients decode it as required; do not
     /// read it as a cost.
     public var providerCost: Double
+    /// The part of `total_cost` with no run record behind it: LLM-proxy calls, memory extraction,
+    /// embeddings, web search, speech, images and video. `total_cost - non_run_cost` is what runs
+    /// cost. Split by `non_run_cost_by_kind`.
     public var nonRunCost: Double
+    /// `non_run_cost` split by what it bought, largest first. `kind`: llm_proxy, memory_extraction,
+    /// embeddings, web_search, stt, tts, image, video, or `unattributed` — spend recorded before
+    /// kinds were (2026-10-30) or by a writer that names none — so the costs add up to
+    /// `non_run_cost`. Always present; `unattributed` always included. `kind` is open: a later
+    /// release may add one.
+    public var nonRunCostByKind: [UsageSummaryNonRunCostByKindItem]?
     /// Platform administrator only; absent for every other caller (since 2026-09-29). Whole or
     /// absent, never partial.
     public var marginSummary: UsageMarginSummary?
@@ -59579,7 +60551,7 @@ public struct UsageSummary: Codable, Hashable, Sendable {
     /// entry included.
     public var bySource: [UsageSummaryBySourceItem]?
 
-    public init(plan: String, period: String, periodDays: Int, inputTokens: Int, outputTokens: Int, thinkingTokens: Int, totalTokens: Int, runsCount: Int, toolCallsCount: Int, bridgeTasks: Int? = nil, storageBytes: Int, totalCost: Double, providerCost: Double, nonRunCost: Double, marginSummary: UsageMarginSummary? = nil, byModel: [UsageSummaryByModelItem]? = nil, bySource: [UsageSummaryBySourceItem]? = nil) {
+    public init(plan: String, period: String, periodDays: Int, inputTokens: Int, outputTokens: Int, thinkingTokens: Int, totalTokens: Int, runsCount: Int, toolCallsCount: Int, bridgeTasks: Int? = nil, storageBytes: Int, totalCost: Double, providerCost: Double, nonRunCost: Double, nonRunCostByKind: [UsageSummaryNonRunCostByKindItem]? = nil, marginSummary: UsageMarginSummary? = nil, byModel: [UsageSummaryByModelItem]? = nil, bySource: [UsageSummaryBySourceItem]? = nil) {
         self.plan = plan
         self.period = period
         self.periodDays = periodDays
@@ -59594,6 +60566,7 @@ public struct UsageSummary: Codable, Hashable, Sendable {
         self.totalCost = totalCost
         self.providerCost = providerCost
         self.nonRunCost = nonRunCost
+        self.nonRunCostByKind = nonRunCostByKind
         self.marginSummary = marginSummary
         self.byModel = byModel
         self.bySource = bySource
@@ -59614,6 +60587,7 @@ public struct UsageSummary: Codable, Hashable, Sendable {
         case totalCost = "total_cost"
         case providerCost = "provider_cost"
         case nonRunCost = "non_run_cost"
+        case nonRunCostByKind = "non_run_cost_by_kind"
         case marginSummary = "margin_summary"
         case byModel = "by_model"
         case bySource = "by_source"
@@ -59678,6 +60652,22 @@ public struct UsageSummaryBySourceItem: Codable, Hashable, Sendable {
         case tokens = "tokens"
         case inputTokens = "input_tokens"
         case outputTokens = "output_tokens"
+    }
+}
+
+/// `UsageSummaryNonRunCostByKindItem` model.
+public struct UsageSummaryNonRunCostByKindItem: Codable, Hashable, Sendable {
+    public var kind: String
+    public var cost: Double
+
+    public init(kind: String, cost: Double) {
+        self.kind = kind
+        self.cost = cost
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case cost = "cost"
     }
 }
 

@@ -149,6 +149,26 @@ public struct TenantsAPI: Sendable {
         ))
     }
 
+    /// The public profile as configured and as the public page shows it
+    ///
+    /// The profile fields, each agent's standing (`public_capable` = visibility public and
+    /// public_config.enabled; `published` = in the allow-list or no allow-list defined;
+    /// `on_public_page` = listed now), and `public_page`: what GET /public/tenants/{slug} answers,
+    /// read through that route's own handler. The public profile is not the marketplace listing;
+    /// `marketplace_listed` reports the listing apart. Change it through a proposal
+    /// (`update_public_profile`, `publish_agent`, `unpublish_agent`). Since 2026-10-30.
+    ///
+    /// `GET /api/v1/tenants/me/public-profile`
+    ///
+    /// Required scopes: `agents:read`.
+    public func getTenantPublicProfile(options: RequestOptions = .init()) async throws -> TenantPublicProfile {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/tenants/me/public-profile",
+            options: options
+        ))
+    }
+
     /// Leave a tenant
     ///
     /// Removes the caller's own membership. The user-record cascade matches an admin-driven

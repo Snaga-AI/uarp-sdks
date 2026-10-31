@@ -115,6 +115,9 @@ package body UARP.API.Missions is
       if Params.Has_Limit then
          UARP.Types.Add (Query, "limit", Params.Limit);
       end if;
+      if Params.Has_Before then
+         UARP.Types.Add (Query, "before", Params.Before);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
@@ -271,4 +274,23 @@ package body UARP.API.Missions is
              Idempotent => True,
              Options => Options));
    end Update_Mission_Objective;
+
+   function Update_Mission_Schedule
+     (Self : Client_Type;
+      Schedule_Id : String;
+      Payload : UARP.Models.Update_Mission_Schedule_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Update_Mission_Schedule_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/missions/schedules/" & UARP.Types.Encode_Path_Segment (Schedule_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Update_Mission_Schedule;
 end UARP.API.Missions;

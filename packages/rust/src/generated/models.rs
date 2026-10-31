@@ -3035,7 +3035,22 @@ pub struct Agent {
     /// 2026-10-12.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub initiative_id: Option<String>,
-    /// SPECs installed on this agent, with version pin and granted permissions.
+    /// On the answer to POST /agents and PATCH/PUT /agents/{id} only: request fields that were not
+    /// applied, each with why. Today only `prompts.system` — the system prompt is managed by the
+    /// Chief of Staff (update_agent), and HTTP does not set it; put the role in
+    /// `prompts.developer`. Absent when everything sent was applied. Since 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ignored_fields: Option<Vec<AgentIgnoredField>>,
+    /// Base-package SPECs a person removed from this agent (any of @platform/now-time,
+    /// simple-tools, files, net, research-toolkit, document-suite, visual-creator, code-companion,
+    /// memory). The platform issues the base package on every read; one on this list stays off.
+    /// Server-managed: a PATCH/PUT whose `specs` leaves out a base SPEC the agent had adds it, and
+    /// one that includes it again removes it. `@platform/core` is never declined. Absent until the
+    /// first such removal. Since 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base_specs_declined: Option<Vec<String>>,
+    /// SPECs installed on this agent, with version pin and granted permissions. The base package is
+    /// added back on every read unless listed in `base_specs_declined`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub specs: Option<Vec<AgentSpec>>,
     /// Always-visible memory blocks placed in the system prompt (CoreMemoryConfig).
@@ -3710,6 +3725,13 @@ impl From<&str> for AgentHireStatus {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `AgentIgnoredField` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentIgnoredField {
+    pub field: String,
+    pub reason: String,
 }
 
 /// Agent-scoped integration (connection) instance
@@ -8580,6 +8602,9 @@ pub struct CompanyExportCompany {
     pub version: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub template: Option<serde_json::Map<String, serde_json::Value>>,
+    /// When the company went through POST /tenants/me/company/launch. Null for a company that never
+    /// did: every tenant starts `active` without a launch, and resume does not launch — so null
+    /// with `status: active` means active without a launch, not a missing value.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub launched_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8740,6 +8765,9 @@ pub struct CompanyProfile {
     pub version: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub template: Option<CompanyProfileTemplate>,
+    /// When the company went through POST /tenants/me/company/launch. Null for a company that never
+    /// did: every tenant starts `active` without a launch, and resume does not launch — so null
+    /// with `status: active` means active without a launch, not a missing value.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub launched_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8835,13 +8863,70 @@ pub struct CompanyProposal {
     pub reject_reason: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub applied: Option<Vec<CompanyProposalStep>>,
+    /// Present when the Chief of Staff applied it in the conversation on the person's answer (since
+    /// 2026-10-31); `decided_by` is that person.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub applied_via: Option<CompanyProposalAppliedVia>,
+    /// Steps whose undo succeeded.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rolled_back: Option<Vec<CompanyProposalStep>>,
+    /// Steps whose undo the route refused: their change is still in place and needs a person.
+    /// Absent when every undo succeeded. Before 2026-10-30 such steps were listed under
+    /// `rolled_back`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rollback_failed: Option<Vec<CompanyProposalStep>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failure: Option<CompanyProposalFailure>,
     /// The company version after a successful apply.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
+}
+
+/// Present when the Chief of Staff applied it in the conversation on the person's answer (since
+/// 2026-10-31); `decided_by` is that person.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyProposalAppliedVia {
+    pub kind: CompanyProposalAppliedViaKind,
+    pub agent_id: String,
+    pub run_id: String,
+    pub session_id: String,
+    pub person_user_id: String,
+}
+
+/// `CompanyProposalAppliedViaKind` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CompanyProposalAppliedViaKind {
+    #[default]
+    #[serde(rename = "conversation")]
+    Conversation,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CompanyProposalAppliedViaKind {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Conversation => "conversation",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CompanyProposalAppliedViaKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CompanyProposalAppliedViaKind {
+    fn from(value: &str) -> Self {
+        match value {
+            "conversation" => Self::Conversation,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `CompanyProposalDiffItem` model.
@@ -13838,6 +13923,71 @@ pub struct EndpointRateLimit {
     pub window_sec_: i64,
 }
 
+/// Every plan limit the platform enforces, read as its enforcement site reads it
+/// (api/lib/plan-terms.ts). `limit: null` means the code applies no cap; a number, 0 included,
+/// is the cap it applies — 0 is a cap of zero where the gate treats it so (videos, images, team
+/// runs, MCP servers, workers) and null where the gate treats 0 as uncapped (tokens, runs, tool
+/// calls, storage, sessions, memory). `scope` says what it counts against: the tenant, or each
+/// agent or squad. Since 2026-10-30.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EnforcedLimit {
+    /// tokens, runs, tokens_daily, tool_calls, tool_calls_daily, images, images_daily, videos,
+    /// storage_bytes, active_sessions, concurrent_team_runs, mcp_servers, workers, memory_entries,
+    /// memory_storage_bytes, agent_versions. Open: a later release may add a kind.
+    pub kind: String,
+    /// The TenantQuotas field it is read from.
+    pub quota: String,
+    pub scope: EnforcedLimitScope,
+    #[serde(default)]
+    pub period: Option<String>,
+    #[serde(default)]
+    pub limit: Option<f64>,
+}
+
+/// `EnforcedLimitScope` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum EnforcedLimitScope {
+    #[default]
+    #[serde(rename = "tenant")]
+    Tenant,
+    #[serde(rename = "agent")]
+    Agent,
+    #[serde(rename = "team")]
+    Team,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl EnforcedLimitScope {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Tenant => "tenant",
+            Self::Agent => "agent",
+            Self::Team => "team",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for EnforcedLimitScope {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for EnforcedLimitScope {
+    fn from(value: &str) -> Self {
+        match value {
+            "tenant" => Self::Tenant,
+            "agent" => Self::Agent,
+            "team" => Self::Team,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `EnforcementResult` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EnforcementResult {
@@ -18682,6 +18832,9 @@ pub struct GetTenantBlueprintResponseDepartmentMember {
 pub struct GetTenantBlueprintResponseDeploymentState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<CompanyProfileStatus>,
+    /// When the company went through POST /tenants/me/company/launch. Null for a company that never
+    /// did: every tenant starts `active` without a launch, and resume does not launch — so null
+    /// with `status: active` means active without a launch, not a missing value.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub launched_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -18986,17 +19139,24 @@ pub struct GetTenantCompanyOverviewResponse {
     /// `next_step ?? \<the same rule computed locally\>`. Localize from `code`; act on `fix` (a
     /// method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
     /// setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
-    /// then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
-    /// with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
-    /// `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
-    /// as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
-    /// else applies.
+    /// an `active` company with no agent besides its Chief of Staff → its first readiness blocker
+    /// (`kind` setup, since 2026-10-30); then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the
+    /// newest failure in the window, with `run_id`, `agent_id`, `agent_name` — null when the agent
+    /// is gone — and `error_code`), `MISSION_STOPPED` (a mission the platform stopped, with
+    /// `mission_id` and its `result_code` as `error_code`), `NEXT_RUN` (with `name`,
+    /// `next_fire_at`; only a schedule that fires — active and enabled — at an instant not more
+    /// than an hour past, since 2026-10-30), and `ALL_QUIET` when nothing else applies.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub next_step: Option<GetTenantCompanyOverviewResponseNextStep>,
     pub generated_at: String,
     pub window_days: i64,
     pub company: GetTenantCompanyOverviewResponseCompany,
-    /// Null when no cap is set.
+    /// What the calendar month (UTC) cost so far, cap or no cap — the same number as GET /usage
+    /// `total_cost`. Null only when the usage read failed. Since 2026-10-30; `spend` below is null
+    /// whenever no cap is set, however much was spent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub month_spend_usd: Option<f64>,
+    /// Null when no cap is set — even with spend this month; read `month_spend_usd` for the amount.
     #[serde(default)]
     pub spend: Option<GetTenantCompanyOverviewResponseSpend>,
     pub decisions: GetTenantCompanyOverviewResponseDecisions,
@@ -19029,8 +19189,15 @@ pub struct GetTenantCompanyOverviewResponseActivityByDayItem {
     pub date: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runs: Option<i64>,
+    /// Runs that failed or timed out, lifecycle refusals excluded (since 2026-10-31; before, a
+    /// paused company's refusals were counted here).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failed: Option<i64>,
+    /// A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+    /// INITIATIVE_BUDGET_EXHAUSTED) is not a failure: it is counted here, apart. `runs` = every run
+    /// created that day, refused ones included. Since 2026-10-31.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub refused: Option<i64>,
 }
 
 /// `GetTenantCompanyOverviewResponseCompany` model.
@@ -19047,6 +19214,9 @@ pub struct GetTenantCompanyOverviewResponseCompany {
     pub status: Option<CompanyProfileStatus>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
+    /// When the company went through POST /tenants/me/company/launch. Null for a company that never
+    /// did: every tenant starts `active` without a launch, and resume does not launch — so null
+    /// with `status: active` means active without a launch, not a missing value.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub launched_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -19093,11 +19263,13 @@ pub struct GetTenantCompanyOverviewResponseNextItem {
 /// `next_step ?? \<the same rule computed locally\>`. Localize from `code`; act on `fix` (a
 /// method and path, as readiness gives). Order: a `draft` → its first readiness blocker (`kind`
 /// setup, `code` = the blocker's), or `LAUNCH` when none stands; `paused` → `COMPANY_PAUSED`;
-/// then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the newest failure in the window,
-/// with `run_id`, `agent_id`, `agent_name` — null when the agent is gone — and `error_code`),
-/// `MISSION_STOPPED` (a mission the platform stopped, with `mission_id` and its `result_code`
-/// as `error_code`), `NEXT_RUN` (with `name`, `next_fire_at`), and `ALL_QUIET` when nothing
-/// else applies.
+/// an `active` company with no agent besides its Chief of Staff → its first readiness blocker
+/// (`kind` setup, since 2026-10-30); then `DECISIONS_WAITING` (with `count`), `RUN_FAILED` (the
+/// newest failure in the window, with `run_id`, `agent_id`, `agent_name` — null when the agent
+/// is gone — and `error_code`), `MISSION_STOPPED` (a mission the platform stopped, with
+/// `mission_id` and its `result_code` as `error_code`), `NEXT_RUN` (with `name`,
+/// `next_fire_at`; only a schedule that fires — active and enabled — at an instant not more
+/// than an hour past, since 2026-10-30), and `ALL_QUIET` when nothing else applies.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetTenantCompanyOverviewResponseNextStep {
     pub kind: GetTenantCompanyOverviewResponseNextStepKind,
@@ -19177,8 +19349,15 @@ impl From<&str> for GetTenantCompanyOverviewResponseNextStepKind {
 /// `GetTenantCompanyOverviewResponseProblems` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetTenantCompanyOverviewResponseProblems {
+    /// Failed or timed-out runs in the window, lifecycle refusals excluded; `recent` and next_step
+    /// RUN_FAILED read the same list (since 2026-10-31).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failed_runs: Option<i64>,
+    /// A run the company's lifecycle refused (error code COMPANY_PAUSED, INITIATIVE_PAUSED or
+    /// INITIATIVE_BUDGET_EXHAUSTED) is not a failure; this counts them in the window. Since
+    /// 2026-10-31.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub refused_runs: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recent: Option<Vec<GetTenantCompanyOverviewResponseProblemsRecentItem>>,
     /// Missions in the window the PLATFORM stopped (`aborted` or `failed`, not
@@ -19317,7 +19496,7 @@ pub struct GetTenantCompanyOverviewResponseResult {
     pub completed_at: Option<String>,
 }
 
-/// Null when no cap is set.
+/// Null when no cap is set — even with spend this month; read `month_spend_usd` for the amount.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetTenantCompanyOverviewResponseSpend {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -22980,8 +23159,25 @@ pub struct ListBillingPlansResponsePlan {
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    /// Six of the plan's limits, kept as they were for their readers. The full set is `quotas` and
+    /// `enforced_limits`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limits: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub queue_tier: Option<PublicPlanQueueTier>,
+    /// Runs at a time the plan really gets — the plan's figure clamped to the live platform
+    /// ceiling.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effective_concurrent_runs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reset: Option<ListBillingPlansResponsePlanReset>,
+    /// Pay-as-you-go beyond the quota; `null` on free.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub overage: Option<ListBillingPlansResponsePlanOverage>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quotas: Option<PlanQuotaFields>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enforced_limits: Option<Vec<EnforcedLimit>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -23047,6 +23243,35 @@ impl From<&str> for ListBillingPlansResponsePlanAppStoreProductId {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// Pay-as-you-go beyond the quota; `null` on free.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListBillingPlansResponsePlanOverage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub available: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requires_cap: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub price_per_million_usd: Option<ListBillingPlansResponsePlanOveragePricePerMillionUsd>,
+}
+
+/// `ListBillingPlansResponsePlanOveragePricePerMillionUsd` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListBillingPlansResponsePlanOveragePricePerMillionUsd {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<f64>,
+}
+
+/// `ListBillingPlansResponsePlanReset` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListBillingPlansResponsePlanReset {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub period: Option<PublicPlanResetPeriod>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub at: Option<String>,
 }
 
 /// `ListBillingSpecPackagesResponse` model.
@@ -23390,6 +23615,21 @@ pub struct ListMissionsResponse {
     pub items: Vec<Mission>,
     /// Length of `items` in this response, not a tenant-wide count.
     pub total: i64,
+    /// Tenant-wide list only: how many missions the tenant has (all of them, not this page). Since
+    /// 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_missions: Option<i64>,
+    /// Tenant-wide list only: more missions follow this page. Since 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub has_more: Option<bool>,
+    /// Tenant-wide list only: pass as `before` for the next page; null when `has_more` is false.
+    /// Since 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_before: Option<String>,
+    /// Present (true) only when the 20 000-row scan cap, not the end of the list, stopped the read:
+    /// `total_missions` is then a lower bound.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub truncated: Option<bool>,
 }
 
 /// `ListModelsResponse` model.
@@ -25882,6 +26122,11 @@ pub struct Mission {
     pub aar_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<MissionMetrics>,
+    /// On GET /missions/{missionId}: false when an objective that ran predates the recording of run
+    /// time and model calls (2026-10-30), so `metrics.total_duration_ms` and `metrics.llm_calls`
+    /// undercount. Cost, tokens and retries are whole either way. Since 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics_complete: Option<bool>,
     /// Terminal outcome. `partial` means some objectives verified and some did not.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub outcome: Option<MissionOutcome>,
@@ -25960,8 +26205,11 @@ impl From<&str> for MissionClassification {
     }
 }
 
-/// Aggregated spend for the whole mission. Written on the terminal transition, so it is absent
-/// while the mission is still running.
+/// Aggregated spend for the whole mission. It was documented as written on the terminal
+/// transition and was written by nothing; since 2026-10-30 GET /missions/{missionId} sums it
+/// from the mission's objectives on every read — cost, tokens and runs as recorded per strike,
+/// so it is present while the mission runs too. `retries` is every strike past an objective's
+/// first. Run time and model calls were recorded only from 2026-10-30: see `metrics_complete`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct MissionMetrics {
     pub total_cost_usd: f64,
@@ -28170,6 +28418,9 @@ pub struct PauseTenantCompanyResponse {
     pub version: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub template: Option<PauseTenantCompanyResponseTemplate>,
+    /// When the company went through POST /tenants/me/company/launch. Null for a company that never
+    /// did: every tenant starts `active` without a launch, and resume does not launch — so null
+    /// with `status: active` means active without a launch, not a missing value.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub launched_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -28431,6 +28682,10 @@ pub struct PlannedObjectiveBudget {
     pub max_tokens: i64,
     pub max_cost_usd: f64,
 }
+
+/// The plan's quota fields as stored, `null` where the plan sets none. Raw values — read
+/// `enforced_limits` for what each one means.
+pub type PlanQuotaFields = serde_json::Map<String, serde_json::Value>;
 
 /// Platform profit and loss: Stripe revenue against real host spend and the LLM provider bill.
 /// Super-admin only. Served from a short-lived cache — `cache` says which.
@@ -29303,6 +29558,105 @@ impl From<&str> for ProposalOpAddSquadOp {
 /// One change a proposal makes, discriminated by `op`.
 pub type ProposalOperation = serde_json::Value;
 
+/// Pause the company — an owner-only switch the Chief of Staff can only propose. Its diff's
+/// `after.stops` is the scope GET /tenants/me/company/pause-scope states. Applied through POST
+/// /tenants/me/company/pause with the applier's rights. Since 2026-10-30.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpPauseCompany {
+    pub op: ProposalOpPauseCompanyOp,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+/// `ProposalOpPauseCompanyOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpPauseCompanyOp {
+    #[default]
+    #[serde(rename = "pause_company")]
+    PauseCompany,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpPauseCompanyOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::PauseCompany => "pause_company",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpPauseCompanyOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpPauseCompanyOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "pause_company" => Self::PauseCompany,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Put one agent on the public page. Sets the agent's `visibility: public` and
+/// `public_config.enabled` (PATCH /agents/{id}) and, when the company keeps an allow-list, adds
+/// it to `published_agent_ids` (an absent allow-list already lists every public-capable agent
+/// and is left absent); `primary` also makes it `public_agent_id`. When the profile is public
+/// the apply then reads GET /public/tenants/{slug} and fails with `PUBLIC_PAGE_MISMATCH`,
+/// rolling back, unless the agent is listed. Refused at plan time when the company has no slug.
+/// Since 2026-10-30.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpPublishAgent {
+    pub op: ProposalOpPublishAgentOp,
+    pub agent_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub primary: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub greeting: Option<String>,
+}
+
+/// `ProposalOpPublishAgentOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpPublishAgentOp {
+    #[default]
+    #[serde(rename = "publish_agent")]
+    PublishAgent,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpPublishAgentOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::PublishAgent => "publish_agent",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpPublishAgentOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpPublishAgentOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "publish_agent" => Self::PublishAgent,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `ProposalOpRemoveAgent` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ProposalOpRemoveAgent {
@@ -29386,6 +29740,49 @@ impl From<&str> for ProposalOpRemoveMissionScheduleOp {
     fn from(value: &str) -> Self {
         match value {
             "remove_mission_schedule" => Self::RemoveMissionSchedule,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Resume the company, through POST /tenants/me/company/resume with the applier's rights. Since
+/// 2026-10-30.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpResumeCompany {
+    pub op: ProposalOpResumeCompanyOp,
+}
+
+/// `ProposalOpResumeCompanyOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpResumeCompanyOp {
+    #[default]
+    #[serde(rename = "resume_company")]
+    ResumeCompany,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpResumeCompanyOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::ResumeCompany => "resume_company",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpResumeCompanyOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpResumeCompanyOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "resume_company" => Self::ResumeCompany,
             other => Self::Other(other.to_string()),
         }
     }
@@ -29593,6 +29990,52 @@ impl From<&str> for ProposalOpSetSquadMembersOp {
     }
 }
 
+/// Take one agent off the public page: removes it from `published_agent_ids` when the company
+/// keeps an allow-list, otherwise turns its `public_config.enabled` off; clears
+/// `public_agent_id` when it was this agent. Verified against GET /public/tenants/{slug} like
+/// `publish_agent`. Since 2026-10-30.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpUnpublishAgent {
+    pub op: ProposalOpUnpublishAgentOp,
+    pub agent_id: String,
+}
+
+/// `ProposalOpUnpublishAgentOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpUnpublishAgentOp {
+    #[default]
+    #[serde(rename = "unpublish_agent")]
+    UnpublishAgent,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpUnpublishAgentOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::UnpublishAgent => "unpublish_agent",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpUnpublishAgentOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpUnpublishAgentOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "unpublish_agent" => Self::UnpublishAgent,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `ProposalOpUpdateAgent` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ProposalOpUpdateAgent {
@@ -29692,6 +30135,90 @@ impl From<&str> for ProposalOpUpdateCompanyOp {
     fn from(value: &str) -> Self {
         match value {
             "update_company" => Self::UpdateCompany,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Change the company's public profile, through PATCH /tenants/me with the applier's rights
+/// (owner). The profile is not the marketplace listing: setting `public: true` on a company not
+/// listed yet ALSO lists it in the marketplace, and the diff summary says so. Undo on a later
+/// failure restores each named field; a slug the company never had is not unset. Since
+/// 2026-10-30.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpUpdatePublicProfile {
+    pub op: ProposalOpUpdatePublicProfileOp,
+    pub changes: ProposalOpUpdatePublicProfileChanges,
+}
+
+/// `ProposalOpUpdatePublicProfileChanges` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpUpdatePublicProfileChanges {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub public: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub slug: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub public_agent_id: Option<String>,
+    /// null removes the allow-list: every public-capable agent is listed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub published_agent_ids: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub public_settings: Option<ProposalOpUpdatePublicProfileChangesPublicSettings>,
+}
+
+/// `ProposalOpUpdatePublicProfileChangesPublicSettings` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProposalOpUpdatePublicProfileChangesPublicSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_messages_per_session: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens_per_session: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allow_tool_calls: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allow_file_uploads: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rate_limit_per_ip_per_hour: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub require_auth: Option<bool>,
+}
+
+/// `ProposalOpUpdatePublicProfileOp` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ProposalOpUpdatePublicProfileOp {
+    #[default]
+    #[serde(rename = "update_public_profile")]
+    UpdatePublicProfile,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ProposalOpUpdatePublicProfileOp {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::UpdatePublicProfile => "update_public_profile",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProposalOpUpdatePublicProfileOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ProposalOpUpdatePublicProfileOp {
+    fn from(value: &str) -> Self {
+        match value {
+            "update_public_profile" => Self::UpdatePublicProfile,
             other => Self::Other(other.to_string()),
         }
     }
@@ -29993,7 +30520,13 @@ pub struct PublicPlan {
     /// is null or `one_time`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price_interval_count: Option<i64>,
-    pub quotas: serde_json::Map<String, serde_json::Value>,
+    /// Every quota field the plan stores, `null` where it sets none (since 2026-10-30 the full set,
+    /// not seven fields). Read `enforced_limits` for what a value means.
+    pub quotas: PlanQuotaFields,
+    /// Every limit the plan enforces, read as its gate reads it — the same list GET /billing/plans
+    /// states. Since 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enforced_limits: Option<Vec<EnforcedLimit>>,
     /// The queue the plan's runs wait in: `standard` on free, `priority` on paid plans. A public
     /// word, not the scheduler's internal tier.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -38752,9 +39285,17 @@ pub struct ScheduleSummary {
     pub agent_name: Option<String>,
     pub cron: String,
     pub enabled: bool,
-    /// `paused` or `error`, or accumulated failures, is what a “silently dead cron” looks like.
+    /// `paused` or `error`, or accumulated failures, is what a “silently dead cron” looks like. A
+    /// schedule switched off can still read `active` here — read `fires`.
     pub status: String,
-    /// `null` when there is no next fire; never an empty string.
+    /// Whether the scheduler will fire this schedule: `status` is `active` AND `enabled` is true.
+    /// The one answer to "is this on" when `enabled: false` and `status: active` disagree. Since
+    /// 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fires: Option<bool>,
+    /// `null` when there is no next fire — including (since 2026-10-30) every schedule with `fires:
+    /// false`, which used to keep the instant it had when it was switched off; never an empty
+    /// string.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub next_fire_at: Option<String>,
 }
@@ -42367,9 +42908,19 @@ pub struct TenantOverviewRuns {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cost_24h_usd: Option<f64>,
     pub recent: Vec<TenantOverviewRunsRecentItem>,
-    /// How many run records the aggregate actually looked at. The scan is capped, so a busy
-    /// tenant's numbers describe the scanned window, not all history.
+    /// How many run records the aggregate actually looked at: the newest `scan_limit` at most,
+    /// whatever `days` says. `by_status`, `active_count`, `failed_24h`, `cost_24h_usd` and `recent`
+    /// describe those runs, not the `days` window — for the window read `window`.
     pub scanned: i64,
+    /// The cap on `scanned` (500). Since 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scan_limit: Option<i64>,
+    /// The scanned runs that fall inside the requested `days` (UTC dates, today included — the
+    /// dates `cost` uses). `complete` is true when the scan held every run there is or reached past
+    /// `since`; false means the window has more runs than the scan saw, so a rate from `by_status`
+    /// is the newest part of the window only. Since 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub window: Option<TenantOverviewRunsWindow>,
 }
 
 /// `TenantOverviewRunsRecentItem` model.
@@ -42404,6 +42955,19 @@ pub struct TenantOverviewRunsRecentItem {
     /// over 8605 run records: absent 7738, bridge 867, async 0).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub execution_mode: Option<RunExecutionMode>,
+}
+
+/// The scanned runs that fall inside the requested `days` (UTC dates, today included — the
+/// dates `cost` uses). `complete` is true when the scan held every run there is or reached past
+/// `since`; false means the window has more runs than the scan saw, so a rate from `by_status`
+/// is the newest part of the window only. Since 2026-10-30.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantOverviewRunsWindow {
+    pub days: i64,
+    pub since: String,
+    pub by_status: serde_json::Map<String, serde_json::Value>,
+    pub counted: i64,
+    pub complete: bool,
 }
 
 /// `TenantOverviewSchedules` model.
@@ -42532,6 +43096,121 @@ pub struct TenantPlanFitSuggestion {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<String>,
+}
+
+/// `TenantPublicProfile` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantPublicProfile {
+    pub public: bool,
+    #[serde(default)]
+    pub slug: Option<String>,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub logo_url: Option<String>,
+    #[serde(default)]
+    pub public_agent_id: Option<String>,
+    /// null: no allow-list — every public-capable agent is listed.
+    #[serde(default)]
+    pub published_agent_ids: Option<Vec<String>>,
+    pub public_settings: serde_json::Map<String, serde_json::Value>,
+    pub marketplace_listed: bool,
+    pub public_page: TenantPublicProfilePublicPage,
+    pub agents: Vec<TenantPublicProfileAgent>,
+    pub agents_truncated: bool,
+}
+
+/// `TenantPublicProfileAgent` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantPublicProfileAgent {
+    /// The one thing that keeps the agent off the page, first match wins: `on_page`;
+    /// `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the
+    /// allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private,
+    /// has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+    /// live, yet not listed — publish_agent rewrites its index row). Show this, not the three
+    /// booleans together: with no allow-list every agent is `published` while none may be on the
+    /// page. Since 2026-10-31.
+    pub standing: TenantPublicProfileAgentStanding,
+    pub agent_id: String,
+    pub name: String,
+    pub public_capable: bool,
+    pub published: bool,
+    pub on_public_page: bool,
+}
+
+/// The one thing that keeps the agent off the page, first match wins: `on_page`;
+/// `agent_not_public` (its own switch is off — publish_agent sets it); `left_out_of_list` (the
+/// allow-list leaves it out — publish_agent adds it); `page_not_live` (the profile is private,
+/// has no slug, or the slug shows another company); `missing_from_page` (ready and the page is
+/// live, yet not listed — publish_agent rewrites its index row). Show this, not the three
+/// booleans together: with no allow-list every agent is `published` while none may be on the
+/// page. Since 2026-10-31.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum TenantPublicProfileAgentStanding {
+    #[default]
+    #[serde(rename = "on_page")]
+    OnPage,
+    #[serde(rename = "agent_not_public")]
+    AgentNotPublic,
+    #[serde(rename = "left_out_of_list")]
+    LeftOutOfList,
+    #[serde(rename = "page_not_live")]
+    PageNotLive,
+    #[serde(rename = "missing_from_page")]
+    MissingFromPage,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl TenantPublicProfileAgentStanding {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::OnPage => "on_page",
+            Self::AgentNotPublic => "agent_not_public",
+            Self::LeftOutOfList => "left_out_of_list",
+            Self::PageNotLive => "page_not_live",
+            Self::MissingFromPage => "missing_from_page",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for TenantPublicProfileAgentStanding {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for TenantPublicProfileAgentStanding {
+    fn from(value: &str) -> Self {
+        match value {
+            "on_page" => Self::OnPage,
+            "agent_not_public" => Self::AgentNotPublic,
+            "left_out_of_list" => Self::LeftOutOfList,
+            "page_not_live" => Self::PageNotLive,
+            "missing_from_page" => Self::MissingFromPage,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `TenantPublicProfilePublicPage` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantPublicProfilePublicPage {
+    #[serde(default)]
+    pub path: Option<String>,
+    /// null when the company has no slug, so no page.
+    #[serde(default)]
+    pub status: Option<i64>,
+    /// False when the page at this slug belongs to another company; `agent_ids` is then empty.
+    pub shows_this_company: bool,
+    pub agent_ids: Vec<String>,
+    #[serde(default)]
+    pub primary_agent_id: Option<String>,
 }
 
 /// `TenantPublicSettings` model.
@@ -45154,6 +45833,73 @@ pub struct UpdateMissionObjectiveRequestBudget {
     pub max_cost_usd: Option<f64>,
 }
 
+/// `UpdateMissionScheduleRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateMissionScheduleRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cron: Option<String>,
+    /// IANA time zone; empty for UTC.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<UpdateMissionScheduleRequestStatus>,
+}
+
+/// `UpdateMissionScheduleRequestStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum UpdateMissionScheduleRequestStatus {
+    #[default]
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "paused")]
+    Paused,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl UpdateMissionScheduleRequestStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Active => "active",
+            Self::Paused => "paused",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for UpdateMissionScheduleRequestStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for UpdateMissionScheduleRequestStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "active" => Self::Active,
+            "paused" => Self::Paused,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `UpdateMissionScheduleResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateMissionScheduleResponse {
+    pub schedule_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    pub cron: String,
+    pub timezone: String,
+    pub status: UpdateMissionScheduleRequestStatus,
+    #[serde(default)]
+    pub next_fire_at: Option<String>,
+}
+
 /// `UpdateMyEmailPreferencesRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateMyEmailPreferencesRequest {
@@ -45838,8 +46584,46 @@ pub struct UsageQuota {
     /// midnight.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub counters: Option<Vec<UsageQuotaCounter>>,
+    /// The complete list of tenant-wide limits with what is used against each, `{kind, used, limit,
+    /// period, resets_at}`: the eight `counters` kinds plus tool_calls_daily, images, images_daily,
+    /// videos, storage_bytes (every file and knowledge-base document stored now — what the upload
+    /// gate sums), active_sessions, concurrent_team_runs and concurrent_runs (the limit the
+    /// scheduler applies: the plan's, clamped by the platform ceiling). Each limit is read as
+    /// `EnforcedLimit` describes; `counters` stays as published, with its closed `kind` enum.
+    /// `kind` here is open. Since 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enforced_counters: Option<Vec<UsageQuotaEnforcedCounter>>,
+    /// Limits that bind each agent or squad rather than the tenant (mcp_servers, workers,
+    /// memory_entries, memory_storage_bytes, agent_versions). There is no tenant-wide `used` for
+    /// them. Since 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub per_resource_limits: Option<Vec<UsageQuotaPerResourceLimit>>,
+    /// Two different dates, said apart: the allowance resets on the calendar month (UTC); the
+    /// subscription renews on Stripe's cycle. `renews_at` is null when no subscription event
+    /// recorded a period end — a plan granted without a Stripe subscription has none. Since
+    /// 2026-10-30.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub billing_period: Option<UsageQuotaBillingPeriod>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan_quotas: Option<PlanQuotaFields>,
     /// api/lib/resource-usage.ts TenantResourceUsage.
     pub resource_usage: UsageQuotaResourceUsage,
+}
+
+/// Two different dates, said apart: the allowance resets on the calendar month (UTC); the
+/// subscription renews on Stripe's cycle. `renews_at` is null when no subscription event
+/// recorded a period end — a plan granted without a Stripe subscription has none. Since
+/// 2026-10-30.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UsageQuotaBillingPeriod {
+    pub quota_resets_at: String,
+    /// The end of the current Stripe billing period, as Stripe's subscription webhook recorded it.
+    /// null: no Stripe subscription backs this company (a free plan, or a plan an administrator
+    /// set) — there is no card renewal to show. It is never pending.
+    #[serde(default)]
+    pub renews_at: Option<String>,
+    #[serde(default)]
+    pub cancel_at_period_end: Option<bool>,
 }
 
 /// `UsageQuotaCounter` model.
@@ -45931,6 +46715,19 @@ pub struct UsageQuotaDaily {
     pub resets_at: String,
 }
 
+/// `UsageQuotaEnforcedCounter` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UsageQuotaEnforcedCounter {
+    pub kind: String,
+    pub used: f64,
+    #[serde(default)]
+    pub limit: Option<f64>,
+    #[serde(default)]
+    pub period: Option<String>,
+    #[serde(default)]
+    pub resets_at: Option<String>,
+}
+
 /// `UsageQuotaLimits` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UsageQuotaLimits {
@@ -45941,6 +46738,55 @@ pub struct UsageQuotaLimits {
     pub max_teams: f64,
     pub max_knowledge_bases: f64,
     pub max_workspaces: f64,
+}
+
+/// `UsageQuotaPerResourceLimit` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UsageQuotaPerResourceLimit {
+    pub kind: String,
+    pub scope: UsageQuotaPerResourceLimitScope,
+    #[serde(default)]
+    pub limit: Option<f64>,
+}
+
+/// `UsageQuotaPerResourceLimitScope` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum UsageQuotaPerResourceLimitScope {
+    #[default]
+    #[serde(rename = "agent")]
+    Agent,
+    #[serde(rename = "team")]
+    Team,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl UsageQuotaPerResourceLimitScope {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Agent => "agent",
+            Self::Team => "team",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for UsageQuotaPerResourceLimitScope {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for UsageQuotaPerResourceLimitScope {
+    fn from(value: &str) -> Self {
+        match value {
+            "agent" => Self::Agent,
+            "team" => Self::Team,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `UsageQuotaResetsAt` model.
@@ -45969,6 +46815,9 @@ pub struct UsageQuotaUsage {
     pub total_tokens: f64,
     pub runs_count: f64,
     pub tool_calls_count: f64,
+    /// Bytes of run artifacts written this period — NOT what is stored now, and not what the
+    /// storage limit counts. The stored total the upload gate compares is the `storage_bytes` entry
+    /// of `enforced_counters`.
     pub storage_bytes: f64,
     pub total_cost: f64,
     /// Platform administrator only; every other caller receives 0 (since 2026-09-29). Kept as a key
@@ -45995,8 +46844,12 @@ pub struct UsageSummary {
     pub total_tokens: i64,
     pub runs_count: i64,
     pub tool_calls_count: i64,
+    /// Bridge tasks completed this period. Each is also counted in `runs_count`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bridge_tasks: Option<i64>,
+    /// Bytes of run artifacts written this period — not what is stored now, and not what the
+    /// storage limit counts; for that read `enforced_counters` (`storage_bytes`) on GET
+    /// /usage/quota.
     pub storage_bytes: i64,
     /// What the tenant is billed, in USD, to six decimals — as are `provider_cost`, `non_run_cost`
     /// and the `cost` of every `by_model` and `by_source` entry (four until 2026-09-29).
@@ -46006,7 +46859,17 @@ pub struct UsageSummary {
     /// books, not the tenant's bill. Kept as a key because clients decode it as required; do not
     /// read it as a cost.
     pub provider_cost: f64,
+    /// The part of `total_cost` with no run record behind it: LLM-proxy calls, memory extraction,
+    /// embeddings, web search, speech, images and video. `total_cost - non_run_cost` is what runs
+    /// cost. Split by `non_run_cost_by_kind`.
     pub non_run_cost: f64,
+    /// `non_run_cost` split by what it bought, largest first. `kind`: llm_proxy, memory_extraction,
+    /// embeddings, web_search, stt, tts, image, video, or `unattributed` — spend recorded before
+    /// kinds were (2026-10-30) or by a writer that names none — so the costs add up to
+    /// `non_run_cost`. Always present; `unattributed` always included. `kind` is open: a later
+    /// release may add one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub non_run_cost_by_kind: Option<Vec<UsageSummaryNonRunCostByKindItem>>,
     /// Platform administrator only; absent for every other caller (since 2026-09-29). Whole or
     /// absent, never partial.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -46054,6 +46917,13 @@ pub struct UsageSummaryBySourceItem {
     pub tokens: i64,
     pub input_tokens: i64,
     pub output_tokens: i64,
+}
+
+/// `UsageSummaryNonRunCostByKindItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UsageSummaryNonRunCostByKindItem {
+    pub kind: String,
+    pub cost: f64,
 }
 
 /// Personal instructions that apply to every conversation this person has, whichever agent

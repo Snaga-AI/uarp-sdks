@@ -1025,9 +1025,10 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Returns a cold flow of server-sent events.
      */
-    public fun streamSessionEvents(sessionId: String, token: String? = null, eventSchema: Long? = null, lastEventId: String? = null, options: RequestOptions = RequestOptions()): Flow<ServerEvent> {
+    public fun streamSessionEvents(sessionId: String, token: String? = null, resume: String? = null, eventSchema: Long? = null, lastEventId: String? = null, options: RequestOptions = RequestOptions()): Flow<ServerEvent> {
         val query = buildList {
             if (token != null) add("token" to token)
+            if (resume != null) add("resume" to resume)
             if (eventSchema != null) add("event_schema" to eventSchema.toString())
         }
         val headers = buildList {

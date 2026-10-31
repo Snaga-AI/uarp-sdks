@@ -6,6 +6,40 @@ All six SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.13.3 — 2026-10-31
+
+Build `b9cb29ac`, digest `4230cb6348e0e48a`. Against 0.13.2: 654 paths (+1), 873
+operations (+2), 510 schemas (+8), 2351 named types (+34); nothing removed. No
+`event_schema=1` type changes.
+
+### Added
+
+- `GET /tenants/me/public-profile` (`TenantPublicProfile`, each agent with its
+  `standing`: `on_page`, `agent_not_public`, `left_out_of_list`, `page_not_live`
+  or `missing_from_page`) and `PATCH /missions/schedules/{scheduleId}`.
+- Five more proposal operations in the `ProposalOperation` union:
+  `ProposalOpUpdatePublicProfile`, `ProposalOpPublishAgent`,
+  `ProposalOpUnpublishAgent`, `ProposalOpPauseCompany`, `ProposalOpResumeCompany`.
+  `CompanyProposal` gains `rollback_failed` and `applied_via` (the conversation,
+  agent, run, session and person a proposal was applied through).
+- The tenant overview counts refused runs: `problems.refused_runs` and
+  `activity.by_day[].refused`.
+- The session event stream takes `resume`: comma-separated `runId:seq` pairs,
+  one per run being followed, so a reconnect resumes every run where it stopped
+  rather than only the one `Last-Event-ID` names. A run not named replays from
+  its start; when both name a run, the larger seq wins. It takes its place before
+  `eventSchema` in Kotlin, so a positional `eventSchema` there needs its name.
+- Quotas and plans: `EnforcedLimit` and `PlanQuotaFields`; `GET /usage/quota` gains
+  `enforced_counters`, `per_resource_limits`, `billing_period` and `plan_quotas`;
+  a billing plan carries the same terms as a public plan (`quotas`,
+  `enforced_limits`, `queue_tier`, …); `GET /usage` gains `non_run_cost_by_kind`.
+- `fires` on a schedule summary, `ignored_fields` and `base_specs_declined` on an
+  agent, `metrics_complete` on a mission, and `total_missions`, `has_more`,
+  `next_before` and `truncated` on `GET /missions`.
+
+`PublicPlan.quotas` now names `PlanQuotaFields` — a map of numbers or `null` that
+every SDK renders as the same JSON object type as before, so no code changes.
+
 ## 0.13.2 — 2026-10-30
 
 Build `bd5dc091`, digest `c3fe74da6c53bef8`. Same 653 paths, 871 operations and

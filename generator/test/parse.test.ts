@@ -472,7 +472,9 @@ test('parses the production document into the expected shape', () => {
   // /agents/{agentId}/sessions`, `PATCH /sessions/{sessionId}`, `GET /voices`,
   // `POST /hire/permission`, and three admin one-offs (retiring platform
   // agents, backfilling session titles, reversing a sponsored run's usage).
-  assert.equal(ops.length, 871);
+  // 871 -> 873 on 2026-10-31 (build cc26d5ce): `GET /tenants/me/public-profile`
+  // and `PATCH /missions/schedules/{scheduleId}`, none removed.
+  assert.equal(ops.length, 873);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -768,7 +770,13 @@ test('parses the production document into the expected shape', () => {
   // 2215 -> 2317 on 2026-10-30 (build 3d07d69d): +102, none removed — the
   // closed `event_schema=1` shapes: 35 schemas (24 RunEventV1 members, the union,
   // five frames per stream) and their payloads and literal discriminants.
-  assert.equal(spec.types.length, 2317);
+  // 2317 -> 2348 on 2026-10-31 (build cc26d5ce): +31, none removed — eight
+  // schemas (EnforcedLimit, PlanQuotaFields, TenantPublicProfile and five
+  // ProposalOp* members of the ProposalOperation union), the two operations'
+  // hoisted shapes, and the quota, billing-plan, usage and mission fields.
+  // 2348 -> 2351 on 2026-10-31 (build af3b029e): a proposal's `applied_via`,
+  // and a public-profile agent's `standing` with its enum.
+  assert.equal(spec.types.length, 2351);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);

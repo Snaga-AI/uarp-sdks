@@ -182,6 +182,27 @@ class TenantsResource:
             request_options=request_options,
         ))
 
+    def get_tenant_public_profile(self, *, request_options: Optional[RequestOptions] = None) -> _m.TenantPublicProfile:
+        """The public profile as configured and as the public page shows it
+
+        The profile fields, each agent's standing (`public_capable` = visibility public and
+        public_config.enabled; `published` = in the allow-list or no allow-list defined;
+        `on_public_page` = listed now), and `public_page`: what GET /public/tenants/{slug} answers,
+        read through that route's own handler. The public profile is not the marketplace listing;
+        `marketplace_listed` reports the listing apart. Change it through a proposal
+        (`update_public_profile`, `publish_agent`, `unpublish_agent`). Since 2026-10-30.
+
+        `GET /api/v1/tenants/me/public-profile`
+
+        Required scopes: `agents:read`.
+        """
+        return _cast("_m.TenantPublicProfile", self._client._request(
+            "GET",
+            "/api/v1/tenants/me/public-profile",
+            response=_Response(type=_m.TenantPublicProfile),
+            request_options=request_options,
+        ))
+
     def leave_tenant(self, tenant_id: str, *, request_options: Optional[RequestOptions] = None) -> _m.LeaveTenantResponse:
         """Leave a tenant
 
@@ -512,6 +533,27 @@ class AsyncTenantsResource:
             "GET",
             "/api/v1/tenants/me/domain/health",
             response=_Response(type=_m.GetTenantDomainHealthResponse),
+            request_options=request_options,
+        ))
+
+    async def get_tenant_public_profile(self, *, request_options: Optional[RequestOptions] = None) -> _m.TenantPublicProfile:
+        """The public profile as configured and as the public page shows it
+
+        The profile fields, each agent's standing (`public_capable` = visibility public and
+        public_config.enabled; `published` = in the allow-list or no allow-list defined;
+        `on_public_page` = listed now), and `public_page`: what GET /public/tenants/{slug} answers,
+        read through that route's own handler. The public profile is not the marketplace listing;
+        `marketplace_listed` reports the listing apart. Change it through a proposal
+        (`update_public_profile`, `publish_agent`, `unpublish_agent`). Since 2026-10-30.
+
+        `GET /api/v1/tenants/me/public-profile`
+
+        Required scopes: `agents:read`.
+        """
+        return _cast("_m.TenantPublicProfile", await self._client._request(
+            "GET",
+            "/api/v1/tenants/me/public-profile",
+            response=_Response(type=_m.TenantPublicProfile),
             request_options=request_options,
         ))
 

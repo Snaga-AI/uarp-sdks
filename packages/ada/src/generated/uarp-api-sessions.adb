@@ -908,6 +908,9 @@ package body UARP.API.Sessions is
       if Params.Has_Token then
          UARP.Types.Add (Query, "token", Params.Token);
       end if;
+      if Params.Has_Resume then
+         UARP.Types.Add (Query, "resume", Params.Resume);
+      end if;
       if Params.Has_Event_Schema then
          UARP.Types.Add (Query, "event_schema", Params.Event_Schema);
       end if;

@@ -136,6 +136,13 @@ package UARP.API.Sessions is
       --  Used by browser EventSource which cannot set Authorization header.
       Has_Token : Boolean := False;
       Token : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Where the client stopped in EVERY run it was following: comma-separated `runId:seq` pairs,
+      --  e.g. `resume=runA:12,runB:7`; pairs past the 200th are ignored. Each run resumes after its
+      --  seq; a run not named replays from the start. `Last-Event-ID` carries one frame's id, so
+      --  alone it resumes only that one run. When both name a run, the larger seq wins. Malformed
+      --  pairs are ignored. Omitting it is the old behaviour. Since 2026-10-30.
+      Has_Resume : Boolean := False;
+      Resume : UARP.Types.Text := UARP.Types.Empty_Text;
       --  The version of the event schemas the client parses strictly (since 2026-10-30). Every frame
       --  is then sent in exactly that version's shape - `RunEventV<N>` for run events,
       --  `RunStreamFrameV<N>*` / `SessionStreamFrameV<N>*` for the stream's own frames - and a frame

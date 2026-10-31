@@ -902,10 +902,13 @@ public struct SessionsAPI: Sendable {
     /// Required scopes: `sessions:read`.
     ///
     /// Returns a server-sent event stream; iterate it with `for try await`.
-    public func streamSessionEvents(sessionId: String, token: String? = nil, eventSchema: Int? = nil, lastEventId: String? = nil, options: RequestOptions = .init()) -> EventStream {
+    public func streamSessionEvents(sessionId: String, token: String? = nil, resume: String? = nil, eventSchema: Int? = nil, lastEventId: String? = nil, options: RequestOptions = .init()) -> EventStream {
         var query: [URLQueryItem] = []
         if let token {
             query.append(URLQueryItem(name: "token", value: token))
+        }
+        if let resume {
+            query.append(URLQueryItem(name: "resume", value: resume))
         }
         if let eventSchema {
             query.append(URLQueryItem(name: "event_schema", value: String(eventSchema)))

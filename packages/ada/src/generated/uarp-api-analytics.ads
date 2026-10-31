@@ -107,7 +107,10 @@ package UARP.API.Analytics is
    --  first), sorts every waiting run in it by urgency (approval, input, paused, failed; newest
    --  first inside each) and returns at most `limit` of them (1-200, default 50). `counts` is
    --  computed over the window, not over `items`, so a short page still reports the window's
-   --  backlog. Failed runs count only for 24 hours after they were created.
+   --  backlog. Failed runs count only for 24 hours after they were created. A run a person
+   --  rejected (`approval_rejected`) and a run the company's lifecycle refused (`COMPANY_PAUSED`,
+   --  `INITIATIVE_PAUSED`, `INITIATIVE_BUDGET_EXHAUSTED`, since 2026-10-31) are not in the inbox:
+   --  nothing failed and nothing is left to do.
    --
    --  **Paging** (since 2026-10-19). When the window held more waiting runs than `limit`, or older
    --  runs exist past it (`truncated`), the answer carries `has_more: true` and a `cursor`. Pass

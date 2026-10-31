@@ -7,7 +7,7 @@ beyond Foundation.
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.13.2"),
+    .package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.13.3"),
 ],
 targets: [
     .target(name: "App", dependencies: [.product(name: "UARPSDK", package: "uarp-swift")]),
