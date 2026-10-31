@@ -206,7 +206,10 @@ jobs:
   swift:
     name: SwiftPM
     needs: verify
-    runs-on: macos-14
+    # Not macos-14: GitHub browned that image out ahead of retiring it on
+    # 2026-11-02, and 0.13.3's job was cancelled before it started — so the
+    # mirror, which needs this job, was never pushed and went out by hand.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       # SwiftPM resolves from git tags, so the tag itself is the release.
