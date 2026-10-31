@@ -21857,6 +21857,12 @@ package body UARP.Models is
             JS.Set (Result, "fields", Items);
          end;
       end if;
+      if Model.Has_Proposal_Id then
+         JS.Set (Result, "proposal_id", JS.JSON.Create (Model.Proposal_Id));
+      end if;
+      if Model.Has_Version_Unchanged then
+         JS.Set (Result, "version_unchanged", JS.JSON.Create (Model.Version_Unchanged));
+      end if;
       return Result;
    end To_JSON;
 
@@ -21887,6 +21893,14 @@ package body UARP.Models is
                Result.Fields.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
             end loop;
          end;
+      end if;
+      if JS.Present (Node, "proposal_id") then
+         Result.Has_Proposal_Id := True;
+         Result.Proposal_Id := JS.As_Text (JS.Get_Value (Node, "proposal_id"));
+      end if;
+      if JS.Present (Node, "version_unchanged") then
+         Result.Has_Version_Unchanged := True;
+         Result.Version_Unchanged := JS.As_Boolean (JS.Get_Value (Node, "version_unchanged"));
       end if;
       return Result;
    end From_JSON;
@@ -25143,6 +25157,9 @@ package body UARP.Models is
             JS.Set (Result, "applied", Items);
          end;
       end if;
+      if Model.Has_Superseded_By then
+         JS.Set (Result, "superseded_by", JS.JSON.Create (Model.Superseded_By));
+      end if;
       if Model.Has_Applied_Via then
          JS.Set (Result, "applied_via", To_JSON (Model.Applied_Via));
       end if;
@@ -25253,6 +25270,10 @@ package body UARP.Models is
                Result.Applied.Append (From_JSON (JS.JSON.Get (Items, Index)));
             end loop;
          end;
+      end if;
+      if JS.Present (Node, "superseded_by") then
+         Result.Has_Superseded_By := True;
+         Result.Superseded_By := JS.As_Text (JS.Get_Value (Node, "superseded_by"));
       end if;
       if JS.Present (Node, "applied_via") then
          Result.Has_Applied_Via := True;

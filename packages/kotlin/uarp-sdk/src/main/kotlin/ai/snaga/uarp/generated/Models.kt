@@ -8561,6 +8561,18 @@ public data class CompanyChange(
     public val source: CompanyChangeSource,
     public val summary: String,
     public val fields: List<String>? = null,
+    /**
+     * The proposal this row applied, on a proposal-sourced row (since 2026-10-31).
+     */
+    @SerialName("proposal_id")
+    public val proposalId: String? = null,
+    /**
+     * The change kept the company version — an applied budget, public-profile or pause proposal —
+     * so `version` is the version it happened at, not a new one, and it is not listed in
+     * /company/versions. Absent on a row that made a version (since 2026-10-31).
+     */
+    @SerialName("version_unchanged")
+    public val versionUnchanged: Boolean? = null,
 )
 
 /**
@@ -9088,6 +9100,13 @@ public data class CompanyProposal(
     @SerialName("reject_reason")
     public val rejectReason: String? = null,
     public val applied: List<CompanyProposalStep>? = null,
+    /**
+     * Set when a newer proposal the same agent made in the same conversation, or one it applied
+     * there, closed this one: `status` is then `rejected`, `decided_by` is `system:superseded` and
+     * `reject_reason` names the newer proposal (since 2026-10-31).
+     */
+    @SerialName("superseded_by")
+    public val supersededBy: String? = null,
     /**
      * Present when the Chief of Staff applied it in the conversation on the person's answer (since
      * 2026-10-31); `decided_by` is that person.

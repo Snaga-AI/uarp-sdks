@@ -6,6 +6,20 @@ All six SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.13.4 — 2026-10-31
+
+Build `5f6d4f9e`, digest `03b620433c30ac44`. Same 654 paths, 873 operations, 510
+schemas and 2351 named types; three fields added, nothing removed.
+
+### Added
+
+- `CompanyProposal.superseded_by`: set when a newer proposal the same agent made
+  in the same conversation, or one it applied there, closed this one — `status`
+  is then `rejected` and `decided_by` is `system:superseded`.
+- `CompanyChange.proposal_id` (the proposal a row applied) and
+  `CompanyChange.version_unchanged` (`true` when the change kept the company
+  version: an applied budget, public-profile or pause proposal).
+
 ## 0.13.3 — 2026-10-31
 
 Build `b9cb29ac`, digest `4230cb6348e0e48a`. Against 0.13.2: 654 paths (+1), 873

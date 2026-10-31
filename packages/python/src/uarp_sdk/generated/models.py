@@ -10090,6 +10090,15 @@ class CompanyChange(Model):
 
     fields: Optional[List[str]] = None
 
+    proposal_id: Optional[str] = None
+    """The proposal this row applied, on a proposal-sourced row (since 2026-10-31)."""
+
+    version_unchanged: Optional[bool] = None
+    """The change kept the company version — an applied budget, public-profile or pause proposal —
+    so `version` is the version it happened at, not a new one, and it is not listed in
+    /company/versions. Absent on a row that made a version (since 2026-10-31).
+    """
+
 
 @_dataclass(kw_only=True)
 class CompanyCreate(Model):
@@ -10533,6 +10542,12 @@ class CompanyProposal(Model):
     reject_reason: Optional[str] = None
 
     applied: Optional[List[CompanyProposalStep]] = None
+
+    superseded_by: Optional[str] = None
+    """Set when a newer proposal the same agent made in the same conversation, or one it applied
+    there, closed this one: `status` is then `rejected`, `decided_by` is `system:superseded` and
+    `reject_reason` names the newer proposal (since 2026-10-31).
+    """
 
     applied_via: Optional[CompanyProposalAppliedVia] = None
     """Present when the Chief of Staff applied it in the conversation on the person's answer (since
