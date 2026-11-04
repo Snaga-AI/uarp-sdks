@@ -5,6 +5,7 @@
 with UARP.Client;
 with UARP.JSON_Support;
 with UARP.Models;
+with UARP.SSE;
 with UARP.Types;
 package UARP.API.Meta is
 
@@ -22,6 +23,16 @@ package UARP.API.Meta is
    end record;
 
    No_Search_Params : constant Search_Params := (others => <>);
+
+   --  Query and header parameters for `streamPublicPlatformAnalytics`.
+   type Stream_Public_Platform_Analytics_Params is record
+      Has_After : Boolean := False;
+      After : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Last_Event_Id : Boolean := False;
+      Last_Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Stream_Public_Platform_Analytics_Params : constant Stream_Public_Platform_Analytics_Params := (others => <>);
 
    --  Apple App Site Association - Universal Links manifest
    --
@@ -88,6 +99,24 @@ package UARP.API.Meta is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Landing_Stats;
 
+   --  Read reconciled lifetime platform activity
+   --
+   --  Aggregate-only materialized snapshot. Scope includes internal research and tests across all
+   --  production tenants; companies are not customers. Execution runs have actual LLM/tool work
+   --  evidence, including pending and failed admitted runs. Pre-work refusals are excluded.
+   --  Logical tool attempts do not assert external business success. Technical completion is
+   --  completed/terminal admitted runs, not quality. Lifetime since remains null when
+   --  inception/retention coverage cannot be verified. Partial counts represent observed minima; a
+   --  partial ratio is not a lower bound. Windows select work-start cohorts; their latest terminal
+   --  outcomes use the same cohort. Null is unavailable, never an invented zero. data_through is a
+   --  durable source barrier, not generation or heartbeat time. No-store; 60 reads/minute/IP.
+   --
+   --  GET /api/v1/public/platform-analytics
+   function Get_Public_Platform_Analytics
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Public_Platform_Analytics;
+
    --  Search across agents, sessions, runs
    --
    --  Searches the caller's tenant for agents, runs, sessions, files, images, projects and memory
@@ -107,5 +136,26 @@ package UARP.API.Meta is
       Params : Search_Params := No_Search_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Search_Response;
+
+   --  Stream resumable public platform activity
+   --
+   --  snapshot/update/reset carry a complete PublicPlatformAnalytics with SSE id equal to its
+   --  decimal revision. Compare revisions numerically, not lexicographically. Last-Event-ID or
+   --  ?after resumes up to 128 retained revisions; a missing, future, or expired cursor produces
+   --  reset with the current full snapshot. Heartbeat every 15 seconds contains
+   --  generated_at,data_through,processed_through,status and no id; it never advances metric
+   --  coverage. KV watch is installed before initial snapshot/replay, and concurrent updates are
+   --  deduplicated by revision. Connection admission is capped at 20/minute/IP and 200 concurrent
+   --  streams/replica; slow readers are disconnected. No credentials or tenant IDs accepted or
+   --  emitted.
+   --
+   --  GET /api/v1/public/platform-analytics/events
+   --
+   --  Dispatches every event to Sink until the stream ends or the sink stops it.
+   procedure Stream_Public_Platform_Analytics
+     (Self : Client_Type;
+      Params : Stream_Public_Platform_Analytics_Params := No_Stream_Public_Platform_Analytics_Params;
+      Sink : in out UARP.SSE.Event_Sink'Class;
+      Options : Request_Options := UARP.Client.Default_Options);
 
 end UARP.API.Meta;

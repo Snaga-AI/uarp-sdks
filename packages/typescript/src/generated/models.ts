@@ -1458,27 +1458,27 @@ export interface AdminPutLandingConfigRequest {
   multilang_enabled?: boolean;
   default_locale?: VideoOrderLocale;
   partners_enabled?: boolean;
-  partners?: AdminPutLandingConfigRequestPartner[] | null;
+  partners?: AdminPutLandingConfigRequestPartnersVariant1item[] | null;
   expected_version?: string | null;
-}
-
-export interface AdminPutLandingConfigRequestPartner {
-  id: string;
-  name: string;
-  tagline: string;
-  tagline_uk?: string;
-  href: string;
-  logo: AdminPutLandingConfigRequestPartnerLogo;
-}
-
-export interface AdminPutLandingConfigRequestPartnerLogo {
-  slug?: AdminPutLandingConfigRequestPartnerLogoSlug;
-  url?: string;
 }
 
 export type AdminPutLandingConfigRequestPartnerLogoSlug = 'rust' | 'together' | 'ollama' | 'gonka' | 'wasm' | 'docker' | 'deno' | 'digitalocean' | 'github' | 'monogram';
 
 export const ADMIN_PUT_LANDING_CONFIG_REQUEST_PARTNER_LOGO_SLUG_VALUES = ['rust', 'together', 'ollama', 'gonka', 'wasm', 'docker', 'deno', 'digitalocean', 'github', 'monogram'] as const;
+
+export interface AdminPutLandingConfigRequestPartnersVariant1item {
+  id: string;
+  name: string;
+  tagline: string;
+  tagline_uk?: string;
+  href: string;
+  logo: AdminPutLandingConfigRequestPartnersVariant1itemLogo;
+}
+
+export interface AdminPutLandingConfigRequestPartnersVariant1itemLogo {
+  slug?: AdminPutLandingConfigRequestPartnerLogoSlug;
+  url?: string;
+}
 
 export interface AdminPutLandingConfigRequestTextsValue {
   en?: string;
@@ -5899,24 +5899,15 @@ export interface CreateAdminJobRequest {
   seniority?: JobSeniority;
   employment_type: JobEmploymentType;
   workplace_type: JobWorkplaceType;
-  /**
-   * @default {}
-   */
   location?: CreateAdminJobRequestLocation;
-  /**
-   * @default []
-   */
-  applicant_countries?: JsonValue[];
+  applicant_countries?: string[];
   english_level?: JobEnglishLevel;
   experience_years_min?: number;
   /**
    * @default []
    */
   skills?: string[];
-  /**
-   * @default null
-   */
-  salary?: CreateAdminJobRequestSalary | null;
+  salary?: CreateAdminJobRequestSalaryVariant1 | null;
   /**
    * @default false
    */
@@ -5955,13 +5946,13 @@ export interface CreateAdminJobRequestApply {
 
 export interface CreateAdminJobRequestLocation {
   city?: string;
-  country?: JsonValue;
+  country?: string;
 }
 
-export interface CreateAdminJobRequestSalary {
+export interface CreateAdminJobRequestSalaryVariant1 {
   min?: number;
   max?: number;
-  currency: JsonValue;
+  currency: string;
   period: JobSalaryPeriod;
 }
 
@@ -6085,6 +6076,10 @@ export interface CreateAgentScorerRequestConfig {
   type: 'webhook';
   url: string;
   timeout_ms?: number;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
 }
 
 export interface CreateAgentVersionRequest {
@@ -8054,9 +8049,9 @@ export interface Error {
  * code only when its call site names one. Other statuses: absent when there is no
  * machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'ASSESSMENT_ISOLATION_REQUIRED' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CLIENT_REQUEST_CONFLICT' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXECUTION_PROFILE_UNVERIFIABLE' | 'EXECUTION_RECEIPT_PENDING' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURED_SET_CONTENDED' | 'FEATURE_DISABLED' | 'FILE_NOT_FOUND' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_CONFLICT' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INTERNAL_ERROR' | 'INVALID_ARCHIVE' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_MANIFEST' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'ISOLATION_VIOLATION' | 'LLM_ERROR' | 'MANAGED_AGENT' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSING_SCOPE' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'OUTPUT_CONTRACT_VIOLATION' | 'OUTPUT_TOO_LARGE' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROCESSING_POLICY_CHANGED' | 'PROCESSING_POLICY_NOT_READY' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUALIFICATION_BUDGET_STOP' | 'QUALIFICATION_ROUTE_MISMATCH' | 'QUALIFICATION_VERSION_UNAVAILABLE' | 'QUOTA_EXCEEDED' | 'RATE_LIMITED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SECURITY_SCAN_FAILED' | 'SERVICE_UNAVAILABLE' | 'SESSION_NOT_ACTIVE' | 'SHARE_LIST_CONFLICT' | 'SIGNING_NOT_CONFIGURED' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'SPONSORSHIP_BUDGET_BELOW_COMMITTED' | 'SPONSORSHIP_BUDGET_EXHAUSTED' | 'SPONSORSHIP_CANDIDATE_LIMIT' | 'SPONSORSHIP_CONCURRENCY_LIMIT' | 'SPONSORSHIP_FUNDING_UNAVAILABLE' | 'SPONSORSHIP_GRANT_CONFLICT' | 'SPONSORSHIP_GRANT_IN_USE' | 'SPONSORSHIP_GRANT_MISMATCH' | 'SPONSORSHIP_GRANT_UNAVAILABLE' | 'SPONSORSHIP_OUTCOME_UNKNOWN' | 'SPONSORSHIP_PROGRAM_IMMUTABLE' | 'SPONSORSHIP_PROGRAM_INACTIVE' | 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT' | 'SPONSORSHIP_REQUIRED' | 'SPONSORSHIP_SCOPE_REQUIRED' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'SUPER_ADMIN_REQUIRED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'UNAUTHENTICATED' | 'USAGE_CORRECTION_EXCEEDS_COUNTERS' | 'USAGE_CORRECTION_IN_PROGRESS' | 'USAGE_CORRECTION_NOT_SETTLED' | 'USAGE_CORRECTION_NOT_SPONSORED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'hire_catalog_unknown' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'not_hired' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_agent_stopped' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'ASSESSMENT_ISOLATION_REQUIRED' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CLIENT_REQUEST_CONFLICT' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXECUTION_PROFILE_UNVERIFIABLE' | 'EXECUTION_RECEIPT_PENDING' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURED_SET_CONTENDED' | 'FEATURE_DISABLED' | 'FILE_NOT_FOUND' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_CONFLICT' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INTERNAL_ERROR' | 'INVALID_ARCHIVE' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_MANIFEST' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'ISOLATION_VIOLATION' | 'LLM_ERROR' | 'MANAGED_AGENT' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSING_SCOPE' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'OUTPUT_CONTRACT_VIOLATION' | 'OUTPUT_TOO_LARGE' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROCESSING_POLICY_CHANGED' | 'PROCESSING_POLICY_NOT_READY' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUALIFICATION_BUDGET_STOP' | 'QUALIFICATION_ROUTE_MISMATCH' | 'QUALIFICATION_VERSION_UNAVAILABLE' | 'QUOTA_EXCEEDED' | 'RATE_LIMITED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'REQUEST_CANCELLED' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SECURITY_SCAN_FAILED' | 'SERVICE_UNAVAILABLE' | 'SESSION_NOT_ACTIVE' | 'SHARE_LIST_CONFLICT' | 'SIGNING_NOT_CONFIGURED' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'SPONSORSHIP_BUDGET_BELOW_COMMITTED' | 'SPONSORSHIP_BUDGET_EXHAUSTED' | 'SPONSORSHIP_CANDIDATE_LIMIT' | 'SPONSORSHIP_CONCURRENCY_LIMIT' | 'SPONSORSHIP_FUNDING_UNAVAILABLE' | 'SPONSORSHIP_GRANT_CONFLICT' | 'SPONSORSHIP_GRANT_IN_USE' | 'SPONSORSHIP_GRANT_MISMATCH' | 'SPONSORSHIP_GRANT_UNAVAILABLE' | 'SPONSORSHIP_OUTCOME_UNKNOWN' | 'SPONSORSHIP_PROGRAM_IMMUTABLE' | 'SPONSORSHIP_PROGRAM_INACTIVE' | 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT' | 'SPONSORSHIP_REQUIRED' | 'SPONSORSHIP_SCOPE_REQUIRED' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'SUPER_ADMIN_REQUIRED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'UNAUTHENTICATED' | 'USAGE_CORRECTION_EXCEEDS_COUNTERS' | 'USAGE_CORRECTION_IN_PROGRESS' | 'USAGE_CORRECTION_NOT_SETTLED' | 'USAGE_CORRECTION_NOT_SPONSORED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'hire_catalog_unknown' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'not_hired' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_agent_stopped' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'ASSESSMENT_ISOLATION_REQUIRED', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CLIENT_REQUEST_CONFLICT', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXECUTION_PROFILE_UNVERIFIABLE', 'EXECUTION_RECEIPT_PENDING', 'EXTERNAL_SERVICE_ERROR', 'FEATURED_SET_CONTENDED', 'FEATURE_DISABLED', 'FILE_NOT_FOUND', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INTERNAL_ERROR', 'INVALID_ARCHIVE', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_MANIFEST', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'ISOLATION_VIOLATION', 'LLM_ERROR', 'MANAGED_AGENT', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSING_SCOPE', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'OUTPUT_CONTRACT_VIOLATION', 'OUTPUT_TOO_LARGE', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROCESSING_POLICY_CHANGED', 'PROCESSING_POLICY_NOT_READY', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUALIFICATION_BUDGET_STOP', 'QUALIFICATION_ROUTE_MISMATCH', 'QUALIFICATION_VERSION_UNAVAILABLE', 'QUOTA_EXCEEDED', 'RATE_LIMITED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SECURITY_SCAN_FAILED', 'SERVICE_UNAVAILABLE', 'SESSION_NOT_ACTIVE', 'SHARE_LIST_CONFLICT', 'SIGNING_NOT_CONFIGURED', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'SPONSORSHIP_BUDGET_BELOW_COMMITTED', 'SPONSORSHIP_BUDGET_EXHAUSTED', 'SPONSORSHIP_CANDIDATE_LIMIT', 'SPONSORSHIP_CONCURRENCY_LIMIT', 'SPONSORSHIP_FUNDING_UNAVAILABLE', 'SPONSORSHIP_GRANT_CONFLICT', 'SPONSORSHIP_GRANT_IN_USE', 'SPONSORSHIP_GRANT_MISMATCH', 'SPONSORSHIP_GRANT_UNAVAILABLE', 'SPONSORSHIP_OUTCOME_UNKNOWN', 'SPONSORSHIP_PROGRAM_IMMUTABLE', 'SPONSORSHIP_PROGRAM_INACTIVE', 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT', 'SPONSORSHIP_REQUIRED', 'SPONSORSHIP_SCOPE_REQUIRED', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'SUPER_ADMIN_REQUIRED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'UNAUTHENTICATED', 'USAGE_CORRECTION_EXCEEDS_COUNTERS', 'USAGE_CORRECTION_IN_PROGRESS', 'USAGE_CORRECTION_NOT_SETTLED', 'USAGE_CORRECTION_NOT_SPONSORED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'hire_catalog_unknown', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'not_hired', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_agent_stopped', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'ASSESSMENT_ISOLATION_REQUIRED', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CLIENT_REQUEST_CONFLICT', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXECUTION_PROFILE_UNVERIFIABLE', 'EXECUTION_RECEIPT_PENDING', 'EXTERNAL_SERVICE_ERROR', 'FEATURED_SET_CONTENDED', 'FEATURE_DISABLED', 'FILE_NOT_FOUND', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INTERNAL_ERROR', 'INVALID_ARCHIVE', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_MANIFEST', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'ISOLATION_VIOLATION', 'LLM_ERROR', 'MANAGED_AGENT', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSING_SCOPE', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'OUTPUT_CONTRACT_VIOLATION', 'OUTPUT_TOO_LARGE', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROCESSING_POLICY_CHANGED', 'PROCESSING_POLICY_NOT_READY', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUALIFICATION_BUDGET_STOP', 'QUALIFICATION_ROUTE_MISMATCH', 'QUALIFICATION_VERSION_UNAVAILABLE', 'QUOTA_EXCEEDED', 'RATE_LIMITED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'REQUEST_CANCELLED', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SECURITY_SCAN_FAILED', 'SERVICE_UNAVAILABLE', 'SESSION_NOT_ACTIVE', 'SHARE_LIST_CONFLICT', 'SIGNING_NOT_CONFIGURED', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'SPONSORSHIP_BUDGET_BELOW_COMMITTED', 'SPONSORSHIP_BUDGET_EXHAUSTED', 'SPONSORSHIP_CANDIDATE_LIMIT', 'SPONSORSHIP_CONCURRENCY_LIMIT', 'SPONSORSHIP_FUNDING_UNAVAILABLE', 'SPONSORSHIP_GRANT_CONFLICT', 'SPONSORSHIP_GRANT_IN_USE', 'SPONSORSHIP_GRANT_MISMATCH', 'SPONSORSHIP_GRANT_UNAVAILABLE', 'SPONSORSHIP_OUTCOME_UNKNOWN', 'SPONSORSHIP_PROGRAM_IMMUTABLE', 'SPONSORSHIP_PROGRAM_INACTIVE', 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT', 'SPONSORSHIP_REQUIRED', 'SPONSORSHIP_SCOPE_REQUIRED', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'SUPER_ADMIN_REQUIRED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'UNAUTHENTICATED', 'USAGE_CORRECTION_EXCEEDS_COUNTERS', 'USAGE_CORRECTION_IN_PROGRESS', 'USAGE_CORRECTION_NOT_SETTLED', 'USAGE_CORRECTION_NOT_SPONSORED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'hire_catalog_unknown', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'not_hired', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_agent_stopped', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -15708,6 +15703,56 @@ export interface PlannedObjectiveBudget {
  */
 export type PlanQuotaFields = JsonObject;
 
+export interface PlatformAnalyticsMetric {
+  value: number | null;
+  unit: PlatformAnalyticsMetricUnit;
+  status: PlatformAnalyticsMetricStatus;
+  since: string | null;
+  data_through: string | null;
+  numerator: number | null;
+  denominator: number | null;
+  coverage: PlatformAnalyticsMetricCoverage;
+}
+
+export interface PlatformAnalyticsMetricCoverage {
+  completeness: PlatformAnalyticsMetricCoverageCompleteness;
+  observed_from: string | null;
+  gaps: PlatformAnalyticsMetricCoverageGap[];
+}
+
+export type PlatformAnalyticsMetricCoverageCompleteness = 'complete' | 'partial' | 'unknown';
+
+export const PLATFORM_ANALYTICS_METRIC_COVERAGE_COMPLETENESS_VALUES = ['complete', 'partial', 'unknown'] as const;
+
+export interface PlatformAnalyticsMetricCoverageGap {
+  from: string | null;
+  to: string | null;
+  reason: string;
+}
+
+export type PlatformAnalyticsMetricStatus = 'ok' | 'partial' | 'stale' | 'unavailable' | 'suppressed';
+
+export const PLATFORM_ANALYTICS_METRIC_STATUS_VALUES = ['ok', 'partial', 'stale', 'unavailable', 'suppressed'] as const;
+
+export type PlatformAnalyticsMetricUnit = 'count' | 'ratio';
+
+export const PLATFORM_ANALYTICS_METRIC_UNIT_VALUES = ['count', 'ratio'] as const;
+
+export interface PlatformAnalyticsWindow {
+  start: string;
+  end_exclusive: string;
+  metrics: PlatformAnalyticsWindowMetrics;
+}
+
+export interface PlatformAnalyticsWindowMetrics {
+  companies_ever_active: PlatformAnalyticsMetric;
+  agents_ever_active: PlatformAnalyticsMetric;
+  execution_runs: PlatformAnalyticsMetric;
+  logical_tool_calls: PlatformAnalyticsMetric;
+  repeat_companies: PlatformAnalyticsMetric;
+  technical_completion_ratio: PlatformAnalyticsMetric;
+}
+
 /**
  * Platform profit and loss: Stripe revenue against real host spend and the LLM provider bill.
  * Super-admin only. Served from a short-lived cache — `cache` says which.
@@ -16854,6 +16899,70 @@ export interface PublicPlanReset {
 export type PublicPlanResetPeriod = 'day' | 'month';
 
 export const PUBLIC_PLAN_RESET_PERIOD_VALUES = ['day', 'month'] as const;
+
+export interface PublicPlatformAnalytics {
+  schema_version: number;
+  revision: string;
+  generated_at: string;
+  data_through: string | null;
+  processed_through: string | null;
+  status: PublicPlatformAnalyticsStatus;
+  scope: PublicPlatformAnalyticsScope;
+  lifetime: PublicPlatformAnalyticsLifetime;
+  windows: PublicPlatformAnalyticsWindows;
+  series: PublicPlatformAnalyticsSeries;
+}
+
+export interface PublicPlatformAnalyticsLifetime {
+  since: string | null;
+  metrics: PublicPlatformAnalyticsLifetimeMetrics;
+}
+
+export interface PublicPlatformAnalyticsLifetimeMetrics {
+  companies_ever_active: PlatformAnalyticsMetric;
+  agents_ever_active: PlatformAnalyticsMetric;
+  execution_runs: PlatformAnalyticsMetric;
+  logical_tool_calls: PlatformAnalyticsMetric;
+  repeat_companies: PlatformAnalyticsMetric;
+  technical_completion_ratio: PlatformAnalyticsMetric;
+}
+
+export interface PublicPlatformAnalyticsScope {
+  population: 'all_production';
+  includes_internal: boolean;
+  includes_test: boolean;
+  classification: 'not_applied';
+}
+
+export interface PublicPlatformAnalyticsSeries {
+  timezone: 'UTC';
+  status: PublicPlatformAnalyticsSeriesStatus;
+  days: PublicPlatformAnalyticsSeriesDay[] | null;
+}
+
+export interface PublicPlatformAnalyticsSeriesDay {
+  date: string;
+  companies_active: number | null;
+  agents_active: number | null;
+  execution_runs: number | null;
+  logical_tool_calls: number | null;
+  completed_runs: number | null;
+  terminal_runs: number | null;
+  status: PublicPlatformAnalyticsSeriesStatus;
+}
+
+export type PublicPlatformAnalyticsSeriesStatus = 'ok' | 'partial' | 'unavailable';
+
+export const PUBLIC_PLATFORM_ANALYTICS_SERIES_STATUS_VALUES = ['ok', 'partial', 'unavailable'] as const;
+
+export type PublicPlatformAnalyticsStatus = 'ok' | 'partial' | 'stale' | 'unavailable';
+
+export const PUBLIC_PLATFORM_ANALYTICS_STATUS_VALUES = ['ok', 'partial', 'stale', 'unavailable'] as const;
+
+export interface PublicPlatformAnalyticsWindows {
+  '7d': PlatformAnalyticsWindow | null;
+  '30d': PlatformAnalyticsWindow | null;
+}
 
 /**
  * public.ts GET /public/sessions/{sessionId} — every field always present; compacted entries
@@ -19465,7 +19574,7 @@ export interface RunEventV1RunCancelledPayload {
    * on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
    * which one. Absent when the run carries none, or one this version does not list.
    */
-  error_code?: ErrorCode;
+  error_code?: RunEventV1RunFailedPayloadErrorCode;
   error_details?: JsonObject;
   message?: string;
   reason?: string;
@@ -19560,7 +19669,7 @@ export interface RunEventV1RunFailedPayload {
    * on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
    * which one. Absent when the run carries none, or one this version does not list.
    */
-  error_code?: ErrorCode;
+  error_code?: RunEventV1RunFailedPayloadErrorCode;
   error_details?: JsonObject;
   message?: string;
   reason?: string;
@@ -19568,6 +19677,17 @@ export interface RunEventV1RunFailedPayload {
   source?: string;
   rejected?: boolean;
 }
+
+/**
+ * Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+ * beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+ * stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+ * on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+ * which one. Absent when the run carries none, or one this version does not list.
+ */
+export type RunEventV1RunFailedPayloadErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'ASSESSMENT_ISOLATION_REQUIRED' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CLIENT_REQUEST_CONFLICT' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXECUTION_PROFILE_UNVERIFIABLE' | 'EXECUTION_RECEIPT_PENDING' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURED_SET_CONTENDED' | 'FEATURE_DISABLED' | 'FILE_NOT_FOUND' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_CONFLICT' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INTERNAL_ERROR' | 'INVALID_ARCHIVE' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_MANIFEST' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'ISOLATION_VIOLATION' | 'LLM_ERROR' | 'MANAGED_AGENT' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSING_SCOPE' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'OUTPUT_CONTRACT_VIOLATION' | 'OUTPUT_TOO_LARGE' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROCESSING_POLICY_CHANGED' | 'PROCESSING_POLICY_NOT_READY' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUALIFICATION_BUDGET_STOP' | 'QUALIFICATION_ROUTE_MISMATCH' | 'QUALIFICATION_VERSION_UNAVAILABLE' | 'QUOTA_EXCEEDED' | 'RATE_LIMITED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SECURITY_SCAN_FAILED' | 'SERVICE_UNAVAILABLE' | 'SESSION_NOT_ACTIVE' | 'SHARE_LIST_CONFLICT' | 'SIGNING_NOT_CONFIGURED' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'SPONSORSHIP_BUDGET_BELOW_COMMITTED' | 'SPONSORSHIP_BUDGET_EXHAUSTED' | 'SPONSORSHIP_CANDIDATE_LIMIT' | 'SPONSORSHIP_CONCURRENCY_LIMIT' | 'SPONSORSHIP_FUNDING_UNAVAILABLE' | 'SPONSORSHIP_GRANT_CONFLICT' | 'SPONSORSHIP_GRANT_IN_USE' | 'SPONSORSHIP_GRANT_MISMATCH' | 'SPONSORSHIP_GRANT_UNAVAILABLE' | 'SPONSORSHIP_OUTCOME_UNKNOWN' | 'SPONSORSHIP_PROGRAM_IMMUTABLE' | 'SPONSORSHIP_PROGRAM_INACTIVE' | 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT' | 'SPONSORSHIP_REQUIRED' | 'SPONSORSHIP_SCOPE_REQUIRED' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'SUPER_ADMIN_REQUIRED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'UNAUTHENTICATED' | 'USAGE_CORRECTION_EXCEEDS_COUNTERS' | 'USAGE_CORRECTION_IN_PROGRESS' | 'USAGE_CORRECTION_NOT_SETTLED' | 'USAGE_CORRECTION_NOT_SPONSORED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'hire_catalog_unknown' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'not_hired' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_agent_stopped' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
+
+export const RUN_EVENT_V1_RUN_FAILED_PAYLOAD_ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'ASSESSMENT_ISOLATION_REQUIRED', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CLIENT_REQUEST_CONFLICT', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXECUTION_PROFILE_UNVERIFIABLE', 'EXECUTION_RECEIPT_PENDING', 'EXTERNAL_SERVICE_ERROR', 'FEATURED_SET_CONTENDED', 'FEATURE_DISABLED', 'FILE_NOT_FOUND', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INTERNAL_ERROR', 'INVALID_ARCHIVE', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_MANIFEST', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'ISOLATION_VIOLATION', 'LLM_ERROR', 'MANAGED_AGENT', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSING_SCOPE', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'OUTPUT_CONTRACT_VIOLATION', 'OUTPUT_TOO_LARGE', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROCESSING_POLICY_CHANGED', 'PROCESSING_POLICY_NOT_READY', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUALIFICATION_BUDGET_STOP', 'QUALIFICATION_ROUTE_MISMATCH', 'QUALIFICATION_VERSION_UNAVAILABLE', 'QUOTA_EXCEEDED', 'RATE_LIMITED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SECURITY_SCAN_FAILED', 'SERVICE_UNAVAILABLE', 'SESSION_NOT_ACTIVE', 'SHARE_LIST_CONFLICT', 'SIGNING_NOT_CONFIGURED', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'SPONSORSHIP_BUDGET_BELOW_COMMITTED', 'SPONSORSHIP_BUDGET_EXHAUSTED', 'SPONSORSHIP_CANDIDATE_LIMIT', 'SPONSORSHIP_CONCURRENCY_LIMIT', 'SPONSORSHIP_FUNDING_UNAVAILABLE', 'SPONSORSHIP_GRANT_CONFLICT', 'SPONSORSHIP_GRANT_IN_USE', 'SPONSORSHIP_GRANT_MISMATCH', 'SPONSORSHIP_GRANT_UNAVAILABLE', 'SPONSORSHIP_OUTCOME_UNKNOWN', 'SPONSORSHIP_PROGRAM_IMMUTABLE', 'SPONSORSHIP_PROGRAM_INACTIVE', 'SPONSORSHIP_PROGRAM_REVISION_CONFLICT', 'SPONSORSHIP_REQUIRED', 'SPONSORSHIP_SCOPE_REQUIRED', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'SUPER_ADMIN_REQUIRED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'UNAUTHENTICATED', 'USAGE_CORRECTION_EXCEEDS_COUNTERS', 'USAGE_CORRECTION_IN_PROGRESS', 'USAGE_CORRECTION_NOT_SETTLED', 'USAGE_CORRECTION_NOT_SPONSORED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'hire_catalog_unknown', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'not_hired', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_agent_stopped', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
 
 export type RunEventV1RunFailedType = 'run.failed';
 
@@ -19597,7 +19717,7 @@ export interface RunEventV1RunGuardrailBlockedPayload {
    * on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
    * which one. Absent when the run carries none, or one this version does not list.
    */
-  error_code?: ErrorCode;
+  error_code?: RunEventV1RunFailedPayloadErrorCode;
   error_details?: JsonObject;
   message?: string;
   reason?: string;
@@ -21417,7 +21537,28 @@ export interface SetModelPricingOverrideResponse {
 }
 
 export interface SetRateLimitsRequest {
-  endpoints: JsonValue;
+  endpoints: Record<string, SetRateLimitsRequestEndpointsValue>;
+}
+
+export interface SetRateLimitsRequestEndpointsValue {
+  /**
+   * Deprecated spelling of `max_requests` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `max_requests`.
+   *
+   * @deprecated
+   */
+  maxRequests?: number;
+  max_requests?: number;
+  /**
+   * Deprecated spelling of `window_sec` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `window_sec`.
+   *
+   * @deprecated
+   */
+  windowSec?: number;
+  window_sec?: number;
 }
 
 export interface SetRateLimitsResponse {
@@ -21770,10 +21911,11 @@ export interface StartSquadRunResponse {
  */
 export interface StartTeamRunRequest {
   /**
-   * The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
-   * absent, @mentions in `message` are parsed for the same purpose.
+   * The turn; omission defaults to an empty input. A bare string is expanded to `{ message }`.
+   * `addressed_to` selects who answers; absent, @mentions in `message` are parsed for the same
+   * purpose.
    */
-  input: string | StartTeamRunRequestInputVariant2;
+  input?: string | StartTeamRunRequestInputVariant2;
   /**
    * Accepted by the handler and undeclared here until now — the drift ran both ways.
    */
@@ -23649,11 +23791,11 @@ export interface UpdateAdminJobRequest {
   employment_type?: JobEmploymentType;
   workplace_type?: JobWorkplaceType;
   location?: UpdateAdminJobRequestLocation;
-  applicant_countries?: JsonValue[];
+  applicant_countries?: string[];
   english_level?: JobEnglishLevel;
   experience_years_min?: number;
   skills?: string[];
-  salary?: UpdateAdminJobRequestSalary | null;
+  salary?: UpdateAdminJobRequestSalaryVariant1 | null;
   salary_public?: boolean;
   apply?: UpdateAdminJobRequestApply;
   language?: VideoOrderLocale;
@@ -23677,13 +23819,13 @@ export interface UpdateAdminJobRequestApply {
 
 export interface UpdateAdminJobRequestLocation {
   city?: string;
-  country?: JsonValue;
+  country?: string;
 }
 
-export interface UpdateAdminJobRequestSalary {
+export interface UpdateAdminJobRequestSalaryVariant1 {
   min?: number;
   max?: number;
-  currency: JsonValue;
+  currency: string;
   period: JobSalaryPeriod;
 }
 
@@ -23957,7 +24099,7 @@ export interface UpdateAdminRetentionConfigResponseRetention {
 
 export interface UpdateAdminRunCommandConfigRequest {
   enabled?: boolean;
-  isolation?: JsonValue;
+  isolation?: AdminConfigRunCommandConfigRunCommandIsolation;
   timeout_ms?: number;
   max_output_bytes?: number;
   allowed_commands?: string[];
@@ -24622,10 +24764,10 @@ export interface UpdateSessionTodoRequest {
   due_at?: string | null;
   assign_agent_id?: string | null;
   assign_team_id?: string | null;
-  recurrence?: UpdateSessionTodoRequestRecurrence | null;
+  recurrence?: UpdateSessionTodoRequestRecurrenceVariant1 | null;
 }
 
-export interface UpdateSessionTodoRequestRecurrence {
+export interface UpdateSessionTodoRequestRecurrenceVariant1 {
   cron: string;
   timezone?: string;
 }

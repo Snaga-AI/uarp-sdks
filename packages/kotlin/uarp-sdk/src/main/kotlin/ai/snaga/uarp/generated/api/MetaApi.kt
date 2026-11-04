@@ -18,6 +18,7 @@ import ai.snaga.uarp.models.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.coroutines.flow.Flow
 
 /**
  * API metadata
@@ -117,6 +118,31 @@ public class MetaApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Read reconciled lifetime platform activity
+     *
+     * Aggregate-only materialized snapshot. Scope includes internal research and tests across all
+     * production tenants; companies are not customers. Execution runs have actual LLM/tool work
+     * evidence, including pending and failed admitted runs. Pre-work refusals are excluded.
+     * Logical tool attempts do not assert external business success. Technical completion is
+     * completed/terminal admitted runs, not quality. Lifetime since remains null when
+     * inception/retention coverage cannot be verified. Partial counts represent observed minima; a
+     * partial ratio is not a lower bound. Windows select work-start cohorts; their latest terminal
+     * outcomes use the same cohort. Null is unavailable, never an invented zero. data_through is a
+     * durable source barrier, not generation or heartbeat time. No-store; 60 reads/minute/IP.
+     *
+     * `GET /api/v1/public/platform-analytics`
+     */
+    public suspend fun getPublicPlatformAnalytics(options: RequestOptions = RequestOptions()): PublicPlatformAnalytics {
+        return client.request<PublicPlatformAnalytics>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/public/platform-analytics",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Search across agents, sessions, runs
      *
      * Searches the caller's tenant for agents, runs, sessions, files, images, projects and memory
@@ -143,6 +169,41 @@ public class MetaApi internal constructor(private val client: UarpClient) {
                 method = "GET",
                 path = "/api/v1/search",
                 query = query,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Stream resumable public platform activity
+     *
+     * snapshot/update/reset carry a complete PublicPlatformAnalytics with SSE id equal to its
+     * decimal revision. Compare revisions numerically, not lexicographically. Last-Event-ID or
+     * ?after resumes up to 128 retained revisions; a missing, future, or expired cursor produces
+     * reset with the current full snapshot. Heartbeat every 15 seconds contains
+     * generated_at,data_through,processed_through,status and no id; it never advances metric
+     * coverage. KV watch is installed before initial snapshot/replay, and concurrent updates are
+     * deduplicated by revision. Connection admission is capped at 20/minute/IP and 200 concurrent
+     * streams/replica; slow readers are disconnected. No credentials or tenant IDs accepted or
+     * emitted.
+     *
+     * `GET /api/v1/public/platform-analytics/events`
+     *
+     * Returns a cold flow of server-sent events.
+     */
+    public fun streamPublicPlatformAnalytics(after: String? = null, lastEventId: String? = null, options: RequestOptions = RequestOptions()): Flow<ServerEvent> {
+        val query = buildList {
+            if (after != null) add("after" to after)
+        }
+        val headers = buildList {
+            if (lastEventId != null) add("Last-Event-ID" to lastEventId)
+        }
+        return client.stream(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/public/platform-analytics/events",
+                query = query,
+                headers = headers,
                 options = options,
             )
         )

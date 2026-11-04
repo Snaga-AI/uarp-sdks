@@ -3639,10 +3639,10 @@ public struct AdminPutLandingConfigRequest: Codable, Hashable, Sendable {
     public var multilangEnabled: Bool?
     public var defaultLocale: VideoOrderLocale?
     public var partnersEnabled: Bool?
-    public var partners: [AdminPutLandingConfigRequestPartner]?
+    public var partners: [AdminPutLandingConfigRequestPartnersVariant1item]?
     public var expectedVersion: String?
 
-    public init(publicAgentId: String? = nil, texts: [String: AdminPutLandingConfigRequestTextsValue]? = nil, multilangEnabled: Bool? = nil, defaultLocale: VideoOrderLocale? = nil, partnersEnabled: Bool? = nil, partners: [AdminPutLandingConfigRequestPartner]? = nil, expectedVersion: String? = nil) {
+    public init(publicAgentId: String? = nil, texts: [String: AdminPutLandingConfigRequestTextsValue]? = nil, multilangEnabled: Bool? = nil, defaultLocale: VideoOrderLocale? = nil, partnersEnabled: Bool? = nil, partners: [AdminPutLandingConfigRequestPartnersVariant1item]? = nil, expectedVersion: String? = nil) {
         self.publicAgentId = publicAgentId
         self.texts = texts
         self.multilangEnabled = multilangEnabled
@@ -3660,50 +3660,6 @@ public struct AdminPutLandingConfigRequest: Codable, Hashable, Sendable {
         case partnersEnabled = "partners_enabled"
         case partners = "partners"
         case expectedVersion = "expected_version"
-    }
-}
-
-/// `AdminPutLandingConfigRequestPartner` model.
-public struct AdminPutLandingConfigRequestPartner: Codable, Hashable, Sendable {
-    public var id: String
-    public var name: String
-    public var tagline: String
-    public var taglineUk: String?
-    public var href: String
-    public var logo: AdminPutLandingConfigRequestPartnerLogo
-
-    public init(id: String, name: String, tagline: String, taglineUk: String? = nil, href: String, logo: AdminPutLandingConfigRequestPartnerLogo) {
-        self.id = id
-        self.name = name
-        self.tagline = tagline
-        self.taglineUk = taglineUk
-        self.href = href
-        self.logo = logo
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id = "id"
-        case name = "name"
-        case tagline = "tagline"
-        case taglineUk = "tagline_uk"
-        case href = "href"
-        case logo = "logo"
-    }
-}
-
-/// `AdminPutLandingConfigRequestPartnerLogo` model.
-public struct AdminPutLandingConfigRequestPartnerLogo: Codable, Hashable, Sendable {
-    public var slug: AdminPutLandingConfigRequestPartnerLogoSlug?
-    public var url: String?
-
-    public init(slug: AdminPutLandingConfigRequestPartnerLogoSlug? = nil, url: String? = nil) {
-        self.slug = slug
-        self.url = url
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case slug = "slug"
-        case url = "url"
     }
 }
 
@@ -3736,6 +3692,50 @@ public struct AdminPutLandingConfigRequestPartnerLogoSlug: RawRepresentable, Cod
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [AdminPutLandingConfigRequestPartnerLogoSlug] = [.rust, .together, .ollama, .gonka, .wasm, .docker, .deno, .digitalocean, .github, .monogram]
+}
+
+/// `AdminPutLandingConfigRequestPartnersVariant1item` model.
+public struct AdminPutLandingConfigRequestPartnersVariant1item: Codable, Hashable, Sendable {
+    public var id: String
+    public var name: String
+    public var tagline: String
+    public var taglineUk: String?
+    public var href: String
+    public var logo: AdminPutLandingConfigRequestPartnersVariant1itemLogo
+
+    public init(id: String, name: String, tagline: String, taglineUk: String? = nil, href: String, logo: AdminPutLandingConfigRequestPartnersVariant1itemLogo) {
+        self.id = id
+        self.name = name
+        self.tagline = tagline
+        self.taglineUk = taglineUk
+        self.href = href
+        self.logo = logo
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case name = "name"
+        case tagline = "tagline"
+        case taglineUk = "tagline_uk"
+        case href = "href"
+        case logo = "logo"
+    }
+}
+
+/// `AdminPutLandingConfigRequestPartnersVariant1itemLogo` model.
+public struct AdminPutLandingConfigRequestPartnersVariant1itemLogo: Codable, Hashable, Sendable {
+    public var slug: AdminPutLandingConfigRequestPartnerLogoSlug?
+    public var url: String?
+
+    public init(slug: AdminPutLandingConfigRequestPartnerLogoSlug? = nil, url: String? = nil) {
+        self.slug = slug
+        self.url = url
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case slug = "slug"
+        case url = "url"
+    }
 }
 
 /// `AdminPutLandingConfigRequestTextsValue` model.
@@ -13898,18 +13898,18 @@ public struct CreateAdminJobRequest: Codable, Hashable, Sendable {
     public var employmentType: JobEmploymentType
     public var workplaceType: JobWorkplaceType
     public var location: CreateAdminJobRequestLocation?
-    public var applicantCountries: [JSONValue]?
+    public var applicantCountries: [String]?
     public var englishLevel: JobEnglishLevel?
     public var experienceYearsMin: Int?
     public var skills: [String]?
-    public var salary: CreateAdminJobRequestSalary?
+    public var salary: CreateAdminJobRequestSalaryVariant1?
     public var salaryPublic: Bool?
     public var apply: CreateAdminJobRequestApply?
     public var language: VideoOrderLocale?
     public var status: JobStatus?
     public var closesAt: String?
 
-    public init(title: String, summary: String? = nil, `description`: String? = nil, responsibilities: [String]? = nil, requirements: [String]? = nil, niceToHave: [String]? = nil, benefits: [String]? = nil, category: String, department: String? = nil, seniority: JobSeniority? = nil, employmentType: JobEmploymentType, workplaceType: JobWorkplaceType, location: CreateAdminJobRequestLocation? = nil, applicantCountries: [JSONValue]? = nil, englishLevel: JobEnglishLevel? = nil, experienceYearsMin: Int? = nil, skills: [String]? = nil, salary: CreateAdminJobRequestSalary? = nil, salaryPublic: Bool? = nil, apply: CreateAdminJobRequestApply? = nil, language: VideoOrderLocale? = nil, status: JobStatus? = nil, closesAt: String? = nil) {
+    public init(title: String, summary: String? = nil, `description`: String? = nil, responsibilities: [String]? = nil, requirements: [String]? = nil, niceToHave: [String]? = nil, benefits: [String]? = nil, category: String, department: String? = nil, seniority: JobSeniority? = nil, employmentType: JobEmploymentType, workplaceType: JobWorkplaceType, location: CreateAdminJobRequestLocation? = nil, applicantCountries: [String]? = nil, englishLevel: JobEnglishLevel? = nil, experienceYearsMin: Int? = nil, skills: [String]? = nil, salary: CreateAdminJobRequestSalaryVariant1? = nil, salaryPublic: Bool? = nil, apply: CreateAdminJobRequestApply? = nil, language: VideoOrderLocale? = nil, status: JobStatus? = nil, closesAt: String? = nil) {
         self.title = title
         self.summary = summary
         self.`description` = `description`
@@ -13990,9 +13990,9 @@ public struct CreateAdminJobRequestApply: Codable, Hashable, Sendable {
 /// `CreateAdminJobRequestLocation` model.
 public struct CreateAdminJobRequestLocation: Codable, Hashable, Sendable {
     public var city: String?
-    public var country: JSONValue?
+    public var country: String?
 
-    public init(city: String? = nil, country: JSONValue? = nil) {
+    public init(city: String? = nil, country: String? = nil) {
         self.city = city
         self.country = country
     }
@@ -14003,14 +14003,14 @@ public struct CreateAdminJobRequestLocation: Codable, Hashable, Sendable {
     }
 }
 
-/// `CreateAdminJobRequestSalary` model.
-public struct CreateAdminJobRequestSalary: Codable, Hashable, Sendable {
+/// `CreateAdminJobRequestSalaryVariant1` model.
+public struct CreateAdminJobRequestSalaryVariant1: Codable, Hashable, Sendable {
     public var min: Double?
     public var max: Double?
-    public var currency: JSONValue
+    public var currency: String
     public var period: JobSalaryPeriod
 
-    public init(min: Double? = nil, max: Double? = nil, currency: JSONValue, period: JobSalaryPeriod) {
+    public init(min: Double? = nil, max: Double? = nil, currency: String, period: JobSalaryPeriod) {
         self.min = min
         self.max = max
         self.currency = currency
@@ -14337,17 +14337,52 @@ public struct CreateAgentScorerRequestConfig: Codable, Hashable, Sendable {
     public var type: String
     public var url: String
     public var timeoutMs: Double?
+    /// Properties the server returned that this SDK does not model.
+    public var additionalProperties: [String: JSONValue]
 
-    public init(type: String, url: String, timeoutMs: Double? = nil) {
+    public init(type: String, url: String, timeoutMs: Double? = nil, additionalProperties: [String: JSONValue] = [:]) {
         self.type = type
         self.url = url
         self.timeoutMs = timeoutMs
+        self.additionalProperties = additionalProperties
     }
 
     private enum CodingKeys: String, CodingKey {
         case type = "type"
         case url = "url"
         case timeoutMs = "timeout_ms"
+    }
+
+    private struct DynamicKey: CodingKey {
+        let stringValue: String
+        var intValue: Int? { nil }
+        init(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.type = try container.decode(String.self, forKey: .type)
+        self.url = try container.decode(String.self, forKey: .url)
+        self.timeoutMs = try container.decodeIfPresent(Double.self, forKey: .timeoutMs)
+        let dynamic = try decoder.container(keyedBy: DynamicKey.self)
+        let known: Set<String> = ["type", "url", "timeout_ms"]
+        var extra: [String: JSONValue] = [:]
+        for key in dynamic.allKeys where !known.contains(key.stringValue) {
+            extra[key.stringValue] = try dynamic.decode(JSONValue.self, forKey: key)
+        }
+        self.additionalProperties = extra
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(type, forKey: .type)
+        try container.encode(url, forKey: .url)
+        try container.encodeIfPresent(timeoutMs, forKey: .timeoutMs)
+        var dynamic = encoder.container(keyedBy: DynamicKey.self)
+        for (key, value) in additionalProperties {
+            try dynamic.encode(value, forKey: DynamicKey(stringValue: key))
+        }
     }
 }
 
@@ -19074,6 +19109,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let rateLimited = ErrorCode(rawValue: "RATE_LIMITED")
     public static let rateLimitExceeded = ErrorCode(rawValue: "RATE_LIMIT_EXCEEDED")
     public static let referenceNotFound = ErrorCode(rawValue: "REFERENCE_NOT_FOUND")
+    public static let requestCancelled = ErrorCode(rawValue: "REQUEST_CANCELLED")
     public static let reservedScope = ErrorCode(rawValue: "RESERVED_SCOPE")
     public static let runActive = ErrorCode(rawValue: "RUN_ACTIVE")
     public static let runCancelled = ErrorCode(rawValue: "RUN_CANCELLED")
@@ -19175,7 +19211,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let videoSlotInvalid = ErrorCode(rawValue: "video_slot_invalid")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .activeTenantNotSupported, .alreadyExists, .anonBusy, .artifactIntegrityError, .assessmentIsolationRequired, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .clientRequestConflict, .companyNotReady, .companyPaused, .concurrencyLimit, .concurrentModification, .configurationError, .confirmationRequired, .conflict, .contextLengthExceeded, .countLimitReached, .dailyLimit, .dependencyExists, .eventStoreError, .executionProfileUnverifiable, .executionReceiptPending, .externalServiceError, .featuredSetContended, .featureDisabled, .fileNotFound, .fileTypeNotAllowed, .forbidden, .guardrailViolation, .idempotencyConflict, .idempotencyKeyReused, .initiativeBudgetExhausted, .initiativePaused, .internalError, .invalidArchive, .invalidBody, .invalidCursor, .invalidManifest, .invalidQuery, .invalidRequest, .invalidShareList, .invalidShareTarget, .invalidStateTransition, .isolationViolation, .llmError, .managedAgent, .maxDurationExceeded, .maxTokensExceeded, .methodNotAllowed, .migrationConflict, .missingField, .missingScope, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notBridgeAgent, .notFound, .notYanked, .noRunnableTarget, .oauthFailed, .outputContractViolation, .outputTooLarge, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .prerequisiteMissing, .pricingUnavailable, .privateNotShared, .processingPolicyChanged, .processingPolicyNotReady, .promoRedemptionFailed, .proposalExpired, .qualificationBudgetStop, .qualificationRouteMismatch, .qualificationVersionUnavailable, .quotaExceeded, .rateLimited, .rateLimitExceeded, .referenceNotFound, .reservedScope, .runActive, .runCancelled, .scopeMismatch, .scopeTaken, .searchProviderNotConfigured, .searchUpstreamFailed, .searchUpstreamTimeout, .securityScanFailed, .serviceUnavailable, .sessionNotActive, .shareListConflict, .signingNotConfigured, .sizeLimit, .specNotFound, .sponsorshipBudgetBelowCommitted, .sponsorshipBudgetExhausted, .sponsorshipCandidateLimit, .sponsorshipConcurrencyLimit, .sponsorshipFundingUnavailable, .sponsorshipGrantConflict, .sponsorshipGrantInUse, .sponsorshipGrantMismatch, .sponsorshipGrantUnavailable, .sponsorshipOutcomeUnknown, .sponsorshipProgramImmutable, .sponsorshipProgramInactive, .sponsorshipProgramRevisionConflict, .sponsorshipRequired, .sponsorshipScopeRequired, .startedByAnotherUser, .strategistModelUnconfigured, .superAdminRequired, .taskGraphFailed, .teamAbort, .termsNotAccepted, .textExtractionFailed, .unauthenticated, .usageCorrectionExceedsCounters, .usageCorrectionInProgress, .usageCorrectionNotSettled, .usageCorrectionNotSponsored, .userRequired, .validationError, .verificationFailed, .versionConflict, .versionNotFound, .workspaceStorageLimit, .wouldOrphan, .yankConflict, .agentDeleted, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .consentRequired, .cvInvalid, .cvTooLarge, .duplicateApplication, .governanceNotEnabled, .hireCatalogUnknown, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .jobApplyElsewhere, .jobClosed, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbEmbeddingFailed, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .mfaRequired, .noEligibleArbiter, .notHired, .planUpgradeRequired, .proposalRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited_, .resourceLimitReached, .runAgentStopped, .runApprovalExpired, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded, .runStalled, .secretWouldMove, .videoConsentRequired, .videoOrderState, .videoPhotoInvalid, .videoPhotoRejected, .videoRegenUnavailable, .videoSlotInvalid]
+    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .activeTenantNotSupported, .alreadyExists, .anonBusy, .artifactIntegrityError, .assessmentIsolationRequired, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .clientRequestConflict, .companyNotReady, .companyPaused, .concurrencyLimit, .concurrentModification, .configurationError, .confirmationRequired, .conflict, .contextLengthExceeded, .countLimitReached, .dailyLimit, .dependencyExists, .eventStoreError, .executionProfileUnverifiable, .executionReceiptPending, .externalServiceError, .featuredSetContended, .featureDisabled, .fileNotFound, .fileTypeNotAllowed, .forbidden, .guardrailViolation, .idempotencyConflict, .idempotencyKeyReused, .initiativeBudgetExhausted, .initiativePaused, .internalError, .invalidArchive, .invalidBody, .invalidCursor, .invalidManifest, .invalidQuery, .invalidRequest, .invalidShareList, .invalidShareTarget, .invalidStateTransition, .isolationViolation, .llmError, .managedAgent, .maxDurationExceeded, .maxTokensExceeded, .methodNotAllowed, .migrationConflict, .missingField, .missingScope, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notBridgeAgent, .notFound, .notYanked, .noRunnableTarget, .oauthFailed, .outputContractViolation, .outputTooLarge, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .prerequisiteMissing, .pricingUnavailable, .privateNotShared, .processingPolicyChanged, .processingPolicyNotReady, .promoRedemptionFailed, .proposalExpired, .qualificationBudgetStop, .qualificationRouteMismatch, .qualificationVersionUnavailable, .quotaExceeded, .rateLimited, .rateLimitExceeded, .referenceNotFound, .requestCancelled, .reservedScope, .runActive, .runCancelled, .scopeMismatch, .scopeTaken, .searchProviderNotConfigured, .searchUpstreamFailed, .searchUpstreamTimeout, .securityScanFailed, .serviceUnavailable, .sessionNotActive, .shareListConflict, .signingNotConfigured, .sizeLimit, .specNotFound, .sponsorshipBudgetBelowCommitted, .sponsorshipBudgetExhausted, .sponsorshipCandidateLimit, .sponsorshipConcurrencyLimit, .sponsorshipFundingUnavailable, .sponsorshipGrantConflict, .sponsorshipGrantInUse, .sponsorshipGrantMismatch, .sponsorshipGrantUnavailable, .sponsorshipOutcomeUnknown, .sponsorshipProgramImmutable, .sponsorshipProgramInactive, .sponsorshipProgramRevisionConflict, .sponsorshipRequired, .sponsorshipScopeRequired, .startedByAnotherUser, .strategistModelUnconfigured, .superAdminRequired, .taskGraphFailed, .teamAbort, .termsNotAccepted, .textExtractionFailed, .unauthenticated, .usageCorrectionExceedsCounters, .usageCorrectionInProgress, .usageCorrectionNotSettled, .usageCorrectionNotSponsored, .userRequired, .validationError, .verificationFailed, .versionConflict, .versionNotFound, .workspaceStorageLimit, .wouldOrphan, .yankConflict, .agentDeleted, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .consentRequired, .cvInvalid, .cvTooLarge, .duplicateApplication, .governanceNotEnabled, .hireCatalogUnknown, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .jobApplyElsewhere, .jobClosed, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbEmbeddingFailed, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .mfaRequired, .noEligibleArbiter, .notHired, .planUpgradeRequired, .proposalRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited_, .resourceLimitReached, .runAgentStopped, .runApprovalExpired, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded, .runStalled, .secretWouldMove, .videoConsentRequired, .videoOrderState, .videoPhotoInvalid, .videoPhotoRejected, .videoRegenUnavailable, .videoSlotInvalid]
 }
 
 /// `ErrorError` model.
@@ -36840,6 +36876,198 @@ public struct PlannedObjectiveBudget: Codable, Hashable, Sendable {
 /// `enforced_limits` for what each one means.
 public typealias PlanQuotaFields = JSONObject
 
+/// `PlatformAnalyticsMetric` model.
+public struct PlatformAnalyticsMetric: Codable, Hashable, Sendable {
+    public var value: Double?
+    public var unit: PlatformAnalyticsMetricUnit
+    public var status: PlatformAnalyticsMetricStatus
+    public var since: String?
+    public var dataThrough: String?
+    public var numerator: Int?
+    public var denominator: Int?
+    public var coverage: PlatformAnalyticsMetricCoverage
+
+    public init(value: Double? = nil, unit: PlatformAnalyticsMetricUnit, status: PlatformAnalyticsMetricStatus, since: String? = nil, dataThrough: String? = nil, numerator: Int? = nil, denominator: Int? = nil, coverage: PlatformAnalyticsMetricCoverage) {
+        self.value = value
+        self.unit = unit
+        self.status = status
+        self.since = since
+        self.dataThrough = dataThrough
+        self.numerator = numerator
+        self.denominator = denominator
+        self.coverage = coverage
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case value = "value"
+        case unit = "unit"
+        case status = "status"
+        case since = "since"
+        case dataThrough = "data_through"
+        case numerator = "numerator"
+        case denominator = "denominator"
+        case coverage = "coverage"
+    }
+}
+
+/// `PlatformAnalyticsMetricCoverage` model.
+public struct PlatformAnalyticsMetricCoverage: Codable, Hashable, Sendable {
+    public var completeness: PlatformAnalyticsMetricCoverageCompleteness
+    public var observedFrom: String?
+    public var gaps: [PlatformAnalyticsMetricCoverageGap]
+
+    public init(completeness: PlatformAnalyticsMetricCoverageCompleteness, observedFrom: String? = nil, gaps: [PlatformAnalyticsMetricCoverageGap]) {
+        self.completeness = completeness
+        self.observedFrom = observedFrom
+        self.gaps = gaps
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case completeness = "completeness"
+        case observedFrom = "observed_from"
+        case gaps = "gaps"
+    }
+}
+
+/// `PlatformAnalyticsMetricCoverageCompleteness` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct PlatformAnalyticsMetricCoverageCompleteness: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let complete = PlatformAnalyticsMetricCoverageCompleteness(rawValue: "complete")
+    public static let partial = PlatformAnalyticsMetricCoverageCompleteness(rawValue: "partial")
+    public static let unknown = PlatformAnalyticsMetricCoverageCompleteness(rawValue: "unknown")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [PlatformAnalyticsMetricCoverageCompleteness] = [.complete, .partial, .unknown]
+}
+
+/// `PlatformAnalyticsMetricCoverageGap` model.
+public struct PlatformAnalyticsMetricCoverageGap: Codable, Hashable, Sendable {
+    public var from: String?
+    public var to: String?
+    public var reason: String
+
+    public init(from: String? = nil, to: String? = nil, reason: String) {
+        self.from = from
+        self.to = to
+        self.reason = reason
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case from = "from"
+        case to = "to"
+        case reason = "reason"
+    }
+}
+
+/// `PlatformAnalyticsMetricStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct PlatformAnalyticsMetricStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let ok = PlatformAnalyticsMetricStatus(rawValue: "ok")
+    public static let partial = PlatformAnalyticsMetricStatus(rawValue: "partial")
+    public static let stale = PlatformAnalyticsMetricStatus(rawValue: "stale")
+    public static let unavailable = PlatformAnalyticsMetricStatus(rawValue: "unavailable")
+    public static let suppressed = PlatformAnalyticsMetricStatus(rawValue: "suppressed")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [PlatformAnalyticsMetricStatus] = [.ok, .partial, .stale, .unavailable, .suppressed]
+}
+
+/// `PlatformAnalyticsMetricUnit` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct PlatformAnalyticsMetricUnit: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let count = PlatformAnalyticsMetricUnit(rawValue: "count")
+    public static let ratio = PlatformAnalyticsMetricUnit(rawValue: "ratio")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [PlatformAnalyticsMetricUnit] = [.count, .ratio]
+}
+
+/// `PlatformAnalyticsWindow` model.
+public struct PlatformAnalyticsWindow: Codable, Hashable, Sendable {
+    public var start: String
+    public var endExclusive: String
+    public var metrics: PlatformAnalyticsWindowMetrics
+
+    public init(start: String, endExclusive: String, metrics: PlatformAnalyticsWindowMetrics) {
+        self.start = start
+        self.endExclusive = endExclusive
+        self.metrics = metrics
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case start = "start"
+        case endExclusive = "end_exclusive"
+        case metrics = "metrics"
+    }
+}
+
+/// `PlatformAnalyticsWindowMetrics` model.
+public struct PlatformAnalyticsWindowMetrics: Codable, Hashable, Sendable {
+    public var companiesEverActive: PlatformAnalyticsMetric
+    public var agentsEverActive: PlatformAnalyticsMetric
+    public var executionRuns: PlatformAnalyticsMetric
+    public var logicalToolCalls: PlatformAnalyticsMetric
+    public var repeatCompanies: PlatformAnalyticsMetric
+    public var technicalCompletionRatio: PlatformAnalyticsMetric
+
+    public init(companiesEverActive: PlatformAnalyticsMetric, agentsEverActive: PlatformAnalyticsMetric, executionRuns: PlatformAnalyticsMetric, logicalToolCalls: PlatformAnalyticsMetric, repeatCompanies: PlatformAnalyticsMetric, technicalCompletionRatio: PlatformAnalyticsMetric) {
+        self.companiesEverActive = companiesEverActive
+        self.agentsEverActive = agentsEverActive
+        self.executionRuns = executionRuns
+        self.logicalToolCalls = logicalToolCalls
+        self.repeatCompanies = repeatCompanies
+        self.technicalCompletionRatio = technicalCompletionRatio
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case companiesEverActive = "companies_ever_active"
+        case agentsEverActive = "agents_ever_active"
+        case executionRuns = "execution_runs"
+        case logicalToolCalls = "logical_tool_calls"
+        case repeatCompanies = "repeat_companies"
+        case technicalCompletionRatio = "technical_completion_ratio"
+    }
+}
+
 /// Platform profit and loss: Stripe revenue against real host spend and the LLM provider bill.
 /// Super-admin only. Served from a short-lived cache — `cache` says which.
 public struct PlatformEconomics: Codable, Hashable, Sendable {
@@ -39346,6 +39574,230 @@ public struct PublicPlanResetPeriod: RawRepresentable, Codable, Hashable, Sendab
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [PublicPlanResetPeriod] = [.day, .month]
+}
+
+/// `PublicPlatformAnalytics` model.
+public struct PublicPlatformAnalytics: Codable, Hashable, Sendable {
+    public var schemaVersion: Int
+    public var revision: String
+    public var generatedAt: String
+    public var dataThrough: String?
+    public var processedThrough: String?
+    public var status: PublicPlatformAnalyticsStatus
+    public var scope: PublicPlatformAnalyticsScope
+    public var lifetime: PublicPlatformAnalyticsLifetime
+    public var windows: PublicPlatformAnalyticsWindows
+    public var series: PublicPlatformAnalyticsSeries
+
+    public init(schemaVersion: Int, revision: String, generatedAt: String, dataThrough: String? = nil, processedThrough: String? = nil, status: PublicPlatformAnalyticsStatus, scope: PublicPlatformAnalyticsScope, lifetime: PublicPlatformAnalyticsLifetime, windows: PublicPlatformAnalyticsWindows, series: PublicPlatformAnalyticsSeries) {
+        self.schemaVersion = schemaVersion
+        self.revision = revision
+        self.generatedAt = generatedAt
+        self.dataThrough = dataThrough
+        self.processedThrough = processedThrough
+        self.status = status
+        self.scope = scope
+        self.lifetime = lifetime
+        self.windows = windows
+        self.series = series
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case revision = "revision"
+        case generatedAt = "generated_at"
+        case dataThrough = "data_through"
+        case processedThrough = "processed_through"
+        case status = "status"
+        case scope = "scope"
+        case lifetime = "lifetime"
+        case windows = "windows"
+        case series = "series"
+    }
+}
+
+/// `PublicPlatformAnalyticsLifetime` model.
+public struct PublicPlatformAnalyticsLifetime: Codable, Hashable, Sendable {
+    public var since: String?
+    public var metrics: PublicPlatformAnalyticsLifetimeMetrics
+
+    public init(since: String? = nil, metrics: PublicPlatformAnalyticsLifetimeMetrics) {
+        self.since = since
+        self.metrics = metrics
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case since = "since"
+        case metrics = "metrics"
+    }
+}
+
+/// `PublicPlatformAnalyticsLifetimeMetrics` model.
+public struct PublicPlatformAnalyticsLifetimeMetrics: Codable, Hashable, Sendable {
+    public var companiesEverActive: PlatformAnalyticsMetric
+    public var agentsEverActive: PlatformAnalyticsMetric
+    public var executionRuns: PlatformAnalyticsMetric
+    public var logicalToolCalls: PlatformAnalyticsMetric
+    public var repeatCompanies: PlatformAnalyticsMetric
+    public var technicalCompletionRatio: PlatformAnalyticsMetric
+
+    public init(companiesEverActive: PlatformAnalyticsMetric, agentsEverActive: PlatformAnalyticsMetric, executionRuns: PlatformAnalyticsMetric, logicalToolCalls: PlatformAnalyticsMetric, repeatCompanies: PlatformAnalyticsMetric, technicalCompletionRatio: PlatformAnalyticsMetric) {
+        self.companiesEverActive = companiesEverActive
+        self.agentsEverActive = agentsEverActive
+        self.executionRuns = executionRuns
+        self.logicalToolCalls = logicalToolCalls
+        self.repeatCompanies = repeatCompanies
+        self.technicalCompletionRatio = technicalCompletionRatio
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case companiesEverActive = "companies_ever_active"
+        case agentsEverActive = "agents_ever_active"
+        case executionRuns = "execution_runs"
+        case logicalToolCalls = "logical_tool_calls"
+        case repeatCompanies = "repeat_companies"
+        case technicalCompletionRatio = "technical_completion_ratio"
+    }
+}
+
+/// `PublicPlatformAnalyticsScope` model.
+public struct PublicPlatformAnalyticsScope: Codable, Hashable, Sendable {
+    public var population: String
+    public var includesInternal: Bool
+    public var includesTest: Bool
+    public var classification: String
+
+    public init(population: String, includesInternal: Bool, includesTest: Bool, classification: String) {
+        self.population = population
+        self.includesInternal = includesInternal
+        self.includesTest = includesTest
+        self.classification = classification
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case population = "population"
+        case includesInternal = "includes_internal"
+        case includesTest = "includes_test"
+        case classification = "classification"
+    }
+}
+
+/// `PublicPlatformAnalyticsSeries` model.
+public struct PublicPlatformAnalyticsSeries: Codable, Hashable, Sendable {
+    public var timezone: String
+    public var status: PublicPlatformAnalyticsSeriesStatus
+    public var days: [PublicPlatformAnalyticsSeriesDay]?
+
+    public init(timezone: String, status: PublicPlatformAnalyticsSeriesStatus, days: [PublicPlatformAnalyticsSeriesDay]? = nil) {
+        self.timezone = timezone
+        self.status = status
+        self.days = days
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case timezone = "timezone"
+        case status = "status"
+        case days = "days"
+    }
+}
+
+/// `PublicPlatformAnalyticsSeriesDay` model.
+public struct PublicPlatformAnalyticsSeriesDay: Codable, Hashable, Sendable {
+    public var date: String
+    public var companiesActive: Int?
+    public var agentsActive: Int?
+    public var executionRuns: Int?
+    public var logicalToolCalls: Int?
+    public var completedRuns: Int?
+    public var terminalRuns: Int?
+    public var status: PublicPlatformAnalyticsSeriesStatus
+
+    public init(date: String, companiesActive: Int? = nil, agentsActive: Int? = nil, executionRuns: Int? = nil, logicalToolCalls: Int? = nil, completedRuns: Int? = nil, terminalRuns: Int? = nil, status: PublicPlatformAnalyticsSeriesStatus) {
+        self.date = date
+        self.companiesActive = companiesActive
+        self.agentsActive = agentsActive
+        self.executionRuns = executionRuns
+        self.logicalToolCalls = logicalToolCalls
+        self.completedRuns = completedRuns
+        self.terminalRuns = terminalRuns
+        self.status = status
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case date = "date"
+        case companiesActive = "companies_active"
+        case agentsActive = "agents_active"
+        case executionRuns = "execution_runs"
+        case logicalToolCalls = "logical_tool_calls"
+        case completedRuns = "completed_runs"
+        case terminalRuns = "terminal_runs"
+        case status = "status"
+    }
+}
+
+/// `PublicPlatformAnalyticsSeriesStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct PublicPlatformAnalyticsSeriesStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let ok = PublicPlatformAnalyticsSeriesStatus(rawValue: "ok")
+    public static let partial = PublicPlatformAnalyticsSeriesStatus(rawValue: "partial")
+    public static let unavailable = PublicPlatformAnalyticsSeriesStatus(rawValue: "unavailable")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [PublicPlatformAnalyticsSeriesStatus] = [.ok, .partial, .unavailable]
+}
+
+/// `PublicPlatformAnalyticsStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct PublicPlatformAnalyticsStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let ok = PublicPlatformAnalyticsStatus(rawValue: "ok")
+    public static let partial = PublicPlatformAnalyticsStatus(rawValue: "partial")
+    public static let stale = PublicPlatformAnalyticsStatus(rawValue: "stale")
+    public static let unavailable = PublicPlatformAnalyticsStatus(rawValue: "unavailable")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [PublicPlatformAnalyticsStatus] = [.ok, .partial, .stale, .unavailable]
+}
+
+/// `PublicPlatformAnalyticsWindows` model.
+public struct PublicPlatformAnalyticsWindows: Codable, Hashable, Sendable {
+    public var field7d: PlatformAnalyticsWindow?
+    public var field30d: PlatformAnalyticsWindow?
+
+    public init(field7d: PlatformAnalyticsWindow? = nil, field30d: PlatformAnalyticsWindow? = nil) {
+        self.field7d = field7d
+        self.field30d = field30d
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case field7d = "7d"
+        case field30d = "30d"
+    }
 }
 
 /// public.ts GET /public/sessions/{sessionId} — every field always present; compacted entries
@@ -46284,7 +46736,7 @@ public struct RunEventV1RunCancelledPayload: Codable, Hashable, Sendable {
     /// stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
     /// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
     /// which one. Absent when the run carries none, or one this version does not list.
-    public var errorCode: ErrorCode?
+    public var errorCode: RunEventV1RunFailedPayloadErrorCode?
     public var errorDetails: JSONObject?
     public var message: String?
     public var reason: String?
@@ -46295,7 +46747,7 @@ public struct RunEventV1RunCancelledPayload: Codable, Hashable, Sendable {
     public var teamRunId: String?
     public var was: String?
 
-    public init(error: String? = nil, errorCode: ErrorCode? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil, previousStatus: String? = nil, teamRunId: String? = nil, was: String? = nil) {
+    public init(error: String? = nil, errorCode: RunEventV1RunFailedPayloadErrorCode? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil, previousStatus: String? = nil, teamRunId: String? = nil, was: String? = nil) {
         self.error = error
         self.errorCode = errorCode
         self.errorDetails = errorDetails
@@ -46601,7 +47053,7 @@ public struct RunEventV1RunFailedPayload: Codable, Hashable, Sendable {
     /// stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
     /// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
     /// which one. Absent when the run carries none, or one this version does not list.
-    public var errorCode: ErrorCode?
+    public var errorCode: RunEventV1RunFailedPayloadErrorCode?
     public var errorDetails: JSONObject?
     public var message: String?
     public var reason: String?
@@ -46609,7 +47061,7 @@ public struct RunEventV1RunFailedPayload: Codable, Hashable, Sendable {
     public var source: String?
     public var rejected: Bool?
 
-    public init(error: String, errorCode: ErrorCode? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil) {
+    public init(error: String, errorCode: RunEventV1RunFailedPayloadErrorCode? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil) {
         self.error = error
         self.errorCode = errorCode
         self.errorDetails = errorDetails
@@ -46630,6 +47082,219 @@ public struct RunEventV1RunFailedPayload: Codable, Hashable, Sendable {
         case source = "source"
         case rejected = "rejected"
     }
+}
+
+/// Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+/// beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+/// stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+/// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+/// which one. Absent when the run carries none, or one this version does not list.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunEventV1RunFailedPayloadErrorCode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let aarNotAvailable = RunEventV1RunFailedPayloadErrorCode(rawValue: "AAR_NOT_AVAILABLE")
+    public static let activeTenantNotSupported = RunEventV1RunFailedPayloadErrorCode(rawValue: "ACTIVE_TENANT_NOT_SUPPORTED")
+    public static let alreadyExists = RunEventV1RunFailedPayloadErrorCode(rawValue: "ALREADY_EXISTS")
+    public static let anonBusy = RunEventV1RunFailedPayloadErrorCode(rawValue: "ANON_BUSY")
+    public static let artifactIntegrityError = RunEventV1RunFailedPayloadErrorCode(rawValue: "ARTIFACT_INTEGRITY_ERROR")
+    public static let assessmentIsolationRequired = RunEventV1RunFailedPayloadErrorCode(rawValue: "ASSESSMENT_ISOLATION_REQUIRED")
+    public static let authError = RunEventV1RunFailedPayloadErrorCode(rawValue: "AUTH_ERROR")
+    public static let billingCancelled = RunEventV1RunFailedPayloadErrorCode(rawValue: "BILLING_CANCELLED")
+    public static let billingDisputed = RunEventV1RunFailedPayloadErrorCode(rawValue: "BILLING_DISPUTED")
+    public static let billingPastDue = RunEventV1RunFailedPayloadErrorCode(rawValue: "BILLING_PAST_DUE")
+    public static let budgetExceeded = RunEventV1RunFailedPayloadErrorCode(rawValue: "BUDGET_EXCEEDED")
+    public static let checksumMismatch = RunEventV1RunFailedPayloadErrorCode(rawValue: "CHECKSUM_MISMATCH")
+    public static let clientRequestConflict = RunEventV1RunFailedPayloadErrorCode(rawValue: "CLIENT_REQUEST_CONFLICT")
+    public static let companyNotReady = RunEventV1RunFailedPayloadErrorCode(rawValue: "COMPANY_NOT_READY")
+    public static let companyPaused = RunEventV1RunFailedPayloadErrorCode(rawValue: "COMPANY_PAUSED")
+    public static let concurrencyLimit = RunEventV1RunFailedPayloadErrorCode(rawValue: "CONCURRENCY_LIMIT")
+    public static let concurrentModification = RunEventV1RunFailedPayloadErrorCode(rawValue: "CONCURRENT_MODIFICATION")
+    public static let configurationError = RunEventV1RunFailedPayloadErrorCode(rawValue: "CONFIGURATION_ERROR")
+    public static let confirmationRequired = RunEventV1RunFailedPayloadErrorCode(rawValue: "CONFIRMATION_REQUIRED")
+    public static let conflict = RunEventV1RunFailedPayloadErrorCode(rawValue: "CONFLICT")
+    public static let contextLengthExceeded = RunEventV1RunFailedPayloadErrorCode(rawValue: "CONTEXT_LENGTH_EXCEEDED")
+    public static let countLimitReached = RunEventV1RunFailedPayloadErrorCode(rawValue: "COUNT_LIMIT_REACHED")
+    public static let dailyLimit = RunEventV1RunFailedPayloadErrorCode(rawValue: "DAILY_LIMIT")
+    public static let dependencyExists = RunEventV1RunFailedPayloadErrorCode(rawValue: "DEPENDENCY_EXISTS")
+    public static let eventStoreError = RunEventV1RunFailedPayloadErrorCode(rawValue: "EVENT_STORE_ERROR")
+    public static let executionProfileUnverifiable = RunEventV1RunFailedPayloadErrorCode(rawValue: "EXECUTION_PROFILE_UNVERIFIABLE")
+    public static let executionReceiptPending = RunEventV1RunFailedPayloadErrorCode(rawValue: "EXECUTION_RECEIPT_PENDING")
+    public static let externalServiceError = RunEventV1RunFailedPayloadErrorCode(rawValue: "EXTERNAL_SERVICE_ERROR")
+    public static let featuredSetContended = RunEventV1RunFailedPayloadErrorCode(rawValue: "FEATURED_SET_CONTENDED")
+    public static let featureDisabled = RunEventV1RunFailedPayloadErrorCode(rawValue: "FEATURE_DISABLED")
+    public static let fileNotFound = RunEventV1RunFailedPayloadErrorCode(rawValue: "FILE_NOT_FOUND")
+    public static let fileTypeNotAllowed = RunEventV1RunFailedPayloadErrorCode(rawValue: "FILE_TYPE_NOT_ALLOWED")
+    public static let forbidden = RunEventV1RunFailedPayloadErrorCode(rawValue: "FORBIDDEN")
+    public static let guardrailViolation = RunEventV1RunFailedPayloadErrorCode(rawValue: "GUARDRAIL_VIOLATION")
+    public static let idempotencyConflict = RunEventV1RunFailedPayloadErrorCode(rawValue: "IDEMPOTENCY_CONFLICT")
+    public static let idempotencyKeyReused = RunEventV1RunFailedPayloadErrorCode(rawValue: "IDEMPOTENCY_KEY_REUSED")
+    public static let initiativeBudgetExhausted = RunEventV1RunFailedPayloadErrorCode(rawValue: "INITIATIVE_BUDGET_EXHAUSTED")
+    public static let initiativePaused = RunEventV1RunFailedPayloadErrorCode(rawValue: "INITIATIVE_PAUSED")
+    public static let internalError = RunEventV1RunFailedPayloadErrorCode(rawValue: "INTERNAL_ERROR")
+    public static let invalidArchive = RunEventV1RunFailedPayloadErrorCode(rawValue: "INVALID_ARCHIVE")
+    public static let invalidBody = RunEventV1RunFailedPayloadErrorCode(rawValue: "INVALID_BODY")
+    public static let invalidCursor = RunEventV1RunFailedPayloadErrorCode(rawValue: "INVALID_CURSOR")
+    public static let invalidManifest = RunEventV1RunFailedPayloadErrorCode(rawValue: "INVALID_MANIFEST")
+    public static let invalidQuery = RunEventV1RunFailedPayloadErrorCode(rawValue: "INVALID_QUERY")
+    public static let invalidRequest = RunEventV1RunFailedPayloadErrorCode(rawValue: "INVALID_REQUEST")
+    public static let invalidShareList = RunEventV1RunFailedPayloadErrorCode(rawValue: "INVALID_SHARE_LIST")
+    public static let invalidShareTarget = RunEventV1RunFailedPayloadErrorCode(rawValue: "INVALID_SHARE_TARGET")
+    public static let invalidStateTransition = RunEventV1RunFailedPayloadErrorCode(rawValue: "INVALID_STATE_TRANSITION")
+    public static let isolationViolation = RunEventV1RunFailedPayloadErrorCode(rawValue: "ISOLATION_VIOLATION")
+    public static let llmError = RunEventV1RunFailedPayloadErrorCode(rawValue: "LLM_ERROR")
+    public static let managedAgent = RunEventV1RunFailedPayloadErrorCode(rawValue: "MANAGED_AGENT")
+    public static let maxDurationExceeded = RunEventV1RunFailedPayloadErrorCode(rawValue: "MAX_DURATION_EXCEEDED")
+    public static let maxTokensExceeded = RunEventV1RunFailedPayloadErrorCode(rawValue: "MAX_TOKENS_EXCEEDED")
+    public static let methodNotAllowed = RunEventV1RunFailedPayloadErrorCode(rawValue: "METHOD_NOT_ALLOWED")
+    public static let migrationConflict = RunEventV1RunFailedPayloadErrorCode(rawValue: "MIGRATION_CONFLICT")
+    public static let missingField = RunEventV1RunFailedPayloadErrorCode(rawValue: "MISSING_FIELD")
+    public static let missingScope = RunEventV1RunFailedPayloadErrorCode(rawValue: "MISSING_SCOPE")
+    public static let missionAlreadyRunning = RunEventV1RunFailedPayloadErrorCode(rawValue: "MISSION_ALREADY_RUNNING")
+    public static let missionConcurrencyLimit = RunEventV1RunFailedPayloadErrorCode(rawValue: "MISSION_CONCURRENCY_LIMIT")
+    public static let missionNotFound = RunEventV1RunFailedPayloadErrorCode(rawValue: "MISSION_NOT_FOUND")
+    public static let missionNotRunnable = RunEventV1RunFailedPayloadErrorCode(rawValue: "MISSION_NOT_RUNNABLE")
+    public static let missionNotRunning = RunEventV1RunFailedPayloadErrorCode(rawValue: "MISSION_NOT_RUNNING")
+    public static let missionRouteNotFound = RunEventV1RunFailedPayloadErrorCode(rawValue: "MISSION_ROUTE_NOT_FOUND")
+    public static let notBridgeAgent = RunEventV1RunFailedPayloadErrorCode(rawValue: "NOT_BRIDGE_AGENT")
+    public static let notFound = RunEventV1RunFailedPayloadErrorCode(rawValue: "NOT_FOUND")
+    public static let notYanked = RunEventV1RunFailedPayloadErrorCode(rawValue: "NOT_YANKED")
+    public static let noRunnableTarget = RunEventV1RunFailedPayloadErrorCode(rawValue: "NO_RUNNABLE_TARGET")
+    public static let oauthFailed = RunEventV1RunFailedPayloadErrorCode(rawValue: "OAUTH_FAILED")
+    public static let outputContractViolation = RunEventV1RunFailedPayloadErrorCode(rawValue: "OUTPUT_CONTRACT_VIOLATION")
+    public static let outputTooLarge = RunEventV1RunFailedPayloadErrorCode(rawValue: "OUTPUT_TOO_LARGE")
+    public static let payloadTooLarge = RunEventV1RunFailedPayloadErrorCode(rawValue: "PAYLOAD_TOO_LARGE")
+    public static let persistenceError = RunEventV1RunFailedPayloadErrorCode(rawValue: "PERSISTENCE_ERROR")
+    public static let plannerOutputInvalid = RunEventV1RunFailedPayloadErrorCode(rawValue: "PLANNER_OUTPUT_INVALID")
+    public static let plannerRefused = RunEventV1RunFailedPayloadErrorCode(rawValue: "PLANNER_REFUSED")
+    public static let preconditionFailed = RunEventV1RunFailedPayloadErrorCode(rawValue: "PRECONDITION_FAILED")
+    public static let prerequisiteMissing = RunEventV1RunFailedPayloadErrorCode(rawValue: "PREREQUISITE_MISSING")
+    public static let pricingUnavailable = RunEventV1RunFailedPayloadErrorCode(rawValue: "PRICING_UNAVAILABLE")
+    public static let privateNotShared = RunEventV1RunFailedPayloadErrorCode(rawValue: "PRIVATE_NOT_SHARED")
+    public static let processingPolicyChanged = RunEventV1RunFailedPayloadErrorCode(rawValue: "PROCESSING_POLICY_CHANGED")
+    public static let processingPolicyNotReady = RunEventV1RunFailedPayloadErrorCode(rawValue: "PROCESSING_POLICY_NOT_READY")
+    public static let promoRedemptionFailed = RunEventV1RunFailedPayloadErrorCode(rawValue: "PROMO_REDEMPTION_FAILED")
+    public static let proposalExpired = RunEventV1RunFailedPayloadErrorCode(rawValue: "PROPOSAL_EXPIRED")
+    public static let qualificationBudgetStop = RunEventV1RunFailedPayloadErrorCode(rawValue: "QUALIFICATION_BUDGET_STOP")
+    public static let qualificationRouteMismatch = RunEventV1RunFailedPayloadErrorCode(rawValue: "QUALIFICATION_ROUTE_MISMATCH")
+    public static let qualificationVersionUnavailable = RunEventV1RunFailedPayloadErrorCode(rawValue: "QUALIFICATION_VERSION_UNAVAILABLE")
+    public static let quotaExceeded = RunEventV1RunFailedPayloadErrorCode(rawValue: "QUOTA_EXCEEDED")
+    public static let rateLimited = RunEventV1RunFailedPayloadErrorCode(rawValue: "RATE_LIMITED")
+    public static let rateLimitExceeded = RunEventV1RunFailedPayloadErrorCode(rawValue: "RATE_LIMIT_EXCEEDED")
+    public static let referenceNotFound = RunEventV1RunFailedPayloadErrorCode(rawValue: "REFERENCE_NOT_FOUND")
+    public static let reservedScope = RunEventV1RunFailedPayloadErrorCode(rawValue: "RESERVED_SCOPE")
+    public static let runActive = RunEventV1RunFailedPayloadErrorCode(rawValue: "RUN_ACTIVE")
+    public static let runCancelled = RunEventV1RunFailedPayloadErrorCode(rawValue: "RUN_CANCELLED")
+    public static let scopeMismatch = RunEventV1RunFailedPayloadErrorCode(rawValue: "SCOPE_MISMATCH")
+    public static let scopeTaken = RunEventV1RunFailedPayloadErrorCode(rawValue: "SCOPE_TAKEN")
+    public static let searchProviderNotConfigured = RunEventV1RunFailedPayloadErrorCode(rawValue: "SEARCH_PROVIDER_NOT_CONFIGURED")
+    public static let searchUpstreamFailed = RunEventV1RunFailedPayloadErrorCode(rawValue: "SEARCH_UPSTREAM_FAILED")
+    public static let searchUpstreamTimeout = RunEventV1RunFailedPayloadErrorCode(rawValue: "SEARCH_UPSTREAM_TIMEOUT")
+    public static let securityScanFailed = RunEventV1RunFailedPayloadErrorCode(rawValue: "SECURITY_SCAN_FAILED")
+    public static let serviceUnavailable = RunEventV1RunFailedPayloadErrorCode(rawValue: "SERVICE_UNAVAILABLE")
+    public static let sessionNotActive = RunEventV1RunFailedPayloadErrorCode(rawValue: "SESSION_NOT_ACTIVE")
+    public static let shareListConflict = RunEventV1RunFailedPayloadErrorCode(rawValue: "SHARE_LIST_CONFLICT")
+    public static let signingNotConfigured = RunEventV1RunFailedPayloadErrorCode(rawValue: "SIGNING_NOT_CONFIGURED")
+    public static let sizeLimit = RunEventV1RunFailedPayloadErrorCode(rawValue: "SIZE_LIMIT")
+    public static let specNotFound = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPEC_NOT_FOUND")
+    public static let sponsorshipBudgetBelowCommitted = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_BUDGET_BELOW_COMMITTED")
+    public static let sponsorshipBudgetExhausted = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_BUDGET_EXHAUSTED")
+    public static let sponsorshipCandidateLimit = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_CANDIDATE_LIMIT")
+    public static let sponsorshipConcurrencyLimit = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_CONCURRENCY_LIMIT")
+    public static let sponsorshipFundingUnavailable = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_FUNDING_UNAVAILABLE")
+    public static let sponsorshipGrantConflict = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_GRANT_CONFLICT")
+    public static let sponsorshipGrantInUse = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_GRANT_IN_USE")
+    public static let sponsorshipGrantMismatch = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_GRANT_MISMATCH")
+    public static let sponsorshipGrantUnavailable = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_GRANT_UNAVAILABLE")
+    public static let sponsorshipOutcomeUnknown = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_OUTCOME_UNKNOWN")
+    public static let sponsorshipProgramImmutable = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_PROGRAM_IMMUTABLE")
+    public static let sponsorshipProgramInactive = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_PROGRAM_INACTIVE")
+    public static let sponsorshipProgramRevisionConflict = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_PROGRAM_REVISION_CONFLICT")
+    public static let sponsorshipRequired = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_REQUIRED")
+    public static let sponsorshipScopeRequired = RunEventV1RunFailedPayloadErrorCode(rawValue: "SPONSORSHIP_SCOPE_REQUIRED")
+    public static let startedByAnotherUser = RunEventV1RunFailedPayloadErrorCode(rawValue: "STARTED_BY_ANOTHER_USER")
+    public static let strategistModelUnconfigured = RunEventV1RunFailedPayloadErrorCode(rawValue: "STRATEGIST_MODEL_UNCONFIGURED")
+    public static let superAdminRequired = RunEventV1RunFailedPayloadErrorCode(rawValue: "SUPER_ADMIN_REQUIRED")
+    public static let taskGraphFailed = RunEventV1RunFailedPayloadErrorCode(rawValue: "TASK_GRAPH_FAILED")
+    public static let teamAbort = RunEventV1RunFailedPayloadErrorCode(rawValue: "TEAM_ABORT")
+    public static let termsNotAccepted = RunEventV1RunFailedPayloadErrorCode(rawValue: "TERMS_NOT_ACCEPTED")
+    public static let textExtractionFailed = RunEventV1RunFailedPayloadErrorCode(rawValue: "TEXT_EXTRACTION_FAILED")
+    public static let unauthenticated = RunEventV1RunFailedPayloadErrorCode(rawValue: "UNAUTHENTICATED")
+    public static let usageCorrectionExceedsCounters = RunEventV1RunFailedPayloadErrorCode(rawValue: "USAGE_CORRECTION_EXCEEDS_COUNTERS")
+    public static let usageCorrectionInProgress = RunEventV1RunFailedPayloadErrorCode(rawValue: "USAGE_CORRECTION_IN_PROGRESS")
+    public static let usageCorrectionNotSettled = RunEventV1RunFailedPayloadErrorCode(rawValue: "USAGE_CORRECTION_NOT_SETTLED")
+    public static let usageCorrectionNotSponsored = RunEventV1RunFailedPayloadErrorCode(rawValue: "USAGE_CORRECTION_NOT_SPONSORED")
+    public static let userRequired = RunEventV1RunFailedPayloadErrorCode(rawValue: "USER_REQUIRED")
+    public static let validationError = RunEventV1RunFailedPayloadErrorCode(rawValue: "VALIDATION_ERROR")
+    public static let verificationFailed = RunEventV1RunFailedPayloadErrorCode(rawValue: "VERIFICATION_FAILED")
+    public static let versionConflict = RunEventV1RunFailedPayloadErrorCode(rawValue: "VERSION_CONFLICT")
+    public static let versionNotFound = RunEventV1RunFailedPayloadErrorCode(rawValue: "VERSION_NOT_FOUND")
+    public static let workspaceStorageLimit = RunEventV1RunFailedPayloadErrorCode(rawValue: "WORKSPACE_STORAGE_LIMIT")
+    public static let wouldOrphan = RunEventV1RunFailedPayloadErrorCode(rawValue: "WOULD_ORPHAN")
+    public static let yankConflict = RunEventV1RunFailedPayloadErrorCode(rawValue: "YANK_CONFLICT")
+    public static let agentDeleted = RunEventV1RunFailedPayloadErrorCode(rawValue: "agent_deleted")
+    public static let agentNotFound = RunEventV1RunFailedPayloadErrorCode(rawValue: "agent_not_found")
+    public static let alreadyBootstrapped = RunEventV1RunFailedPayloadErrorCode(rawValue: "already_bootstrapped")
+    public static let approvalRejected = RunEventV1RunFailedPayloadErrorCode(rawValue: "approval_rejected")
+    public static let billingNotConfigured = RunEventV1RunFailedPayloadErrorCode(rawValue: "billing_not_configured")
+    public static let consentRequired = RunEventV1RunFailedPayloadErrorCode(rawValue: "consent_required")
+    public static let cvInvalid = RunEventV1RunFailedPayloadErrorCode(rawValue: "cv_invalid")
+    public static let cvTooLarge = RunEventV1RunFailedPayloadErrorCode(rawValue: "cv_too_large")
+    public static let duplicateApplication = RunEventV1RunFailedPayloadErrorCode(rawValue: "duplicate_application")
+    public static let governanceNotEnabled = RunEventV1RunFailedPayloadErrorCode(rawValue: "governance_not_enabled")
+    public static let hireCatalogUnknown = RunEventV1RunFailedPayloadErrorCode(rawValue: "hire_catalog_unknown")
+    public static let incompleteRecord = RunEventV1RunFailedPayloadErrorCode(rawValue: "incomplete_record")
+    public static let inertPolicyField = RunEventV1RunFailedPayloadErrorCode(rawValue: "inert_policy_field")
+    public static let inertPublicConfigField = RunEventV1RunFailedPayloadErrorCode(rawValue: "inert_public_config_field")
+    public static let jobApplyElsewhere = RunEventV1RunFailedPayloadErrorCode(rawValue: "job_apply_elsewhere")
+    public static let jobClosed = RunEventV1RunFailedPayloadErrorCode(rawValue: "job_closed")
+    public static let kbChunkLimit = RunEventV1RunFailedPayloadErrorCode(rawValue: "kb_chunk_limit")
+    public static let kbDocumentBodyInvalid = RunEventV1RunFailedPayloadErrorCode(rawValue: "kb_document_body_invalid")
+    public static let kbDocumentTooLarge = RunEventV1RunFailedPayloadErrorCode(rawValue: "kb_document_too_large")
+    public static let kbEmbeddingFailed = RunEventV1RunFailedPayloadErrorCode(rawValue: "kb_embedding_failed")
+    public static let kbStorageLimit = RunEventV1RunFailedPayloadErrorCode(rawValue: "kb_storage_limit")
+    public static let kbTextExtractionFailed = RunEventV1RunFailedPayloadErrorCode(rawValue: "kb_text_extraction_failed")
+    public static let limitReached = RunEventV1RunFailedPayloadErrorCode(rawValue: "limit_reached")
+    public static let mfaRequired = RunEventV1RunFailedPayloadErrorCode(rawValue: "mfa_required")
+    public static let noEligibleArbiter = RunEventV1RunFailedPayloadErrorCode(rawValue: "no_eligible_arbiter")
+    public static let notHired = RunEventV1RunFailedPayloadErrorCode(rawValue: "not_hired")
+    public static let planUpgradeRequired = RunEventV1RunFailedPayloadErrorCode(rawValue: "plan_upgrade_required")
+    public static let proposalRequired = RunEventV1RunFailedPayloadErrorCode(rawValue: "proposal_required")
+    public static let providerAuthFailed = RunEventV1RunFailedPayloadErrorCode(rawValue: "provider_auth_failed")
+    public static let providerCircuitOpen = RunEventV1RunFailedPayloadErrorCode(rawValue: "provider_circuit_open")
+    public static let providerNotConfigured = RunEventV1RunFailedPayloadErrorCode(rawValue: "provider_not_configured")
+    public static let providerRateLimited = RunEventV1RunFailedPayloadErrorCode(rawValue: "provider_rate_limited")
+    public static let quotaExceeded_ = RunEventV1RunFailedPayloadErrorCode(rawValue: "quota_exceeded")
+    public static let rateLimited_ = RunEventV1RunFailedPayloadErrorCode(rawValue: "rate_limited")
+    public static let resourceLimitReached = RunEventV1RunFailedPayloadErrorCode(rawValue: "resource_limit_reached")
+    public static let runAgentStopped = RunEventV1RunFailedPayloadErrorCode(rawValue: "run_agent_stopped")
+    public static let runApprovalExpired = RunEventV1RunFailedPayloadErrorCode(rawValue: "run_approval_expired")
+    public static let runInputTimeout = RunEventV1RunFailedPayloadErrorCode(rawValue: "run_input_timeout")
+    public static let runNeverClaimed = RunEventV1RunFailedPayloadErrorCode(rawValue: "run_never_claimed")
+    public static let runOrphanedRestart = RunEventV1RunFailedPayloadErrorCode(rawValue: "run_orphaned_restart")
+    public static let runQuotaExceeded = RunEventV1RunFailedPayloadErrorCode(rawValue: "run_quota_exceeded")
+    public static let runStalled = RunEventV1RunFailedPayloadErrorCode(rawValue: "run_stalled")
+    public static let secretWouldMove = RunEventV1RunFailedPayloadErrorCode(rawValue: "secret_would_move")
+    public static let videoConsentRequired = RunEventV1RunFailedPayloadErrorCode(rawValue: "video_consent_required")
+    public static let videoOrderState = RunEventV1RunFailedPayloadErrorCode(rawValue: "video_order_state")
+    public static let videoPhotoInvalid = RunEventV1RunFailedPayloadErrorCode(rawValue: "video_photo_invalid")
+    public static let videoPhotoRejected = RunEventV1RunFailedPayloadErrorCode(rawValue: "video_photo_rejected")
+    public static let videoRegenUnavailable = RunEventV1RunFailedPayloadErrorCode(rawValue: "video_regen_unavailable")
+    public static let videoSlotInvalid = RunEventV1RunFailedPayloadErrorCode(rawValue: "video_slot_invalid")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunEventV1RunFailedPayloadErrorCode] = [.aarNotAvailable, .activeTenantNotSupported, .alreadyExists, .anonBusy, .artifactIntegrityError, .assessmentIsolationRequired, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .clientRequestConflict, .companyNotReady, .companyPaused, .concurrencyLimit, .concurrentModification, .configurationError, .confirmationRequired, .conflict, .contextLengthExceeded, .countLimitReached, .dailyLimit, .dependencyExists, .eventStoreError, .executionProfileUnverifiable, .executionReceiptPending, .externalServiceError, .featuredSetContended, .featureDisabled, .fileNotFound, .fileTypeNotAllowed, .forbidden, .guardrailViolation, .idempotencyConflict, .idempotencyKeyReused, .initiativeBudgetExhausted, .initiativePaused, .internalError, .invalidArchive, .invalidBody, .invalidCursor, .invalidManifest, .invalidQuery, .invalidRequest, .invalidShareList, .invalidShareTarget, .invalidStateTransition, .isolationViolation, .llmError, .managedAgent, .maxDurationExceeded, .maxTokensExceeded, .methodNotAllowed, .migrationConflict, .missingField, .missingScope, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notBridgeAgent, .notFound, .notYanked, .noRunnableTarget, .oauthFailed, .outputContractViolation, .outputTooLarge, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .prerequisiteMissing, .pricingUnavailable, .privateNotShared, .processingPolicyChanged, .processingPolicyNotReady, .promoRedemptionFailed, .proposalExpired, .qualificationBudgetStop, .qualificationRouteMismatch, .qualificationVersionUnavailable, .quotaExceeded, .rateLimited, .rateLimitExceeded, .referenceNotFound, .reservedScope, .runActive, .runCancelled, .scopeMismatch, .scopeTaken, .searchProviderNotConfigured, .searchUpstreamFailed, .searchUpstreamTimeout, .securityScanFailed, .serviceUnavailable, .sessionNotActive, .shareListConflict, .signingNotConfigured, .sizeLimit, .specNotFound, .sponsorshipBudgetBelowCommitted, .sponsorshipBudgetExhausted, .sponsorshipCandidateLimit, .sponsorshipConcurrencyLimit, .sponsorshipFundingUnavailable, .sponsorshipGrantConflict, .sponsorshipGrantInUse, .sponsorshipGrantMismatch, .sponsorshipGrantUnavailable, .sponsorshipOutcomeUnknown, .sponsorshipProgramImmutable, .sponsorshipProgramInactive, .sponsorshipProgramRevisionConflict, .sponsorshipRequired, .sponsorshipScopeRequired, .startedByAnotherUser, .strategistModelUnconfigured, .superAdminRequired, .taskGraphFailed, .teamAbort, .termsNotAccepted, .textExtractionFailed, .unauthenticated, .usageCorrectionExceedsCounters, .usageCorrectionInProgress, .usageCorrectionNotSettled, .usageCorrectionNotSponsored, .userRequired, .validationError, .verificationFailed, .versionConflict, .versionNotFound, .workspaceStorageLimit, .wouldOrphan, .yankConflict, .agentDeleted, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .consentRequired, .cvInvalid, .cvTooLarge, .duplicateApplication, .governanceNotEnabled, .hireCatalogUnknown, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .jobApplyElsewhere, .jobClosed, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbEmbeddingFailed, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .mfaRequired, .noEligibleArbiter, .notHired, .planUpgradeRequired, .proposalRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited_, .resourceLimitReached, .runAgentStopped, .runApprovalExpired, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded, .runStalled, .secretWouldMove, .videoConsentRequired, .videoOrderState, .videoPhotoInvalid, .videoPhotoRejected, .videoRegenUnavailable, .videoSlotInvalid]
 }
 
 /// `RunEventV1RunFailedType` values.
@@ -46708,7 +47373,7 @@ public struct RunEventV1RunGuardrailBlockedPayload: Codable, Hashable, Sendable 
     /// stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
     /// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
     /// which one. Absent when the run carries none, or one this version does not list.
-    public var errorCode: ErrorCode?
+    public var errorCode: RunEventV1RunFailedPayloadErrorCode?
     public var errorDetails: JSONObject?
     public var message: String?
     public var reason: String?
@@ -46716,7 +47381,7 @@ public struct RunEventV1RunGuardrailBlockedPayload: Codable, Hashable, Sendable 
     public var source: String?
     public var rejected: Bool?
 
-    public init(error: String, errorCode: ErrorCode? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil) {
+    public init(error: String, errorCode: RunEventV1RunFailedPayloadErrorCode? = nil, errorDetails: JSONObject? = nil, message: String? = nil, reason: String? = nil, endReason: String? = nil, source: String? = nil, rejected: Bool? = nil) {
         self.error = error
         self.errorCode = errorCode
         self.errorDetails = errorDetails
@@ -51493,14 +52158,46 @@ public struct SetModelPricingOverrideResponse: Codable, Hashable, Sendable {
 
 /// `SetRateLimitsRequest` model.
 public struct SetRateLimitsRequest: Codable, Hashable, Sendable {
-    public var endpoints: JSONValue
+    public var endpoints: [String: SetRateLimitsRequestEndpointsValue]
 
-    public init(endpoints: JSONValue) {
+    public init(endpoints: [String: SetRateLimitsRequestEndpointsValue]) {
         self.endpoints = endpoints
     }
 
     private enum CodingKeys: String, CodingKey {
         case endpoints = "endpoints"
+    }
+}
+
+/// `SetRateLimitsRequestEndpointsValue` model.
+public struct SetRateLimitsRequestEndpointsValue: Codable, Hashable, Sendable {
+    /// Deprecated spelling of `max_requests` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `max_requests`.
+    ///
+    /// - Warning: Deprecated by the API.
+    public var maxRequests: Int?
+    public var maxRequests_: Int?
+    /// Deprecated spelling of `window_sec` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `window_sec`.
+    ///
+    /// - Warning: Deprecated by the API.
+    public var windowSec: Int?
+    public var windowSec_: Int?
+
+    public init(maxRequests: Int? = nil, maxRequests_: Int? = nil, windowSec: Int? = nil, windowSec_: Int? = nil) {
+        self.maxRequests = maxRequests
+        self.maxRequests_ = maxRequests_
+        self.windowSec = windowSec
+        self.windowSec_ = windowSec_
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxRequests = "maxRequests"
+        case maxRequests_ = "max_requests"
+        case windowSec = "windowSec"
+        case windowSec_ = "window_sec"
     }
 }
 
@@ -52293,13 +52990,14 @@ public struct StartSquadRunResponse: Codable, Hashable, Sendable {
 /// run started, it just was not the run that was asked for. They belong inside `input`, which
 /// is where the handler reads them.
 public struct StartTeamRunRequest: Codable, Hashable, Sendable {
-    /// The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
-    /// absent, @mentions in `message` are parsed for the same purpose.
-    public var input: JSONValue
+    /// The turn; omission defaults to an empty input. A bare string is expanded to `{ message }`.
+    /// `addressed_to` selects who answers; absent, @mentions in `message` are parsed for the same
+    /// purpose.
+    public var input: JSONValue?
     /// Accepted by the handler and undeclared here until now — the drift ran both ways.
     public var metadata: JSONObject?
 
-    public init(input: JSONValue, metadata: JSONObject? = nil) {
+    public init(input: JSONValue? = nil, metadata: JSONObject? = nil) {
         self.input = input
         self.metadata = metadata
     }
@@ -56814,18 +57512,18 @@ public struct UpdateAdminJobRequest: Codable, Hashable, Sendable {
     public var employmentType: JobEmploymentType?
     public var workplaceType: JobWorkplaceType?
     public var location: UpdateAdminJobRequestLocation?
-    public var applicantCountries: [JSONValue]?
+    public var applicantCountries: [String]?
     public var englishLevel: JobEnglishLevel?
     public var experienceYearsMin: Int?
     public var skills: [String]?
-    public var salary: UpdateAdminJobRequestSalary?
+    public var salary: UpdateAdminJobRequestSalaryVariant1?
     public var salaryPublic: Bool?
     public var apply: UpdateAdminJobRequestApply?
     public var language: VideoOrderLocale?
     public var status: JobStatus?
     public var closesAt: String?
 
-    public init(title: String? = nil, summary: String? = nil, `description`: String? = nil, responsibilities: [String]? = nil, requirements: [String]? = nil, niceToHave: [String]? = nil, benefits: [String]? = nil, category: String? = nil, department: String? = nil, seniority: JobSeniority? = nil, employmentType: JobEmploymentType? = nil, workplaceType: JobWorkplaceType? = nil, location: UpdateAdminJobRequestLocation? = nil, applicantCountries: [JSONValue]? = nil, englishLevel: JobEnglishLevel? = nil, experienceYearsMin: Int? = nil, skills: [String]? = nil, salary: UpdateAdminJobRequestSalary? = nil, salaryPublic: Bool? = nil, apply: UpdateAdminJobRequestApply? = nil, language: VideoOrderLocale? = nil, status: JobStatus? = nil, closesAt: String? = nil) {
+    public init(title: String? = nil, summary: String? = nil, `description`: String? = nil, responsibilities: [String]? = nil, requirements: [String]? = nil, niceToHave: [String]? = nil, benefits: [String]? = nil, category: String? = nil, department: String? = nil, seniority: JobSeniority? = nil, employmentType: JobEmploymentType? = nil, workplaceType: JobWorkplaceType? = nil, location: UpdateAdminJobRequestLocation? = nil, applicantCountries: [String]? = nil, englishLevel: JobEnglishLevel? = nil, experienceYearsMin: Int? = nil, skills: [String]? = nil, salary: UpdateAdminJobRequestSalaryVariant1? = nil, salaryPublic: Bool? = nil, apply: UpdateAdminJobRequestApply? = nil, language: VideoOrderLocale? = nil, status: JobStatus? = nil, closesAt: String? = nil) {
         self.title = title
         self.summary = summary
         self.`description` = `description`
@@ -56906,9 +57604,9 @@ public struct UpdateAdminJobRequestApply: Codable, Hashable, Sendable {
 /// `UpdateAdminJobRequestLocation` model.
 public struct UpdateAdminJobRequestLocation: Codable, Hashable, Sendable {
     public var city: String?
-    public var country: JSONValue?
+    public var country: String?
 
-    public init(city: String? = nil, country: JSONValue? = nil) {
+    public init(city: String? = nil, country: String? = nil) {
         self.city = city
         self.country = country
     }
@@ -56919,14 +57617,14 @@ public struct UpdateAdminJobRequestLocation: Codable, Hashable, Sendable {
     }
 }
 
-/// `UpdateAdminJobRequestSalary` model.
-public struct UpdateAdminJobRequestSalary: Codable, Hashable, Sendable {
+/// `UpdateAdminJobRequestSalaryVariant1` model.
+public struct UpdateAdminJobRequestSalaryVariant1: Codable, Hashable, Sendable {
     public var min: Double?
     public var max: Double?
-    public var currency: JSONValue
+    public var currency: String
     public var period: JobSalaryPeriod
 
-    public init(min: Double? = nil, max: Double? = nil, currency: JSONValue, period: JobSalaryPeriod) {
+    public init(min: Double? = nil, max: Double? = nil, currency: String, period: JobSalaryPeriod) {
         self.min = min
         self.max = max
         self.currency = currency
@@ -57786,14 +58484,14 @@ public struct UpdateAdminRetentionConfigResponseRetention: Codable, Hashable, Se
 /// `UpdateAdminRunCommandConfigRequest` model.
 public struct UpdateAdminRunCommandConfigRequest: Codable, Hashable, Sendable {
     public var enabled: Bool?
-    public var isolation: JSONValue?
+    public var isolation: AdminConfigRunCommandConfigRunCommandIsolation?
     public var timeoutMs: Int?
     public var maxOutputBytes: Int?
     public var allowedCommands: [String]?
     public var denoAllow: [String]?
     public var containerImage: String?
 
-    public init(enabled: Bool? = nil, isolation: JSONValue? = nil, timeoutMs: Int? = nil, maxOutputBytes: Int? = nil, allowedCommands: [String]? = nil, denoAllow: [String]? = nil, containerImage: String? = nil) {
+    public init(enabled: Bool? = nil, isolation: AdminConfigRunCommandConfigRunCommandIsolation? = nil, timeoutMs: Int? = nil, maxOutputBytes: Int? = nil, allowedCommands: [String]? = nil, denoAllow: [String]? = nil, containerImage: String? = nil) {
         self.enabled = enabled
         self.isolation = isolation
         self.timeoutMs = timeoutMs
@@ -59525,9 +60223,9 @@ public struct UpdateSessionTodoRequest: Codable, Hashable, Sendable {
     public var dueAt: String?
     public var assignAgentId: String?
     public var assignTeamId: String?
-    public var recurrence: UpdateSessionTodoRequestRecurrence?
+    public var recurrence: UpdateSessionTodoRequestRecurrenceVariant1?
 
-    public init(title: String? = nil, status: String? = nil, orderIndex: Double? = nil, instructions: String? = nil, dueAt: String? = nil, assignAgentId: String? = nil, assignTeamId: String? = nil, recurrence: UpdateSessionTodoRequestRecurrence? = nil) {
+    public init(title: String? = nil, status: String? = nil, orderIndex: Double? = nil, instructions: String? = nil, dueAt: String? = nil, assignAgentId: String? = nil, assignTeamId: String? = nil, recurrence: UpdateSessionTodoRequestRecurrenceVariant1? = nil) {
         self.title = title
         self.status = status
         self.orderIndex = orderIndex
@@ -59550,8 +60248,8 @@ public struct UpdateSessionTodoRequest: Codable, Hashable, Sendable {
     }
 }
 
-/// `UpdateSessionTodoRequestRecurrence` model.
-public struct UpdateSessionTodoRequestRecurrence: Codable, Hashable, Sendable {
+/// `UpdateSessionTodoRequestRecurrenceVariant1` model.
+public struct UpdateSessionTodoRequestRecurrenceVariant1: Codable, Hashable, Sendable {
     public var cron: String
     public var timezone: String?
 

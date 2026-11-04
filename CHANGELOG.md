@@ -6,6 +6,46 @@ All six SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.13.5 — 2026-11-04
+
+Build `0e6666cb`, digest `48904fdbaf7ef5b8`. Against 0.13.4: 656 paths (+2), 875
+operations (+2), 513 schemas (+3), 2370 named types (+19: 24 added, 5 renamed);
+no operation or schema removed.
+
+### Added
+
+- Public platform analytics, no credential needed: `GET /public/platform-analytics`
+  (`getPublicPlatformAnalytics` → `PublicPlatformAnalytics`, the reconciled
+  lifetime activity with windows and a daily series) and its resumable stream
+  `GET /public/platform-analytics/events` (`streamPublicPlatformAnalytics`, with
+  `after` and `Last-Event-ID`). Schemas `PlatformAnalyticsMetric`,
+  `PlatformAnalyticsWindow`, `PublicPlatformAnalytics`.
+- `REQUEST_CANCELLED` joins `ErrorCode`.
+
+### Changed — may need a code change
+
+- Five request types are renamed. The document now spells a nullable object
+  `anyOf: [X, null]` where it used to say `type: [X, "null"]`, and the generator
+  names the member of an `anyOf` after its position, as it already did for nine
+  published types. Changing that rule would rename those nine instead.
+  - `CreateAdminJobRequestSalary` → `CreateAdminJobRequestSalaryVariant1`
+  - `UpdateAdminJobRequestSalary` → `UpdateAdminJobRequestSalaryVariant1`
+  - `UpdateSessionTodoRequestRecurrence` → `UpdateSessionTodoRequestRecurrenceVariant1`
+  - `AdminPutLandingConfigRequestPartner` → `AdminPutLandingConfigRequestPartnersVariant1item`
+    (and its `…Logo`)
+
+  Only code that names these types changes; the wire does not.
+- The v1 `error_code` in `run.failed`, `run.cancelled` and `run.guardrail_blocked`
+  has its own type, `RunEventV1RunFailedPayloadErrorCode`. Its 188 codes are
+  frozen for v1, and `ErrorCode` has grown past them, so the two are no longer
+  the same list.
+
+### Fixed — Rust
+
+A property whose name starts with a digit — `7d` and `30d` in the analytics
+windows — came out as `pub 7d`, which does not parse. It is now `field_7d`
+(renamed on the wire), as Swift and Kotlin already spell it `field7d`.
+
 ## 0.13.4 — 2026-10-31
 
 Build `5f6d4f9e`, digest `03b620433c30ac44`. Same 654 paths, 873 operations, 510

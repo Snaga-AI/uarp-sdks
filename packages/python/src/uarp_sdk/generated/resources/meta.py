@@ -116,6 +116,28 @@ class MetaResource:
             request_options=request_options,
         ))
 
+    def get_public_platform_analytics(self, *, request_options: Optional[RequestOptions] = None) -> _m.PublicPlatformAnalytics:
+        """Read reconciled lifetime platform activity
+
+        Aggregate-only materialized snapshot. Scope includes internal research and tests across all
+        production tenants; companies are not customers. Execution runs have actual LLM/tool work
+        evidence, including pending and failed admitted runs. Pre-work refusals are excluded.
+        Logical tool attempts do not assert external business success. Technical completion is
+        completed/terminal admitted runs, not quality. Lifetime since remains null when
+        inception/retention coverage cannot be verified. Partial counts represent observed minima; a
+        partial ratio is not a lower bound. Windows select work-start cohorts; their latest terminal
+        outcomes use the same cohort. Null is unavailable, never an invented zero. data_through is a
+        durable source barrier, not generation or heartbeat time. No-store; 60 reads/minute/IP.
+
+        `GET /api/v1/public/platform-analytics`
+        """
+        return _cast("_m.PublicPlatformAnalytics", self._client._request(
+            "GET",
+            "/api/v1/public/platform-analytics",
+            response=_Response(type=_m.PublicPlatformAnalytics),
+            request_options=request_options,
+        ))
+
     def search(self, *, q: str, type: Optional[_m.SearchType] = None, limit: Optional[int] = None, request_options: Optional[RequestOptions] = None) -> _m.SearchResponse:
         """Search across agents, sessions, runs
 
@@ -139,6 +161,30 @@ class MetaResource:
             response=_Response(type=_m.SearchResponse),
             request_options=request_options,
         ))
+
+    def stream_public_platform_analytics(self, *, after: Optional[str] = None, last_event_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> EventStream:
+        """Stream resumable public platform activity
+
+        snapshot/update/reset carry a complete PublicPlatformAnalytics with SSE id equal to its
+        decimal revision. Compare revisions numerically, not lexicographically. Last-Event-ID or
+        ?after resumes up to 128 retained revisions; a missing, future, or expired cursor produces
+        reset with the current full snapshot. Heartbeat every 15 seconds contains
+        generated_at,data_through,processed_through,status and no id; it never advances metric
+        coverage. KV watch is installed before initial snapshot/replay, and concurrent updates are
+        deduplicated by revision. Connection admission is capped at 20/minute/IP and 200 concurrent
+        streams/replica; slow readers are disconnected. No credentials or tenant IDs accepted or
+        emitted.
+
+        `GET /api/v1/public/platform-analytics/events`
+
+        Returns a server-sent event stream; iterate it with `for`.
+        """
+        return self._client._stream(
+            "/api/v1/public/platform-analytics/events",
+            query=[("after", after)],
+            headers=[("Last-Event-ID", last_event_id)],
+            request_options=request_options,
+        )
 
 
 class AsyncMetaResource:
@@ -228,6 +274,28 @@ class AsyncMetaResource:
             request_options=request_options,
         ))
 
+    async def get_public_platform_analytics(self, *, request_options: Optional[RequestOptions] = None) -> _m.PublicPlatformAnalytics:
+        """Read reconciled lifetime platform activity
+
+        Aggregate-only materialized snapshot. Scope includes internal research and tests across all
+        production tenants; companies are not customers. Execution runs have actual LLM/tool work
+        evidence, including pending and failed admitted runs. Pre-work refusals are excluded.
+        Logical tool attempts do not assert external business success. Technical completion is
+        completed/terminal admitted runs, not quality. Lifetime since remains null when
+        inception/retention coverage cannot be verified. Partial counts represent observed minima; a
+        partial ratio is not a lower bound. Windows select work-start cohorts; their latest terminal
+        outcomes use the same cohort. Null is unavailable, never an invented zero. data_through is a
+        durable source barrier, not generation or heartbeat time. No-store; 60 reads/minute/IP.
+
+        `GET /api/v1/public/platform-analytics`
+        """
+        return _cast("_m.PublicPlatformAnalytics", await self._client._request(
+            "GET",
+            "/api/v1/public/platform-analytics",
+            response=_Response(type=_m.PublicPlatformAnalytics),
+            request_options=request_options,
+        ))
+
     async def search(self, *, q: str, type: Optional[_m.SearchType] = None, limit: Optional[int] = None, request_options: Optional[RequestOptions] = None) -> _m.SearchResponse:
         """Search across agents, sessions, runs
 
@@ -251,3 +319,27 @@ class AsyncMetaResource:
             response=_Response(type=_m.SearchResponse),
             request_options=request_options,
         ))
+
+    def stream_public_platform_analytics(self, *, after: Optional[str] = None, last_event_id: Optional[str] = None, request_options: Optional[RequestOptions] = None) -> AsyncEventStream:
+        """Stream resumable public platform activity
+
+        snapshot/update/reset carry a complete PublicPlatformAnalytics with SSE id equal to its
+        decimal revision. Compare revisions numerically, not lexicographically. Last-Event-ID or
+        ?after resumes up to 128 retained revisions; a missing, future, or expired cursor produces
+        reset with the current full snapshot. Heartbeat every 15 seconds contains
+        generated_at,data_through,processed_through,status and no id; it never advances metric
+        coverage. KV watch is installed before initial snapshot/replay, and concurrent updates are
+        deduplicated by revision. Connection admission is capped at 20/minute/IP and 200 concurrent
+        streams/replica; slow readers are disconnected. No credentials or tenant IDs accepted or
+        emitted.
+
+        `GET /api/v1/public/platform-analytics/events`
+
+        Returns a server-sent event stream; iterate it with `async for`.
+        """
+        return self._client._stream(
+            "/api/v1/public/platform-analytics/events",
+            query=[("after", after)],
+            headers=[("Last-Event-ID", last_event_id)],
+            request_options=request_options,
+        )

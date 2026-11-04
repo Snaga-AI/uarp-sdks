@@ -2379,30 +2379,9 @@ pub struct AdminPutLandingConfigRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub partners_enabled: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub partners: Option<Vec<AdminPutLandingConfigRequestPartner>>,
+    pub partners: Option<Vec<AdminPutLandingConfigRequestPartnersVariant1item>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expected_version: Option<String>,
-}
-
-/// `AdminPutLandingConfigRequestPartner` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct AdminPutLandingConfigRequestPartner {
-    pub id: String,
-    pub name: String,
-    pub tagline: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tagline_uk: Option<String>,
-    pub href: String,
-    pub logo: AdminPutLandingConfigRequestPartnerLogo,
-}
-
-/// `AdminPutLandingConfigRequestPartnerLogo` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct AdminPutLandingConfigRequestPartnerLogo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub slug: Option<AdminPutLandingConfigRequestPartnerLogoSlug>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
 }
 
 /// `AdminPutLandingConfigRequestPartnerLogoSlug` enumeration.
@@ -2475,6 +2454,27 @@ impl From<&str> for AdminPutLandingConfigRequestPartnerLogoSlug {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `AdminPutLandingConfigRequestPartnersVariant1item` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPutLandingConfigRequestPartnersVariant1item {
+    pub id: String,
+    pub name: String,
+    pub tagline: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tagline_uk: Option<String>,
+    pub href: String,
+    pub logo: AdminPutLandingConfigRequestPartnersVariant1itemLogo,
+}
+
+/// `AdminPutLandingConfigRequestPartnersVariant1itemLogo` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPutLandingConfigRequestPartnersVariant1itemLogo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub slug: Option<AdminPutLandingConfigRequestPartnerLogoSlug>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
 }
 
 /// `AdminPutLandingConfigRequestTextsValue` model.
@@ -10632,12 +10632,10 @@ pub struct CreateAdminJobRequest {
     pub seniority: Option<JobSeniority>,
     pub employment_type: JobEmploymentType,
     pub workplace_type: JobWorkplaceType,
-    /// Server default: `{}`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<CreateAdminJobRequestLocation>,
-    /// Server default: `\[\]`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub applicant_countries: Option<Vec<serde_json::Value>>,
+    pub applicant_countries: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub english_level: Option<JobEnglishLevel>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10645,9 +10643,8 @@ pub struct CreateAdminJobRequest {
     /// Server default: `\[\]`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub skills: Option<Vec<String>>,
-    /// Server default: `null`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub salary: Option<CreateAdminJobRequestSalary>,
+    pub salary: Option<CreateAdminJobRequestSalaryVariant1>,
     /// Server default: `false`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub salary_public: Option<bool>,
@@ -10687,17 +10684,17 @@ pub struct CreateAdminJobRequestLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub city: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub country: Option<serde_json::Value>,
+    pub country: Option<String>,
 }
 
-/// `CreateAdminJobRequestSalary` model.
+/// `CreateAdminJobRequestSalaryVariant1` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct CreateAdminJobRequestSalary {
+pub struct CreateAdminJobRequestSalaryVariant1 {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max: Option<f64>,
-    pub currency: serde_json::Value,
+    pub currency: String,
     pub period: JobSalaryPeriod,
 }
 
@@ -10924,6 +10921,9 @@ pub struct CreateAgentScorerRequestConfig {
     pub url: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout_ms: Option<f64>,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 /// `CreateAgentVersionRequest` model.
@@ -14360,6 +14360,8 @@ pub enum ErrorCode {
     RateLimitExceeded,
     #[serde(rename = "REFERENCE_NOT_FOUND")]
     ReferenceNotFound,
+    #[serde(rename = "REQUEST_CANCELLED")]
+    RequestCancelled,
     #[serde(rename = "RESERVED_SCOPE")]
     ReservedScope,
     #[serde(rename = "RUN_ACTIVE")]
@@ -14656,6 +14658,7 @@ impl ErrorCode {
             Self::RateLimited => "RATE_LIMITED",
             Self::RateLimitExceeded => "RATE_LIMIT_EXCEEDED",
             Self::ReferenceNotFound => "REFERENCE_NOT_FOUND",
+            Self::RequestCancelled => "REQUEST_CANCELLED",
             Self::ReservedScope => "RESERVED_SCOPE",
             Self::RunActive => "RUN_ACTIVE",
             Self::RunCancelled => "RUN_CANCELLED",
@@ -14858,6 +14861,7 @@ impl From<&str> for ErrorCode {
             "RATE_LIMITED" => Self::RateLimited,
             "RATE_LIMIT_EXCEEDED" => Self::RateLimitExceeded,
             "REFERENCE_NOT_FOUND" => Self::ReferenceNotFound,
+            "REQUEST_CANCELLED" => Self::RequestCancelled,
             "RESERVED_SCOPE" => Self::ReservedScope,
             "RUN_ACTIVE" => Self::RunActive,
             "RUN_CANCELLED" => Self::RunCancelled,
@@ -28700,6 +28704,198 @@ pub struct PlannedObjectiveBudget {
 /// `enforced_limits` for what each one means.
 pub type PlanQuotaFields = serde_json::Map<String, serde_json::Value>;
 
+/// `PlatformAnalyticsMetric` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PlatformAnalyticsMetric {
+    #[serde(default)]
+    pub value: Option<f64>,
+    pub unit: PlatformAnalyticsMetricUnit,
+    pub status: PlatformAnalyticsMetricStatus,
+    #[serde(default)]
+    pub since: Option<String>,
+    #[serde(default)]
+    pub data_through: Option<String>,
+    #[serde(default)]
+    pub numerator: Option<i64>,
+    #[serde(default)]
+    pub denominator: Option<i64>,
+    pub coverage: PlatformAnalyticsMetricCoverage,
+}
+
+/// `PlatformAnalyticsMetricCoverage` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PlatformAnalyticsMetricCoverage {
+    pub completeness: PlatformAnalyticsMetricCoverageCompleteness,
+    #[serde(default)]
+    pub observed_from: Option<String>,
+    pub gaps: Vec<PlatformAnalyticsMetricCoverageGap>,
+}
+
+/// `PlatformAnalyticsMetricCoverageCompleteness` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum PlatformAnalyticsMetricCoverageCompleteness {
+    #[default]
+    #[serde(rename = "complete")]
+    Complete,
+    #[serde(rename = "partial")]
+    Partial,
+    #[serde(rename = "unknown")]
+    Unknown,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl PlatformAnalyticsMetricCoverageCompleteness {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Complete => "complete",
+            Self::Partial => "partial",
+            Self::Unknown => "unknown",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for PlatformAnalyticsMetricCoverageCompleteness {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for PlatformAnalyticsMetricCoverageCompleteness {
+    fn from(value: &str) -> Self {
+        match value {
+            "complete" => Self::Complete,
+            "partial" => Self::Partial,
+            "unknown" => Self::Unknown,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `PlatformAnalyticsMetricCoverageGap` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PlatformAnalyticsMetricCoverageGap {
+    #[serde(default)]
+    pub from: Option<String>,
+    #[serde(default)]
+    pub to: Option<String>,
+    pub reason: String,
+}
+
+/// `PlatformAnalyticsMetricStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum PlatformAnalyticsMetricStatus {
+    #[default]
+    #[serde(rename = "ok")]
+    Ok,
+    #[serde(rename = "partial")]
+    Partial,
+    #[serde(rename = "stale")]
+    Stale,
+    #[serde(rename = "unavailable")]
+    Unavailable,
+    #[serde(rename = "suppressed")]
+    Suppressed,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl PlatformAnalyticsMetricStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Ok => "ok",
+            Self::Partial => "partial",
+            Self::Stale => "stale",
+            Self::Unavailable => "unavailable",
+            Self::Suppressed => "suppressed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for PlatformAnalyticsMetricStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for PlatformAnalyticsMetricStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "ok" => Self::Ok,
+            "partial" => Self::Partial,
+            "stale" => Self::Stale,
+            "unavailable" => Self::Unavailable,
+            "suppressed" => Self::Suppressed,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `PlatformAnalyticsMetricUnit` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum PlatformAnalyticsMetricUnit {
+    #[default]
+    #[serde(rename = "count")]
+    Count,
+    #[serde(rename = "ratio")]
+    Ratio,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl PlatformAnalyticsMetricUnit {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Count => "count",
+            Self::Ratio => "ratio",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for PlatformAnalyticsMetricUnit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for PlatformAnalyticsMetricUnit {
+    fn from(value: &str) -> Self {
+        match value {
+            "count" => Self::Count,
+            "ratio" => Self::Ratio,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `PlatformAnalyticsWindow` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PlatformAnalyticsWindow {
+    pub start: String,
+    pub end_exclusive: String,
+    pub metrics: PlatformAnalyticsWindowMetrics,
+}
+
+/// `PlatformAnalyticsWindowMetrics` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PlatformAnalyticsWindowMetrics {
+    pub companies_ever_active: PlatformAnalyticsMetric,
+    pub agents_ever_active: PlatformAnalyticsMetric,
+    pub execution_runs: PlatformAnalyticsMetric,
+    pub logical_tool_calls: PlatformAnalyticsMetric,
+    pub repeat_companies: PlatformAnalyticsMetric,
+    pub technical_completion_ratio: PlatformAnalyticsMetric,
+}
+
 /// Platform profit and loss: Stripe revenue against real host spend and the LLM provider bill.
 /// Super-admin only. Served from a short-lived cache — `cache` says which.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -30667,6 +30863,183 @@ impl From<&str> for PublicPlanResetPeriod {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `PublicPlatformAnalytics` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicPlatformAnalytics {
+    pub schema_version: i64,
+    pub revision: String,
+    pub generated_at: String,
+    #[serde(default)]
+    pub data_through: Option<String>,
+    #[serde(default)]
+    pub processed_through: Option<String>,
+    pub status: PublicPlatformAnalyticsStatus,
+    pub scope: PublicPlatformAnalyticsScope,
+    pub lifetime: PublicPlatformAnalyticsLifetime,
+    pub windows: PublicPlatformAnalyticsWindows,
+    pub series: PublicPlatformAnalyticsSeries,
+}
+
+/// `PublicPlatformAnalyticsLifetime` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicPlatformAnalyticsLifetime {
+    #[serde(default)]
+    pub since: Option<String>,
+    pub metrics: PublicPlatformAnalyticsLifetimeMetrics,
+}
+
+/// `PublicPlatformAnalyticsLifetimeMetrics` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicPlatformAnalyticsLifetimeMetrics {
+    pub companies_ever_active: PlatformAnalyticsMetric,
+    pub agents_ever_active: PlatformAnalyticsMetric,
+    pub execution_runs: PlatformAnalyticsMetric,
+    pub logical_tool_calls: PlatformAnalyticsMetric,
+    pub repeat_companies: PlatformAnalyticsMetric,
+    pub technical_completion_ratio: PlatformAnalyticsMetric,
+}
+
+/// `PublicPlatformAnalyticsScope` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicPlatformAnalyticsScope {
+    /// Always `all_production`.
+    pub population: String,
+    pub includes_internal: bool,
+    pub includes_test: bool,
+    /// Always `not_applied`.
+    pub classification: String,
+}
+
+/// `PublicPlatformAnalyticsSeries` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicPlatformAnalyticsSeries {
+    /// Always `UTC`.
+    pub timezone: String,
+    pub status: PublicPlatformAnalyticsSeriesStatus,
+    #[serde(default)]
+    pub days: Option<Vec<PublicPlatformAnalyticsSeriesDay>>,
+}
+
+/// `PublicPlatformAnalyticsSeriesDay` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicPlatformAnalyticsSeriesDay {
+    pub date: String,
+    #[serde(default)]
+    pub companies_active: Option<i64>,
+    #[serde(default)]
+    pub agents_active: Option<i64>,
+    #[serde(default)]
+    pub execution_runs: Option<i64>,
+    #[serde(default)]
+    pub logical_tool_calls: Option<i64>,
+    #[serde(default)]
+    pub completed_runs: Option<i64>,
+    #[serde(default)]
+    pub terminal_runs: Option<i64>,
+    pub status: PublicPlatformAnalyticsSeriesStatus,
+}
+
+/// `PublicPlatformAnalyticsSeriesStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum PublicPlatformAnalyticsSeriesStatus {
+    #[default]
+    #[serde(rename = "ok")]
+    Ok,
+    #[serde(rename = "partial")]
+    Partial,
+    #[serde(rename = "unavailable")]
+    Unavailable,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl PublicPlatformAnalyticsSeriesStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Ok => "ok",
+            Self::Partial => "partial",
+            Self::Unavailable => "unavailable",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for PublicPlatformAnalyticsSeriesStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for PublicPlatformAnalyticsSeriesStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "ok" => Self::Ok,
+            "partial" => Self::Partial,
+            "unavailable" => Self::Unavailable,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `PublicPlatformAnalyticsStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum PublicPlatformAnalyticsStatus {
+    #[default]
+    #[serde(rename = "ok")]
+    Ok,
+    #[serde(rename = "partial")]
+    Partial,
+    #[serde(rename = "stale")]
+    Stale,
+    #[serde(rename = "unavailable")]
+    Unavailable,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl PublicPlatformAnalyticsStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Ok => "ok",
+            Self::Partial => "partial",
+            Self::Stale => "stale",
+            Self::Unavailable => "unavailable",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for PublicPlatformAnalyticsStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for PublicPlatformAnalyticsStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "ok" => Self::Ok,
+            "partial" => Self::Partial,
+            "stale" => Self::Stale,
+            "unavailable" => Self::Unavailable,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `PublicPlatformAnalyticsWindows` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicPlatformAnalyticsWindows {
+    #[serde(rename = "7d", default)]
+    pub field_7d: Option<PlatformAnalyticsWindow>,
+    #[serde(rename = "30d", default)]
+    pub field_30d: Option<PlatformAnalyticsWindow>,
 }
 
 /// public.ts GET /public/sessions/{sessionId} — every field always present; compacted entries
@@ -36382,7 +36755,7 @@ pub struct RunEventV1RunCancelledPayload {
     /// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
     /// which one. Absent when the run carries none, or one this version does not list.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<ErrorCode>,
+    pub error_code: Option<RunEventV1RunFailedPayloadErrorCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -36665,7 +37038,7 @@ pub struct RunEventV1RunFailedPayload {
     /// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
     /// which one. Absent when the run carries none, or one this version does not list.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<ErrorCode>,
+    pub error_code: Option<RunEventV1RunFailedPayloadErrorCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -36678,6 +37051,794 @@ pub struct RunEventV1RunFailedPayload {
     pub source: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rejected: Option<bool>,
+}
+
+/// Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+/// beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+/// stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+/// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+/// which one. Absent when the run carries none, or one this version does not list.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventV1RunFailedPayloadErrorCode {
+    #[default]
+    #[serde(rename = "AAR_NOT_AVAILABLE")]
+    AarNotAvailable,
+    #[serde(rename = "ACTIVE_TENANT_NOT_SUPPORTED")]
+    ActiveTenantNotSupported,
+    #[serde(rename = "ALREADY_EXISTS")]
+    AlreadyExists,
+    #[serde(rename = "ANON_BUSY")]
+    AnonBusy,
+    #[serde(rename = "ARTIFACT_INTEGRITY_ERROR")]
+    ArtifactIntegrityError,
+    #[serde(rename = "ASSESSMENT_ISOLATION_REQUIRED")]
+    AssessmentIsolationRequired,
+    #[serde(rename = "AUTH_ERROR")]
+    AuthError,
+    #[serde(rename = "BILLING_CANCELLED")]
+    BillingCancelled,
+    #[serde(rename = "BILLING_DISPUTED")]
+    BillingDisputed,
+    #[serde(rename = "BILLING_PAST_DUE")]
+    BillingPastDue,
+    #[serde(rename = "BUDGET_EXCEEDED")]
+    BudgetExceeded,
+    #[serde(rename = "CHECKSUM_MISMATCH")]
+    ChecksumMismatch,
+    #[serde(rename = "CLIENT_REQUEST_CONFLICT")]
+    ClientRequestConflict,
+    #[serde(rename = "COMPANY_NOT_READY")]
+    CompanyNotReady,
+    #[serde(rename = "COMPANY_PAUSED")]
+    CompanyPaused,
+    #[serde(rename = "CONCURRENCY_LIMIT")]
+    ConcurrencyLimit,
+    #[serde(rename = "CONCURRENT_MODIFICATION")]
+    ConcurrentModification,
+    #[serde(rename = "CONFIGURATION_ERROR")]
+    ConfigurationError,
+    #[serde(rename = "CONFIRMATION_REQUIRED")]
+    ConfirmationRequired,
+    #[serde(rename = "CONFLICT")]
+    Conflict,
+    #[serde(rename = "CONTEXT_LENGTH_EXCEEDED")]
+    ContextLengthExceeded,
+    #[serde(rename = "COUNT_LIMIT_REACHED")]
+    CountLimitReached,
+    #[serde(rename = "DAILY_LIMIT")]
+    DailyLimit,
+    #[serde(rename = "DEPENDENCY_EXISTS")]
+    DependencyExists,
+    #[serde(rename = "EVENT_STORE_ERROR")]
+    EventStoreError,
+    #[serde(rename = "EXECUTION_PROFILE_UNVERIFIABLE")]
+    ExecutionProfileUnverifiable,
+    #[serde(rename = "EXECUTION_RECEIPT_PENDING")]
+    ExecutionReceiptPending,
+    #[serde(rename = "EXTERNAL_SERVICE_ERROR")]
+    ExternalServiceError,
+    #[serde(rename = "FEATURED_SET_CONTENDED")]
+    FeaturedSetContended,
+    #[serde(rename = "FEATURE_DISABLED")]
+    FeatureDisabled,
+    #[serde(rename = "FILE_NOT_FOUND")]
+    FileNotFound,
+    #[serde(rename = "FILE_TYPE_NOT_ALLOWED")]
+    FileTypeNotAllowed,
+    #[serde(rename = "FORBIDDEN")]
+    Forbidden,
+    #[serde(rename = "GUARDRAIL_VIOLATION")]
+    GuardrailViolation,
+    #[serde(rename = "IDEMPOTENCY_CONFLICT")]
+    IdempotencyConflict,
+    #[serde(rename = "IDEMPOTENCY_KEY_REUSED")]
+    IdempotencyKeyReused,
+    #[serde(rename = "INITIATIVE_BUDGET_EXHAUSTED")]
+    InitiativeBudgetExhausted,
+    #[serde(rename = "INITIATIVE_PAUSED")]
+    InitiativePaused,
+    #[serde(rename = "INTERNAL_ERROR")]
+    InternalError,
+    #[serde(rename = "INVALID_ARCHIVE")]
+    InvalidArchive,
+    #[serde(rename = "INVALID_BODY")]
+    InvalidBody,
+    #[serde(rename = "INVALID_CURSOR")]
+    InvalidCursor,
+    #[serde(rename = "INVALID_MANIFEST")]
+    InvalidManifest,
+    #[serde(rename = "INVALID_QUERY")]
+    InvalidQuery,
+    #[serde(rename = "INVALID_REQUEST")]
+    InvalidRequest,
+    #[serde(rename = "INVALID_SHARE_LIST")]
+    InvalidShareList,
+    #[serde(rename = "INVALID_SHARE_TARGET")]
+    InvalidShareTarget,
+    #[serde(rename = "INVALID_STATE_TRANSITION")]
+    InvalidStateTransition,
+    #[serde(rename = "ISOLATION_VIOLATION")]
+    IsolationViolation,
+    #[serde(rename = "LLM_ERROR")]
+    LLMError,
+    #[serde(rename = "MANAGED_AGENT")]
+    ManagedAgent,
+    #[serde(rename = "MAX_DURATION_EXCEEDED")]
+    MaxDurationExceeded,
+    #[serde(rename = "MAX_TOKENS_EXCEEDED")]
+    MaxTokensExceeded,
+    #[serde(rename = "METHOD_NOT_ALLOWED")]
+    MethodNotAllowed,
+    #[serde(rename = "MIGRATION_CONFLICT")]
+    MigrationConflict,
+    #[serde(rename = "MISSING_FIELD")]
+    MissingField,
+    #[serde(rename = "MISSING_SCOPE")]
+    MissingScope,
+    #[serde(rename = "MISSION_ALREADY_RUNNING")]
+    MissionAlreadyRunning,
+    #[serde(rename = "MISSION_CONCURRENCY_LIMIT")]
+    MissionConcurrencyLimit,
+    #[serde(rename = "MISSION_NOT_FOUND")]
+    MissionNotFound,
+    #[serde(rename = "MISSION_NOT_RUNNABLE")]
+    MissionNotRunnable,
+    #[serde(rename = "MISSION_NOT_RUNNING")]
+    MissionNotRunning,
+    #[serde(rename = "MISSION_ROUTE_NOT_FOUND")]
+    MissionRouteNotFound,
+    #[serde(rename = "NOT_BRIDGE_AGENT")]
+    NotBridgeAgent,
+    #[serde(rename = "NOT_FOUND")]
+    NotFound,
+    #[serde(rename = "NOT_YANKED")]
+    NotYanked,
+    #[serde(rename = "NO_RUNNABLE_TARGET")]
+    NoRunnableTarget,
+    #[serde(rename = "OAUTH_FAILED")]
+    OauthFailed,
+    #[serde(rename = "OUTPUT_CONTRACT_VIOLATION")]
+    OutputContractViolation,
+    #[serde(rename = "OUTPUT_TOO_LARGE")]
+    OutputTooLarge,
+    #[serde(rename = "PAYLOAD_TOO_LARGE")]
+    PayloadTooLarge,
+    #[serde(rename = "PERSISTENCE_ERROR")]
+    PersistenceError,
+    #[serde(rename = "PLANNER_OUTPUT_INVALID")]
+    PlannerOutputInvalid,
+    #[serde(rename = "PLANNER_REFUSED")]
+    PlannerRefused,
+    #[serde(rename = "PRECONDITION_FAILED")]
+    PreconditionFailed,
+    #[serde(rename = "PREREQUISITE_MISSING")]
+    PrerequisiteMissing,
+    #[serde(rename = "PRICING_UNAVAILABLE")]
+    PricingUnavailable,
+    #[serde(rename = "PRIVATE_NOT_SHARED")]
+    PrivateNotShared,
+    #[serde(rename = "PROCESSING_POLICY_CHANGED")]
+    ProcessingPolicyChanged,
+    #[serde(rename = "PROCESSING_POLICY_NOT_READY")]
+    ProcessingPolicyNotReady,
+    #[serde(rename = "PROMO_REDEMPTION_FAILED")]
+    PromoRedemptionFailed,
+    #[serde(rename = "PROPOSAL_EXPIRED")]
+    ProposalExpired,
+    #[serde(rename = "QUALIFICATION_BUDGET_STOP")]
+    QualificationBudgetStop,
+    #[serde(rename = "QUALIFICATION_ROUTE_MISMATCH")]
+    QualificationRouteMismatch,
+    #[serde(rename = "QUALIFICATION_VERSION_UNAVAILABLE")]
+    QualificationVersionUnavailable,
+    #[serde(rename = "QUOTA_EXCEEDED")]
+    QuotaExceeded,
+    #[serde(rename = "RATE_LIMITED")]
+    RateLimited,
+    #[serde(rename = "RATE_LIMIT_EXCEEDED")]
+    RateLimitExceeded,
+    #[serde(rename = "REFERENCE_NOT_FOUND")]
+    ReferenceNotFound,
+    #[serde(rename = "RESERVED_SCOPE")]
+    ReservedScope,
+    #[serde(rename = "RUN_ACTIVE")]
+    RunActive,
+    #[serde(rename = "RUN_CANCELLED")]
+    RunCancelled,
+    #[serde(rename = "SCOPE_MISMATCH")]
+    ScopeMismatch,
+    #[serde(rename = "SCOPE_TAKEN")]
+    ScopeTaken,
+    #[serde(rename = "SEARCH_PROVIDER_NOT_CONFIGURED")]
+    SearchProviderNotConfigured,
+    #[serde(rename = "SEARCH_UPSTREAM_FAILED")]
+    SearchUpstreamFailed,
+    #[serde(rename = "SEARCH_UPSTREAM_TIMEOUT")]
+    SearchUpstreamTimeout,
+    #[serde(rename = "SECURITY_SCAN_FAILED")]
+    SecurityScanFailed,
+    #[serde(rename = "SERVICE_UNAVAILABLE")]
+    ServiceUnavailable,
+    #[serde(rename = "SESSION_NOT_ACTIVE")]
+    SessionNotActive,
+    #[serde(rename = "SHARE_LIST_CONFLICT")]
+    ShareListConflict,
+    #[serde(rename = "SIGNING_NOT_CONFIGURED")]
+    SigningNotConfigured,
+    #[serde(rename = "SIZE_LIMIT")]
+    SizeLimit,
+    #[serde(rename = "SPEC_NOT_FOUND")]
+    SpecNotFound,
+    #[serde(rename = "SPONSORSHIP_BUDGET_BELOW_COMMITTED")]
+    SponsorshipBudgetBelowCommitted,
+    #[serde(rename = "SPONSORSHIP_BUDGET_EXHAUSTED")]
+    SponsorshipBudgetExhausted,
+    #[serde(rename = "SPONSORSHIP_CANDIDATE_LIMIT")]
+    SponsorshipCandidateLimit,
+    #[serde(rename = "SPONSORSHIP_CONCURRENCY_LIMIT")]
+    SponsorshipConcurrencyLimit,
+    #[serde(rename = "SPONSORSHIP_FUNDING_UNAVAILABLE")]
+    SponsorshipFundingUnavailable,
+    #[serde(rename = "SPONSORSHIP_GRANT_CONFLICT")]
+    SponsorshipGrantConflict,
+    #[serde(rename = "SPONSORSHIP_GRANT_IN_USE")]
+    SponsorshipGrantInUse,
+    #[serde(rename = "SPONSORSHIP_GRANT_MISMATCH")]
+    SponsorshipGrantMismatch,
+    #[serde(rename = "SPONSORSHIP_GRANT_UNAVAILABLE")]
+    SponsorshipGrantUnavailable,
+    #[serde(rename = "SPONSORSHIP_OUTCOME_UNKNOWN")]
+    SponsorshipOutcomeUnknown,
+    #[serde(rename = "SPONSORSHIP_PROGRAM_IMMUTABLE")]
+    SponsorshipProgramImmutable,
+    #[serde(rename = "SPONSORSHIP_PROGRAM_INACTIVE")]
+    SponsorshipProgramInactive,
+    #[serde(rename = "SPONSORSHIP_PROGRAM_REVISION_CONFLICT")]
+    SponsorshipProgramRevisionConflict,
+    #[serde(rename = "SPONSORSHIP_REQUIRED")]
+    SponsorshipRequired,
+    #[serde(rename = "SPONSORSHIP_SCOPE_REQUIRED")]
+    SponsorshipScopeRequired,
+    #[serde(rename = "STARTED_BY_ANOTHER_USER")]
+    StartedByAnotherUser,
+    #[serde(rename = "STRATEGIST_MODEL_UNCONFIGURED")]
+    StrategistModelUnconfigured,
+    #[serde(rename = "SUPER_ADMIN_REQUIRED")]
+    SuperAdminRequired,
+    #[serde(rename = "TASK_GRAPH_FAILED")]
+    TaskGraphFailed,
+    #[serde(rename = "TEAM_ABORT")]
+    TeamAbort,
+    #[serde(rename = "TERMS_NOT_ACCEPTED")]
+    TermsNotAccepted,
+    #[serde(rename = "TEXT_EXTRACTION_FAILED")]
+    TextExtractionFailed,
+    #[serde(rename = "UNAUTHENTICATED")]
+    Unauthenticated,
+    #[serde(rename = "USAGE_CORRECTION_EXCEEDS_COUNTERS")]
+    UsageCorrectionExceedsCounters,
+    #[serde(rename = "USAGE_CORRECTION_IN_PROGRESS")]
+    UsageCorrectionInProgress,
+    #[serde(rename = "USAGE_CORRECTION_NOT_SETTLED")]
+    UsageCorrectionNotSettled,
+    #[serde(rename = "USAGE_CORRECTION_NOT_SPONSORED")]
+    UsageCorrectionNotSponsored,
+    #[serde(rename = "USER_REQUIRED")]
+    UserRequired,
+    #[serde(rename = "VALIDATION_ERROR")]
+    ValidationError,
+    #[serde(rename = "VERIFICATION_FAILED")]
+    VerificationFailed,
+    #[serde(rename = "VERSION_CONFLICT")]
+    VersionConflict,
+    #[serde(rename = "VERSION_NOT_FOUND")]
+    VersionNotFound,
+    #[serde(rename = "WORKSPACE_STORAGE_LIMIT")]
+    WorkspaceStorageLimit,
+    #[serde(rename = "WOULD_ORPHAN")]
+    WouldOrphan,
+    #[serde(rename = "YANK_CONFLICT")]
+    YankConflict,
+    #[serde(rename = "agent_deleted")]
+    AgentDeleted,
+    #[serde(rename = "agent_not_found")]
+    AgentNotFound,
+    #[serde(rename = "already_bootstrapped")]
+    AlreadyBootstrapped,
+    #[serde(rename = "approval_rejected")]
+    ApprovalRejected,
+    #[serde(rename = "billing_not_configured")]
+    BillingNotConfigured,
+    #[serde(rename = "consent_required")]
+    ConsentRequired,
+    #[serde(rename = "cv_invalid")]
+    CvInvalid,
+    #[serde(rename = "cv_too_large")]
+    CvTooLarge,
+    #[serde(rename = "duplicate_application")]
+    DuplicateApplication,
+    #[serde(rename = "governance_not_enabled")]
+    GovernanceNotEnabled,
+    #[serde(rename = "hire_catalog_unknown")]
+    HireCatalogUnknown,
+    #[serde(rename = "incomplete_record")]
+    IncompleteRecord,
+    #[serde(rename = "inert_policy_field")]
+    InertPolicyField,
+    #[serde(rename = "inert_public_config_field")]
+    InertPublicConfigField,
+    #[serde(rename = "job_apply_elsewhere")]
+    JobApplyElsewhere,
+    #[serde(rename = "job_closed")]
+    JobClosed,
+    #[serde(rename = "kb_chunk_limit")]
+    KbChunkLimit,
+    #[serde(rename = "kb_document_body_invalid")]
+    KbDocumentBodyInvalid,
+    #[serde(rename = "kb_document_too_large")]
+    KbDocumentTooLarge,
+    #[serde(rename = "kb_embedding_failed")]
+    KbEmbeddingFailed,
+    #[serde(rename = "kb_storage_limit")]
+    KbStorageLimit,
+    #[serde(rename = "kb_text_extraction_failed")]
+    KbTextExtractionFailed,
+    #[serde(rename = "limit_reached")]
+    LimitReached,
+    #[serde(rename = "mfa_required")]
+    MfaRequired,
+    #[serde(rename = "no_eligible_arbiter")]
+    NoEligibleArbiter,
+    #[serde(rename = "not_hired")]
+    NotHired,
+    #[serde(rename = "plan_upgrade_required")]
+    PlanUpgradeRequired,
+    #[serde(rename = "proposal_required")]
+    ProposalRequired,
+    #[serde(rename = "provider_auth_failed")]
+    ProviderAuthFailed,
+    #[serde(rename = "provider_circuit_open")]
+    ProviderCircuitOpen,
+    #[serde(rename = "provider_not_configured")]
+    ProviderNotConfigured,
+    #[serde(rename = "provider_rate_limited")]
+    ProviderRateLimited,
+    #[serde(rename = "quota_exceeded")]
+    QuotaExceeded2,
+    #[serde(rename = "rate_limited")]
+    RateLimited2,
+    #[serde(rename = "resource_limit_reached")]
+    ResourceLimitReached,
+    #[serde(rename = "run_agent_stopped")]
+    RunAgentStopped,
+    #[serde(rename = "run_approval_expired")]
+    RunApprovalExpired,
+    #[serde(rename = "run_input_timeout")]
+    RunInputTimeout,
+    #[serde(rename = "run_never_claimed")]
+    RunNeverClaimed,
+    #[serde(rename = "run_orphaned_restart")]
+    RunOrphanedRestart,
+    #[serde(rename = "run_quota_exceeded")]
+    RunQuotaExceeded,
+    #[serde(rename = "run_stalled")]
+    RunStalled,
+    #[serde(rename = "secret_would_move")]
+    SecretWouldMove,
+    #[serde(rename = "video_consent_required")]
+    VideoConsentRequired,
+    #[serde(rename = "video_order_state")]
+    VideoOrderState,
+    #[serde(rename = "video_photo_invalid")]
+    VideoPhotoInvalid,
+    #[serde(rename = "video_photo_rejected")]
+    VideoPhotoRejected,
+    #[serde(rename = "video_regen_unavailable")]
+    VideoRegenUnavailable,
+    #[serde(rename = "video_slot_invalid")]
+    VideoSlotInvalid,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventV1RunFailedPayloadErrorCode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::AarNotAvailable => "AAR_NOT_AVAILABLE",
+            Self::ActiveTenantNotSupported => "ACTIVE_TENANT_NOT_SUPPORTED",
+            Self::AlreadyExists => "ALREADY_EXISTS",
+            Self::AnonBusy => "ANON_BUSY",
+            Self::ArtifactIntegrityError => "ARTIFACT_INTEGRITY_ERROR",
+            Self::AssessmentIsolationRequired => "ASSESSMENT_ISOLATION_REQUIRED",
+            Self::AuthError => "AUTH_ERROR",
+            Self::BillingCancelled => "BILLING_CANCELLED",
+            Self::BillingDisputed => "BILLING_DISPUTED",
+            Self::BillingPastDue => "BILLING_PAST_DUE",
+            Self::BudgetExceeded => "BUDGET_EXCEEDED",
+            Self::ChecksumMismatch => "CHECKSUM_MISMATCH",
+            Self::ClientRequestConflict => "CLIENT_REQUEST_CONFLICT",
+            Self::CompanyNotReady => "COMPANY_NOT_READY",
+            Self::CompanyPaused => "COMPANY_PAUSED",
+            Self::ConcurrencyLimit => "CONCURRENCY_LIMIT",
+            Self::ConcurrentModification => "CONCURRENT_MODIFICATION",
+            Self::ConfigurationError => "CONFIGURATION_ERROR",
+            Self::ConfirmationRequired => "CONFIRMATION_REQUIRED",
+            Self::Conflict => "CONFLICT",
+            Self::ContextLengthExceeded => "CONTEXT_LENGTH_EXCEEDED",
+            Self::CountLimitReached => "COUNT_LIMIT_REACHED",
+            Self::DailyLimit => "DAILY_LIMIT",
+            Self::DependencyExists => "DEPENDENCY_EXISTS",
+            Self::EventStoreError => "EVENT_STORE_ERROR",
+            Self::ExecutionProfileUnverifiable => "EXECUTION_PROFILE_UNVERIFIABLE",
+            Self::ExecutionReceiptPending => "EXECUTION_RECEIPT_PENDING",
+            Self::ExternalServiceError => "EXTERNAL_SERVICE_ERROR",
+            Self::FeaturedSetContended => "FEATURED_SET_CONTENDED",
+            Self::FeatureDisabled => "FEATURE_DISABLED",
+            Self::FileNotFound => "FILE_NOT_FOUND",
+            Self::FileTypeNotAllowed => "FILE_TYPE_NOT_ALLOWED",
+            Self::Forbidden => "FORBIDDEN",
+            Self::GuardrailViolation => "GUARDRAIL_VIOLATION",
+            Self::IdempotencyConflict => "IDEMPOTENCY_CONFLICT",
+            Self::IdempotencyKeyReused => "IDEMPOTENCY_KEY_REUSED",
+            Self::InitiativeBudgetExhausted => "INITIATIVE_BUDGET_EXHAUSTED",
+            Self::InitiativePaused => "INITIATIVE_PAUSED",
+            Self::InternalError => "INTERNAL_ERROR",
+            Self::InvalidArchive => "INVALID_ARCHIVE",
+            Self::InvalidBody => "INVALID_BODY",
+            Self::InvalidCursor => "INVALID_CURSOR",
+            Self::InvalidManifest => "INVALID_MANIFEST",
+            Self::InvalidQuery => "INVALID_QUERY",
+            Self::InvalidRequest => "INVALID_REQUEST",
+            Self::InvalidShareList => "INVALID_SHARE_LIST",
+            Self::InvalidShareTarget => "INVALID_SHARE_TARGET",
+            Self::InvalidStateTransition => "INVALID_STATE_TRANSITION",
+            Self::IsolationViolation => "ISOLATION_VIOLATION",
+            Self::LLMError => "LLM_ERROR",
+            Self::ManagedAgent => "MANAGED_AGENT",
+            Self::MaxDurationExceeded => "MAX_DURATION_EXCEEDED",
+            Self::MaxTokensExceeded => "MAX_TOKENS_EXCEEDED",
+            Self::MethodNotAllowed => "METHOD_NOT_ALLOWED",
+            Self::MigrationConflict => "MIGRATION_CONFLICT",
+            Self::MissingField => "MISSING_FIELD",
+            Self::MissingScope => "MISSING_SCOPE",
+            Self::MissionAlreadyRunning => "MISSION_ALREADY_RUNNING",
+            Self::MissionConcurrencyLimit => "MISSION_CONCURRENCY_LIMIT",
+            Self::MissionNotFound => "MISSION_NOT_FOUND",
+            Self::MissionNotRunnable => "MISSION_NOT_RUNNABLE",
+            Self::MissionNotRunning => "MISSION_NOT_RUNNING",
+            Self::MissionRouteNotFound => "MISSION_ROUTE_NOT_FOUND",
+            Self::NotBridgeAgent => "NOT_BRIDGE_AGENT",
+            Self::NotFound => "NOT_FOUND",
+            Self::NotYanked => "NOT_YANKED",
+            Self::NoRunnableTarget => "NO_RUNNABLE_TARGET",
+            Self::OauthFailed => "OAUTH_FAILED",
+            Self::OutputContractViolation => "OUTPUT_CONTRACT_VIOLATION",
+            Self::OutputTooLarge => "OUTPUT_TOO_LARGE",
+            Self::PayloadTooLarge => "PAYLOAD_TOO_LARGE",
+            Self::PersistenceError => "PERSISTENCE_ERROR",
+            Self::PlannerOutputInvalid => "PLANNER_OUTPUT_INVALID",
+            Self::PlannerRefused => "PLANNER_REFUSED",
+            Self::PreconditionFailed => "PRECONDITION_FAILED",
+            Self::PrerequisiteMissing => "PREREQUISITE_MISSING",
+            Self::PricingUnavailable => "PRICING_UNAVAILABLE",
+            Self::PrivateNotShared => "PRIVATE_NOT_SHARED",
+            Self::ProcessingPolicyChanged => "PROCESSING_POLICY_CHANGED",
+            Self::ProcessingPolicyNotReady => "PROCESSING_POLICY_NOT_READY",
+            Self::PromoRedemptionFailed => "PROMO_REDEMPTION_FAILED",
+            Self::ProposalExpired => "PROPOSAL_EXPIRED",
+            Self::QualificationBudgetStop => "QUALIFICATION_BUDGET_STOP",
+            Self::QualificationRouteMismatch => "QUALIFICATION_ROUTE_MISMATCH",
+            Self::QualificationVersionUnavailable => "QUALIFICATION_VERSION_UNAVAILABLE",
+            Self::QuotaExceeded => "QUOTA_EXCEEDED",
+            Self::RateLimited => "RATE_LIMITED",
+            Self::RateLimitExceeded => "RATE_LIMIT_EXCEEDED",
+            Self::ReferenceNotFound => "REFERENCE_NOT_FOUND",
+            Self::ReservedScope => "RESERVED_SCOPE",
+            Self::RunActive => "RUN_ACTIVE",
+            Self::RunCancelled => "RUN_CANCELLED",
+            Self::ScopeMismatch => "SCOPE_MISMATCH",
+            Self::ScopeTaken => "SCOPE_TAKEN",
+            Self::SearchProviderNotConfigured => "SEARCH_PROVIDER_NOT_CONFIGURED",
+            Self::SearchUpstreamFailed => "SEARCH_UPSTREAM_FAILED",
+            Self::SearchUpstreamTimeout => "SEARCH_UPSTREAM_TIMEOUT",
+            Self::SecurityScanFailed => "SECURITY_SCAN_FAILED",
+            Self::ServiceUnavailable => "SERVICE_UNAVAILABLE",
+            Self::SessionNotActive => "SESSION_NOT_ACTIVE",
+            Self::ShareListConflict => "SHARE_LIST_CONFLICT",
+            Self::SigningNotConfigured => "SIGNING_NOT_CONFIGURED",
+            Self::SizeLimit => "SIZE_LIMIT",
+            Self::SpecNotFound => "SPEC_NOT_FOUND",
+            Self::SponsorshipBudgetBelowCommitted => "SPONSORSHIP_BUDGET_BELOW_COMMITTED",
+            Self::SponsorshipBudgetExhausted => "SPONSORSHIP_BUDGET_EXHAUSTED",
+            Self::SponsorshipCandidateLimit => "SPONSORSHIP_CANDIDATE_LIMIT",
+            Self::SponsorshipConcurrencyLimit => "SPONSORSHIP_CONCURRENCY_LIMIT",
+            Self::SponsorshipFundingUnavailable => "SPONSORSHIP_FUNDING_UNAVAILABLE",
+            Self::SponsorshipGrantConflict => "SPONSORSHIP_GRANT_CONFLICT",
+            Self::SponsorshipGrantInUse => "SPONSORSHIP_GRANT_IN_USE",
+            Self::SponsorshipGrantMismatch => "SPONSORSHIP_GRANT_MISMATCH",
+            Self::SponsorshipGrantUnavailable => "SPONSORSHIP_GRANT_UNAVAILABLE",
+            Self::SponsorshipOutcomeUnknown => "SPONSORSHIP_OUTCOME_UNKNOWN",
+            Self::SponsorshipProgramImmutable => "SPONSORSHIP_PROGRAM_IMMUTABLE",
+            Self::SponsorshipProgramInactive => "SPONSORSHIP_PROGRAM_INACTIVE",
+            Self::SponsorshipProgramRevisionConflict => "SPONSORSHIP_PROGRAM_REVISION_CONFLICT",
+            Self::SponsorshipRequired => "SPONSORSHIP_REQUIRED",
+            Self::SponsorshipScopeRequired => "SPONSORSHIP_SCOPE_REQUIRED",
+            Self::StartedByAnotherUser => "STARTED_BY_ANOTHER_USER",
+            Self::StrategistModelUnconfigured => "STRATEGIST_MODEL_UNCONFIGURED",
+            Self::SuperAdminRequired => "SUPER_ADMIN_REQUIRED",
+            Self::TaskGraphFailed => "TASK_GRAPH_FAILED",
+            Self::TeamAbort => "TEAM_ABORT",
+            Self::TermsNotAccepted => "TERMS_NOT_ACCEPTED",
+            Self::TextExtractionFailed => "TEXT_EXTRACTION_FAILED",
+            Self::Unauthenticated => "UNAUTHENTICATED",
+            Self::UsageCorrectionExceedsCounters => "USAGE_CORRECTION_EXCEEDS_COUNTERS",
+            Self::UsageCorrectionInProgress => "USAGE_CORRECTION_IN_PROGRESS",
+            Self::UsageCorrectionNotSettled => "USAGE_CORRECTION_NOT_SETTLED",
+            Self::UsageCorrectionNotSponsored => "USAGE_CORRECTION_NOT_SPONSORED",
+            Self::UserRequired => "USER_REQUIRED",
+            Self::ValidationError => "VALIDATION_ERROR",
+            Self::VerificationFailed => "VERIFICATION_FAILED",
+            Self::VersionConflict => "VERSION_CONFLICT",
+            Self::VersionNotFound => "VERSION_NOT_FOUND",
+            Self::WorkspaceStorageLimit => "WORKSPACE_STORAGE_LIMIT",
+            Self::WouldOrphan => "WOULD_ORPHAN",
+            Self::YankConflict => "YANK_CONFLICT",
+            Self::AgentDeleted => "agent_deleted",
+            Self::AgentNotFound => "agent_not_found",
+            Self::AlreadyBootstrapped => "already_bootstrapped",
+            Self::ApprovalRejected => "approval_rejected",
+            Self::BillingNotConfigured => "billing_not_configured",
+            Self::ConsentRequired => "consent_required",
+            Self::CvInvalid => "cv_invalid",
+            Self::CvTooLarge => "cv_too_large",
+            Self::DuplicateApplication => "duplicate_application",
+            Self::GovernanceNotEnabled => "governance_not_enabled",
+            Self::HireCatalogUnknown => "hire_catalog_unknown",
+            Self::IncompleteRecord => "incomplete_record",
+            Self::InertPolicyField => "inert_policy_field",
+            Self::InertPublicConfigField => "inert_public_config_field",
+            Self::JobApplyElsewhere => "job_apply_elsewhere",
+            Self::JobClosed => "job_closed",
+            Self::KbChunkLimit => "kb_chunk_limit",
+            Self::KbDocumentBodyInvalid => "kb_document_body_invalid",
+            Self::KbDocumentTooLarge => "kb_document_too_large",
+            Self::KbEmbeddingFailed => "kb_embedding_failed",
+            Self::KbStorageLimit => "kb_storage_limit",
+            Self::KbTextExtractionFailed => "kb_text_extraction_failed",
+            Self::LimitReached => "limit_reached",
+            Self::MfaRequired => "mfa_required",
+            Self::NoEligibleArbiter => "no_eligible_arbiter",
+            Self::NotHired => "not_hired",
+            Self::PlanUpgradeRequired => "plan_upgrade_required",
+            Self::ProposalRequired => "proposal_required",
+            Self::ProviderAuthFailed => "provider_auth_failed",
+            Self::ProviderCircuitOpen => "provider_circuit_open",
+            Self::ProviderNotConfigured => "provider_not_configured",
+            Self::ProviderRateLimited => "provider_rate_limited",
+            Self::QuotaExceeded2 => "quota_exceeded",
+            Self::RateLimited2 => "rate_limited",
+            Self::ResourceLimitReached => "resource_limit_reached",
+            Self::RunAgentStopped => "run_agent_stopped",
+            Self::RunApprovalExpired => "run_approval_expired",
+            Self::RunInputTimeout => "run_input_timeout",
+            Self::RunNeverClaimed => "run_never_claimed",
+            Self::RunOrphanedRestart => "run_orphaned_restart",
+            Self::RunQuotaExceeded => "run_quota_exceeded",
+            Self::RunStalled => "run_stalled",
+            Self::SecretWouldMove => "secret_would_move",
+            Self::VideoConsentRequired => "video_consent_required",
+            Self::VideoOrderState => "video_order_state",
+            Self::VideoPhotoInvalid => "video_photo_invalid",
+            Self::VideoPhotoRejected => "video_photo_rejected",
+            Self::VideoRegenUnavailable => "video_regen_unavailable",
+            Self::VideoSlotInvalid => "video_slot_invalid",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventV1RunFailedPayloadErrorCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventV1RunFailedPayloadErrorCode {
+    fn from(value: &str) -> Self {
+        match value {
+            "AAR_NOT_AVAILABLE" => Self::AarNotAvailable,
+            "ACTIVE_TENANT_NOT_SUPPORTED" => Self::ActiveTenantNotSupported,
+            "ALREADY_EXISTS" => Self::AlreadyExists,
+            "ANON_BUSY" => Self::AnonBusy,
+            "ARTIFACT_INTEGRITY_ERROR" => Self::ArtifactIntegrityError,
+            "ASSESSMENT_ISOLATION_REQUIRED" => Self::AssessmentIsolationRequired,
+            "AUTH_ERROR" => Self::AuthError,
+            "BILLING_CANCELLED" => Self::BillingCancelled,
+            "BILLING_DISPUTED" => Self::BillingDisputed,
+            "BILLING_PAST_DUE" => Self::BillingPastDue,
+            "BUDGET_EXCEEDED" => Self::BudgetExceeded,
+            "CHECKSUM_MISMATCH" => Self::ChecksumMismatch,
+            "CLIENT_REQUEST_CONFLICT" => Self::ClientRequestConflict,
+            "COMPANY_NOT_READY" => Self::CompanyNotReady,
+            "COMPANY_PAUSED" => Self::CompanyPaused,
+            "CONCURRENCY_LIMIT" => Self::ConcurrencyLimit,
+            "CONCURRENT_MODIFICATION" => Self::ConcurrentModification,
+            "CONFIGURATION_ERROR" => Self::ConfigurationError,
+            "CONFIRMATION_REQUIRED" => Self::ConfirmationRequired,
+            "CONFLICT" => Self::Conflict,
+            "CONTEXT_LENGTH_EXCEEDED" => Self::ContextLengthExceeded,
+            "COUNT_LIMIT_REACHED" => Self::CountLimitReached,
+            "DAILY_LIMIT" => Self::DailyLimit,
+            "DEPENDENCY_EXISTS" => Self::DependencyExists,
+            "EVENT_STORE_ERROR" => Self::EventStoreError,
+            "EXECUTION_PROFILE_UNVERIFIABLE" => Self::ExecutionProfileUnverifiable,
+            "EXECUTION_RECEIPT_PENDING" => Self::ExecutionReceiptPending,
+            "EXTERNAL_SERVICE_ERROR" => Self::ExternalServiceError,
+            "FEATURED_SET_CONTENDED" => Self::FeaturedSetContended,
+            "FEATURE_DISABLED" => Self::FeatureDisabled,
+            "FILE_NOT_FOUND" => Self::FileNotFound,
+            "FILE_TYPE_NOT_ALLOWED" => Self::FileTypeNotAllowed,
+            "FORBIDDEN" => Self::Forbidden,
+            "GUARDRAIL_VIOLATION" => Self::GuardrailViolation,
+            "IDEMPOTENCY_CONFLICT" => Self::IdempotencyConflict,
+            "IDEMPOTENCY_KEY_REUSED" => Self::IdempotencyKeyReused,
+            "INITIATIVE_BUDGET_EXHAUSTED" => Self::InitiativeBudgetExhausted,
+            "INITIATIVE_PAUSED" => Self::InitiativePaused,
+            "INTERNAL_ERROR" => Self::InternalError,
+            "INVALID_ARCHIVE" => Self::InvalidArchive,
+            "INVALID_BODY" => Self::InvalidBody,
+            "INVALID_CURSOR" => Self::InvalidCursor,
+            "INVALID_MANIFEST" => Self::InvalidManifest,
+            "INVALID_QUERY" => Self::InvalidQuery,
+            "INVALID_REQUEST" => Self::InvalidRequest,
+            "INVALID_SHARE_LIST" => Self::InvalidShareList,
+            "INVALID_SHARE_TARGET" => Self::InvalidShareTarget,
+            "INVALID_STATE_TRANSITION" => Self::InvalidStateTransition,
+            "ISOLATION_VIOLATION" => Self::IsolationViolation,
+            "LLM_ERROR" => Self::LLMError,
+            "MANAGED_AGENT" => Self::ManagedAgent,
+            "MAX_DURATION_EXCEEDED" => Self::MaxDurationExceeded,
+            "MAX_TOKENS_EXCEEDED" => Self::MaxTokensExceeded,
+            "METHOD_NOT_ALLOWED" => Self::MethodNotAllowed,
+            "MIGRATION_CONFLICT" => Self::MigrationConflict,
+            "MISSING_FIELD" => Self::MissingField,
+            "MISSING_SCOPE" => Self::MissingScope,
+            "MISSION_ALREADY_RUNNING" => Self::MissionAlreadyRunning,
+            "MISSION_CONCURRENCY_LIMIT" => Self::MissionConcurrencyLimit,
+            "MISSION_NOT_FOUND" => Self::MissionNotFound,
+            "MISSION_NOT_RUNNABLE" => Self::MissionNotRunnable,
+            "MISSION_NOT_RUNNING" => Self::MissionNotRunning,
+            "MISSION_ROUTE_NOT_FOUND" => Self::MissionRouteNotFound,
+            "NOT_BRIDGE_AGENT" => Self::NotBridgeAgent,
+            "NOT_FOUND" => Self::NotFound,
+            "NOT_YANKED" => Self::NotYanked,
+            "NO_RUNNABLE_TARGET" => Self::NoRunnableTarget,
+            "OAUTH_FAILED" => Self::OauthFailed,
+            "OUTPUT_CONTRACT_VIOLATION" => Self::OutputContractViolation,
+            "OUTPUT_TOO_LARGE" => Self::OutputTooLarge,
+            "PAYLOAD_TOO_LARGE" => Self::PayloadTooLarge,
+            "PERSISTENCE_ERROR" => Self::PersistenceError,
+            "PLANNER_OUTPUT_INVALID" => Self::PlannerOutputInvalid,
+            "PLANNER_REFUSED" => Self::PlannerRefused,
+            "PRECONDITION_FAILED" => Self::PreconditionFailed,
+            "PREREQUISITE_MISSING" => Self::PrerequisiteMissing,
+            "PRICING_UNAVAILABLE" => Self::PricingUnavailable,
+            "PRIVATE_NOT_SHARED" => Self::PrivateNotShared,
+            "PROCESSING_POLICY_CHANGED" => Self::ProcessingPolicyChanged,
+            "PROCESSING_POLICY_NOT_READY" => Self::ProcessingPolicyNotReady,
+            "PROMO_REDEMPTION_FAILED" => Self::PromoRedemptionFailed,
+            "PROPOSAL_EXPIRED" => Self::ProposalExpired,
+            "QUALIFICATION_BUDGET_STOP" => Self::QualificationBudgetStop,
+            "QUALIFICATION_ROUTE_MISMATCH" => Self::QualificationRouteMismatch,
+            "QUALIFICATION_VERSION_UNAVAILABLE" => Self::QualificationVersionUnavailable,
+            "QUOTA_EXCEEDED" => Self::QuotaExceeded,
+            "RATE_LIMITED" => Self::RateLimited,
+            "RATE_LIMIT_EXCEEDED" => Self::RateLimitExceeded,
+            "REFERENCE_NOT_FOUND" => Self::ReferenceNotFound,
+            "RESERVED_SCOPE" => Self::ReservedScope,
+            "RUN_ACTIVE" => Self::RunActive,
+            "RUN_CANCELLED" => Self::RunCancelled,
+            "SCOPE_MISMATCH" => Self::ScopeMismatch,
+            "SCOPE_TAKEN" => Self::ScopeTaken,
+            "SEARCH_PROVIDER_NOT_CONFIGURED" => Self::SearchProviderNotConfigured,
+            "SEARCH_UPSTREAM_FAILED" => Self::SearchUpstreamFailed,
+            "SEARCH_UPSTREAM_TIMEOUT" => Self::SearchUpstreamTimeout,
+            "SECURITY_SCAN_FAILED" => Self::SecurityScanFailed,
+            "SERVICE_UNAVAILABLE" => Self::ServiceUnavailable,
+            "SESSION_NOT_ACTIVE" => Self::SessionNotActive,
+            "SHARE_LIST_CONFLICT" => Self::ShareListConflict,
+            "SIGNING_NOT_CONFIGURED" => Self::SigningNotConfigured,
+            "SIZE_LIMIT" => Self::SizeLimit,
+            "SPEC_NOT_FOUND" => Self::SpecNotFound,
+            "SPONSORSHIP_BUDGET_BELOW_COMMITTED" => Self::SponsorshipBudgetBelowCommitted,
+            "SPONSORSHIP_BUDGET_EXHAUSTED" => Self::SponsorshipBudgetExhausted,
+            "SPONSORSHIP_CANDIDATE_LIMIT" => Self::SponsorshipCandidateLimit,
+            "SPONSORSHIP_CONCURRENCY_LIMIT" => Self::SponsorshipConcurrencyLimit,
+            "SPONSORSHIP_FUNDING_UNAVAILABLE" => Self::SponsorshipFundingUnavailable,
+            "SPONSORSHIP_GRANT_CONFLICT" => Self::SponsorshipGrantConflict,
+            "SPONSORSHIP_GRANT_IN_USE" => Self::SponsorshipGrantInUse,
+            "SPONSORSHIP_GRANT_MISMATCH" => Self::SponsorshipGrantMismatch,
+            "SPONSORSHIP_GRANT_UNAVAILABLE" => Self::SponsorshipGrantUnavailable,
+            "SPONSORSHIP_OUTCOME_UNKNOWN" => Self::SponsorshipOutcomeUnknown,
+            "SPONSORSHIP_PROGRAM_IMMUTABLE" => Self::SponsorshipProgramImmutable,
+            "SPONSORSHIP_PROGRAM_INACTIVE" => Self::SponsorshipProgramInactive,
+            "SPONSORSHIP_PROGRAM_REVISION_CONFLICT" => Self::SponsorshipProgramRevisionConflict,
+            "SPONSORSHIP_REQUIRED" => Self::SponsorshipRequired,
+            "SPONSORSHIP_SCOPE_REQUIRED" => Self::SponsorshipScopeRequired,
+            "STARTED_BY_ANOTHER_USER" => Self::StartedByAnotherUser,
+            "STRATEGIST_MODEL_UNCONFIGURED" => Self::StrategistModelUnconfigured,
+            "SUPER_ADMIN_REQUIRED" => Self::SuperAdminRequired,
+            "TASK_GRAPH_FAILED" => Self::TaskGraphFailed,
+            "TEAM_ABORT" => Self::TeamAbort,
+            "TERMS_NOT_ACCEPTED" => Self::TermsNotAccepted,
+            "TEXT_EXTRACTION_FAILED" => Self::TextExtractionFailed,
+            "UNAUTHENTICATED" => Self::Unauthenticated,
+            "USAGE_CORRECTION_EXCEEDS_COUNTERS" => Self::UsageCorrectionExceedsCounters,
+            "USAGE_CORRECTION_IN_PROGRESS" => Self::UsageCorrectionInProgress,
+            "USAGE_CORRECTION_NOT_SETTLED" => Self::UsageCorrectionNotSettled,
+            "USAGE_CORRECTION_NOT_SPONSORED" => Self::UsageCorrectionNotSponsored,
+            "USER_REQUIRED" => Self::UserRequired,
+            "VALIDATION_ERROR" => Self::ValidationError,
+            "VERIFICATION_FAILED" => Self::VerificationFailed,
+            "VERSION_CONFLICT" => Self::VersionConflict,
+            "VERSION_NOT_FOUND" => Self::VersionNotFound,
+            "WORKSPACE_STORAGE_LIMIT" => Self::WorkspaceStorageLimit,
+            "WOULD_ORPHAN" => Self::WouldOrphan,
+            "YANK_CONFLICT" => Self::YankConflict,
+            "agent_deleted" => Self::AgentDeleted,
+            "agent_not_found" => Self::AgentNotFound,
+            "already_bootstrapped" => Self::AlreadyBootstrapped,
+            "approval_rejected" => Self::ApprovalRejected,
+            "billing_not_configured" => Self::BillingNotConfigured,
+            "consent_required" => Self::ConsentRequired,
+            "cv_invalid" => Self::CvInvalid,
+            "cv_too_large" => Self::CvTooLarge,
+            "duplicate_application" => Self::DuplicateApplication,
+            "governance_not_enabled" => Self::GovernanceNotEnabled,
+            "hire_catalog_unknown" => Self::HireCatalogUnknown,
+            "incomplete_record" => Self::IncompleteRecord,
+            "inert_policy_field" => Self::InertPolicyField,
+            "inert_public_config_field" => Self::InertPublicConfigField,
+            "job_apply_elsewhere" => Self::JobApplyElsewhere,
+            "job_closed" => Self::JobClosed,
+            "kb_chunk_limit" => Self::KbChunkLimit,
+            "kb_document_body_invalid" => Self::KbDocumentBodyInvalid,
+            "kb_document_too_large" => Self::KbDocumentTooLarge,
+            "kb_embedding_failed" => Self::KbEmbeddingFailed,
+            "kb_storage_limit" => Self::KbStorageLimit,
+            "kb_text_extraction_failed" => Self::KbTextExtractionFailed,
+            "limit_reached" => Self::LimitReached,
+            "mfa_required" => Self::MfaRequired,
+            "no_eligible_arbiter" => Self::NoEligibleArbiter,
+            "not_hired" => Self::NotHired,
+            "plan_upgrade_required" => Self::PlanUpgradeRequired,
+            "proposal_required" => Self::ProposalRequired,
+            "provider_auth_failed" => Self::ProviderAuthFailed,
+            "provider_circuit_open" => Self::ProviderCircuitOpen,
+            "provider_not_configured" => Self::ProviderNotConfigured,
+            "provider_rate_limited" => Self::ProviderRateLimited,
+            "quota_exceeded" => Self::QuotaExceeded2,
+            "rate_limited" => Self::RateLimited2,
+            "resource_limit_reached" => Self::ResourceLimitReached,
+            "run_agent_stopped" => Self::RunAgentStopped,
+            "run_approval_expired" => Self::RunApprovalExpired,
+            "run_input_timeout" => Self::RunInputTimeout,
+            "run_never_claimed" => Self::RunNeverClaimed,
+            "run_orphaned_restart" => Self::RunOrphanedRestart,
+            "run_quota_exceeded" => Self::RunQuotaExceeded,
+            "run_stalled" => Self::RunStalled,
+            "secret_would_move" => Self::SecretWouldMove,
+            "video_consent_required" => Self::VideoConsentRequired,
+            "video_order_state" => Self::VideoOrderState,
+            "video_photo_invalid" => Self::VideoPhotoInvalid,
+            "video_photo_rejected" => Self::VideoPhotoRejected,
+            "video_regen_unavailable" => Self::VideoRegenUnavailable,
+            "video_slot_invalid" => Self::VideoSlotInvalid,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `RunEventV1RunFailedType` enumeration.
@@ -36748,7 +37909,7 @@ pub struct RunEventV1RunGuardrailBlockedPayload {
     /// on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
     /// which one. Absent when the run carries none, or one this version does not list.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<ErrorCode>,
+    pub error_code: Option<RunEventV1RunFailedPayloadErrorCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -40540,7 +41701,26 @@ pub struct SetModelPricingOverrideResponse {
 /// `SetRateLimitsRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SetRateLimitsRequest {
-    pub endpoints: serde_json::Value,
+    pub endpoints: HashMap<String, SetRateLimitsRequestEndpointsValue>,
+}
+
+/// `SetRateLimitsRequestEndpointsValue` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetRateLimitsRequestEndpointsValue {
+    /// Deprecated spelling of `max_requests` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `max_requests`.
+    #[serde(rename = "maxRequests", default, skip_serializing_if = "Option::is_none")]
+    pub max_requests: Option<i64>,
+    #[serde(rename = "max_requests", default, skip_serializing_if = "Option::is_none")]
+    pub max_requests_: Option<i64>,
+    /// Deprecated spelling of `window_sec` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `window_sec`.
+    #[serde(rename = "windowSec", default, skip_serializing_if = "Option::is_none")]
+    pub window_sec: Option<i64>,
+    #[serde(rename = "window_sec", default, skip_serializing_if = "Option::is_none")]
+    pub window_sec_: Option<i64>,
 }
 
 /// `SetRateLimitsResponse` model.
@@ -41152,9 +42332,11 @@ pub struct StartSquadRunResponse {
 /// is where the handler reads them.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct StartTeamRunRequest {
-    /// The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
-    /// absent, @mentions in `message` are parsed for the same purpose.
-    pub input: serde_json::Value,
+    /// The turn; omission defaults to an empty input. A bare string is expanded to `{ message }`.
+    /// `addressed_to` selects who answers; absent, @mentions in `message` are parsed for the same
+    /// purpose.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input: Option<serde_json::Value>,
     /// Accepted by the handler and undeclared here until now — the drift ran both ways.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
@@ -44502,7 +45684,7 @@ pub struct UpdateAdminJobRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<UpdateAdminJobRequestLocation>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub applicant_countries: Option<Vec<serde_json::Value>>,
+    pub applicant_countries: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub english_level: Option<JobEnglishLevel>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -44510,7 +45692,7 @@ pub struct UpdateAdminJobRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub skills: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub salary: Option<UpdateAdminJobRequestSalary>,
+    pub salary: Option<UpdateAdminJobRequestSalaryVariant1>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub salary_public: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -44545,17 +45727,17 @@ pub struct UpdateAdminJobRequestLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub city: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub country: Option<serde_json::Value>,
+    pub country: Option<String>,
 }
 
-/// `UpdateAdminJobRequestSalary` model.
+/// `UpdateAdminJobRequestSalaryVariant1` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct UpdateAdminJobRequestSalary {
+pub struct UpdateAdminJobRequestSalaryVariant1 {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max: Option<f64>,
-    pub currency: serde_json::Value,
+    pub currency: String,
     pub period: JobSalaryPeriod,
 }
 
@@ -45093,7 +46275,7 @@ pub struct UpdateAdminRunCommandConfigRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub isolation: Option<serde_json::Value>,
+    pub isolation: Option<AdminConfigRunCommandConfigRunCommandIsolation>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout_ms: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -46238,12 +47420,12 @@ pub struct UpdateSessionTodoRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub assign_team_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub recurrence: Option<UpdateSessionTodoRequestRecurrence>,
+    pub recurrence: Option<UpdateSessionTodoRequestRecurrenceVariant1>,
 }
 
-/// `UpdateSessionTodoRequestRecurrence` model.
+/// `UpdateSessionTodoRequestRecurrenceVariant1` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct UpdateSessionTodoRequestRecurrence {
+pub struct UpdateSessionTodoRequestRecurrenceVariant1 {
     pub cron: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timezone: Option<String>,

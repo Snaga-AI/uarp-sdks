@@ -1203,6 +1203,7 @@ class ErrorCode(UarpEnum):
     RATE_LIMITED = "RATE_LIMITED"
     RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED"
     REFERENCE_NOT_FOUND = "REFERENCE_NOT_FOUND"
+    REQUEST_CANCELLED = "REQUEST_CANCELLED"
     RESERVED_SCOPE = "RESERVED_SCOPE"
     RUN_ACTIVE = "RUN_ACTIVE"
     RUN_CANCELLED = "RUN_CANCELLED"
@@ -2457,6 +2458,31 @@ class PlanLLMLimitsTierAccessItem(UarpEnum):
     ENTERPRISE = "enterprise"
 
 
+class PlatformAnalyticsMetricCoverageCompleteness(UarpEnum):
+    """`PlatformAnalyticsMetricCoverageCompleteness` enumeration."""
+
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+    UNKNOWN = "unknown"
+
+
+class PlatformAnalyticsMetricStatus(UarpEnum):
+    """`PlatformAnalyticsMetricStatus` enumeration."""
+
+    OK = "ok"
+    PARTIAL = "partial"
+    STALE = "stale"
+    UNAVAILABLE = "unavailable"
+    SUPPRESSED = "suppressed"
+
+
+class PlatformAnalyticsMetricUnit(UarpEnum):
+    """`PlatformAnalyticsMetricUnit` enumeration."""
+
+    COUNT = "count"
+    RATIO = "ratio"
+
+
 class PlatformEconomicsCache(UarpEnum):
     """`hit` — served from cache; `miss` — computed and cached; `bypass` — recomputed because
     `refresh=1`.
@@ -2626,6 +2652,23 @@ class PublicPlanResetPeriod(UarpEnum):
 
     DAY = "day"
     MONTH = "month"
+
+
+class PublicPlatformAnalyticsSeriesStatus(UarpEnum):
+    """`PublicPlatformAnalyticsSeriesStatus` enumeration."""
+
+    OK = "ok"
+    PARTIAL = "partial"
+    UNAVAILABLE = "unavailable"
+
+
+class PublicPlatformAnalyticsStatus(UarpEnum):
+    """`PublicPlatformAnalyticsStatus` enumeration."""
+
+    OK = "ok"
+    PARTIAL = "partial"
+    STALE = "stale"
+    UNAVAILABLE = "unavailable"
 
 
 class PublicSessionViewMessageRole(UarpEnum):
@@ -3252,6 +3295,204 @@ class RunEventV1RunCompletedType(UarpEnum):
     """`RunEventV1RunCompletedType` enumeration."""
 
     RUN_COMPLETED = "run.completed"
+
+
+class RunEventV1RunFailedPayloadErrorCode(UarpEnum):
+    """Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+    beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+    stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+    on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+    which one. Absent when the run carries none, or one this version does not list.
+    """
+
+    AAR_NOT_AVAILABLE = "AAR_NOT_AVAILABLE"
+    ACTIVE_TENANT_NOT_SUPPORTED = "ACTIVE_TENANT_NOT_SUPPORTED"
+    ALREADY_EXISTS = "ALREADY_EXISTS"
+    ANON_BUSY = "ANON_BUSY"
+    ARTIFACT_INTEGRITY_ERROR = "ARTIFACT_INTEGRITY_ERROR"
+    ASSESSMENT_ISOLATION_REQUIRED = "ASSESSMENT_ISOLATION_REQUIRED"
+    AUTH_ERROR = "AUTH_ERROR"
+    BILLING_CANCELLED = "BILLING_CANCELLED"
+    BILLING_DISPUTED = "BILLING_DISPUTED"
+    BILLING_PAST_DUE = "BILLING_PAST_DUE"
+    BUDGET_EXCEEDED = "BUDGET_EXCEEDED"
+    CHECKSUM_MISMATCH = "CHECKSUM_MISMATCH"
+    CLIENT_REQUEST_CONFLICT = "CLIENT_REQUEST_CONFLICT"
+    COMPANY_NOT_READY = "COMPANY_NOT_READY"
+    COMPANY_PAUSED = "COMPANY_PAUSED"
+    CONCURRENCY_LIMIT = "CONCURRENCY_LIMIT"
+    CONCURRENT_MODIFICATION = "CONCURRENT_MODIFICATION"
+    CONFIGURATION_ERROR = "CONFIGURATION_ERROR"
+    CONFIRMATION_REQUIRED = "CONFIRMATION_REQUIRED"
+    CONFLICT = "CONFLICT"
+    CONTEXT_LENGTH_EXCEEDED = "CONTEXT_LENGTH_EXCEEDED"
+    COUNT_LIMIT_REACHED = "COUNT_LIMIT_REACHED"
+    DAILY_LIMIT = "DAILY_LIMIT"
+    DEPENDENCY_EXISTS = "DEPENDENCY_EXISTS"
+    EVENT_STORE_ERROR = "EVENT_STORE_ERROR"
+    EXECUTION_PROFILE_UNVERIFIABLE = "EXECUTION_PROFILE_UNVERIFIABLE"
+    EXECUTION_RECEIPT_PENDING = "EXECUTION_RECEIPT_PENDING"
+    EXTERNAL_SERVICE_ERROR = "EXTERNAL_SERVICE_ERROR"
+    FEATURED_SET_CONTENDED = "FEATURED_SET_CONTENDED"
+    FEATURE_DISABLED = "FEATURE_DISABLED"
+    FILE_NOT_FOUND = "FILE_NOT_FOUND"
+    FILE_TYPE_NOT_ALLOWED = "FILE_TYPE_NOT_ALLOWED"
+    FORBIDDEN = "FORBIDDEN"
+    GUARDRAIL_VIOLATION = "GUARDRAIL_VIOLATION"
+    IDEMPOTENCY_CONFLICT = "IDEMPOTENCY_CONFLICT"
+    IDEMPOTENCY_KEY_REUSED = "IDEMPOTENCY_KEY_REUSED"
+    INITIATIVE_BUDGET_EXHAUSTED = "INITIATIVE_BUDGET_EXHAUSTED"
+    INITIATIVE_PAUSED = "INITIATIVE_PAUSED"
+    INTERNAL_ERROR = "INTERNAL_ERROR"
+    INVALID_ARCHIVE = "INVALID_ARCHIVE"
+    INVALID_BODY = "INVALID_BODY"
+    INVALID_CURSOR = "INVALID_CURSOR"
+    INVALID_MANIFEST = "INVALID_MANIFEST"
+    INVALID_QUERY = "INVALID_QUERY"
+    INVALID_REQUEST = "INVALID_REQUEST"
+    INVALID_SHARE_LIST = "INVALID_SHARE_LIST"
+    INVALID_SHARE_TARGET = "INVALID_SHARE_TARGET"
+    INVALID_STATE_TRANSITION = "INVALID_STATE_TRANSITION"
+    ISOLATION_VIOLATION = "ISOLATION_VIOLATION"
+    LLM_ERROR = "LLM_ERROR"
+    MANAGED_AGENT = "MANAGED_AGENT"
+    MAX_DURATION_EXCEEDED = "MAX_DURATION_EXCEEDED"
+    MAX_TOKENS_EXCEEDED = "MAX_TOKENS_EXCEEDED"
+    METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED"
+    MIGRATION_CONFLICT = "MIGRATION_CONFLICT"
+    MISSING_FIELD = "MISSING_FIELD"
+    MISSING_SCOPE = "MISSING_SCOPE"
+    MISSION_ALREADY_RUNNING = "MISSION_ALREADY_RUNNING"
+    MISSION_CONCURRENCY_LIMIT = "MISSION_CONCURRENCY_LIMIT"
+    MISSION_NOT_FOUND = "MISSION_NOT_FOUND"
+    MISSION_NOT_RUNNABLE = "MISSION_NOT_RUNNABLE"
+    MISSION_NOT_RUNNING = "MISSION_NOT_RUNNING"
+    MISSION_ROUTE_NOT_FOUND = "MISSION_ROUTE_NOT_FOUND"
+    NOT_BRIDGE_AGENT = "NOT_BRIDGE_AGENT"
+    NOT_FOUND = "NOT_FOUND"
+    NOT_YANKED = "NOT_YANKED"
+    NO_RUNNABLE_TARGET = "NO_RUNNABLE_TARGET"
+    OAUTH_FAILED = "OAUTH_FAILED"
+    OUTPUT_CONTRACT_VIOLATION = "OUTPUT_CONTRACT_VIOLATION"
+    OUTPUT_TOO_LARGE = "OUTPUT_TOO_LARGE"
+    PAYLOAD_TOO_LARGE = "PAYLOAD_TOO_LARGE"
+    PERSISTENCE_ERROR = "PERSISTENCE_ERROR"
+    PLANNER_OUTPUT_INVALID = "PLANNER_OUTPUT_INVALID"
+    PLANNER_REFUSED = "PLANNER_REFUSED"
+    PRECONDITION_FAILED = "PRECONDITION_FAILED"
+    PREREQUISITE_MISSING = "PREREQUISITE_MISSING"
+    PRICING_UNAVAILABLE = "PRICING_UNAVAILABLE"
+    PRIVATE_NOT_SHARED = "PRIVATE_NOT_SHARED"
+    PROCESSING_POLICY_CHANGED = "PROCESSING_POLICY_CHANGED"
+    PROCESSING_POLICY_NOT_READY = "PROCESSING_POLICY_NOT_READY"
+    PROMO_REDEMPTION_FAILED = "PROMO_REDEMPTION_FAILED"
+    PROPOSAL_EXPIRED = "PROPOSAL_EXPIRED"
+    QUALIFICATION_BUDGET_STOP = "QUALIFICATION_BUDGET_STOP"
+    QUALIFICATION_ROUTE_MISMATCH = "QUALIFICATION_ROUTE_MISMATCH"
+    QUALIFICATION_VERSION_UNAVAILABLE = "QUALIFICATION_VERSION_UNAVAILABLE"
+    QUOTA_EXCEEDED = "QUOTA_EXCEEDED"
+    RATE_LIMITED = "RATE_LIMITED"
+    RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED"
+    REFERENCE_NOT_FOUND = "REFERENCE_NOT_FOUND"
+    RESERVED_SCOPE = "RESERVED_SCOPE"
+    RUN_ACTIVE = "RUN_ACTIVE"
+    RUN_CANCELLED = "RUN_CANCELLED"
+    SCOPE_MISMATCH = "SCOPE_MISMATCH"
+    SCOPE_TAKEN = "SCOPE_TAKEN"
+    SEARCH_PROVIDER_NOT_CONFIGURED = "SEARCH_PROVIDER_NOT_CONFIGURED"
+    SEARCH_UPSTREAM_FAILED = "SEARCH_UPSTREAM_FAILED"
+    SEARCH_UPSTREAM_TIMEOUT = "SEARCH_UPSTREAM_TIMEOUT"
+    SECURITY_SCAN_FAILED = "SECURITY_SCAN_FAILED"
+    SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
+    SESSION_NOT_ACTIVE = "SESSION_NOT_ACTIVE"
+    SHARE_LIST_CONFLICT = "SHARE_LIST_CONFLICT"
+    SIGNING_NOT_CONFIGURED = "SIGNING_NOT_CONFIGURED"
+    SIZE_LIMIT = "SIZE_LIMIT"
+    SPEC_NOT_FOUND = "SPEC_NOT_FOUND"
+    SPONSORSHIP_BUDGET_BELOW_COMMITTED = "SPONSORSHIP_BUDGET_BELOW_COMMITTED"
+    SPONSORSHIP_BUDGET_EXHAUSTED = "SPONSORSHIP_BUDGET_EXHAUSTED"
+    SPONSORSHIP_CANDIDATE_LIMIT = "SPONSORSHIP_CANDIDATE_LIMIT"
+    SPONSORSHIP_CONCURRENCY_LIMIT = "SPONSORSHIP_CONCURRENCY_LIMIT"
+    SPONSORSHIP_FUNDING_UNAVAILABLE = "SPONSORSHIP_FUNDING_UNAVAILABLE"
+    SPONSORSHIP_GRANT_CONFLICT = "SPONSORSHIP_GRANT_CONFLICT"
+    SPONSORSHIP_GRANT_IN_USE = "SPONSORSHIP_GRANT_IN_USE"
+    SPONSORSHIP_GRANT_MISMATCH = "SPONSORSHIP_GRANT_MISMATCH"
+    SPONSORSHIP_GRANT_UNAVAILABLE = "SPONSORSHIP_GRANT_UNAVAILABLE"
+    SPONSORSHIP_OUTCOME_UNKNOWN = "SPONSORSHIP_OUTCOME_UNKNOWN"
+    SPONSORSHIP_PROGRAM_IMMUTABLE = "SPONSORSHIP_PROGRAM_IMMUTABLE"
+    SPONSORSHIP_PROGRAM_INACTIVE = "SPONSORSHIP_PROGRAM_INACTIVE"
+    SPONSORSHIP_PROGRAM_REVISION_CONFLICT = "SPONSORSHIP_PROGRAM_REVISION_CONFLICT"
+    SPONSORSHIP_REQUIRED = "SPONSORSHIP_REQUIRED"
+    SPONSORSHIP_SCOPE_REQUIRED = "SPONSORSHIP_SCOPE_REQUIRED"
+    STARTED_BY_ANOTHER_USER = "STARTED_BY_ANOTHER_USER"
+    STRATEGIST_MODEL_UNCONFIGURED = "STRATEGIST_MODEL_UNCONFIGURED"
+    SUPER_ADMIN_REQUIRED = "SUPER_ADMIN_REQUIRED"
+    TASK_GRAPH_FAILED = "TASK_GRAPH_FAILED"
+    TEAM_ABORT = "TEAM_ABORT"
+    TERMS_NOT_ACCEPTED = "TERMS_NOT_ACCEPTED"
+    TEXT_EXTRACTION_FAILED = "TEXT_EXTRACTION_FAILED"
+    UNAUTHENTICATED = "UNAUTHENTICATED"
+    USAGE_CORRECTION_EXCEEDS_COUNTERS = "USAGE_CORRECTION_EXCEEDS_COUNTERS"
+    USAGE_CORRECTION_IN_PROGRESS = "USAGE_CORRECTION_IN_PROGRESS"
+    USAGE_CORRECTION_NOT_SETTLED = "USAGE_CORRECTION_NOT_SETTLED"
+    USAGE_CORRECTION_NOT_SPONSORED = "USAGE_CORRECTION_NOT_SPONSORED"
+    USER_REQUIRED = "USER_REQUIRED"
+    VALIDATION_ERROR = "VALIDATION_ERROR"
+    VERIFICATION_FAILED = "VERIFICATION_FAILED"
+    VERSION_CONFLICT = "VERSION_CONFLICT"
+    VERSION_NOT_FOUND = "VERSION_NOT_FOUND"
+    WORKSPACE_STORAGE_LIMIT = "WORKSPACE_STORAGE_LIMIT"
+    WOULD_ORPHAN = "WOULD_ORPHAN"
+    YANK_CONFLICT = "YANK_CONFLICT"
+    AGENT_DELETED = "agent_deleted"
+    AGENT_NOT_FOUND = "agent_not_found"
+    ALREADY_BOOTSTRAPPED = "already_bootstrapped"
+    APPROVAL_REJECTED = "approval_rejected"
+    BILLING_NOT_CONFIGURED = "billing_not_configured"
+    CONSENT_REQUIRED = "consent_required"
+    CV_INVALID = "cv_invalid"
+    CV_TOO_LARGE = "cv_too_large"
+    DUPLICATE_APPLICATION = "duplicate_application"
+    GOVERNANCE_NOT_ENABLED = "governance_not_enabled"
+    HIRE_CATALOG_UNKNOWN = "hire_catalog_unknown"
+    INCOMPLETE_RECORD = "incomplete_record"
+    INERT_POLICY_FIELD = "inert_policy_field"
+    INERT_PUBLIC_CONFIG_FIELD = "inert_public_config_field"
+    JOB_APPLY_ELSEWHERE = "job_apply_elsewhere"
+    JOB_CLOSED = "job_closed"
+    KB_CHUNK_LIMIT = "kb_chunk_limit"
+    KB_DOCUMENT_BODY_INVALID = "kb_document_body_invalid"
+    KB_DOCUMENT_TOO_LARGE = "kb_document_too_large"
+    KB_EMBEDDING_FAILED = "kb_embedding_failed"
+    KB_STORAGE_LIMIT = "kb_storage_limit"
+    KB_TEXT_EXTRACTION_FAILED = "kb_text_extraction_failed"
+    LIMIT_REACHED = "limit_reached"
+    MFA_REQUIRED = "mfa_required"
+    NO_ELIGIBLE_ARBITER = "no_eligible_arbiter"
+    NOT_HIRED = "not_hired"
+    PLAN_UPGRADE_REQUIRED = "plan_upgrade_required"
+    PROPOSAL_REQUIRED = "proposal_required"
+    PROVIDER_AUTH_FAILED = "provider_auth_failed"
+    PROVIDER_CIRCUIT_OPEN = "provider_circuit_open"
+    PROVIDER_NOT_CONFIGURED = "provider_not_configured"
+    PROVIDER_RATE_LIMITED = "provider_rate_limited"
+    QUOTA_EXCEEDED_2 = "quota_exceeded"
+    RATE_LIMITED_2 = "rate_limited"
+    RESOURCE_LIMIT_REACHED = "resource_limit_reached"
+    RUN_AGENT_STOPPED = "run_agent_stopped"
+    RUN_APPROVAL_EXPIRED = "run_approval_expired"
+    RUN_INPUT_TIMEOUT = "run_input_timeout"
+    RUN_NEVER_CLAIMED = "run_never_claimed"
+    RUN_ORPHANED_RESTART = "run_orphaned_restart"
+    RUN_QUOTA_EXCEEDED = "run_quota_exceeded"
+    RUN_STALLED = "run_stalled"
+    SECRET_WOULD_MOVE = "secret_would_move"
+    VIDEO_CONSENT_REQUIRED = "video_consent_required"
+    VIDEO_ORDER_STATE = "video_order_state"
+    VIDEO_PHOTO_INVALID = "video_photo_invalid"
+    VIDEO_PHOTO_REJECTED = "video_photo_rejected"
+    VIDEO_REGEN_UNAVAILABLE = "video_regen_unavailable"
+    VIDEO_SLOT_INVALID = "video_slot_invalid"
 
 
 class RunEventV1RunFailedType(UarpEnum):
@@ -6170,14 +6411,14 @@ class AdminPutLandingConfigRequest(Model):
 
     partners_enabled: Optional[bool] = None
 
-    partners: Optional[List[AdminPutLandingConfigRequestPartner]] = None
+    partners: Optional[List[AdminPutLandingConfigRequestPartnersVariant1item]] = None
 
     expected_version: Optional[str] = None
 
 
 @_dataclass(kw_only=True)
-class AdminPutLandingConfigRequestPartner(Model):
-    """`AdminPutLandingConfigRequestPartner` model."""
+class AdminPutLandingConfigRequestPartnersVariant1item(Model):
+    """`AdminPutLandingConfigRequestPartnersVariant1item` model."""
 
     id: str
 
@@ -6189,12 +6430,12 @@ class AdminPutLandingConfigRequestPartner(Model):
 
     href: str
 
-    logo: AdminPutLandingConfigRequestPartnerLogo
+    logo: AdminPutLandingConfigRequestPartnersVariant1itemLogo
 
 
 @_dataclass(kw_only=True)
-class AdminPutLandingConfigRequestPartnerLogo(Model):
-    """`AdminPutLandingConfigRequestPartnerLogo` model."""
+class AdminPutLandingConfigRequestPartnersVariant1itemLogo(Model):
+    """`AdminPutLandingConfigRequestPartnersVariant1itemLogo` model."""
 
     slug: Optional[AdminPutLandingConfigRequestPartnerLogoSlug] = None
 
@@ -11607,10 +11848,8 @@ class CreateAdminJobRequest(Model):
     workplace_type: JobWorkplaceType
 
     location: Optional[CreateAdminJobRequestLocation] = None
-    """Server default: `{}`."""
 
-    applicant_countries: Optional[List[JsonValue]] = None
-    """Server default: `[]`."""
+    applicant_countries: Optional[List[str]] = None
 
     english_level: Optional[JobEnglishLevel] = None
 
@@ -11619,8 +11858,7 @@ class CreateAdminJobRequest(Model):
     skills: Optional[List[str]] = None
     """Server default: `[]`."""
 
-    salary: Optional[CreateAdminJobRequestSalary] = None
-    """Server default: `null`."""
+    salary: Optional[CreateAdminJobRequestSalaryVariant1] = None
 
     salary_public: Optional[bool] = None
     """Server default: `false`."""
@@ -11661,18 +11899,18 @@ class CreateAdminJobRequestLocation(Model):
 
     city: Optional[str] = None
 
-    country: JsonValue = None
+    country: Optional[str] = None
 
 
 @_dataclass(kw_only=True)
-class CreateAdminJobRequestSalary(Model):
-    """`CreateAdminJobRequestSalary` model."""
+class CreateAdminJobRequestSalaryVariant1(Model):
+    """`CreateAdminJobRequestSalaryVariant1` model."""
 
     min: Optional[float] = None
 
     max: Optional[float] = None
 
-    currency: JsonValue
+    currency: str
 
     period: JobSalaryPeriod
 
@@ -11849,6 +12087,9 @@ class CreateAgentScorerRequestConfig(Model):
     url: str
 
     timeout_ms: Optional[float] = None
+
+    additional_properties: Dict[str, Any] = _field(default_factory=dict, metadata={"additional": True})
+    """Members the server sent that the document does not name, as sent."""
 
 
 @_dataclass(kw_only=True)
@@ -23920,6 +24161,77 @@ class PlannedObjectiveBudget(Model):
 
 
 @_dataclass(kw_only=True)
+class PlatformAnalyticsMetric(Model):
+    """`PlatformAnalyticsMetric` model."""
+
+    value: Optional[float]
+
+    unit: PlatformAnalyticsMetricUnit
+
+    status: PlatformAnalyticsMetricStatus
+
+    since: Optional[str]
+
+    data_through: Optional[str]
+
+    numerator: Optional[int]
+
+    denominator: Optional[int]
+
+    coverage: PlatformAnalyticsMetricCoverage
+
+
+@_dataclass(kw_only=True)
+class PlatformAnalyticsMetricCoverage(Model):
+    """`PlatformAnalyticsMetricCoverage` model."""
+
+    completeness: PlatformAnalyticsMetricCoverageCompleteness
+
+    observed_from: Optional[str]
+
+    gaps: List[PlatformAnalyticsMetricCoverageGap]
+
+
+@_dataclass(kw_only=True)
+class PlatformAnalyticsMetricCoverageGap(Model):
+    """`PlatformAnalyticsMetricCoverageGap` model."""
+
+    from_: Optional[str] = _field(metadata={"wire": "from"})
+
+    to: Optional[str]
+
+    reason: str
+
+
+@_dataclass(kw_only=True)
+class PlatformAnalyticsWindow(Model):
+    """`PlatformAnalyticsWindow` model."""
+
+    start: str
+
+    end_exclusive: str
+
+    metrics: PlatformAnalyticsWindowMetrics
+
+
+@_dataclass(kw_only=True)
+class PlatformAnalyticsWindowMetrics(Model):
+    """`PlatformAnalyticsWindowMetrics` model."""
+
+    companies_ever_active: PlatformAnalyticsMetric
+
+    agents_ever_active: PlatformAnalyticsMetric
+
+    execution_runs: PlatformAnalyticsMetric
+
+    logical_tool_calls: PlatformAnalyticsMetric
+
+    repeat_companies: PlatformAnalyticsMetric
+
+    technical_completion_ratio: PlatformAnalyticsMetric
+
+
+@_dataclass(kw_only=True)
 class PlatformEconomics(Model):
     """Platform profit and loss: Stripe revenue against real host spend and the LLM provider bill.
     Super-admin only. Served from a short-lived cache — `cache` says which.
@@ -25202,6 +25514,114 @@ class PublicPlanReset(Model):
 
     at: Optional[str] = None
     """Human wording of the reset instant, e.g. `00:00 UTC`."""
+
+
+@_dataclass(kw_only=True)
+class PublicPlatformAnalytics(Model):
+    """`PublicPlatformAnalytics` model."""
+
+    schema_version: int
+
+    revision: str
+
+    generated_at: str
+
+    data_through: Optional[str]
+
+    processed_through: Optional[str]
+
+    status: PublicPlatformAnalyticsStatus
+
+    scope: PublicPlatformAnalyticsScope
+
+    lifetime: PublicPlatformAnalyticsLifetime
+
+    windows: PublicPlatformAnalyticsWindows
+
+    series: PublicPlatformAnalyticsSeries
+
+
+@_dataclass(kw_only=True)
+class PublicPlatformAnalyticsLifetime(Model):
+    """`PublicPlatformAnalyticsLifetime` model."""
+
+    since: Optional[str]
+
+    metrics: PublicPlatformAnalyticsLifetimeMetrics
+
+
+@_dataclass(kw_only=True)
+class PublicPlatformAnalyticsLifetimeMetrics(Model):
+    """`PublicPlatformAnalyticsLifetimeMetrics` model."""
+
+    companies_ever_active: PlatformAnalyticsMetric
+
+    agents_ever_active: PlatformAnalyticsMetric
+
+    execution_runs: PlatformAnalyticsMetric
+
+    logical_tool_calls: PlatformAnalyticsMetric
+
+    repeat_companies: PlatformAnalyticsMetric
+
+    technical_completion_ratio: PlatformAnalyticsMetric
+
+
+@_dataclass(kw_only=True)
+class PublicPlatformAnalyticsScope(Model):
+    """`PublicPlatformAnalyticsScope` model."""
+
+    population: str
+    """Always `all_production`."""
+
+    includes_internal: bool
+
+    includes_test: bool
+
+    classification: str
+    """Always `not_applied`."""
+
+
+@_dataclass(kw_only=True)
+class PublicPlatformAnalyticsSeries(Model):
+    """`PublicPlatformAnalyticsSeries` model."""
+
+    timezone: str
+    """Always `UTC`."""
+
+    status: PublicPlatformAnalyticsSeriesStatus
+
+    days: Optional[List[PublicPlatformAnalyticsSeriesDay]]
+
+
+@_dataclass(kw_only=True)
+class PublicPlatformAnalyticsSeriesDay(Model):
+    """`PublicPlatformAnalyticsSeriesDay` model."""
+
+    date: str
+
+    companies_active: Optional[int]
+
+    agents_active: Optional[int]
+
+    execution_runs: Optional[int]
+
+    logical_tool_calls: Optional[int]
+
+    completed_runs: Optional[int]
+
+    terminal_runs: Optional[int]
+
+    status: PublicPlatformAnalyticsSeriesStatus
+
+
+@_dataclass(kw_only=True)
+class PublicPlatformAnalyticsWindows(Model):
+    """`PublicPlatformAnalyticsWindows` model."""
+
+    v_7d: Optional[PlatformAnalyticsWindow] = _field(metadata={"wire": "7d"})
+
+    v_30d: Optional[PlatformAnalyticsWindow] = _field(metadata={"wire": "30d"})
 
 
 @_dataclass(kw_only=True)
@@ -28732,7 +29152,7 @@ class RunEventV1RunCancelledPayload(Model):
 
     error: Optional[str] = None
 
-    error_code: Optional[ErrorCode] = None
+    error_code: Optional[RunEventV1RunFailedPayloadErrorCode] = None
     """Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
     beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
     stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
@@ -28877,7 +29297,7 @@ class RunEventV1RunFailedPayload(Model):
 
     error: str
 
-    error_code: Optional[ErrorCode] = None
+    error_code: Optional[RunEventV1RunFailedPayloadErrorCode] = None
     """Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
     beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
     stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
@@ -28933,7 +29353,7 @@ class RunEventV1RunGuardrailBlockedPayload(Model):
 
     error: str
 
-    error_code: Optional[ErrorCode] = None
+    error_code: Optional[RunEventV1RunFailedPayloadErrorCode] = None
     """Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
     beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
     stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
@@ -31349,7 +31769,32 @@ class SetModelPricingOverrideResponse(Model):
 class SetRateLimitsRequest(Model):
     """`SetRateLimitsRequest` model."""
 
-    endpoints: JsonValue
+    endpoints: Dict[str, SetRateLimitsRequestEndpointsValue]
+
+
+@_dataclass(kw_only=True)
+class SetRateLimitsRequestEndpointsValue(Model):
+    """`SetRateLimitsRequestEndpointsValue` model."""
+
+    max_requests: Optional[int] = _field(default=None, metadata={"wire": "maxRequests"})
+    """Deprecated spelling of `max_requests` — the same value, kept for the compatibility window
+    and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    `max_requests`.
+
+    Deprecated.
+    """
+
+    max_requests_: Optional[int] = _field(default=None, metadata={"wire": "max_requests"})
+
+    window_sec: Optional[int] = _field(default=None, metadata={"wire": "windowSec"})
+    """Deprecated spelling of `window_sec` — the same value, kept for the compatibility window and
+    removed in the next breaking release (the one that moves `X-API-Version`). Read
+    `window_sec`.
+
+    Deprecated.
+    """
+
+    window_sec_: Optional[int] = _field(default=None, metadata={"wire": "window_sec"})
 
 
 @_dataclass(kw_only=True)
@@ -31779,9 +32224,10 @@ class StartTeamRunRequest(Model):
     is where the handler reads them.
     """
 
-    input: JsonValue
-    """The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
-    absent, @mentions in `message` are parsed for the same purpose.
+    input: JsonValue = None
+    """The turn; omission defaults to an empty input. A bare string is expanded to `{ message }`.
+    `addressed_to` selects who answers; absent, @mentions in `message` are parsed for the same
+    purpose.
     """
 
     metadata: Optional[JsonObject] = None
@@ -34279,7 +34725,7 @@ class UpdateAdminJobRequest(Model):
 
     location: Optional[UpdateAdminJobRequestLocation] = None
 
-    applicant_countries: Optional[List[JsonValue]] = None
+    applicant_countries: Optional[List[str]] = None
 
     english_level: Optional[JobEnglishLevel] = None
 
@@ -34287,7 +34733,7 @@ class UpdateAdminJobRequest(Model):
 
     skills: Optional[List[str]] = None
 
-    salary: Optional[UpdateAdminJobRequestSalary] = None
+    salary: Optional[UpdateAdminJobRequestSalaryVariant1] = None
 
     salary_public: Optional[bool] = None
 
@@ -34323,18 +34769,18 @@ class UpdateAdminJobRequestLocation(Model):
 
     city: Optional[str] = None
 
-    country: JsonValue = None
+    country: Optional[str] = None
 
 
 @_dataclass(kw_only=True)
-class UpdateAdminJobRequestSalary(Model):
-    """`UpdateAdminJobRequestSalary` model."""
+class UpdateAdminJobRequestSalaryVariant1(Model):
+    """`UpdateAdminJobRequestSalaryVariant1` model."""
 
     min: Optional[float] = None
 
     max: Optional[float] = None
 
-    currency: JsonValue
+    currency: str
 
     period: JobSalaryPeriod
 
@@ -34807,7 +35253,7 @@ class UpdateAdminRunCommandConfigRequest(Model):
 
     enabled: Optional[bool] = None
 
-    isolation: JsonValue = None
+    isolation: Optional[AdminConfigRunCommandConfigRunCommandIsolation] = None
 
     timeout_ms: Optional[int] = None
 
@@ -35819,12 +36265,12 @@ class UpdateSessionTodoRequest(Model):
 
     assign_team_id: Optional[str] = None
 
-    recurrence: Optional[UpdateSessionTodoRequestRecurrence] = None
+    recurrence: Optional[UpdateSessionTodoRequestRecurrenceVariant1] = None
 
 
 @_dataclass(kw_only=True)
-class UpdateSessionTodoRequestRecurrence(Model):
-    """`UpdateSessionTodoRequestRecurrence` model."""
+class UpdateSessionTodoRequestRecurrenceVariant1(Model):
+    """`UpdateSessionTodoRequestRecurrenceVariant1` model."""
 
     cron: str
 
@@ -37520,9 +37966,9 @@ __all__ = [
     "AdminProviderLastModelsSync",
     "AdminProviderSummary",
     "AdminPutLandingConfigRequest",
-    "AdminPutLandingConfigRequestPartner",
-    "AdminPutLandingConfigRequestPartnerLogo",
     "AdminPutLandingConfigRequestPartnerLogoSlug",
+    "AdminPutLandingConfigRequestPartnersVariant1item",
+    "AdminPutLandingConfigRequestPartnersVariant1itemLogo",
     "AdminPutLandingConfigRequestTextsValue",
     "AdminPutLandingConfigResponse",
     "AdminPutLandingConfigResponseSource",
@@ -37893,7 +38339,7 @@ __all__ = [
     "CreateAdminJobRequest",
     "CreateAdminJobRequestApply",
     "CreateAdminJobRequestLocation",
-    "CreateAdminJobRequestSalary",
+    "CreateAdminJobRequestSalaryVariant1",
     "CreateAdminJobResponse",
     "CreateAdminProviderRequest",
     "CreateAdminProviderRequestCanonical",
@@ -38747,6 +39193,14 @@ __all__ = [
     "PlannedObjective",
     "PlannedObjectiveBudget",
     "PlanQuotaFields",
+    "PlatformAnalyticsMetric",
+    "PlatformAnalyticsMetricCoverage",
+    "PlatformAnalyticsMetricCoverageCompleteness",
+    "PlatformAnalyticsMetricCoverageGap",
+    "PlatformAnalyticsMetricStatus",
+    "PlatformAnalyticsMetricUnit",
+    "PlatformAnalyticsWindow",
+    "PlatformAnalyticsWindowMetrics",
     "PlatformEconomics",
     "PlatformEconomicsCache",
     "PlatformEconomicsCosts",
@@ -38839,6 +39293,15 @@ __all__ = [
     "PublicPlanQueueTier",
     "PublicPlanReset",
     "PublicPlanResetPeriod",
+    "PublicPlatformAnalytics",
+    "PublicPlatformAnalyticsLifetime",
+    "PublicPlatformAnalyticsLifetimeMetrics",
+    "PublicPlatformAnalyticsScope",
+    "PublicPlatformAnalyticsSeries",
+    "PublicPlatformAnalyticsSeriesDay",
+    "PublicPlatformAnalyticsSeriesStatus",
+    "PublicPlatformAnalyticsStatus",
+    "PublicPlatformAnalyticsWindows",
     "PublicSessionView",
     "PublicSessionViewMessage",
     "PublicSessionViewMessageRole",
@@ -39114,6 +39577,7 @@ __all__ = [
     "RunEventV1RunCompletedType",
     "RunEventV1RunFailed",
     "RunEventV1RunFailedPayload",
+    "RunEventV1RunFailedPayloadErrorCode",
     "RunEventV1RunFailedType",
     "RunEventV1RunGuardrailBlocked",
     "RunEventV1RunGuardrailBlockedPayload",
@@ -39297,6 +39761,7 @@ __all__ = [
     "SetModelPricingOverrideRequest",
     "SetModelPricingOverrideResponse",
     "SetRateLimitsRequest",
+    "SetRateLimitsRequestEndpointsValue",
     "SetRateLimitsResponse",
     "SetRegistrySpecVisibilityRequest",
     "SetRegistrySpecVisibilityRequestVisibility",
@@ -39501,7 +39966,7 @@ __all__ = [
     "UpdateAdminJobRequest",
     "UpdateAdminJobRequestApply",
     "UpdateAdminJobRequestLocation",
-    "UpdateAdminJobRequestSalary",
+    "UpdateAdminJobRequestSalaryVariant1",
     "UpdateAdminJobResponse",
     "UpdateAdminLLMAdaptersConfigRequest",
     "UpdateAdminLLMAdaptersConfigRequestCircuitBreaker",
@@ -39610,7 +40075,7 @@ __all__ = [
     "UpdateSessionRequest",
     "UpdateSessionRequestModelOverride",
     "UpdateSessionTodoRequest",
-    "UpdateSessionTodoRequestRecurrence",
+    "UpdateSessionTodoRequestRecurrenceVariant1",
     "UpdateSquadGraphNodeRequest",
     "UpdateTeamGraphNodeRequest",
     "UpdateTenantCompanyRequest",

@@ -474,7 +474,9 @@ test('parses the production document into the expected shape', () => {
   // agents, backfilling session titles, reversing a sponsored run's usage).
   // 871 -> 873 on 2026-10-31 (build cc26d5ce): `GET /tenants/me/public-profile`
   // and `PATCH /missions/schedules/{scheduleId}`, none removed.
-  assert.equal(ops.length, 873);
+  // 873 -> 875 on 2026-11-04 (build 0e6666cb): the public platform analytics,
+  // `GET /public/platform-analytics` and its event stream.
+  assert.equal(ops.length, 875);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -776,7 +778,12 @@ test('parses the production document into the expected shape', () => {
   // hoisted shapes, and the quota, billing-plan, usage and mission fields.
   // 2348 -> 2351 on 2026-10-31 (build af3b029e): a proposal's `applied_via`,
   // and a public-profile agent's `standing` with its enum.
-  assert.equal(spec.types.length, 2351);
+  // 2351 -> 2370 on 2026-11-04 (build 0e6666cb): +24 -5. Added: the platform
+  // analytics schemas and their hoisted parts, the v1 `error_code` list now
+  // that `ErrorCode` gained `REQUEST_CANCELLED`, a rate-limit endpoint value.
+  // Five request types moved under a `Variant1` name when the document spelled
+  // their nullability `anyOf: [X, null]` instead of `type: [X, "null"]`.
+  assert.equal(spec.types.length, 2370);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);
@@ -796,7 +803,8 @@ test('parses the production document into the expected shape', () => {
   // commits left behind.
   // 15 -> 16 on 2026-10-12 (build ef5b646d): its twin,
   // `GET /initiatives/{initiativeId}/events`.
-  assert.equal(ops.filter((o) => o.sse).length, 16);
+  // 16 -> 17 on 2026-11-04 (build 0e6666cb): `GET /public/platform-analytics/events`.
+  assert.equal(ops.filter((o) => o.sse).length, 17);
   // 14 -> 15: `GET /training-jobs`.
   // 15 -> 16 on 2026-08-28: `listTeamRuns`. The handler has read `limit`
   // (default 50, ceiling 100) and `cursor` all along and neither was

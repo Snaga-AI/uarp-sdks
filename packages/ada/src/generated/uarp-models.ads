@@ -3120,33 +3120,33 @@ package UARP.Models is
    function To_JSON (Model : Admin_Put_Landing_Config_Request_Partner_Logo_Slug) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Request_Partner_Logo_Slug;
 
-   --  `AdminPutLandingConfigRequestPartnerLogo` model.
-   type Admin_Put_Landing_Config_Request_Partner_Logo is record
+   --  `AdminPutLandingConfigRequestPartnersVariant1itemLogo` model.
+   type Admin_Put_Landing_Config_Request_Partners_Variant1item_Logo is record
       Has_Slug : Boolean := False;
       Slug : UARP.Models.Admin_Put_Landing_Config_Request_Partner_Logo_Slug;
       Has_URL : Boolean := False;
       URL : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
-   function To_JSON (Model : Admin_Put_Landing_Config_Request_Partner_Logo) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Request_Partner_Logo;
+   function To_JSON (Model : Admin_Put_Landing_Config_Request_Partners_Variant1item_Logo) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Request_Partners_Variant1item_Logo;
 
-   --  `AdminPutLandingConfigRequestPartner` model.
-   type Admin_Put_Landing_Config_Request_Partner is record
+   --  `AdminPutLandingConfigRequestPartnersVariant1item` model.
+   type Admin_Put_Landing_Config_Request_Partners_Variant1item is record
       Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Tagline : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Tagline_Uk : Boolean := False;
       Tagline_Uk : UARP.Types.Text := UARP.Types.Empty_Text;
       Href : UARP.Types.Text := UARP.Types.Empty_Text;
-      Logo : UARP.Models.Admin_Put_Landing_Config_Request_Partner_Logo;
+      Logo : UARP.Models.Admin_Put_Landing_Config_Request_Partners_Variant1item_Logo;
    end record;
 
-   function To_JSON (Model : Admin_Put_Landing_Config_Request_Partner) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Request_Partner;
+   function To_JSON (Model : Admin_Put_Landing_Config_Request_Partners_Variant1item) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Request_Partners_Variant1item;
 
-   package Admin_Put_Landing_Config_Request_Partner_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Admin_Put_Landing_Config_Request_Partner);
+   package Admin_Put_Landing_Config_Request_Partners_Variant1item_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Admin_Put_Landing_Config_Request_Partners_Variant1item);
 
    --  `AdminPutLandingConfigRequest` model.
    type Admin_Put_Landing_Config_Request is record
@@ -3161,7 +3161,7 @@ package UARP.Models is
       Has_Partners_Enabled : Boolean := False;
       Partners_Enabled : Standard.Boolean := False;
       Has_Partners : Boolean := False;
-      Partners : UARP.Models.Admin_Put_Landing_Config_Request_Partner_Vectors.Vector;
+      Partners : UARP.Models.Admin_Put_Landing_Config_Request_Partners_Variant1item_Vectors.Vector;
       Has_Expected_Version : Boolean := False;
       Expected_Version : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -11748,24 +11748,24 @@ package UARP.Models is
       Has_City : Boolean := False;
       City : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Country : Boolean := False;
-      Country : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Country : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Create_Admin_Job_Request_Location) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Job_Request_Location;
 
-   --  `CreateAdminJobRequestSalary` model.
-   type Create_Admin_Job_Request_Salary is record
+   --  `CreateAdminJobRequestSalaryVariant1` model.
+   type Create_Admin_Job_Request_Salary_Variant1 is record
       Has_Min : Boolean := False;
       Min : UARP.Types.Float_Value := 0.0;
       Has_Max : Boolean := False;
       Max : UARP.Types.Float_Value := 0.0;
-      Currency : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Currency : UARP.Types.Text := UARP.Types.Empty_Text;
       Period : UARP.Models.Job_Salary_Period;
    end record;
 
-   function To_JSON (Model : Create_Admin_Job_Request_Salary) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Job_Request_Salary;
+   function To_JSON (Model : Create_Admin_Job_Request_Salary_Variant1) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Job_Request_Salary_Variant1;
 
    --  `CreateAdminJobRequestApply` model.
    type Create_Admin_Job_Request_Apply is record
@@ -11808,7 +11808,7 @@ package UARP.Models is
       Has_Location : Boolean := False;
       Location : UARP.Models.Create_Admin_Job_Request_Location;
       Has_Applicant_Countries : Boolean := False;
-      Applicant_Countries : UARP.JSON_Support.JSON_Value;
+      Applicant_Countries : UARP.Types.Text_Vectors.Vector;
       Has_English_Level : Boolean := False;
       English_Level : UARP.Models.Job_English_Level;
       Has_Experience_Years_Min : Boolean := False;
@@ -11816,7 +11816,7 @@ package UARP.Models is
       Has_Skills : Boolean := False;
       Skills : UARP.Types.Text_Vectors.Vector;
       Has_Salary : Boolean := False;
-      Salary : UARP.Models.Create_Admin_Job_Request_Salary;
+      Salary : UARP.Models.Create_Admin_Job_Request_Salary_Variant1;
       Has_Salary_Public : Boolean := False;
       Salary_Public : Standard.Boolean := False;
       Has_Apply : Boolean := False;
@@ -12119,6 +12119,8 @@ package UARP.Models is
       URL : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Timeout_Ms : Boolean := False;
       Timeout_Ms : UARP.Types.Float_Value := 0.0;
+      --  Properties the server returned that this SDK does not model.
+      Extra : JSON_Value := UARP.JSON_Support.Null_Value;
    end record;
 
    function To_JSON (Model : Create_Agent_Scorer_Request_Config) return UARP.JSON_Support.JSON_Value;
@@ -15461,6 +15463,7 @@ package UARP.Models is
    Error_Code_Rate_Limited,
    Error_Code_Rate_Limit_Exceeded,
    Error_Code_Reference_Not_Found,
+   Error_Code_Request_Cancelled,
    Error_Code_Reserved_Scope,
    Error_Code_Run_Active,
    Error_Code_Run_Cancelled,
@@ -29184,6 +29187,136 @@ package UARP.Models is
    function To_JSON (Model : Permission_Set_Update) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Permission_Set_Update;
 
+   --  Values of `PlatformAnalyticsMetricUnit`.
+   --  A value the API introduces later decodes as Platform_Analytics_Metric_Unit_Unrecognized
+   --  with the original text kept in Raw.
+   type Platform_Analytics_Metric_Unit_Kind is
+     (Platform_Analytics_Metric_Unit_Count,
+   Platform_Analytics_Metric_Unit_Ratio,
+   Platform_Analytics_Metric_Unit_Unrecognized);
+
+   type Platform_Analytics_Metric_Unit is record
+      Kind : Platform_Analytics_Metric_Unit_Kind := Platform_Analytics_Metric_Unit_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Platform_Analytics_Metric_Unit (Value : String) return Platform_Analytics_Metric_Unit;
+   function To_Platform_Analytics_Metric_Unit (Kind : Platform_Analytics_Metric_Unit_Kind) return Platform_Analytics_Metric_Unit;
+   function Image (Model : Platform_Analytics_Metric_Unit) return String;
+   function To_JSON (Model : Platform_Analytics_Metric_Unit) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Metric_Unit;
+
+   --  Values of `PlatformAnalyticsMetricStatus`.
+   --  A value the API introduces later decodes as Platform_Analytics_Metric_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Platform_Analytics_Metric_Status_Kind is
+     (Platform_Analytics_Metric_Status_Ok,
+   Platform_Analytics_Metric_Status_Partial,
+   Platform_Analytics_Metric_Status_Stale,
+   Platform_Analytics_Metric_Status_Unavailable,
+   Platform_Analytics_Metric_Status_Suppressed,
+   Platform_Analytics_Metric_Status_Unrecognized);
+
+   type Platform_Analytics_Metric_Status is record
+      Kind : Platform_Analytics_Metric_Status_Kind := Platform_Analytics_Metric_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Platform_Analytics_Metric_Status (Value : String) return Platform_Analytics_Metric_Status;
+   function To_Platform_Analytics_Metric_Status (Kind : Platform_Analytics_Metric_Status_Kind) return Platform_Analytics_Metric_Status;
+   function Image (Model : Platform_Analytics_Metric_Status) return String;
+   function To_JSON (Model : Platform_Analytics_Metric_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Metric_Status;
+
+   --  Values of `PlatformAnalyticsMetricCoverageCompleteness`.
+   --  A value the API introduces later decodes as Platform_Analytics_Metric_Coverage_Completeness_Unrecognized
+   --  with the original text kept in Raw.
+   type Platform_Analytics_Metric_Coverage_Completeness_Kind is
+     (Platform_Analytics_Metric_Coverage_Completeness_Complete,
+   Platform_Analytics_Metric_Coverage_Completeness_Partial,
+   Platform_Analytics_Metric_Coverage_Completeness_Unknown,
+   Platform_Analytics_Metric_Coverage_Completeness_Unrecognized);
+
+   type Platform_Analytics_Metric_Coverage_Completeness is record
+      Kind : Platform_Analytics_Metric_Coverage_Completeness_Kind := Platform_Analytics_Metric_Coverage_Completeness_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Platform_Analytics_Metric_Coverage_Completeness (Value : String) return Platform_Analytics_Metric_Coverage_Completeness;
+   function To_Platform_Analytics_Metric_Coverage_Completeness (Kind : Platform_Analytics_Metric_Coverage_Completeness_Kind) return Platform_Analytics_Metric_Coverage_Completeness;
+   function Image (Model : Platform_Analytics_Metric_Coverage_Completeness) return String;
+   function To_JSON (Model : Platform_Analytics_Metric_Coverage_Completeness) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Metric_Coverage_Completeness;
+
+   --  `PlatformAnalyticsMetricCoverageGap` model.
+   type Platform_Analytics_Metric_Coverage_Gap is record
+      Has_From : Boolean := False;
+      From : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_To : Boolean := False;
+      To : UARP.Types.Text := UARP.Types.Empty_Text;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Platform_Analytics_Metric_Coverage_Gap) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Metric_Coverage_Gap;
+
+   package Platform_Analytics_Metric_Coverage_Gap_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Platform_Analytics_Metric_Coverage_Gap);
+
+   --  `PlatformAnalyticsMetricCoverage` model.
+   type Platform_Analytics_Metric_Coverage is record
+      Completeness : UARP.Models.Platform_Analytics_Metric_Coverage_Completeness;
+      Has_Observed_From : Boolean := False;
+      Observed_From : UARP.Types.Text := UARP.Types.Empty_Text;
+      Gaps : UARP.Models.Platform_Analytics_Metric_Coverage_Gap_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Platform_Analytics_Metric_Coverage) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Metric_Coverage;
+
+   --  `PlatformAnalyticsMetric` model.
+   type Platform_Analytics_Metric is record
+      Has_Value : Boolean := False;
+      Value : UARP.Types.Float_Value := 0.0;
+      Unit : UARP.Models.Platform_Analytics_Metric_Unit;
+      Status : UARP.Models.Platform_Analytics_Metric_Status;
+      Has_Since : Boolean := False;
+      Since : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Data_Through : Boolean := False;
+      Data_Through : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Numerator : Boolean := False;
+      Numerator : UARP.Types.Integer_Value := 0;
+      Has_Denominator : Boolean := False;
+      Denominator : UARP.Types.Integer_Value := 0;
+      Coverage : UARP.Models.Platform_Analytics_Metric_Coverage;
+   end record;
+
+   function To_JSON (Model : Platform_Analytics_Metric) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Metric;
+
+   --  `PlatformAnalyticsWindowMetrics` model.
+   type Platform_Analytics_Window_Metrics is record
+      Companies_Ever_Active : UARP.Models.Platform_Analytics_Metric;
+      Agents_Ever_Active : UARP.Models.Platform_Analytics_Metric;
+      Execution_Runs : UARP.Models.Platform_Analytics_Metric;
+      Logical_Tool_Calls : UARP.Models.Platform_Analytics_Metric;
+      Repeat_Companies : UARP.Models.Platform_Analytics_Metric;
+      Technical_Completion_Ratio : UARP.Models.Platform_Analytics_Metric;
+   end record;
+
+   function To_JSON (Model : Platform_Analytics_Window_Metrics) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Window_Metrics;
+
+   --  `PlatformAnalyticsWindow` model.
+   type Platform_Analytics_Window is record
+      Start : UARP.Types.Text := UARP.Types.Empty_Text;
+      End_Exclusive : UARP.Types.Text := UARP.Types.Empty_Text;
+      Metrics : UARP.Models.Platform_Analytics_Window_Metrics;
+   end record;
+
+   function To_JSON (Model : Platform_Analytics_Window) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Window;
+
    --  `PlatformEconomicsRevenueSubscription` model.
    type Platform_Economics_Revenue_Subscription is record
       Subscription_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -29811,6 +29944,146 @@ package UARP.Models is
 
    function To_JSON (Model : Public_Domain_Lookup_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Domain_Lookup_Response;
+
+   --  Values of `PublicPlatformAnalyticsStatus`.
+   --  A value the API introduces later decodes as Public_Platform_Analytics_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Public_Platform_Analytics_Status_Kind is
+     (Public_Platform_Analytics_Status_Ok,
+   Public_Platform_Analytics_Status_Partial,
+   Public_Platform_Analytics_Status_Stale,
+   Public_Platform_Analytics_Status_Unavailable,
+   Public_Platform_Analytics_Status_Unrecognized);
+
+   type Public_Platform_Analytics_Status is record
+      Kind : Public_Platform_Analytics_Status_Kind := Public_Platform_Analytics_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Public_Platform_Analytics_Status (Value : String) return Public_Platform_Analytics_Status;
+   function To_Public_Platform_Analytics_Status (Kind : Public_Platform_Analytics_Status_Kind) return Public_Platform_Analytics_Status;
+   function Image (Model : Public_Platform_Analytics_Status) return String;
+   function To_JSON (Model : Public_Platform_Analytics_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Status;
+
+   --  `PublicPlatformAnalyticsScope` model.
+   type Public_Platform_Analytics_Scope is record
+      Population : UARP.Types.Text := UARP.Types.Empty_Text;
+      Includes_Internal : Standard.Boolean := False;
+      Includes_Test : Standard.Boolean := False;
+      Classification : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Public_Platform_Analytics_Scope) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Scope;
+
+   --  `PublicPlatformAnalyticsLifetimeMetrics` model.
+   type Public_Platform_Analytics_Lifetime_Metrics is record
+      Companies_Ever_Active : UARP.Models.Platform_Analytics_Metric;
+      Agents_Ever_Active : UARP.Models.Platform_Analytics_Metric;
+      Execution_Runs : UARP.Models.Platform_Analytics_Metric;
+      Logical_Tool_Calls : UARP.Models.Platform_Analytics_Metric;
+      Repeat_Companies : UARP.Models.Platform_Analytics_Metric;
+      Technical_Completion_Ratio : UARP.Models.Platform_Analytics_Metric;
+   end record;
+
+   function To_JSON (Model : Public_Platform_Analytics_Lifetime_Metrics) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Lifetime_Metrics;
+
+   --  `PublicPlatformAnalyticsLifetime` model.
+   type Public_Platform_Analytics_Lifetime is record
+      Has_Since : Boolean := False;
+      Since : UARP.Types.Text := UARP.Types.Empty_Text;
+      Metrics : UARP.Models.Public_Platform_Analytics_Lifetime_Metrics;
+   end record;
+
+   function To_JSON (Model : Public_Platform_Analytics_Lifetime) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Lifetime;
+
+   --  `PublicPlatformAnalyticsWindows` model.
+   type Public_Platform_Analytics_Windows is record
+      Has_N_7d : Boolean := False;
+      N_7d : UARP.Models.Platform_Analytics_Window;
+      Has_N_30d : Boolean := False;
+      N_30d : UARP.Models.Platform_Analytics_Window;
+   end record;
+
+   function To_JSON (Model : Public_Platform_Analytics_Windows) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Windows;
+
+   --  Values of `PublicPlatformAnalyticsSeriesStatus`.
+   --  A value the API introduces later decodes as Public_Platform_Analytics_Series_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Public_Platform_Analytics_Series_Status_Kind is
+     (Public_Platform_Analytics_Series_Status_Ok,
+   Public_Platform_Analytics_Series_Status_Partial,
+   Public_Platform_Analytics_Series_Status_Unavailable,
+   Public_Platform_Analytics_Series_Status_Unrecognized);
+
+   type Public_Platform_Analytics_Series_Status is record
+      Kind : Public_Platform_Analytics_Series_Status_Kind := Public_Platform_Analytics_Series_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Public_Platform_Analytics_Series_Status (Value : String) return Public_Platform_Analytics_Series_Status;
+   function To_Public_Platform_Analytics_Series_Status (Kind : Public_Platform_Analytics_Series_Status_Kind) return Public_Platform_Analytics_Series_Status;
+   function Image (Model : Public_Platform_Analytics_Series_Status) return String;
+   function To_JSON (Model : Public_Platform_Analytics_Series_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Series_Status;
+
+   --  `PublicPlatformAnalyticsSeriesDay` model.
+   type Public_Platform_Analytics_Series_Day is record
+      Date : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Companies_Active : Boolean := False;
+      Companies_Active : UARP.Types.Integer_Value := 0;
+      Has_Agents_Active : Boolean := False;
+      Agents_Active : UARP.Types.Integer_Value := 0;
+      Has_Execution_Runs : Boolean := False;
+      Execution_Runs : UARP.Types.Integer_Value := 0;
+      Has_Logical_Tool_Calls : Boolean := False;
+      Logical_Tool_Calls : UARP.Types.Integer_Value := 0;
+      Has_Completed_Runs : Boolean := False;
+      Completed_Runs : UARP.Types.Integer_Value := 0;
+      Has_Terminal_Runs : Boolean := False;
+      Terminal_Runs : UARP.Types.Integer_Value := 0;
+      Status : UARP.Models.Public_Platform_Analytics_Series_Status;
+   end record;
+
+   function To_JSON (Model : Public_Platform_Analytics_Series_Day) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Series_Day;
+
+   package Public_Platform_Analytics_Series_Day_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Public_Platform_Analytics_Series_Day);
+
+   --  `PublicPlatformAnalyticsSeries` model.
+   type Public_Platform_Analytics_Series is record
+      Timezone : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Models.Public_Platform_Analytics_Series_Status;
+      Has_Days : Boolean := False;
+      Days : UARP.Models.Public_Platform_Analytics_Series_Day_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Public_Platform_Analytics_Series) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Series;
+
+   --  `PublicPlatformAnalytics` model.
+   type Public_Platform_Analytics is record
+      Schema_Version : UARP.Types.Integer_Value := 0;
+      Revision : UARP.Types.Text := UARP.Types.Empty_Text;
+      Generated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Data_Through : Boolean := False;
+      Data_Through : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Processed_Through : Boolean := False;
+      Processed_Through : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Models.Public_Platform_Analytics_Status;
+      Scope : UARP.Models.Public_Platform_Analytics_Scope;
+      Lifetime : UARP.Models.Public_Platform_Analytics_Lifetime;
+      Windows : UARP.Models.Public_Platform_Analytics_Windows;
+      Series : UARP.Models.Public_Platform_Analytics_Series;
+   end record;
+
+   function To_JSON (Model : Public_Platform_Analytics) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics;
 
    --  `PublicSessionViewMessage` model.
    type Public_Session_View_Message is record
@@ -33405,6 +33678,215 @@ package UARP.Models is
    function To_JSON (Model : Run_Event_V1_Run_Failed_Type) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Failed_Type;
 
+   --  Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+   --  beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+   --  stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+   --  on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+   --  which one. Absent when the run carries none, or one this version does not list.
+   --  A value the API introduces later decodes as Run_Event_V1_Run_Failed_Payload_Error_Code_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Event_V1_Run_Failed_Payload_Error_Code_Kind is
+     (Run_Event_V1_Run_Failed_Payload_Error_Code_Aar_Not_Available,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Active_Tenant_Not_Supported,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Already_Exists,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Anon_Busy,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Artifact_Integrity_Error,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Assessment_Isolation_Required,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Auth_Error,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Billing_Cancelled,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Billing_Disputed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Billing_Past_Due,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Budget_Exceeded,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Checksum_Mismatch,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Client_Request_Conflict,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Company_Not_Ready,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Company_Paused,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Concurrency_Limit,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Concurrent_Modification,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Configuration_Error,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Confirmation_Required,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Conflict,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Context_Length_Exceeded,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Count_Limit_Reached,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Daily_Limit,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Dependency_Exists,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Event_Store_Error,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Execution_Profile_Unverifiable,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Execution_Receipt_Pending,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_External_Service_Error,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Featured_Set_Contended,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Feature_Disabled,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_File_Not_Found,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_File_Type_Not_Allowed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Forbidden,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Guardrail_Violation,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Idempotency_Conflict,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Idempotency_Key_Reused,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Initiative_Budget_Exhausted,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Initiative_Paused,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Internal_Error,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Archive,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Body,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Cursor,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Manifest,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Query,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Request,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Share_List,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Share_Target,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_State_Transition,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Isolation_Violation,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_LLM_Error,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Managed_Agent,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Max_Duration_Exceeded,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Max_Tokens_Exceeded,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Method_Not_Allowed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Migration_Conflict,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Missing_Field,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Missing_Scope,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Already_Running,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Concurrency_Limit,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Not_Found,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Not_Runnable,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Not_Running,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Route_Not_Found,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Not_Bridge_Agent,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Not_Found,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Not_Yanked,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_No_Runnable_Target,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Oauth_Failed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Output_Contract_Violation,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Output_Too_Large,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Payload_Too_Large,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Persistence_Error,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Planner_Output_Invalid,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Planner_Refused,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Precondition_Failed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Prerequisite_Missing,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Pricing_Unavailable,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Private_Not_Shared,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Processing_Policy_Changed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Processing_Policy_Not_Ready,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Promo_Redemption_Failed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Proposal_Expired,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Qualification_Budget_Stop,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Qualification_Route_Mismatch,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Qualification_Version_Unavailable,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Quota_Exceeded,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Rate_Limited,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Rate_Limit_Exceeded,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Reference_Not_Found,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Reserved_Scope,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Active,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Cancelled,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Scope_Mismatch,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Scope_Taken,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Search_Provider_Not_Configured,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Search_Upstream_Failed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Search_Upstream_Timeout,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Security_Scan_Failed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Service_Unavailable,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Session_Not_Active,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Share_List_Conflict,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Signing_Not_Configured,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Size_Limit,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Spec_Not_Found,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Budget_Below_Committed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Budget_Exhausted,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Candidate_Limit,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Concurrency_Limit,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Funding_Unavailable,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Grant_Conflict,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Grant_In_Use,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Grant_Mismatch,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Grant_Unavailable,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Outcome_Unknown,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Program_Immutable,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Program_Inactive,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Program_Revision_Conflict,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Required,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Scope_Required,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Started_By_Another_User,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Strategist_Model_Unconfigured,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Super_Admin_Required,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Task_Graph_Failed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Team_Abort,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Terms_Not_Accepted,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Text_Extraction_Failed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Unauthenticated,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Usage_Correction_Exceeds_Counters,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Usage_Correction_In_Progress,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Usage_Correction_Not_Settled,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Usage_Correction_Not_Sponsored,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_User_Required,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Validation_Error,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Verification_Failed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Version_Conflict,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Version_Not_Found,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Workspace_Storage_Limit,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Would_Orphan,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Yank_Conflict,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Agent_Deleted,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Agent_Not_Found,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Already_Bootstrapped,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Approval_Rejected,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Billing_Not_Configured,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Consent_Required,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Cv_Invalid,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Cv_Too_Large,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Duplicate_Application,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Governance_Not_Enabled,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Hire_Catalog_Unknown,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Incomplete_Record,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Inert_Policy_Field,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Inert_Public_Config_Field,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Job_Apply_Elsewhere,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Job_Closed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Chunk_Limit,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Document_Body_Invalid,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Document_Too_Large,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Embedding_Failed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Storage_Limit,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Text_Extraction_Failed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Limit_Reached,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Mfa_Required,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_No_Eligible_Arbiter,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Not_Hired,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Plan_Upgrade_Required,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Proposal_Required,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Provider_Auth_Failed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Provider_Circuit_Open,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Provider_Not_Configured,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Provider_Rate_Limited,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Quota_Exceeded_X,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Rate_Limited_X,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Resource_Limit_Reached,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Agent_Stopped,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Approval_Expired,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Input_Timeout,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Never_Claimed,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Orphaned_Restart,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Quota_Exceeded,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Stalled,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Secret_Would_Move,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Consent_Required,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Order_State,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Photo_Invalid,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Photo_Rejected,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Regen_Unavailable,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Slot_Invalid,
+   Run_Event_V1_Run_Failed_Payload_Error_Code_Unrecognized);
+
+   type Run_Event_V1_Run_Failed_Payload_Error_Code is record
+      Kind : Run_Event_V1_Run_Failed_Payload_Error_Code_Kind := Run_Event_V1_Run_Failed_Payload_Error_Code_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Event_V1_Run_Failed_Payload_Error_Code (Value : String) return Run_Event_V1_Run_Failed_Payload_Error_Code;
+   function To_Run_Event_V1_Run_Failed_Payload_Error_Code (Kind : Run_Event_V1_Run_Failed_Payload_Error_Code_Kind) return Run_Event_V1_Run_Failed_Payload_Error_Code;
+   function Image (Model : Run_Event_V1_Run_Failed_Payload_Error_Code) return String;
+   function To_JSON (Model : Run_Event_V1_Run_Failed_Payload_Error_Code) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Failed_Payload_Error_Code;
+
    --  `RunEventV1RunFailedPayload` model.
    type Run_Event_V1_Run_Failed_Payload is record
       Error : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -33414,7 +33896,7 @@ package UARP.Models is
       --  on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
       --  which one. Absent when the run carries none, or one this version does not list.
       Has_Error_Code : Boolean := False;
-      Error_Code : UARP.Models.Error_Code;
+      Error_Code : UARP.Models.Run_Event_V1_Run_Failed_Payload_Error_Code;
       Has_Error_Details : Boolean := False;
       Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Message : Boolean := False;
@@ -33484,7 +33966,7 @@ package UARP.Models is
       --  on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
       --  which one. Absent when the run carries none, or one this version does not list.
       Has_Error_Code : Boolean := False;
-      Error_Code : UARP.Models.Error_Code;
+      Error_Code : UARP.Models.Run_Event_V1_Run_Failed_Payload_Error_Code;
       Has_Error_Details : Boolean := False;
       Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Message : Boolean := False;
@@ -33559,7 +34041,7 @@ package UARP.Models is
       --  on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
       --  which one. Absent when the run carries none, or one this version does not list.
       Has_Error_Code : Boolean := False;
-      Error_Code : UARP.Models.Error_Code;
+      Error_Code : UARP.Models.Run_Event_V1_Run_Failed_Payload_Error_Code;
       Has_Error_Details : Boolean := False;
       Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Message : Boolean := False;
@@ -36388,6 +36870,27 @@ package UARP.Models is
    function To_JSON (Model : Set_Model_Pricing_Override_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Model_Pricing_Override_Response;
 
+   --  `SetRateLimitsRequestEndpointsValue` model.
+   type Set_Rate_Limits_Request_Endpoints_Value is record
+      --  Deprecated spelling of `max_requests` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `max_requests`.
+      Has_Max_Requests : Boolean := False;
+      Max_Requests : UARP.Types.Integer_Value := 0;
+      Has_Max_Requests_X : Boolean := False;
+      Max_Requests_X : UARP.Types.Integer_Value := 0;
+      --  Deprecated spelling of `window_sec` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `window_sec`.
+      Has_Window_Sec : Boolean := False;
+      Window_Sec : UARP.Types.Integer_Value := 0;
+      Has_Window_Sec_X : Boolean := False;
+      Window_Sec_X : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Set_Rate_Limits_Request_Endpoints_Value) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Rate_Limits_Request_Endpoints_Value;
+
    --  `SetRateLimitsRequest` model.
    type Set_Rate_Limits_Request is record
       Endpoints : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
@@ -36942,8 +37445,10 @@ package UARP.Models is
    --  run started, it just was not the run that was asked for. They belong inside `input`, which
    --  is where the handler reads them.
    type Start_Team_Run_Request is record
-      --  The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
-      --  absent, @mentions in `message` are parsed for the same purpose.
+      --  The turn; omission defaults to an empty input. A bare string is expanded to `{ message }`.
+      --  `addressed_to` selects who answers; absent, @mentions in `message` are parsed for the same
+      --  purpose.
+      Has_Input : Boolean := False;
       Input : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
       --  Accepted by the handler and undeclared here until now - the drift ran both ways.
       Has_Metadata : Boolean := False;
@@ -38582,24 +39087,24 @@ package UARP.Models is
       Has_City : Boolean := False;
       City : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Country : Boolean := False;
-      Country : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Country : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Update_Admin_Job_Request_Location) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Job_Request_Location;
 
-   --  `UpdateAdminJobRequestSalary` model.
-   type Update_Admin_Job_Request_Salary is record
+   --  `UpdateAdminJobRequestSalaryVariant1` model.
+   type Update_Admin_Job_Request_Salary_Variant1 is record
       Has_Min : Boolean := False;
       Min : UARP.Types.Float_Value := 0.0;
       Has_Max : Boolean := False;
       Max : UARP.Types.Float_Value := 0.0;
-      Currency : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Currency : UARP.Types.Text := UARP.Types.Empty_Text;
       Period : UARP.Models.Job_Salary_Period;
    end record;
 
-   function To_JSON (Model : Update_Admin_Job_Request_Salary) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Job_Request_Salary;
+   function To_JSON (Model : Update_Admin_Job_Request_Salary_Variant1) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Job_Request_Salary_Variant1;
 
    --  `UpdateAdminJobRequestApply` model.
    type Update_Admin_Job_Request_Apply is record
@@ -38646,7 +39151,7 @@ package UARP.Models is
       Has_Location : Boolean := False;
       Location : UARP.Models.Update_Admin_Job_Request_Location;
       Has_Applicant_Countries : Boolean := False;
-      Applicant_Countries : UARP.JSON_Support.JSON_Value;
+      Applicant_Countries : UARP.Types.Text_Vectors.Vector;
       Has_English_Level : Boolean := False;
       English_Level : UARP.Models.Job_English_Level;
       Has_Experience_Years_Min : Boolean := False;
@@ -38654,7 +39159,7 @@ package UARP.Models is
       Has_Skills : Boolean := False;
       Skills : UARP.Types.Text_Vectors.Vector;
       Has_Salary : Boolean := False;
-      Salary : UARP.Models.Update_Admin_Job_Request_Salary;
+      Salary : UARP.Models.Update_Admin_Job_Request_Salary_Variant1;
       Has_Salary_Public : Boolean := False;
       Salary_Public : Standard.Boolean := False;
       Has_Apply : Boolean := False;
@@ -39199,7 +39704,7 @@ package UARP.Models is
       Has_Enabled : Boolean := False;
       Enabled : Standard.Boolean := False;
       Has_Isolation : Boolean := False;
-      Isolation : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Isolation : UARP.Models.Admin_Config_Run_Command_Config_Run_Command_Isolation;
       Has_Timeout_Ms : Boolean := False;
       Timeout_Ms : UARP.Types.Integer_Value := 0;
       Has_Max_Output_Bytes : Boolean := False;
@@ -40331,15 +40836,15 @@ package UARP.Models is
    function To_JSON (Model : Update_Session_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Session_Request;
 
-   --  `UpdateSessionTodoRequestRecurrence` model.
-   type Update_Session_Todo_Request_Recurrence is record
+   --  `UpdateSessionTodoRequestRecurrenceVariant1` model.
+   type Update_Session_Todo_Request_Recurrence_Variant1 is record
       Cron : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Timezone : Boolean := False;
       Timezone : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
-   function To_JSON (Model : Update_Session_Todo_Request_Recurrence) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Session_Todo_Request_Recurrence;
+   function To_JSON (Model : Update_Session_Todo_Request_Recurrence_Variant1) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Session_Todo_Request_Recurrence_Variant1;
 
    --  `UpdateSessionTodoRequest` model.
    type Update_Session_Todo_Request is record
@@ -40358,7 +40863,7 @@ package UARP.Models is
       Has_Assign_Team_Id : Boolean := False;
       Assign_Team_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Recurrence : Boolean := False;
-      Recurrence : UARP.Models.Update_Session_Todo_Request_Recurrence;
+      Recurrence : UARP.Models.Update_Session_Todo_Request_Recurrence_Variant1;
    end record;
 
    function To_JSON (Model : Update_Session_Todo_Request) return UARP.JSON_Support.JSON_Value;

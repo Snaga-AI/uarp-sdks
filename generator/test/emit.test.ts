@@ -183,3 +183,17 @@ test('Ada handles an alias of raw JSON as an array element and as an answer', ()
   assert.match(ada, /package Policy_Vectors is new Ada\.Containers\.Vectors\n\s+\(Index_Type => Positive, Element_Type => Policy,\n\s+"=" => UARP\.JSON_Support\.JSON\."="\);/);
   assert.doesNotMatch(ada, /return UARP\.Models\.From_JSON\n\s+\(UARP\.Client\.Call[^;]*"\/policy"/);
 });
+
+test('a property whose wire name starts with a digit gets a legal field name in every SDK', () => {
+  // `PublicPlatformAnalyticsWindows` has `7d` and `30d`. Rust emitted
+  // `pub 7d: …`, which does not parse, and the whole crate failed to build.
+  const spec = productionSpec();
+  const rust = renderTarget(spec, 'rust');
+  assert.match(rust, /#\[serde\(rename = "7d", default\)\]\s+pub field_7d:/);
+  assert.doesNotMatch(rust, /pub [0-9]/);
+  assert.match(renderTarget(spec, 'swift'), /public var field7d:/);
+  assert.match(renderTarget(spec, 'kotlin'), /public val field7d:/);
+  assert.match(renderTarget(spec, 'python'), /v_7d: .*"wire": "7d"/);
+  assert.match(renderTarget(spec, 'ada'), /N_7d : /);
+  assert.match(renderTarget(spec, 'typescript'), /'7d': /);
+});

@@ -106,6 +106,441 @@
             }
         },
         "schemas": {
+            "PlatformAnalyticsMetric": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "value",
+                    "unit",
+                    "status",
+                    "since",
+                    "data_through",
+                    "numerator",
+                    "denominator",
+                    "coverage"
+                ],
+                "properties": {
+                    "value": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "unit": {
+                        "type": "string",
+                        "enum": [
+                            "count",
+                            "ratio"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "ok",
+                            "partial",
+                            "stale",
+                            "unavailable",
+                            "suppressed"
+                        ]
+                    },
+                    "since": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "data_through": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "numerator": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "denominator": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "coverage": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "completeness",
+                            "observed_from",
+                            "gaps"
+                        ],
+                        "properties": {
+                            "completeness": {
+                                "type": "string",
+                                "enum": [
+                                    "complete",
+                                    "partial",
+                                    "unknown"
+                                ]
+                            },
+                            "observed_from": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "format": "date-time"
+                            },
+                            "gaps": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "from",
+                                        "to",
+                                        "reason"
+                                    ],
+                                    "properties": {
+                                        "from": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "format": "date-time"
+                                        },
+                                        "to": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "format": "date-time"
+                                        },
+                                        "reason": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "PlatformAnalyticsWindow": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "start",
+                    "end_exclusive",
+                    "metrics"
+                ],
+                "properties": {
+                    "start": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end_exclusive": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "metrics": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "companies_ever_active",
+                            "agents_ever_active",
+                            "execution_runs",
+                            "logical_tool_calls",
+                            "repeat_companies",
+                            "technical_completion_ratio"
+                        ],
+                        "properties": {
+                            "companies_ever_active": {
+                                "$ref": "#/components/schemas/PlatformAnalyticsMetric"
+                            },
+                            "agents_ever_active": {
+                                "$ref": "#/components/schemas/PlatformAnalyticsMetric"
+                            },
+                            "execution_runs": {
+                                "$ref": "#/components/schemas/PlatformAnalyticsMetric"
+                            },
+                            "logical_tool_calls": {
+                                "$ref": "#/components/schemas/PlatformAnalyticsMetric"
+                            },
+                            "repeat_companies": {
+                                "$ref": "#/components/schemas/PlatformAnalyticsMetric"
+                            },
+                            "technical_completion_ratio": {
+                                "$ref": "#/components/schemas/PlatformAnalyticsMetric"
+                            }
+                        }
+                    }
+                }
+            },
+            "PublicPlatformAnalytics": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "schema_version",
+                    "revision",
+                    "generated_at",
+                    "data_through",
+                    "processed_through",
+                    "status",
+                    "scope",
+                    "lifetime",
+                    "windows",
+                    "series"
+                ],
+                "properties": {
+                    "schema_version": {
+                        "type": "integer",
+                        "const": 1
+                    },
+                    "revision": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]*)$"
+                    },
+                    "generated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "data_through": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "processed_through": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "ok",
+                            "partial",
+                            "stale",
+                            "unavailable"
+                        ]
+                    },
+                    "scope": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "population",
+                            "includes_internal",
+                            "includes_test",
+                            "classification"
+                        ],
+                        "properties": {
+                            "population": {
+                                "type": "string",
+                                "const": "all_production"
+                            },
+                            "includes_internal": {
+                                "type": "boolean",
+                                "const": true
+                            },
+                            "includes_test": {
+                                "type": "boolean",
+                                "const": true
+                            },
+                            "classification": {
+                                "type": "string",
+                                "const": "not_applied"
+                            }
+                        }
+                    },
+                    "lifetime": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "since",
+                            "metrics"
+                        ],
+                        "properties": {
+                            "since": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "format": "date-time"
+                            },
+                            "metrics": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "companies_ever_active",
+                                    "agents_ever_active",
+                                    "execution_runs",
+                                    "logical_tool_calls",
+                                    "repeat_companies",
+                                    "technical_completion_ratio"
+                                ],
+                                "properties": {
+                                    "companies_ever_active": {
+                                        "$ref": "#/components/schemas/PlatformAnalyticsMetric"
+                                    },
+                                    "agents_ever_active": {
+                                        "$ref": "#/components/schemas/PlatformAnalyticsMetric"
+                                    },
+                                    "execution_runs": {
+                                        "$ref": "#/components/schemas/PlatformAnalyticsMetric"
+                                    },
+                                    "logical_tool_calls": {
+                                        "$ref": "#/components/schemas/PlatformAnalyticsMetric"
+                                    },
+                                    "repeat_companies": {
+                                        "$ref": "#/components/schemas/PlatformAnalyticsMetric"
+                                    },
+                                    "technical_completion_ratio": {
+                                        "$ref": "#/components/schemas/PlatformAnalyticsMetric"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "windows": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "7d",
+                            "30d"
+                        ],
+                        "properties": {
+                            "7d": {
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/components/schemas/PlatformAnalyticsWindow"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "30d": {
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/components/schemas/PlatformAnalyticsWindow"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "series": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "timezone",
+                            "status",
+                            "days"
+                        ],
+                        "properties": {
+                            "timezone": {
+                                "type": "string",
+                                "const": "UTC"
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "ok",
+                                    "partial",
+                                    "unavailable"
+                                ]
+                            },
+                            "days": {
+                                "type": [
+                                    "array",
+                                    "null"
+                                ],
+                                "items": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "date",
+                                        "companies_active",
+                                        "agents_active",
+                                        "execution_runs",
+                                        "logical_tool_calls",
+                                        "completed_runs",
+                                        "terminal_runs",
+                                        "status"
+                                    ],
+                                    "properties": {
+                                        "date": {
+                                            "type": "string",
+                                            "format": "date"
+                                        },
+                                        "companies_active": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ],
+                                            "minimum": 0
+                                        },
+                                        "agents_active": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ],
+                                            "minimum": 0
+                                        },
+                                        "execution_runs": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ],
+                                            "minimum": 0
+                                        },
+                                        "logical_tool_calls": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ],
+                                            "minimum": 0
+                                        },
+                                        "completed_runs": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ],
+                                            "minimum": 0
+                                        },
+                                        "terminal_runs": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ],
+                                            "minimum": 0
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "ok",
+                                                "partial",
+                                                "unavailable"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "QualificationAssessmentInputMessage": {
                 "type": "object",
                 "additionalProperties": false,
@@ -8777,6 +9212,7 @@
                             "RATE_LIMITED",
                             "RATE_LIMIT_EXCEEDED",
                             "REFERENCE_NOT_FOUND",
+                            "REQUEST_CANCELLED",
                             "RESERVED_SCOPE",
                             "RUN_ACTIVE",
                             "RUN_CANCELLED",
@@ -9254,6 +9690,7 @@
                         "maxLength": 5000
                     },
                     "strategic_goals": {
+                        "maxItems": 50,
                         "type": "array",
                         "items": {
                             "type": "object",
@@ -9272,6 +9709,7 @@
                                     "maxLength": 5000
                                 },
                                 "kpis": {
+                                    "maxItems": 50,
                                     "type": "array",
                                     "items": {
                                         "type": "object",
@@ -9285,19 +9723,14 @@
                                                 "maxLength": 500
                                             },
                                             "current": {
-                                                "anyOf": [
-                                                    {
-                                                        "type": "string",
-                                                        "maxLength": 10485760
-                                                    },
-                                                    {
-                                                        "type": "number"
-                                                    }
-                                                ]
+                                                "type": [
+                                                    "string",
+                                                    "number"
+                                                ],
+                                                "maxLength": 10485760
                                             }
                                         }
-                                    },
-                                    "maxItems": 50
+                                    }
                                 },
                                 "root_objective_id": {
                                     "type": "string",
@@ -9311,8 +9744,7 @@
                             "required": [
                                 "title"
                             ]
-                        },
-                        "maxItems": 50
+                        }
                     },
                     "budget": {
                         "type": "object",
@@ -9350,6 +9782,7 @@
                                 "exclusiveMinimum": 0
                             },
                             "escalation_on": {
+                                "maxItems": 10,
                                 "type": "array",
                                 "items": {
                                     "type": "string",
@@ -9359,8 +9792,7 @@
                                         "goal_completed",
                                         "stuck"
                                     ]
-                                },
-                                "maxItems": 10
+                                }
                             }
                         }
                     },
@@ -9407,6 +9839,7 @@
                         ]
                     },
                     "strategic_goals": {
+                        "maxItems": 50,
                         "type": "array",
                         "items": {
                             "type": "object",
@@ -9425,6 +9858,7 @@
                                     "maxLength": 5000
                                 },
                                 "kpis": {
+                                    "maxItems": 50,
                                     "type": "array",
                                     "items": {
                                         "type": "object",
@@ -9438,19 +9872,14 @@
                                                 "maxLength": 500
                                             },
                                             "current": {
-                                                "anyOf": [
-                                                    {
-                                                        "type": "string",
-                                                        "maxLength": 10485760
-                                                    },
-                                                    {
-                                                        "type": "number"
-                                                    }
-                                                ]
+                                                "type": [
+                                                    "string",
+                                                    "number"
+                                                ],
+                                                "maxLength": 10485760
                                             }
                                         }
-                                    },
-                                    "maxItems": 50
+                                    }
                                 },
                                 "root_objective_id": {
                                     "type": "string",
@@ -9464,8 +9893,7 @@
                             "required": [
                                 "title"
                             ]
-                        },
-                        "maxItems": 50
+                        }
                     },
                     "budget": {
                         "type": "object",
@@ -9503,6 +9931,7 @@
                                 "exclusiveMinimum": 0
                             },
                             "escalation_on": {
+                                "maxItems": 10,
                                 "type": "array",
                                 "items": {
                                     "type": "string",
@@ -9512,8 +9941,7 @@
                                         "goal_completed",
                                         "stuck"
                                     ]
-                                },
-                                "maxItems": 10
+                                }
                             }
                         }
                     }
@@ -33083,6 +33511,111 @@
         }
     },
     "paths": {
+        "/api/v1/public/platform-analytics": {
+            "get": {
+                "operationId": "getPublicPlatformAnalytics",
+                "tags": [
+                    "Meta"
+                ],
+                "security": [],
+                "summary": "Read reconciled lifetime platform activity",
+                "description": "Aggregate-only materialized snapshot. Scope includes internal research and tests across all production tenants; companies are not customers. Execution runs have actual LLM/tool work evidence, including pending and failed admitted runs. Pre-work refusals are excluded. Logical tool attempts do not assert external business success. Technical completion is completed/terminal admitted runs, not quality. Lifetime since remains null when inception/retention coverage cannot be verified. Partial counts represent observed minima; a partial ratio is not a lower bound. Windows select work-start cohorts; their latest terminal outcomes use the same cohort. Null is unavailable, never an invented zero. data_through is a durable source barrier, not generation or heartbeat time. No-store; 60 reads/minute/IP.",
+                "responses": {
+                    "200": {
+                        "description": "Public platform snapshot",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicPlatformAnalytics"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/public/platform-analytics/events": {
+            "get": {
+                "operationId": "streamPublicPlatformAnalytics",
+                "tags": [
+                    "Meta"
+                ],
+                "security": [],
+                "summary": "Stream resumable public platform activity",
+                "description": "snapshot/update/reset carry a complete PublicPlatformAnalytics with SSE id equal to its decimal revision. Compare revisions numerically, not lexicographically. Last-Event-ID or ?after resumes up to 128 retained revisions; a missing, future, or expired cursor produces reset with the current full snapshot. Heartbeat every 15 seconds contains generated_at,data_through,processed_through,status and no id; it never advances metric coverage. KV watch is installed before initial snapshot/replay, and concurrent updates are deduplicated by revision. Connection admission is capped at 20/minute/IP and 200 concurrent streams/replica; slow readers are disconnected. No credentials or tenant IDs accepted or emitted.",
+                "parameters": [
+                    {
+                        "name": "after",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,23})$",
+                            "maxLength": 65536
+                        }
+                    },
+                    {
+                        "name": "Last-Event-ID",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,23})$",
+                            "maxLength": 65536
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE full snapshots and heartbeats",
+                        "content": {
+                            "text/event-stream": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid revision"
+                    },
+                    "429": {
+                        "description": "Public connection limit reached"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
+            }
+        },
         "/api/v1/tenants/me/data-processing-policy": {
             "get": {
                 "operationId": "getDataProcessingPolicy",
@@ -61665,20 +62198,23 @@
                                     "session_id": {
                                         "type": "string",
                                         "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
                                         "maxLength": 36
                                     },
                                     "source": {
+                                        "default": "cli",
                                         "type": "string",
                                         "enum": [
                                             "cli"
-                                        ],
-                                        "default": "cli"
+                                        ]
                                     },
                                     "working_directory": {
                                         "type": "string",
                                         "maxLength": 4096
                                     },
                                     "messages": {
+                                        "minItems": 1,
+                                        "maxItems": 2000,
                                         "type": "array",
                                         "items": {
                                             "type": "object",
@@ -61698,9 +62234,11 @@
                                                 "timestamp": {
                                                     "type": "string",
                                                     "format": "date-time",
+                                                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                                                     "maxLength": 10485760
                                                 },
                                                 "tools": {
+                                                    "maxItems": 64,
                                                     "type": "array",
                                                     "items": {
                                                         "anyOf": [
@@ -61730,20 +62268,21 @@
                                                                 ]
                                                             }
                                                         ]
-                                                    },
-                                                    "maxItems": 64
+                                                    }
                                                 }
                                             },
                                             "required": [
                                                 "role",
                                                 "content"
                                             ]
-                                        },
-                                        "minItems": 1,
-                                        "maxItems": 2000
+                                        }
                                     },
                                     "metadata": {
                                         "type": "object",
+                                        "propertyNames": {
+                                            "type": "string",
+                                            "maxLength": 10485760
+                                        },
                                         "additionalProperties": {}
                                     }
                                 },
@@ -63802,6 +64341,10 @@
                                                 },
                                                 "config": {
                                                     "type": "object",
+                                                    "propertyNames": {
+                                                        "type": "string",
+                                                        "maxLength": 10485760
+                                                    },
                                                     "additionalProperties": {}
                                                 }
                                             },
@@ -63847,6 +64390,10 @@
                                     },
                                     "metadata": {
                                         "type": "object",
+                                        "propertyNames": {
+                                            "type": "string",
+                                            "maxLength": 10485760
+                                        },
                                         "additionalProperties": {}
                                     }
                                 },
@@ -63980,6 +64527,10 @@
                                 "properties": {
                                     "input": {
                                         "type": "object",
+                                        "propertyNames": {
+                                            "type": "string",
+                                            "maxLength": 10485760
+                                        },
                                         "additionalProperties": {}
                                     },
                                     "session_id": {
@@ -64005,10 +64556,18 @@
                                     },
                                     "metadata": {
                                         "type": "object",
+                                        "propertyNames": {
+                                            "type": "string",
+                                            "maxLength": 10485760
+                                        },
                                         "additionalProperties": {}
                                     },
                                     "options": {
                                         "type": "object",
+                                        "propertyNames": {
+                                            "type": "string",
+                                            "maxLength": 10485760
+                                        },
                                         "additionalProperties": {}
                                     }
                                 },
@@ -66861,7 +67420,8 @@
                                         "required": [
                                             "type",
                                             "url"
-                                        ]
+                                        ],
+                                        "additionalProperties": {}
                                     }
                                 },
                                 "required": [
@@ -69876,22 +70436,26 @@
                                         "maxLength": 10485760
                                     },
                                     "recurrence": {
-                                        "type": [
-                                            "object",
-                                            "null"
-                                        ],
-                                        "properties": {
-                                            "cron": {
-                                                "type": "string",
-                                                "maxLength": 10485760
+                                        "anyOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "cron": {
+                                                        "type": "string",
+                                                        "maxLength": 10485760
+                                                    },
+                                                    "timezone": {
+                                                        "type": "string",
+                                                        "maxLength": 10485760
+                                                    }
+                                                },
+                                                "required": [
+                                                    "cron"
+                                                ]
                                             },
-                                            "timezone": {
-                                                "type": "string",
-                                                "maxLength": 10485760
+                                            {
+                                                "type": "null"
                                             }
-                                        },
-                                        "required": [
-                                            "cron"
                                         ]
                                     }
                                 }
@@ -71610,8 +72174,9 @@
                                     },
                                     "email": {
                                         "type": "string",
+                                        "maxLength": 320,
                                         "format": "email",
-                                        "maxLength": 320
+                                        "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                                     },
                                     "slug": {
                                         "type": "string",
@@ -71640,87 +72205,108 @@
                                         "properties": {
                                             "max_agents": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_teams": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_workers_per_team": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_concurrent_runs": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_concurrent_team_runs": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_active_sessions": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_monthly_tokens": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_monthly_tool_calls": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_daily_tool_calls": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_daily_tokens": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_monthly_runs": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_mcp_servers": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_storage_bytes": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_memory_entries_per_agent": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_memory_storage_bytes": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_agent_versions": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_knowledge_bases": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_workspaces": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_monthly_images": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_daily_images": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_monthly_videos": {
                                                 "type": "integer",
-                                                "minimum": 0
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                             }
                                         },
                                         "required": [
@@ -71795,6 +72381,11 @@
                                                         },
                                                         "env": {
                                                             "type": "object",
+                                                            "propertyNames": {
+                                                                "type": "string",
+                                                                "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+                                                                "maxLength": 10485760
+                                                            },
                                                             "additionalProperties": {
                                                                 "type": "string",
                                                                 "maxLength": 10485760
@@ -71866,6 +72457,10 @@
                                                         },
                                                         "config_override": {
                                                             "type": "object",
+                                                            "propertyNames": {
+                                                                "type": "string",
+                                                                "maxLength": 10485760
+                                                            },
                                                             "additionalProperties": {}
                                                         }
                                                     },
@@ -75685,7 +76280,7 @@
                                 "description": "`addressed_to`, `message` and `chat_mode` were declared at the TOP level here and the handler's schema accepts only `input` and `metadata`, with `.strip()`. So a client written from this document had its addressing and its chat mode dropped with no error at all: the run started, it just was not the run that was asked for. They belong inside `input`, which is where the handler reads them.",
                                 "properties": {
                                     "input": {
-                                        "description": "The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers; absent, @mentions in `message` are parsed for the same purpose.",
+                                        "description": "The turn; omission defaults to an empty input. A bare string is expanded to `{ message }`. `addressed_to` selects who answers; absent, @mentions in `message` are parsed for the same purpose.",
                                         "oneOf": [
                                             {
                                                 "type": "string",
@@ -75722,10 +76317,7 @@
                                         "additionalProperties": true,
                                         "description": "Accepted by the handler and undeclared here until now — the drift ran both ways."
                                     }
-                                },
-                                "required": [
-                                    "input"
-                                ]
+                                }
                             }
                         }
                     }
@@ -78072,6 +78664,7 @@
                                 "type": "object",
                                 "properties": {
                                     "skills": {
+                                        "maxItems": 100,
                                         "type": "array",
                                         "items": {
                                             "type": "object",
@@ -78087,27 +78680,27 @@
                                                     "maxLength": 200
                                                 },
                                                 "description": {
+                                                    "default": "",
                                                     "type": "string",
-                                                    "maxLength": 5000,
-                                                    "default": ""
+                                                    "maxLength": 5000
                                                 },
                                                 "input_types": {
+                                                    "default": [],
+                                                    "maxItems": 50,
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
                                                         "maxLength": 100
-                                                    },
-                                                    "maxItems": 50,
-                                                    "default": []
+                                                    }
                                                 },
                                                 "output_types": {
+                                                    "default": [],
+                                                    "maxItems": 50,
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
                                                         "maxLength": 100
-                                                    },
-                                                    "maxItems": 50,
-                                                    "default": []
+                                                    }
                                                 },
                                                 "avg_latency_ms": {
                                                     "type": "number",
@@ -78123,27 +78716,28 @@
                                                 "id",
                                                 "name"
                                             ]
-                                        },
-                                        "maxItems": 100
+                                        }
                                     },
                                     "constraints": {
                                         "type": "object",
                                         "properties": {
                                             "max_context_tokens": {
                                                 "type": "integer",
-                                                "exclusiveMinimum": 0
+                                                "exclusiveMinimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "supported_languages": {
+                                                "maxItems": 100,
                                                 "type": "array",
                                                 "items": {
                                                     "type": "string",
                                                     "maxLength": 35
-                                                },
-                                                "maxItems": 100
+                                                }
                                             },
                                             "rate_limit_rpm": {
                                                 "type": "integer",
-                                                "exclusiveMinimum": 0
+                                                "exclusiveMinimum": 0,
+                                                "maximum": 9007199254740991
                                             }
                                         },
                                         "required": [
@@ -78153,22 +78747,22 @@
                                         ]
                                     },
                                     "tools": {
+                                        "default": [],
+                                        "maxItems": 200,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "maxLength": 200
-                                        },
-                                        "maxItems": 200,
-                                        "default": []
+                                        }
                                     },
                                     "kb_ids": {
+                                        "default": [],
+                                        "maxItems": 200,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "maxLength": 200
-                                        },
-                                        "maxItems": 200,
-                                        "default": []
+                                        }
                                     }
                                 },
                                 "required": [
@@ -90747,7 +91341,40 @@
                                 "type": "object",
                                 "properties": {
                                     "endpoints": {
-                                        "x-zod-unsupported": "ZodEffects(preprocess)"
+                                        "type": "object",
+                                        "propertyNames": {
+                                            "type": "string",
+                                            "maxLength": 10485760
+                                        },
+                                        "additionalProperties": {
+                                            "type": "object",
+                                            "properties": {
+                                                "maxRequests": {
+                                                    "type": "integer",
+                                                    "minimum": 1,
+                                                    "maximum": 9007199254740991,
+                                                    "deprecated": true,
+                                                    "description": "Deprecated spelling of `max_requests` — the same value, kept for the compatibility window and removed in the next breaking release (the one that moves `X-API-Version`). Read `max_requests`."
+                                                },
+                                                "max_requests": {
+                                                    "type": "integer",
+                                                    "minimum": 1,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "windowSec": {
+                                                    "type": "integer",
+                                                    "minimum": 1,
+                                                    "maximum": 9007199254740991,
+                                                    "deprecated": true,
+                                                    "description": "Deprecated spelling of `window_sec` — the same value, kept for the compatibility window and removed in the next breaking release (the one that moves `X-API-Version`). Read `window_sec`."
+                                                },
+                                                "window_sec": {
+                                                    "type": "integer",
+                                                    "minimum": 1,
+                                                    "maximum": 9007199254740991
+                                                }
+                                            }
+                                        }
                                     }
                                 },
                                 "required": [
@@ -90928,6 +91555,10 @@
                                     },
                                     "model_markup_overrides": {
                                         "type": "object",
+                                        "propertyNames": {
+                                            "type": "string",
+                                            "maxLength": 10485760
+                                        },
                                         "additionalProperties": {
                                             "type": "number",
                                             "minimum": 0,
@@ -91342,8 +91973,8 @@
                                     },
                                     "media_endpoint": {
                                         "type": "string",
-                                        "format": "uri",
-                                        "maxLength": 1024
+                                        "maxLength": 1024,
+                                        "format": "uri"
                                     },
                                     "default_team_budget_usd": {
                                         "type": "number",
@@ -91412,6 +92043,11 @@
                                     },
                                     "model_tool_caps": {
                                         "type": "object",
+                                        "propertyNames": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 256
+                                        },
                                         "additionalProperties": {
                                             "type": "integer",
                                             "minimum": 1,
@@ -92650,8 +93286,9 @@
                                 "properties": {
                                     "super_admin_email": {
                                         "type": "string",
+                                        "maxLength": 256,
                                         "format": "email",
-                                        "maxLength": 256
+                                        "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                                     },
                                     "otp_ttl_ms": {
                                         "type": "integer",
@@ -93632,13 +94269,13 @@
                                 "type": "object",
                                 "properties": {
                                     "egress_allowlist_per_tenant": {
+                                        "maxItems": 500,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 256
-                                        },
-                                        "maxItems": 500
+                                        }
                                     },
                                     "default_tool_timeout_ms": {
                                         "type": "integer",
@@ -93864,6 +94501,10 @@
                                     },
                                     "provider_rate_limits": {
                                         "type": "object",
+                                        "propertyNames": {
+                                            "type": "string",
+                                            "maxLength": 10485760
+                                        },
                                         "additionalProperties": {
                                             "type": "object",
                                             "properties": {
@@ -94455,7 +95096,11 @@
                                         "type": "boolean"
                                     },
                                     "isolation": {
-                                        "x-zod-unsupported": "ZodEffects(preprocess)"
+                                        "type": "string",
+                                        "enum": [
+                                            "subprocess",
+                                            "container"
+                                        ]
                                     },
                                     "timeout_ms": {
                                         "type": "integer",
@@ -94468,22 +95113,22 @@
                                         "maximum": 10485760
                                     },
                                     "allowed_commands": {
+                                        "maxItems": 100,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 64
-                                        },
-                                        "maxItems": 100
+                                        }
                                     },
                                     "deno_allow": {
+                                        "maxItems": 20,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 32
-                                        },
-                                        "maxItems": 20
+                                        }
                                     },
                                     "container_image": {
                                         "type": "string",
@@ -95271,13 +95916,14 @@
                                         "maxLength": 200
                                     },
                                     "notify_emails": {
+                                        "maxItems": 20,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
+                                            "maxLength": 320,
                                             "format": "email",
-                                            "maxLength": 320
-                                        },
-                                        "maxItems": 20
+                                            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                        }
                                     },
                                     "retention_days": {
                                         "type": "integer",
@@ -95455,63 +96101,63 @@
                                 "properties": {
                                     "title": {
                                         "type": "string",
-                                        "maxLength": 200,
-                                        "minLength": 1
+                                        "minLength": 1,
+                                        "maxLength": 200
                                     },
                                     "summary": {
+                                        "default": "",
                                         "type": "string",
-                                        "maxLength": 300,
-                                        "default": ""
+                                        "maxLength": 300
                                     },
                                     "description": {
+                                        "default": "",
                                         "type": "string",
-                                        "maxLength": 100000,
-                                        "default": ""
+                                        "maxLength": 100000
                                     },
                                     "responsibilities": {
+                                        "default": [],
+                                        "maxItems": 40,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 500
-                                        },
-                                        "maxItems": 40,
-                                        "default": []
+                                        }
                                     },
                                     "requirements": {
+                                        "default": [],
+                                        "maxItems": 40,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 500
-                                        },
-                                        "maxItems": 40,
-                                        "default": []
+                                        }
                                     },
                                     "nice_to_have": {
+                                        "default": [],
+                                        "maxItems": 40,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 500
-                                        },
-                                        "maxItems": 40,
-                                        "default": []
+                                        }
                                     },
                                     "benefits": {
+                                        "default": [],
+                                        "maxItems": 40,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 500
-                                        },
-                                        "maxItems": 40,
-                                        "default": []
+                                        }
                                     },
                                     "category": {
                                         "type": "string",
-                                        "maxLength": 60,
-                                        "minLength": 1
+                                        "minLength": 1,
+                                        "maxLength": 60
                                     },
                                     "department": {
                                         "type": "string",
@@ -95560,18 +96206,20 @@
                                                 "maxLength": 120
                                             },
                                             "country": {
-                                                "x-zod-unsupported": "ZodEffects(transform)"
+                                                "type": "string",
+                                                "minLength": 2,
+                                                "maxLength": 2
                                             }
-                                        },
-                                        "default": {}
+                                        }
                                     },
                                     "applicant_countries": {
+                                        "maxItems": 60,
                                         "type": "array",
                                         "items": {
-                                            "x-zod-unsupported": "ZodEffects(transform)"
-                                        },
-                                        "maxItems": 60,
-                                        "default": []
+                                            "type": "string",
+                                            "minLength": 2,
+                                            "maxLength": 2
+                                        }
                                     },
                                     "english_level": {
                                         "type": "string",
@@ -95592,56 +96240,66 @@
                                         "maximum": 50
                                     },
                                     "skills": {
+                                        "default": [],
+                                        "maxItems": 40,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 60
-                                        },
-                                        "maxItems": 40,
-                                        "default": []
+                                        }
                                     },
                                     "salary": {
-                                        "type": [
-                                            "object",
-                                            "null"
-                                        ],
-                                        "properties": {
-                                            "min": {
-                                                "type": "number",
-                                                "minimum": 0,
-                                                "maximum": 100000000
-                                            },
-                                            "max": {
-                                                "type": "number",
-                                                "minimum": 0,
-                                                "maximum": 100000000
-                                            },
-                                            "currency": {
-                                                "x-zod-unsupported": "ZodEffects(transform)"
-                                            },
-                                            "period": {
-                                                "type": "string",
-                                                "enum": [
-                                                    "hour",
-                                                    "day",
-                                                    "week",
-                                                    "month",
-                                                    "year"
+                                        "anyOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "min": {
+                                                        "type": "number",
+                                                        "minimum": 0,
+                                                        "maximum": 100000000
+                                                    },
+                                                    "max": {
+                                                        "type": "number",
+                                                        "minimum": 0,
+                                                        "maximum": 100000000
+                                                    },
+                                                    "currency": {
+                                                        "type": "string",
+                                                        "minLength": 3,
+                                                        "maxLength": 3
+                                                    },
+                                                    "period": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "hour",
+                                                            "day",
+                                                            "week",
+                                                            "month",
+                                                            "year"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "currency",
+                                                    "period"
                                                 ]
+                                            },
+                                            {
+                                                "type": "null"
                                             }
-                                        },
-                                        "required": [
-                                            "currency",
-                                            "period"
-                                        ],
-                                        "default": null
+                                        ]
                                     },
                                     "salary_public": {
-                                        "type": "boolean",
-                                        "default": false
+                                        "default": false,
+                                        "type": "boolean"
                                     },
                                     "apply": {
+                                        "default": {
+                                            "mode": "form",
+                                            "requires_cv": true,
+                                            "requires_cover_letter": false
+                                        },
                                         "type": "object",
                                         "properties": {
                                             "mode": {
@@ -95654,57 +96312,58 @@
                                             },
                                             "url": {
                                                 "type": "string",
-                                                "format": "uri",
-                                                "maxLength": 2000
+                                                "maxLength": 2000,
+                                                "format": "uri"
                                             },
                                             "email": {
                                                 "type": "string",
+                                                "maxLength": 320,
                                                 "format": "email",
-                                                "maxLength": 320
+                                                "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                                             },
                                             "requires_cv": {
-                                                "type": "boolean",
-                                                "default": true
+                                                "default": true,
+                                                "type": "boolean"
                                             },
                                             "requires_cover_letter": {
-                                                "type": "boolean",
-                                                "default": false
+                                                "default": false,
+                                                "type": "boolean"
                                             }
                                         },
                                         "required": [
                                             "mode"
-                                        ],
-                                        "default": {
-                                            "mode": "form",
-                                            "requires_cv": true,
-                                            "requires_cover_letter": false
-                                        }
+                                        ]
                                     },
                                     "language": {
+                                        "default": "en",
                                         "type": "string",
                                         "enum": [
                                             "en",
                                             "uk"
-                                        ],
-                                        "default": "en"
+                                        ]
                                     },
                                     "status": {
+                                        "default": "draft",
                                         "type": "string",
                                         "enum": [
                                             "draft",
                                             "published",
                                             "closed"
-                                        ],
-                                        "default": "draft"
+                                        ]
                                     },
                                     "closes_at": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "format": "date-time",
                                         "default": null,
-                                        "maxLength": 10485760
+                                        "anyOf": [
+                                            {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                                                "maxLength": 10485760
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ]
                                     }
                                 },
                                 "required": [
@@ -95897,8 +96556,8 @@
                                 "properties": {
                                     "title": {
                                         "type": "string",
-                                        "maxLength": 200,
-                                        "minLength": 1
+                                        "minLength": 1,
+                                        "maxLength": 200
                                     },
                                     "summary": {
                                         "type": "string",
@@ -95909,45 +96568,45 @@
                                         "maxLength": 100000
                                     },
                                     "responsibilities": {
+                                        "maxItems": 40,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 500
-                                        },
-                                        "maxItems": 40
+                                        }
                                     },
                                     "requirements": {
+                                        "maxItems": 40,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 500
-                                        },
-                                        "maxItems": 40
+                                        }
                                     },
                                     "nice_to_have": {
+                                        "maxItems": 40,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 500
-                                        },
-                                        "maxItems": 40
+                                        }
                                     },
                                     "benefits": {
+                                        "maxItems": 40,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 500
-                                        },
-                                        "maxItems": 40
+                                        }
                                     },
                                     "category": {
                                         "type": "string",
-                                        "maxLength": 60,
-                                        "minLength": 1
+                                        "minLength": 1,
+                                        "maxLength": 60
                                     },
                                     "department": {
                                         "type": "string",
@@ -95996,16 +96655,20 @@
                                                 "maxLength": 120
                                             },
                                             "country": {
-                                                "x-zod-unsupported": "ZodEffects(transform)"
+                                                "type": "string",
+                                                "minLength": 2,
+                                                "maxLength": 2
                                             }
                                         }
                                     },
                                     "applicant_countries": {
+                                        "maxItems": 60,
                                         "type": "array",
                                         "items": {
-                                            "x-zod-unsupported": "ZodEffects(transform)"
-                                        },
-                                        "maxItems": 60
+                                            "type": "string",
+                                            "minLength": 2,
+                                            "maxLength": 2
+                                        }
                                     },
                                     "english_level": {
                                         "type": "string",
@@ -96026,47 +96689,53 @@
                                         "maximum": 50
                                     },
                                     "skills": {
+                                        "maxItems": 40,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 60
-                                        },
-                                        "maxItems": 40
+                                        }
                                     },
                                     "salary": {
-                                        "type": [
-                                            "object",
-                                            "null"
-                                        ],
-                                        "properties": {
-                                            "min": {
-                                                "type": "number",
-                                                "minimum": 0,
-                                                "maximum": 100000000
-                                            },
-                                            "max": {
-                                                "type": "number",
-                                                "minimum": 0,
-                                                "maximum": 100000000
-                                            },
-                                            "currency": {
-                                                "x-zod-unsupported": "ZodEffects(transform)"
-                                            },
-                                            "period": {
-                                                "type": "string",
-                                                "enum": [
-                                                    "hour",
-                                                    "day",
-                                                    "week",
-                                                    "month",
-                                                    "year"
+                                        "anyOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "min": {
+                                                        "type": "number",
+                                                        "minimum": 0,
+                                                        "maximum": 100000000
+                                                    },
+                                                    "max": {
+                                                        "type": "number",
+                                                        "minimum": 0,
+                                                        "maximum": 100000000
+                                                    },
+                                                    "currency": {
+                                                        "type": "string",
+                                                        "minLength": 3,
+                                                        "maxLength": 3
+                                                    },
+                                                    "period": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "hour",
+                                                            "day",
+                                                            "week",
+                                                            "month",
+                                                            "year"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "currency",
+                                                    "period"
                                                 ]
+                                            },
+                                            {
+                                                "type": "null"
                                             }
-                                        },
-                                        "required": [
-                                            "currency",
-                                            "period"
                                         ]
                                     },
                                     "salary_public": {
@@ -96085,21 +96754,22 @@
                                             },
                                             "url": {
                                                 "type": "string",
-                                                "format": "uri",
-                                                "maxLength": 2000
+                                                "maxLength": 2000,
+                                                "format": "uri"
                                             },
                                             "email": {
                                                 "type": "string",
+                                                "maxLength": 320,
                                                 "format": "email",
-                                                "maxLength": 320
+                                                "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                                             },
                                             "requires_cv": {
-                                                "type": "boolean",
-                                                "default": true
+                                                "default": true,
+                                                "type": "boolean"
                                             },
                                             "requires_cover_letter": {
-                                                "type": "boolean",
-                                                "default": false
+                                                "default": false,
+                                                "type": "boolean"
                                             }
                                         },
                                         "required": [
@@ -96122,12 +96792,17 @@
                                         ]
                                     },
                                     "closes_at": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "format": "date-time",
-                                        "maxLength": 10485760
+                                        "anyOf": [
+                                            {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                                                "maxLength": 10485760
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ]
                                     }
                                 }
                             }
@@ -97647,12 +98322,16 @@
                                         "maximum": 100000
                                     },
                                     "extraction_model": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "minLength": 1,
-                                        "maxLength": 256
+                                        "anyOf": [
+                                            {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 256
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ]
                                     },
                                     "eviction_threshold": {
                                         "type": "number",
@@ -97675,12 +98354,16 @@
                                         "maxLength": 256
                                     },
                                     "compression_model": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "minLength": 1,
-                                        "maxLength": 256
+                                        "anyOf": [
+                                            {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 256
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ]
                                     }
                                 }
                             }
@@ -98057,22 +98740,22 @@
                                         "type": "boolean"
                                     },
                                     "supported_image_formats": {
+                                        "maxItems": 50,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 128
-                                        },
-                                        "maxItems": 50
+                                        }
                                     },
                                     "supported_audio_formats": {
+                                        "maxItems": 50,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 128
-                                        },
-                                        "maxItems": 50
+                                        }
                                     }
                                 }
                             }
@@ -98432,13 +99115,13 @@
                                         "maximum": 1
                                     },
                                     "default_scorers": {
+                                        "maxItems": 50,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 64
-                                        },
-                                        "maxItems": 50
+                                        }
                                     },
                                     "max_cases_per_dataset": {
                                         "type": "integer",
@@ -103367,7 +104050,7 @@
                                         "type": "string",
                                         "minLength": 1,
                                         "maxLength": 64,
-                                        "x-zod-unsupported": "string checks: regex"
+                                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
                                     },
                                     "name": {
                                         "type": "string",
@@ -103405,11 +104088,13 @@
                                             },
                                             "max_context_tokens": {
                                                 "type": "integer",
-                                                "exclusiveMinimum": 0
+                                                "exclusiveMinimum": 0,
+                                                "maximum": 9007199254740991
                                             },
                                             "max_output_tokens": {
                                                 "type": "integer",
-                                                "exclusiveMinimum": 0
+                                                "exclusiveMinimum": 0,
+                                                "maximum": 9007199254740991
                                             }
                                         }
                                     },
@@ -103868,13 +104553,13 @@
                                         "type": "boolean"
                                     },
                                     "model_allowlist": {
+                                        "maxItems": 2000,
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
                                             "maxLength": 256
-                                        },
-                                        "maxItems": 2000
+                                        }
                                     },
                                     "requires_api_key": {
                                         "type": "boolean"
@@ -116356,15 +117041,24 @@
                                 "type": "object",
                                 "properties": {
                                     "public_agent_id": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "minLength": 1,
-                                        "maxLength": 128
+                                        "anyOf": [
+                                            {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 128
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ]
                                     },
                                     "texts": {
                                         "type": "object",
+                                        "propertyNames": {
+                                            "type": "string",
+                                            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+|\\[\\d+\\])*$",
+                                            "maxLength": 10485760
+                                        },
                                         "additionalProperties": {
                                             "type": "object",
                                             "properties": {
@@ -116394,74 +117088,78 @@
                                         "type": "boolean"
                                     },
                                     "partners": {
-                                        "type": [
-                                            "array",
-                                            "null"
-                                        ],
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "id": {
-                                                    "type": "string",
-                                                    "minLength": 1,
-                                                    "maxLength": 64,
-                                                    "x-zod-unsupported": "string checks: regex"
-                                                },
-                                                "name": {
-                                                    "type": "string",
-                                                    "minLength": 1,
-                                                    "maxLength": 80
-                                                },
-                                                "tagline": {
-                                                    "type": "string",
-                                                    "minLength": 1,
-                                                    "maxLength": 120
-                                                },
-                                                "tagline_uk": {
-                                                    "type": "string",
-                                                    "maxLength": 120
-                                                },
-                                                "href": {
-                                                    "type": "string",
-                                                    "format": "uri",
-                                                    "maxLength": 2048
-                                                },
-                                                "logo": {
+                                        "anyOf": [
+                                            {
+                                                "maxItems": 24,
+                                                "type": "array",
+                                                "items": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "slug": {
+                                                        "id": {
                                                             "type": "string",
-                                                            "enum": [
-                                                                "rust",
-                                                                "together",
-                                                                "ollama",
-                                                                "gonka",
-                                                                "wasm",
-                                                                "docker",
-                                                                "deno",
-                                                                "digitalocean",
-                                                                "github",
-                                                                "monogram"
-                                                            ]
+                                                            "minLength": 1,
+                                                            "maxLength": 64,
+                                                            "pattern": "^[a-z0-9_-]+$"
                                                         },
-                                                        "url": {
+                                                        "name": {
                                                             "type": "string",
-                                                            "maxLength": 65536
+                                                            "minLength": 1,
+                                                            "maxLength": 80
+                                                        },
+                                                        "tagline": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 120
+                                                        },
+                                                        "tagline_uk": {
+                                                            "type": "string",
+                                                            "maxLength": 120
+                                                        },
+                                                        "href": {
+                                                            "type": "string",
+                                                            "maxLength": 2048,
+                                                            "format": "uri"
+                                                        },
+                                                        "logo": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "slug": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "rust",
+                                                                        "together",
+                                                                        "ollama",
+                                                                        "gonka",
+                                                                        "wasm",
+                                                                        "docker",
+                                                                        "deno",
+                                                                        "digitalocean",
+                                                                        "github",
+                                                                        "monogram"
+                                                                    ]
+                                                                },
+                                                                "url": {
+                                                                    "type": "string",
+                                                                    "maxLength": 65536
+                                                                }
+                                                            },
+                                                            "additionalProperties": false
                                                         }
                                                     },
+                                                    "required": [
+                                                        "id",
+                                                        "name",
+                                                        "tagline",
+                                                        "href",
+                                                        "logo"
+                                                    ],
                                                     "additionalProperties": false
                                                 }
                                             },
-                                            "required": [
-                                                "id",
-                                                "name",
-                                                "tagline",
-                                                "href",
-                                                "logo"
-                                            ],
-                                            "additionalProperties": false
-                                        },
-                                        "maxItems": 24
+                                            {
+                                                "type": "null"
+                                            }
+                                        ]
                                     },
                                     "expected_version": {
                                         "type": [
@@ -116699,6 +117397,7 @@
                                 "type": "object",
                                 "properties": {
                                     "models": {
+                                        "maxItems": 500,
                                         "type": "array",
                                         "items": {
                                             "type": "object",
@@ -116767,12 +117466,8 @@
                                                     "maximum": 10000000
                                                 },
                                                 "pricing": {},
-                                                "input_per_million": {
-                                                    "x-zod-unsupported": "ZodUndefined"
-                                                },
-                                                "output_per_million": {
-                                                    "x-zod-unsupported": "ZodUndefined"
-                                                },
+                                                "input_per_million": {},
+                                                "output_per_million": {},
                                                 "tier": {
                                                     "type": "string",
                                                     "enum": [
@@ -116792,8 +117487,7 @@
                                                 "supports_tool_calls",
                                                 "supports_json_mode"
                                             ]
-                                        },
-                                        "maxItems": 500
+                                        }
                                     },
                                     "expected_version": {
                                         "type": [
@@ -117074,6 +117768,10 @@
                         "application/json": {
                             "schema": {
                                 "type": "object",
+                                "propertyNames": {
+                                    "type": "string",
+                                    "maxLength": 10485760
+                                },
                                 "additionalProperties": {
                                     "type": "array",
                                     "items": {

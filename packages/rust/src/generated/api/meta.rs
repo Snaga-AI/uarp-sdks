@@ -11,6 +11,7 @@ use crate::client::{Client, Request, NO_BODY, NO_QUERY};
 use crate::error::Result;
 use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
+use crate::sse::EventStream;
 use crate::util::encode_path;
 
 /// Query and header parameters for `search`.
@@ -22,6 +23,15 @@ pub struct SearchParams {
     pub r#type: Option<models::SearchType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+}
+
+/// Query and header parameters for `streamPublicPlatformAnalytics`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct StreamPublicPlatformAnalyticsParams {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub after: Option<String>,
+    #[serde(skip)]
+    pub last_event_id: Option<String>,
 }
 
 /// API metadata
@@ -135,6 +145,32 @@ impl MetaApi {
             .await
     }
 
+    /// Read reconciled lifetime platform activity
+    ///
+    /// Aggregate-only materialized snapshot. Scope includes internal research and tests across all
+    /// production tenants; companies are not customers. Execution runs have actual LLM/tool work
+    /// evidence, including pending and failed admitted runs. Pre-work refusals are excluded.
+    /// Logical tool attempts do not assert external business success. Technical completion is
+    /// completed/terminal admitted runs, not quality. Lifetime since remains null when
+    /// inception/retention coverage cannot be verified. Partial counts represent observed minima; a
+    /// partial ratio is not a lower bound. Windows select work-start cohorts; their latest terminal
+    /// outcomes use the same cohort. Null is unavailable, never an invented zero. data_through is a
+    /// durable source barrier, not generation or heartbeat time. No-store; 60 reads/minute/IP.
+    ///
+    /// `GET /api/v1/public/platform-analytics`
+    pub async fn get_public_platform_analytics(&self) -> Result<models::PublicPlatformAnalytics> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/public/platform-analytics".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Search across agents, sessions, runs
     ///
     /// Searches the caller's tenant for agents, runs, sessions, files, images, projects and memory
@@ -160,5 +196,32 @@ impl MetaApi {
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream resumable public platform activity
+    ///
+    /// snapshot/update/reset carry a complete PublicPlatformAnalytics with SSE id equal to its
+    /// decimal revision. Compare revisions numerically, not lexicographically. Last-Event-ID or
+    /// ?after resumes up to 128 retained revisions; a missing, future, or expired cursor produces
+    /// reset with the current full snapshot. Heartbeat every 15 seconds contains
+    /// generated_at,data_through,processed_through,status and no id; it never advances metric
+    /// coverage. KV watch is installed before initial snapshot/replay, and concurrent updates are
+    /// deduplicated by revision. Connection admission is capped at 20/minute/IP and 200 concurrent
+    /// streams/replica; slow readers are disconnected. No credentials or tenant IDs accepted or
+    /// emitted.
+    ///
+    /// `GET /api/v1/public/platform-analytics/events`
+    ///
+    /// Returns a server-sent event stream.
+    pub fn stream_public_platform_analytics(&self, params: &StreamPublicPlatformAnalyticsParams) -> EventStream {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        if let Some(value) = &params.last_event_id {
+            headers.push(("Last-Event-ID", value.clone()));
+        }
+        self.client.request_stream(
+            "/api/v1/public/platform-analytics/events",
+            Some(params),
+            headers,
+        )
     }
 }
