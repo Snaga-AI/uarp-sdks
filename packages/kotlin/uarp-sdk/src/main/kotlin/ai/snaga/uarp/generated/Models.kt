@@ -2627,32 +2627,9 @@ public data class AdminPutLandingConfigRequest(
     public val defaultLocale: VideoOrderLocale? = null,
     @SerialName("partners_enabled")
     public val partnersEnabled: Boolean? = null,
-    public val partners: List<AdminPutLandingConfigRequestPartner>? = null,
+    public val partners: List<AdminPutLandingConfigRequestPartnersVariant1item>? = null,
     @SerialName("expected_version")
     public val expectedVersion: String? = null,
-)
-
-/**
- * `AdminPutLandingConfigRequestPartner` model.
- */
-@Serializable
-public data class AdminPutLandingConfigRequestPartner(
-    public val id: String,
-    public val name: String,
-    public val tagline: String,
-    @SerialName("tagline_uk")
-    public val taglineUk: String? = null,
-    public val href: String,
-    public val logo: AdminPutLandingConfigRequestPartnerLogo,
-)
-
-/**
- * `AdminPutLandingConfigRequestPartnerLogo` model.
- */
-@Serializable
-public data class AdminPutLandingConfigRequestPartnerLogo(
-    public val slug: AdminPutLandingConfigRequestPartnerLogoSlug? = null,
-    public val url: String? = null,
 )
 
 /**
@@ -2690,6 +2667,29 @@ public object AdminPutLandingConfigRequestPartnerLogoSlugSerializer : KSerialize
     override fun serialize(encoder: Encoder, value: AdminPutLandingConfigRequestPartnerLogoSlug): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): AdminPutLandingConfigRequestPartnerLogoSlug = AdminPutLandingConfigRequestPartnerLogoSlug(decoder.decodeString())
 }
+
+/**
+ * `AdminPutLandingConfigRequestPartnersVariant1item` model.
+ */
+@Serializable
+public data class AdminPutLandingConfigRequestPartnersVariant1item(
+    public val id: String,
+    public val name: String,
+    public val tagline: String,
+    @SerialName("tagline_uk")
+    public val taglineUk: String? = null,
+    public val href: String,
+    public val logo: AdminPutLandingConfigRequestPartnersVariant1itemLogo,
+)
+
+/**
+ * `AdminPutLandingConfigRequestPartnersVariant1itemLogo` model.
+ */
+@Serializable
+public data class AdminPutLandingConfigRequestPartnersVariant1itemLogo(
+    public val slug: AdminPutLandingConfigRequestPartnerLogoSlug? = null,
+    public val url: String? = null,
+)
 
 /**
  * `AdminPutLandingConfigRequestTextsValue` model.
@@ -10775,13 +10775,13 @@ public data class CreateAdminJobRequest(
     public val workplaceType: JobWorkplaceType,
     public val location: CreateAdminJobRequestLocation? = null,
     @SerialName("applicant_countries")
-    public val applicantCountries: List<JsonElement>? = null,
+    public val applicantCountries: List<String>? = null,
     @SerialName("english_level")
     public val englishLevel: JobEnglishLevel? = null,
     @SerialName("experience_years_min")
     public val experienceYearsMin: Long? = null,
     public val skills: List<String>? = null,
-    public val salary: CreateAdminJobRequestSalary? = null,
+    public val salary: CreateAdminJobRequestSalaryVariant1? = null,
     @SerialName("salary_public")
     public val salaryPublic: Boolean? = null,
     public val apply: CreateAdminJobRequestApply? = null,
@@ -10811,17 +10811,17 @@ public data class CreateAdminJobRequestApply(
 @Serializable
 public data class CreateAdminJobRequestLocation(
     public val city: String? = null,
-    public val country: JsonElement? = null,
+    public val country: String? = null,
 )
 
 /**
- * `CreateAdminJobRequestSalary` model.
+ * `CreateAdminJobRequestSalaryVariant1` model.
  */
 @Serializable
-public data class CreateAdminJobRequestSalary(
+public data class CreateAdminJobRequestSalaryVariant1(
     public val min: Double? = null,
     public val max: Double? = null,
-    public val currency: JsonElement,
+    public val currency: String,
     public val period: JobSalaryPeriod,
 )
 
@@ -11051,13 +11051,60 @@ public data class CreateAgentScorerRequest(
 /**
  * `CreateAgentScorerRequestConfig` model.
  */
-@Serializable
+@Serializable(with = CreateAgentScorerRequestConfigSerializer::class)
 public data class CreateAgentScorerRequestConfig(
     public val type: String,
     public val url: String,
     @SerialName("timeout_ms")
     public val timeoutMs: Double? = null,
+    /**
+     * Properties the server returned that this SDK does not model.
+     */
+    public val additionalProperties: JsonObject = JsonObject(emptyMap()),
 )
+
+/**
+ * Serializer for \[CreateAgentScorerRequestConfig\] that preserves unmodelled properties.
+ */
+public object CreateAgentScorerRequestConfigSerializer : KSerializer<CreateAgentScorerRequestConfig> {
+    @Serializable
+    @SerialName("CreateAgentScorerRequestConfig")
+    private data class Surrogate(
+        val type: String,
+        val url: String,
+        @SerialName("timeout_ms")
+        val timeoutMs: Double? = null,
+    )
+
+    private val declaredNames: Set<String> = setOf("type", "url", "timeout_ms")
+
+    override val descriptor: SerialDescriptor = Surrogate.serializer().descriptor
+
+    override fun deserialize(decoder: Decoder): CreateAgentScorerRequestConfig {
+        val input = decoder as? JsonDecoder
+            ?: throw SerializationException("CreateAgentScorerRequestConfig can only be read from JSON")
+        val node = input.decodeJsonElement().jsonObject
+        val declared = input.json.decodeFromJsonElement(Surrogate.serializer(), node)
+        return CreateAgentScorerRequestConfig(
+            type = declared.type,
+            url = declared.url,
+            timeoutMs = declared.timeoutMs,
+            additionalProperties = JsonObject(node.filterKeys { it !in declaredNames }),
+        )
+    }
+
+    override fun serialize(encoder: Encoder, value: CreateAgentScorerRequestConfig) {
+        val output = encoder as? JsonEncoder
+            ?: throw SerializationException("CreateAgentScorerRequestConfig can only be written as JSON")
+        val declared = Surrogate(
+            type = value.type,
+            url = value.url,
+            timeoutMs = value.timeoutMs,
+        )
+        val rendered = output.json.encodeToJsonElement(Surrogate.serializer(), declared).jsonObject
+        output.encodeJsonElement(JsonObject(rendered + value.additionalProperties))
+    }
+}
 
 /**
  * `CreateAgentVersionRequest` model.
@@ -14527,6 +14574,7 @@ public value class ErrorCode(public val value: String) {
         public val RATE_LIMITED: ErrorCode = ErrorCode("RATE_LIMITED")
         public val RATE_LIMIT_EXCEEDED: ErrorCode = ErrorCode("RATE_LIMIT_EXCEEDED")
         public val REFERENCE_NOT_FOUND: ErrorCode = ErrorCode("REFERENCE_NOT_FOUND")
+        public val REQUEST_CANCELLED: ErrorCode = ErrorCode("REQUEST_CANCELLED")
         public val RESERVED_SCOPE: ErrorCode = ErrorCode("RESERVED_SCOPE")
         public val RUN_ACTIVE: ErrorCode = ErrorCode("RUN_ACTIVE")
         public val RUN_CANCELLED: ErrorCode = ErrorCode("RUN_CANCELLED")
@@ -14628,7 +14676,7 @@ public value class ErrorCode(public val value: String) {
         public val VIDEO_SLOT_INVALID: ErrorCode = ErrorCode("video_slot_invalid")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, ASSESSMENT_ISOLATION_REQUIRED, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CLIENT_REQUEST_CONFLICT, COMPANY_NOT_READY, COMPANY_PAUSED, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXECUTION_PROFILE_UNVERIFIABLE, EXECUTION_RECEIPT_PENDING, EXTERNAL_SERVICE_ERROR, FEATURED_SET_CONTENDED, FEATURE_DISABLED, FILE_NOT_FOUND, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_CONFLICT, IDEMPOTENCY_KEY_REUSED, INITIATIVE_BUDGET_EXHAUSTED, INITIATIVE_PAUSED, INTERNAL_ERROR, INVALID_ARCHIVE, INVALID_BODY, INVALID_CURSOR, INVALID_MANIFEST, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, ISOLATION_VIOLATION, LLM_ERROR, MANAGED_AGENT, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, METHOD_NOT_ALLOWED, MIGRATION_CONFLICT, MISSING_FIELD, MISSING_SCOPE, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, OUTPUT_CONTRACT_VIOLATION, OUTPUT_TOO_LARGE, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROCESSING_POLICY_CHANGED, PROCESSING_POLICY_NOT_READY, PROMO_REDEMPTION_FAILED, PROPOSAL_EXPIRED, QUALIFICATION_BUDGET_STOP, QUALIFICATION_ROUTE_MISMATCH, QUALIFICATION_VERSION_UNAVAILABLE, QUOTA_EXCEEDED, RATE_LIMITED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SECURITY_SCAN_FAILED, SERVICE_UNAVAILABLE, SESSION_NOT_ACTIVE, SHARE_LIST_CONFLICT, SIGNING_NOT_CONFIGURED, SIZE_LIMIT, SPEC_NOT_FOUND, SPONSORSHIP_BUDGET_BELOW_COMMITTED, SPONSORSHIP_BUDGET_EXHAUSTED, SPONSORSHIP_CANDIDATE_LIMIT, SPONSORSHIP_CONCURRENCY_LIMIT, SPONSORSHIP_FUNDING_UNAVAILABLE, SPONSORSHIP_GRANT_CONFLICT, SPONSORSHIP_GRANT_IN_USE, SPONSORSHIP_GRANT_MISMATCH, SPONSORSHIP_GRANT_UNAVAILABLE, SPONSORSHIP_OUTCOME_UNKNOWN, SPONSORSHIP_PROGRAM_IMMUTABLE, SPONSORSHIP_PROGRAM_INACTIVE, SPONSORSHIP_PROGRAM_REVISION_CONFLICT, SPONSORSHIP_REQUIRED, SPONSORSHIP_SCOPE_REQUIRED, STARTED_BY_ANOTHER_USER, STRATEGIST_MODEL_UNCONFIGURED, SUPER_ADMIN_REQUIRED, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, UNAUTHENTICATED, USAGE_CORRECTION_EXCEEDS_COUNTERS, USAGE_CORRECTION_IN_PROGRESS, USAGE_CORRECTION_NOT_SETTLED, USAGE_CORRECTION_NOT_SPONSORED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, HIRE_CATALOG_UNKNOWN, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, NOT_HIRED, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED_, RESOURCE_LIMIT_REACHED, RUN_AGENT_STOPPED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
+        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, ASSESSMENT_ISOLATION_REQUIRED, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CLIENT_REQUEST_CONFLICT, COMPANY_NOT_READY, COMPANY_PAUSED, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXECUTION_PROFILE_UNVERIFIABLE, EXECUTION_RECEIPT_PENDING, EXTERNAL_SERVICE_ERROR, FEATURED_SET_CONTENDED, FEATURE_DISABLED, FILE_NOT_FOUND, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_CONFLICT, IDEMPOTENCY_KEY_REUSED, INITIATIVE_BUDGET_EXHAUSTED, INITIATIVE_PAUSED, INTERNAL_ERROR, INVALID_ARCHIVE, INVALID_BODY, INVALID_CURSOR, INVALID_MANIFEST, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, ISOLATION_VIOLATION, LLM_ERROR, MANAGED_AGENT, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, METHOD_NOT_ALLOWED, MIGRATION_CONFLICT, MISSING_FIELD, MISSING_SCOPE, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, OUTPUT_CONTRACT_VIOLATION, OUTPUT_TOO_LARGE, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROCESSING_POLICY_CHANGED, PROCESSING_POLICY_NOT_READY, PROMO_REDEMPTION_FAILED, PROPOSAL_EXPIRED, QUALIFICATION_BUDGET_STOP, QUALIFICATION_ROUTE_MISMATCH, QUALIFICATION_VERSION_UNAVAILABLE, QUOTA_EXCEEDED, RATE_LIMITED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, REQUEST_CANCELLED, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SECURITY_SCAN_FAILED, SERVICE_UNAVAILABLE, SESSION_NOT_ACTIVE, SHARE_LIST_CONFLICT, SIGNING_NOT_CONFIGURED, SIZE_LIMIT, SPEC_NOT_FOUND, SPONSORSHIP_BUDGET_BELOW_COMMITTED, SPONSORSHIP_BUDGET_EXHAUSTED, SPONSORSHIP_CANDIDATE_LIMIT, SPONSORSHIP_CONCURRENCY_LIMIT, SPONSORSHIP_FUNDING_UNAVAILABLE, SPONSORSHIP_GRANT_CONFLICT, SPONSORSHIP_GRANT_IN_USE, SPONSORSHIP_GRANT_MISMATCH, SPONSORSHIP_GRANT_UNAVAILABLE, SPONSORSHIP_OUTCOME_UNKNOWN, SPONSORSHIP_PROGRAM_IMMUTABLE, SPONSORSHIP_PROGRAM_INACTIVE, SPONSORSHIP_PROGRAM_REVISION_CONFLICT, SPONSORSHIP_REQUIRED, SPONSORSHIP_SCOPE_REQUIRED, STARTED_BY_ANOTHER_USER, STRATEGIST_MODEL_UNCONFIGURED, SUPER_ADMIN_REQUIRED, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, UNAUTHENTICATED, USAGE_CORRECTION_EXCEEDS_COUNTERS, USAGE_CORRECTION_IN_PROGRESS, USAGE_CORRECTION_NOT_SETTLED, USAGE_CORRECTION_NOT_SPONSORED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, HIRE_CATALOG_UNKNOWN, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, NOT_HIRED, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED_, RESOURCE_LIMIT_REACHED, RUN_AGENT_STOPPED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
     }
 }
 
@@ -28666,6 +28714,161 @@ public data class PlannedObjectiveBudget(
 public typealias PlanQuotaFields = JsonObject
 
 /**
+ * `PlatformAnalyticsMetric` model.
+ */
+@Serializable
+public data class PlatformAnalyticsMetric(
+    public val `value`: Double? = null,
+    public val unit: PlatformAnalyticsMetricUnit,
+    public val status: PlatformAnalyticsMetricStatus,
+    public val since: String? = null,
+    @SerialName("data_through")
+    public val dataThrough: String? = null,
+    public val numerator: Long? = null,
+    public val denominator: Long? = null,
+    public val coverage: PlatformAnalyticsMetricCoverage,
+)
+
+/**
+ * `PlatformAnalyticsMetricCoverage` model.
+ */
+@Serializable
+public data class PlatformAnalyticsMetricCoverage(
+    public val completeness: PlatformAnalyticsMetricCoverageCompleteness,
+    @SerialName("observed_from")
+    public val observedFrom: String? = null,
+    public val gaps: List<PlatformAnalyticsMetricCoverageGap>,
+)
+
+/**
+ * `PlatformAnalyticsMetricCoverageCompleteness` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = PlatformAnalyticsMetricCoverageCompletenessSerializer::class)
+@JvmInline
+public value class PlatformAnalyticsMetricCoverageCompleteness(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val COMPLETE: PlatformAnalyticsMetricCoverageCompleteness = PlatformAnalyticsMetricCoverageCompleteness("complete")
+        public val PARTIAL: PlatformAnalyticsMetricCoverageCompleteness = PlatformAnalyticsMetricCoverageCompleteness("partial")
+        public val UNKNOWN: PlatformAnalyticsMetricCoverageCompleteness = PlatformAnalyticsMetricCoverageCompleteness("unknown")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<PlatformAnalyticsMetricCoverageCompleteness> = listOf(COMPLETE, PARTIAL, UNKNOWN)
+    }
+}
+
+public object PlatformAnalyticsMetricCoverageCompletenessSerializer : KSerializer<PlatformAnalyticsMetricCoverageCompleteness> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.PlatformAnalyticsMetricCoverageCompleteness", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: PlatformAnalyticsMetricCoverageCompleteness): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): PlatformAnalyticsMetricCoverageCompleteness = PlatformAnalyticsMetricCoverageCompleteness(decoder.decodeString())
+}
+
+/**
+ * `PlatformAnalyticsMetricCoverageGap` model.
+ */
+@Serializable
+public data class PlatformAnalyticsMetricCoverageGap(
+    public val from: String? = null,
+    public val to: String? = null,
+    public val reason: String,
+)
+
+/**
+ * `PlatformAnalyticsMetricStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = PlatformAnalyticsMetricStatusSerializer::class)
+@JvmInline
+public value class PlatformAnalyticsMetricStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val OK: PlatformAnalyticsMetricStatus = PlatformAnalyticsMetricStatus("ok")
+        public val PARTIAL: PlatformAnalyticsMetricStatus = PlatformAnalyticsMetricStatus("partial")
+        public val STALE: PlatformAnalyticsMetricStatus = PlatformAnalyticsMetricStatus("stale")
+        public val UNAVAILABLE: PlatformAnalyticsMetricStatus = PlatformAnalyticsMetricStatus("unavailable")
+        public val SUPPRESSED: PlatformAnalyticsMetricStatus = PlatformAnalyticsMetricStatus("suppressed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<PlatformAnalyticsMetricStatus> = listOf(OK, PARTIAL, STALE, UNAVAILABLE, SUPPRESSED)
+    }
+}
+
+public object PlatformAnalyticsMetricStatusSerializer : KSerializer<PlatformAnalyticsMetricStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.PlatformAnalyticsMetricStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: PlatformAnalyticsMetricStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): PlatformAnalyticsMetricStatus = PlatformAnalyticsMetricStatus(decoder.decodeString())
+}
+
+/**
+ * `PlatformAnalyticsMetricUnit` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = PlatformAnalyticsMetricUnitSerializer::class)
+@JvmInline
+public value class PlatformAnalyticsMetricUnit(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val COUNT: PlatformAnalyticsMetricUnit = PlatformAnalyticsMetricUnit("count")
+        public val RATIO: PlatformAnalyticsMetricUnit = PlatformAnalyticsMetricUnit("ratio")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<PlatformAnalyticsMetricUnit> = listOf(COUNT, RATIO)
+    }
+}
+
+public object PlatformAnalyticsMetricUnitSerializer : KSerializer<PlatformAnalyticsMetricUnit> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.PlatformAnalyticsMetricUnit", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: PlatformAnalyticsMetricUnit): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): PlatformAnalyticsMetricUnit = PlatformAnalyticsMetricUnit(decoder.decodeString())
+}
+
+/**
+ * `PlatformAnalyticsWindow` model.
+ */
+@Serializable
+public data class PlatformAnalyticsWindow(
+    public val start: String,
+    @SerialName("end_exclusive")
+    public val endExclusive: String,
+    public val metrics: PlatformAnalyticsWindowMetrics,
+)
+
+/**
+ * `PlatformAnalyticsWindowMetrics` model.
+ */
+@Serializable
+public data class PlatformAnalyticsWindowMetrics(
+    @SerialName("companies_ever_active")
+    public val companiesEverActive: PlatformAnalyticsMetric,
+    @SerialName("agents_ever_active")
+    public val agentsEverActive: PlatformAnalyticsMetric,
+    @SerialName("execution_runs")
+    public val executionRuns: PlatformAnalyticsMetric,
+    @SerialName("logical_tool_calls")
+    public val logicalToolCalls: PlatformAnalyticsMetric,
+    @SerialName("repeat_companies")
+    public val repeatCompanies: PlatformAnalyticsMetric,
+    @SerialName("technical_completion_ratio")
+    public val technicalCompletionRatio: PlatformAnalyticsMetric,
+)
+
+/**
  * Platform profit and loss: Stripe revenue against real host spend and the LLM provider bill.
  * Super-admin only. Served from a short-lived cache — `cache` says which.
  */
@@ -30774,6 +30977,169 @@ public object PublicPlanResetPeriodSerializer : KSerializer<PublicPlanResetPerio
     override fun serialize(encoder: Encoder, value: PublicPlanResetPeriod): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): PublicPlanResetPeriod = PublicPlanResetPeriod(decoder.decodeString())
 }
+
+/**
+ * `PublicPlatformAnalytics` model.
+ */
+@Serializable
+public data class PublicPlatformAnalytics(
+    @SerialName("schema_version")
+    public val schemaVersion: Long,
+    public val revision: String,
+    @SerialName("generated_at")
+    public val generatedAt: String,
+    @SerialName("data_through")
+    public val dataThrough: String? = null,
+    @SerialName("processed_through")
+    public val processedThrough: String? = null,
+    public val status: PublicPlatformAnalyticsStatus,
+    public val scope: PublicPlatformAnalyticsScope,
+    public val lifetime: PublicPlatformAnalyticsLifetime,
+    public val windows: PublicPlatformAnalyticsWindows,
+    public val series: PublicPlatformAnalyticsSeries,
+)
+
+/**
+ * `PublicPlatformAnalyticsLifetime` model.
+ */
+@Serializable
+public data class PublicPlatformAnalyticsLifetime(
+    public val since: String? = null,
+    public val metrics: PublicPlatformAnalyticsLifetimeMetrics,
+)
+
+/**
+ * `PublicPlatformAnalyticsLifetimeMetrics` model.
+ */
+@Serializable
+public data class PublicPlatformAnalyticsLifetimeMetrics(
+    @SerialName("companies_ever_active")
+    public val companiesEverActive: PlatformAnalyticsMetric,
+    @SerialName("agents_ever_active")
+    public val agentsEverActive: PlatformAnalyticsMetric,
+    @SerialName("execution_runs")
+    public val executionRuns: PlatformAnalyticsMetric,
+    @SerialName("logical_tool_calls")
+    public val logicalToolCalls: PlatformAnalyticsMetric,
+    @SerialName("repeat_companies")
+    public val repeatCompanies: PlatformAnalyticsMetric,
+    @SerialName("technical_completion_ratio")
+    public val technicalCompletionRatio: PlatformAnalyticsMetric,
+)
+
+/**
+ * `PublicPlatformAnalyticsScope` model.
+ */
+@Serializable
+public data class PublicPlatformAnalyticsScope(
+    public val population: String,
+    @SerialName("includes_internal")
+    public val includesInternal: Boolean,
+    @SerialName("includes_test")
+    public val includesTest: Boolean,
+    public val classification: String,
+)
+
+/**
+ * `PublicPlatformAnalyticsSeries` model.
+ */
+@Serializable
+public data class PublicPlatformAnalyticsSeries(
+    public val timezone: String,
+    public val status: PublicPlatformAnalyticsSeriesStatus,
+    public val days: List<PublicPlatformAnalyticsSeriesDay>? = null,
+)
+
+/**
+ * `PublicPlatformAnalyticsSeriesDay` model.
+ */
+@Serializable
+public data class PublicPlatformAnalyticsSeriesDay(
+    public val date: String,
+    @SerialName("companies_active")
+    public val companiesActive: Long? = null,
+    @SerialName("agents_active")
+    public val agentsActive: Long? = null,
+    @SerialName("execution_runs")
+    public val executionRuns: Long? = null,
+    @SerialName("logical_tool_calls")
+    public val logicalToolCalls: Long? = null,
+    @SerialName("completed_runs")
+    public val completedRuns: Long? = null,
+    @SerialName("terminal_runs")
+    public val terminalRuns: Long? = null,
+    public val status: PublicPlatformAnalyticsSeriesStatus,
+)
+
+/**
+ * `PublicPlatformAnalyticsSeriesStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = PublicPlatformAnalyticsSeriesStatusSerializer::class)
+@JvmInline
+public value class PublicPlatformAnalyticsSeriesStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val OK: PublicPlatformAnalyticsSeriesStatus = PublicPlatformAnalyticsSeriesStatus("ok")
+        public val PARTIAL: PublicPlatformAnalyticsSeriesStatus = PublicPlatformAnalyticsSeriesStatus("partial")
+        public val UNAVAILABLE: PublicPlatformAnalyticsSeriesStatus = PublicPlatformAnalyticsSeriesStatus("unavailable")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<PublicPlatformAnalyticsSeriesStatus> = listOf(OK, PARTIAL, UNAVAILABLE)
+    }
+}
+
+public object PublicPlatformAnalyticsSeriesStatusSerializer : KSerializer<PublicPlatformAnalyticsSeriesStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.PublicPlatformAnalyticsSeriesStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: PublicPlatformAnalyticsSeriesStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): PublicPlatformAnalyticsSeriesStatus = PublicPlatformAnalyticsSeriesStatus(decoder.decodeString())
+}
+
+/**
+ * `PublicPlatformAnalyticsStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = PublicPlatformAnalyticsStatusSerializer::class)
+@JvmInline
+public value class PublicPlatformAnalyticsStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val OK: PublicPlatformAnalyticsStatus = PublicPlatformAnalyticsStatus("ok")
+        public val PARTIAL: PublicPlatformAnalyticsStatus = PublicPlatformAnalyticsStatus("partial")
+        public val STALE: PublicPlatformAnalyticsStatus = PublicPlatformAnalyticsStatus("stale")
+        public val UNAVAILABLE: PublicPlatformAnalyticsStatus = PublicPlatformAnalyticsStatus("unavailable")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<PublicPlatformAnalyticsStatus> = listOf(OK, PARTIAL, STALE, UNAVAILABLE)
+    }
+}
+
+public object PublicPlatformAnalyticsStatusSerializer : KSerializer<PublicPlatformAnalyticsStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.PublicPlatformAnalyticsStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: PublicPlatformAnalyticsStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): PublicPlatformAnalyticsStatus = PublicPlatformAnalyticsStatus(decoder.decodeString())
+}
+
+/**
+ * `PublicPlatformAnalyticsWindows` model.
+ */
+@Serializable
+public data class PublicPlatformAnalyticsWindows(
+    @SerialName("7d")
+    public val field7d: PlatformAnalyticsWindow? = null,
+    @SerialName("30d")
+    public val field30d: PlatformAnalyticsWindow? = null,
+)
 
 /**
  * public.ts GET /public/sessions/{sessionId} — every field always present; compacted entries
@@ -36042,7 +36408,7 @@ public data class RunEventV1RunCancelledPayload(
      * which one. Absent when the run carries none, or one this version does not list.
      */
     @SerialName("error_code")
-    public val errorCode: ErrorCode? = null,
+    public val errorCode: RunEventV1RunFailedPayloadErrorCode? = null,
     @SerialName("error_details")
     public val errorDetails: JsonObject? = null,
     public val message: String? = null,
@@ -36292,7 +36658,7 @@ public data class RunEventV1RunFailedPayload(
      * which one. Absent when the run carries none, or one this version does not list.
      */
     @SerialName("error_code")
-    public val errorCode: ErrorCode? = null,
+    public val errorCode: RunEventV1RunFailedPayloadErrorCode? = null,
     @SerialName("error_details")
     public val errorDetails: JsonObject? = null,
     public val message: String? = null,
@@ -36302,6 +36668,224 @@ public data class RunEventV1RunFailedPayload(
     public val source: String? = null,
     public val rejected: Boolean? = null,
 )
+
+/**
+ * Why the run ended, from the `code` dictionary, in its stored casing (`approval_rejected`
+ * beside `RUN_CANCELLED`). Decide what to show by the event, not by this: `run.cancelled` is a
+ * stop, `run.failed` with `rejected: true` is a person refusing the tool call the run waited
+ * on, any other `run.failed` or `run.guardrail_blocked` is a failure; this code only says
+ * which one. Absent when the run carries none, or one this version does not list.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventV1RunFailedPayloadErrorCodeSerializer::class)
+@JvmInline
+public value class RunEventV1RunFailedPayloadErrorCode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val AAR_NOT_AVAILABLE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("AAR_NOT_AVAILABLE")
+        public val ACTIVE_TENANT_NOT_SUPPORTED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("ACTIVE_TENANT_NOT_SUPPORTED")
+        public val ALREADY_EXISTS: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("ALREADY_EXISTS")
+        public val ANON_BUSY: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("ANON_BUSY")
+        public val ARTIFACT_INTEGRITY_ERROR: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("ARTIFACT_INTEGRITY_ERROR")
+        public val ASSESSMENT_ISOLATION_REQUIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("ASSESSMENT_ISOLATION_REQUIRED")
+        public val AUTH_ERROR: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("AUTH_ERROR")
+        public val BILLING_CANCELLED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("BILLING_CANCELLED")
+        public val BILLING_DISPUTED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("BILLING_DISPUTED")
+        public val BILLING_PAST_DUE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("BILLING_PAST_DUE")
+        public val BUDGET_EXCEEDED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("BUDGET_EXCEEDED")
+        public val CHECKSUM_MISMATCH: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("CHECKSUM_MISMATCH")
+        public val CLIENT_REQUEST_CONFLICT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("CLIENT_REQUEST_CONFLICT")
+        public val COMPANY_NOT_READY: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("COMPANY_NOT_READY")
+        public val COMPANY_PAUSED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("COMPANY_PAUSED")
+        public val CONCURRENCY_LIMIT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("CONCURRENCY_LIMIT")
+        public val CONCURRENT_MODIFICATION: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("CONCURRENT_MODIFICATION")
+        public val CONFIGURATION_ERROR: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("CONFIGURATION_ERROR")
+        public val CONFIRMATION_REQUIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("CONFIRMATION_REQUIRED")
+        public val CONFLICT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("CONFLICT")
+        public val CONTEXT_LENGTH_EXCEEDED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("CONTEXT_LENGTH_EXCEEDED")
+        public val COUNT_LIMIT_REACHED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("COUNT_LIMIT_REACHED")
+        public val DAILY_LIMIT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("DAILY_LIMIT")
+        public val DEPENDENCY_EXISTS: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("DEPENDENCY_EXISTS")
+        public val EVENT_STORE_ERROR: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("EVENT_STORE_ERROR")
+        public val EXECUTION_PROFILE_UNVERIFIABLE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("EXECUTION_PROFILE_UNVERIFIABLE")
+        public val EXECUTION_RECEIPT_PENDING: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("EXECUTION_RECEIPT_PENDING")
+        public val EXTERNAL_SERVICE_ERROR: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("EXTERNAL_SERVICE_ERROR")
+        public val FEATURED_SET_CONTENDED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("FEATURED_SET_CONTENDED")
+        public val FEATURE_DISABLED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("FEATURE_DISABLED")
+        public val FILE_NOT_FOUND: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("FILE_NOT_FOUND")
+        public val FILE_TYPE_NOT_ALLOWED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("FILE_TYPE_NOT_ALLOWED")
+        public val FORBIDDEN: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("FORBIDDEN")
+        public val GUARDRAIL_VIOLATION: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("GUARDRAIL_VIOLATION")
+        public val IDEMPOTENCY_CONFLICT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("IDEMPOTENCY_CONFLICT")
+        public val IDEMPOTENCY_KEY_REUSED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("IDEMPOTENCY_KEY_REUSED")
+        public val INITIATIVE_BUDGET_EXHAUSTED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("INITIATIVE_BUDGET_EXHAUSTED")
+        public val INITIATIVE_PAUSED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("INITIATIVE_PAUSED")
+        public val INTERNAL_ERROR: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("INTERNAL_ERROR")
+        public val INVALID_ARCHIVE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("INVALID_ARCHIVE")
+        public val INVALID_BODY: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("INVALID_BODY")
+        public val INVALID_CURSOR: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("INVALID_CURSOR")
+        public val INVALID_MANIFEST: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("INVALID_MANIFEST")
+        public val INVALID_QUERY: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("INVALID_QUERY")
+        public val INVALID_REQUEST: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("INVALID_REQUEST")
+        public val INVALID_SHARE_LIST: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("INVALID_SHARE_LIST")
+        public val INVALID_SHARE_TARGET: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("INVALID_SHARE_TARGET")
+        public val INVALID_STATE_TRANSITION: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("INVALID_STATE_TRANSITION")
+        public val ISOLATION_VIOLATION: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("ISOLATION_VIOLATION")
+        public val LLM_ERROR: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("LLM_ERROR")
+        public val MANAGED_AGENT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("MANAGED_AGENT")
+        public val MAX_DURATION_EXCEEDED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("MAX_DURATION_EXCEEDED")
+        public val MAX_TOKENS_EXCEEDED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("MAX_TOKENS_EXCEEDED")
+        public val METHOD_NOT_ALLOWED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("METHOD_NOT_ALLOWED")
+        public val MIGRATION_CONFLICT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("MIGRATION_CONFLICT")
+        public val MISSING_FIELD: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("MISSING_FIELD")
+        public val MISSING_SCOPE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("MISSING_SCOPE")
+        public val MISSION_ALREADY_RUNNING: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("MISSION_ALREADY_RUNNING")
+        public val MISSION_CONCURRENCY_LIMIT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("MISSION_CONCURRENCY_LIMIT")
+        public val MISSION_NOT_FOUND: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("MISSION_NOT_FOUND")
+        public val MISSION_NOT_RUNNABLE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("MISSION_NOT_RUNNABLE")
+        public val MISSION_NOT_RUNNING: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("MISSION_NOT_RUNNING")
+        public val MISSION_ROUTE_NOT_FOUND: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("MISSION_ROUTE_NOT_FOUND")
+        public val NOT_BRIDGE_AGENT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("NOT_BRIDGE_AGENT")
+        public val NOT_FOUND: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("NOT_FOUND")
+        public val NOT_YANKED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("NOT_YANKED")
+        public val NO_RUNNABLE_TARGET: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("NO_RUNNABLE_TARGET")
+        public val OAUTH_FAILED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("OAUTH_FAILED")
+        public val OUTPUT_CONTRACT_VIOLATION: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("OUTPUT_CONTRACT_VIOLATION")
+        public val OUTPUT_TOO_LARGE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("OUTPUT_TOO_LARGE")
+        public val PAYLOAD_TOO_LARGE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("PAYLOAD_TOO_LARGE")
+        public val PERSISTENCE_ERROR: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("PERSISTENCE_ERROR")
+        public val PLANNER_OUTPUT_INVALID: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("PLANNER_OUTPUT_INVALID")
+        public val PLANNER_REFUSED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("PLANNER_REFUSED")
+        public val PRECONDITION_FAILED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("PRECONDITION_FAILED")
+        public val PREREQUISITE_MISSING: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("PREREQUISITE_MISSING")
+        public val PRICING_UNAVAILABLE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("PRICING_UNAVAILABLE")
+        public val PRIVATE_NOT_SHARED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("PRIVATE_NOT_SHARED")
+        public val PROCESSING_POLICY_CHANGED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("PROCESSING_POLICY_CHANGED")
+        public val PROCESSING_POLICY_NOT_READY: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("PROCESSING_POLICY_NOT_READY")
+        public val PROMO_REDEMPTION_FAILED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("PROMO_REDEMPTION_FAILED")
+        public val PROPOSAL_EXPIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("PROPOSAL_EXPIRED")
+        public val QUALIFICATION_BUDGET_STOP: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("QUALIFICATION_BUDGET_STOP")
+        public val QUALIFICATION_ROUTE_MISMATCH: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("QUALIFICATION_ROUTE_MISMATCH")
+        public val QUALIFICATION_VERSION_UNAVAILABLE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("QUALIFICATION_VERSION_UNAVAILABLE")
+        public val QUOTA_EXCEEDED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("QUOTA_EXCEEDED")
+        public val RATE_LIMITED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("RATE_LIMITED")
+        public val RATE_LIMIT_EXCEEDED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("RATE_LIMIT_EXCEEDED")
+        public val REFERENCE_NOT_FOUND: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("REFERENCE_NOT_FOUND")
+        public val RESERVED_SCOPE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("RESERVED_SCOPE")
+        public val RUN_ACTIVE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("RUN_ACTIVE")
+        public val RUN_CANCELLED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("RUN_CANCELLED")
+        public val SCOPE_MISMATCH: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SCOPE_MISMATCH")
+        public val SCOPE_TAKEN: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SCOPE_TAKEN")
+        public val SEARCH_PROVIDER_NOT_CONFIGURED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SEARCH_PROVIDER_NOT_CONFIGURED")
+        public val SEARCH_UPSTREAM_FAILED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SEARCH_UPSTREAM_FAILED")
+        public val SEARCH_UPSTREAM_TIMEOUT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SEARCH_UPSTREAM_TIMEOUT")
+        public val SECURITY_SCAN_FAILED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SECURITY_SCAN_FAILED")
+        public val SERVICE_UNAVAILABLE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SERVICE_UNAVAILABLE")
+        public val SESSION_NOT_ACTIVE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SESSION_NOT_ACTIVE")
+        public val SHARE_LIST_CONFLICT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SHARE_LIST_CONFLICT")
+        public val SIGNING_NOT_CONFIGURED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SIGNING_NOT_CONFIGURED")
+        public val SIZE_LIMIT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SIZE_LIMIT")
+        public val SPEC_NOT_FOUND: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPEC_NOT_FOUND")
+        public val SPONSORSHIP_BUDGET_BELOW_COMMITTED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_BUDGET_BELOW_COMMITTED")
+        public val SPONSORSHIP_BUDGET_EXHAUSTED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_BUDGET_EXHAUSTED")
+        public val SPONSORSHIP_CANDIDATE_LIMIT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_CANDIDATE_LIMIT")
+        public val SPONSORSHIP_CONCURRENCY_LIMIT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_CONCURRENCY_LIMIT")
+        public val SPONSORSHIP_FUNDING_UNAVAILABLE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_FUNDING_UNAVAILABLE")
+        public val SPONSORSHIP_GRANT_CONFLICT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_GRANT_CONFLICT")
+        public val SPONSORSHIP_GRANT_IN_USE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_GRANT_IN_USE")
+        public val SPONSORSHIP_GRANT_MISMATCH: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_GRANT_MISMATCH")
+        public val SPONSORSHIP_GRANT_UNAVAILABLE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_GRANT_UNAVAILABLE")
+        public val SPONSORSHIP_OUTCOME_UNKNOWN: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_OUTCOME_UNKNOWN")
+        public val SPONSORSHIP_PROGRAM_IMMUTABLE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_PROGRAM_IMMUTABLE")
+        public val SPONSORSHIP_PROGRAM_INACTIVE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_PROGRAM_INACTIVE")
+        public val SPONSORSHIP_PROGRAM_REVISION_CONFLICT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_PROGRAM_REVISION_CONFLICT")
+        public val SPONSORSHIP_REQUIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_REQUIRED")
+        public val SPONSORSHIP_SCOPE_REQUIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SPONSORSHIP_SCOPE_REQUIRED")
+        public val STARTED_BY_ANOTHER_USER: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("STARTED_BY_ANOTHER_USER")
+        public val STRATEGIST_MODEL_UNCONFIGURED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("STRATEGIST_MODEL_UNCONFIGURED")
+        public val SUPER_ADMIN_REQUIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("SUPER_ADMIN_REQUIRED")
+        public val TASK_GRAPH_FAILED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("TASK_GRAPH_FAILED")
+        public val TEAM_ABORT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("TEAM_ABORT")
+        public val TERMS_NOT_ACCEPTED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("TERMS_NOT_ACCEPTED")
+        public val TEXT_EXTRACTION_FAILED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("TEXT_EXTRACTION_FAILED")
+        public val UNAUTHENTICATED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("UNAUTHENTICATED")
+        public val USAGE_CORRECTION_EXCEEDS_COUNTERS: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("USAGE_CORRECTION_EXCEEDS_COUNTERS")
+        public val USAGE_CORRECTION_IN_PROGRESS: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("USAGE_CORRECTION_IN_PROGRESS")
+        public val USAGE_CORRECTION_NOT_SETTLED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("USAGE_CORRECTION_NOT_SETTLED")
+        public val USAGE_CORRECTION_NOT_SPONSORED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("USAGE_CORRECTION_NOT_SPONSORED")
+        public val USER_REQUIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("USER_REQUIRED")
+        public val VALIDATION_ERROR: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("VALIDATION_ERROR")
+        public val VERIFICATION_FAILED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("VERIFICATION_FAILED")
+        public val VERSION_CONFLICT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("VERSION_CONFLICT")
+        public val VERSION_NOT_FOUND: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("VERSION_NOT_FOUND")
+        public val WORKSPACE_STORAGE_LIMIT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("WORKSPACE_STORAGE_LIMIT")
+        public val WOULD_ORPHAN: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("WOULD_ORPHAN")
+        public val YANK_CONFLICT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("YANK_CONFLICT")
+        public val AGENT_DELETED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("agent_deleted")
+        public val AGENT_NOT_FOUND: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("agent_not_found")
+        public val ALREADY_BOOTSTRAPPED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("already_bootstrapped")
+        public val APPROVAL_REJECTED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("approval_rejected")
+        public val BILLING_NOT_CONFIGURED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("billing_not_configured")
+        public val CONSENT_REQUIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("consent_required")
+        public val CV_INVALID: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("cv_invalid")
+        public val CV_TOO_LARGE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("cv_too_large")
+        public val DUPLICATE_APPLICATION: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("duplicate_application")
+        public val GOVERNANCE_NOT_ENABLED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("governance_not_enabled")
+        public val HIRE_CATALOG_UNKNOWN: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("hire_catalog_unknown")
+        public val INCOMPLETE_RECORD: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("incomplete_record")
+        public val INERT_POLICY_FIELD: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("inert_policy_field")
+        public val INERT_PUBLIC_CONFIG_FIELD: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("inert_public_config_field")
+        public val JOB_APPLY_ELSEWHERE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("job_apply_elsewhere")
+        public val JOB_CLOSED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("job_closed")
+        public val KB_CHUNK_LIMIT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("kb_chunk_limit")
+        public val KB_DOCUMENT_BODY_INVALID: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("kb_document_body_invalid")
+        public val KB_DOCUMENT_TOO_LARGE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("kb_document_too_large")
+        public val KB_EMBEDDING_FAILED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("kb_embedding_failed")
+        public val KB_STORAGE_LIMIT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("kb_storage_limit")
+        public val KB_TEXT_EXTRACTION_FAILED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("kb_text_extraction_failed")
+        public val LIMIT_REACHED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("limit_reached")
+        public val MFA_REQUIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("mfa_required")
+        public val NO_ELIGIBLE_ARBITER: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("no_eligible_arbiter")
+        public val NOT_HIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("not_hired")
+        public val PLAN_UPGRADE_REQUIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("plan_upgrade_required")
+        public val PROPOSAL_REQUIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("proposal_required")
+        public val PROVIDER_AUTH_FAILED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("provider_auth_failed")
+        public val PROVIDER_CIRCUIT_OPEN: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("provider_circuit_open")
+        public val PROVIDER_NOT_CONFIGURED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("provider_not_configured")
+        public val PROVIDER_RATE_LIMITED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("provider_rate_limited")
+        public val QUOTA_EXCEEDED_: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("quota_exceeded")
+        public val RATE_LIMITED_: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("rate_limited")
+        public val RESOURCE_LIMIT_REACHED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("resource_limit_reached")
+        public val RUN_AGENT_STOPPED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("run_agent_stopped")
+        public val RUN_APPROVAL_EXPIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("run_approval_expired")
+        public val RUN_INPUT_TIMEOUT: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("run_input_timeout")
+        public val RUN_NEVER_CLAIMED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("run_never_claimed")
+        public val RUN_ORPHANED_RESTART: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("run_orphaned_restart")
+        public val RUN_QUOTA_EXCEEDED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("run_quota_exceeded")
+        public val RUN_STALLED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("run_stalled")
+        public val SECRET_WOULD_MOVE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("secret_would_move")
+        public val VIDEO_CONSENT_REQUIRED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("video_consent_required")
+        public val VIDEO_ORDER_STATE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("video_order_state")
+        public val VIDEO_PHOTO_INVALID: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("video_photo_invalid")
+        public val VIDEO_PHOTO_REJECTED: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("video_photo_rejected")
+        public val VIDEO_REGEN_UNAVAILABLE: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("video_regen_unavailable")
+        public val VIDEO_SLOT_INVALID: RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode("video_slot_invalid")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventV1RunFailedPayloadErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, ASSESSMENT_ISOLATION_REQUIRED, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CLIENT_REQUEST_CONFLICT, COMPANY_NOT_READY, COMPANY_PAUSED, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXECUTION_PROFILE_UNVERIFIABLE, EXECUTION_RECEIPT_PENDING, EXTERNAL_SERVICE_ERROR, FEATURED_SET_CONTENDED, FEATURE_DISABLED, FILE_NOT_FOUND, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_CONFLICT, IDEMPOTENCY_KEY_REUSED, INITIATIVE_BUDGET_EXHAUSTED, INITIATIVE_PAUSED, INTERNAL_ERROR, INVALID_ARCHIVE, INVALID_BODY, INVALID_CURSOR, INVALID_MANIFEST, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, ISOLATION_VIOLATION, LLM_ERROR, MANAGED_AGENT, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, METHOD_NOT_ALLOWED, MIGRATION_CONFLICT, MISSING_FIELD, MISSING_SCOPE, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, OUTPUT_CONTRACT_VIOLATION, OUTPUT_TOO_LARGE, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROCESSING_POLICY_CHANGED, PROCESSING_POLICY_NOT_READY, PROMO_REDEMPTION_FAILED, PROPOSAL_EXPIRED, QUALIFICATION_BUDGET_STOP, QUALIFICATION_ROUTE_MISMATCH, QUALIFICATION_VERSION_UNAVAILABLE, QUOTA_EXCEEDED, RATE_LIMITED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SECURITY_SCAN_FAILED, SERVICE_UNAVAILABLE, SESSION_NOT_ACTIVE, SHARE_LIST_CONFLICT, SIGNING_NOT_CONFIGURED, SIZE_LIMIT, SPEC_NOT_FOUND, SPONSORSHIP_BUDGET_BELOW_COMMITTED, SPONSORSHIP_BUDGET_EXHAUSTED, SPONSORSHIP_CANDIDATE_LIMIT, SPONSORSHIP_CONCURRENCY_LIMIT, SPONSORSHIP_FUNDING_UNAVAILABLE, SPONSORSHIP_GRANT_CONFLICT, SPONSORSHIP_GRANT_IN_USE, SPONSORSHIP_GRANT_MISMATCH, SPONSORSHIP_GRANT_UNAVAILABLE, SPONSORSHIP_OUTCOME_UNKNOWN, SPONSORSHIP_PROGRAM_IMMUTABLE, SPONSORSHIP_PROGRAM_INACTIVE, SPONSORSHIP_PROGRAM_REVISION_CONFLICT, SPONSORSHIP_REQUIRED, SPONSORSHIP_SCOPE_REQUIRED, STARTED_BY_ANOTHER_USER, STRATEGIST_MODEL_UNCONFIGURED, SUPER_ADMIN_REQUIRED, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, UNAUTHENTICATED, USAGE_CORRECTION_EXCEEDS_COUNTERS, USAGE_CORRECTION_IN_PROGRESS, USAGE_CORRECTION_NOT_SETTLED, USAGE_CORRECTION_NOT_SPONSORED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, HIRE_CATALOG_UNKNOWN, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, NOT_HIRED, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED_, RESOURCE_LIMIT_REACHED, RUN_AGENT_STOPPED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
+    }
+}
+
+public object RunEventV1RunFailedPayloadErrorCodeSerializer : KSerializer<RunEventV1RunFailedPayloadErrorCode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventV1RunFailedPayloadErrorCode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventV1RunFailedPayloadErrorCode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventV1RunFailedPayloadErrorCode = RunEventV1RunFailedPayloadErrorCode(decoder.decodeString())
+}
 
 /**
  * `RunEventV1RunFailedType` values.
@@ -36371,7 +36955,7 @@ public data class RunEventV1RunGuardrailBlockedPayload(
      * which one. Absent when the run carries none, or one this version does not list.
      */
     @SerialName("error_code")
-    public val errorCode: ErrorCode? = null,
+    public val errorCode: RunEventV1RunFailedPayloadErrorCode? = null,
     @SerialName("error_details")
     public val errorDetails: JsonObject? = null,
     public val message: String? = null,
@@ -40145,7 +40729,30 @@ public data class SetModelPricingOverrideResponse(
  */
 @Serializable
 public data class SetRateLimitsRequest(
-    public val endpoints: JsonElement,
+    public val endpoints: Map<String, SetRateLimitsRequestEndpointsValue>,
+)
+
+/**
+ * `SetRateLimitsRequestEndpointsValue` model.
+ */
+@Serializable
+public data class SetRateLimitsRequestEndpointsValue(
+    /**
+     * Deprecated spelling of `max_requests` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `max_requests`. Deprecated by the API.
+     */
+    public val maxRequests: Long? = null,
+    @SerialName("max_requests")
+    public val maxRequests_: Long? = null,
+    /**
+     * Deprecated spelling of `window_sec` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `window_sec`. Deprecated by the API.
+     */
+    public val windowSec: Long? = null,
+    @SerialName("window_sec")
+    public val windowSec_: Long? = null,
 )
 
 /**
@@ -40795,10 +41402,11 @@ public data class StartSquadRunResponse(
 @Serializable
 public data class StartTeamRunRequest(
     /**
-     * The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
-     * absent, @mentions in `message` are parsed for the same purpose.
+     * The turn; omission defaults to an empty input. A bare string is expanded to `{ message }`.
+     * `addressed_to` selects who answers; absent, @mentions in `message` are parsed for the same
+     * purpose.
      */
-    public val input: JsonElement,
+    public val input: JsonElement? = null,
     /**
      * Accepted by the handler and undeclared here until now — the drift ran both ways.
      */
@@ -44236,13 +44844,13 @@ public data class UpdateAdminJobRequest(
     public val workplaceType: JobWorkplaceType? = null,
     public val location: UpdateAdminJobRequestLocation? = null,
     @SerialName("applicant_countries")
-    public val applicantCountries: List<JsonElement>? = null,
+    public val applicantCountries: List<String>? = null,
     @SerialName("english_level")
     public val englishLevel: JobEnglishLevel? = null,
     @SerialName("experience_years_min")
     public val experienceYearsMin: Long? = null,
     public val skills: List<String>? = null,
-    public val salary: UpdateAdminJobRequestSalary? = null,
+    public val salary: UpdateAdminJobRequestSalaryVariant1? = null,
     @SerialName("salary_public")
     public val salaryPublic: Boolean? = null,
     public val apply: UpdateAdminJobRequestApply? = null,
@@ -44272,17 +44880,17 @@ public data class UpdateAdminJobRequestApply(
 @Serializable
 public data class UpdateAdminJobRequestLocation(
     public val city: String? = null,
-    public val country: JsonElement? = null,
+    public val country: String? = null,
 )
 
 /**
- * `UpdateAdminJobRequestSalary` model.
+ * `UpdateAdminJobRequestSalaryVariant1` model.
  */
 @Serializable
-public data class UpdateAdminJobRequestSalary(
+public data class UpdateAdminJobRequestSalaryVariant1(
     public val min: Double? = null,
     public val max: Double? = null,
-    public val currency: JsonElement,
+    public val currency: String,
     public val period: JobSalaryPeriod,
 )
 
@@ -44885,7 +45493,7 @@ public data class UpdateAdminRetentionConfigResponseRetention(
 @Serializable
 public data class UpdateAdminRunCommandConfigRequest(
     public val enabled: Boolean? = null,
-    public val isolation: JsonElement? = null,
+    public val isolation: AdminConfigRunCommandConfigRunCommandIsolation? = null,
     @SerialName("timeout_ms")
     public val timeoutMs: Long? = null,
     @SerialName("max_output_bytes")
@@ -46126,14 +46734,14 @@ public data class UpdateSessionTodoRequest(
     public val assignAgentId: String? = null,
     @SerialName("assign_team_id")
     public val assignTeamId: String? = null,
-    public val recurrence: UpdateSessionTodoRequestRecurrence? = null,
+    public val recurrence: UpdateSessionTodoRequestRecurrenceVariant1? = null,
 )
 
 /**
- * `UpdateSessionTodoRequestRecurrence` model.
+ * `UpdateSessionTodoRequestRecurrenceVariant1` model.
  */
 @Serializable
-public data class UpdateSessionTodoRequestRecurrence(
+public data class UpdateSessionTodoRequestRecurrenceVariant1(
     public val cron: String,
     public val timezone: String? = null,
 )

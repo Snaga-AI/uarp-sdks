@@ -3,11 +3,13 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
+import type { EventStream } from '../../core/sse.js';
 import type {
   GetAppleAppSiteAssociationResponse,
   GetClientConfigResponse,
   JsonObject,
   LandingStats,
+  PublicPlatformAnalytics,
   SearchResponse,
   SearchType,
 } from '../models.js';
@@ -22,6 +24,14 @@ export interface SearchParams {
   q: string;
   type?: SearchType;
   limit?: number;
+}
+
+/**
+ * Query and header parameters for `streamPublicPlatformAnalytics`.
+ */
+export interface StreamPublicPlatformAnalyticsParams {
+  after?: string;
+  'Last-Event-ID'?: string;
 }
 
 /**
@@ -114,6 +124,29 @@ export class MetaResource extends APIResource {
   }
 
   /**
+   * Read reconciled lifetime platform activity
+   *
+   * Aggregate-only materialized snapshot. Scope includes internal research and tests across all
+   * production tenants; companies are not customers. Execution runs have actual LLM/tool work
+   * evidence, including pending and failed admitted runs. Pre-work refusals are excluded.
+   * Logical tool attempts do not assert external business success. Technical completion is
+   * completed/terminal admitted runs, not quality. Lifetime since remains null when
+   * inception/retention coverage cannot be verified. Partial counts represent observed minima; a
+   * partial ratio is not a lower bound. Windows select work-start cohorts; their latest terminal
+   * outcomes use the same cohort. Null is unavailable, never an invented zero. data_through is a
+   * durable source barrier, not generation or heartbeat time. No-store; 60 reads/minute/IP.
+   *
+   * `GET /api/v1/public/platform-analytics`
+   */
+  getPublicPlatformAnalytics(options?: RequestOptions): Promise<PublicPlatformAnalytics> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/platform-analytics',
+      options,
+    });
+  }
+
+  /**
    * Search across agents, sessions, runs
    *
    * Searches the caller's tenant for agents, runs, sessions, files, images, projects and memory
@@ -134,6 +167,33 @@ export class MetaResource extends APIResource {
       method: 'GET',
       path: '/api/v1/search',
       query: pick(params, ['q', 'type', 'limit']),
+      options,
+    });
+  }
+
+  /**
+   * Stream resumable public platform activity
+   *
+   * snapshot/update/reset carry a complete PublicPlatformAnalytics with SSE id equal to its
+   * decimal revision. Compare revisions numerically, not lexicographically. Last-Event-ID or
+   * ?after resumes up to 128 retained revisions; a missing, future, or expired cursor produces
+   * reset with the current full snapshot. Heartbeat every 15 seconds contains
+   * generated_at,data_through,processed_through,status and no id; it never advances metric
+   * coverage. KV watch is installed before initial snapshot/replay, and concurrent updates are
+   * deduplicated by revision. Connection admission is capped at 20/minute/IP and 200 concurrent
+   * streams/replica; slow readers are disconnected. No credentials or tenant IDs accepted or
+   * emitted.
+   *
+   * `GET /api/v1/public/platform-analytics/events`
+   *
+   * Returns a server-sent event stream; iterate it with `for await`.
+   */
+  streamPublicPlatformAnalytics(params?: StreamPublicPlatformAnalyticsParams, options?: RequestOptions): EventStream {
+    return this._client.stream({
+      method: 'GET',
+      path: '/api/v1/public/platform-analytics/events',
+      query: pick(params, ['after']),
+      headers: pick(params, ['Last-Event-ID']),
       options,
     });
   }

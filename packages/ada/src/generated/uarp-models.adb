@@ -7763,7 +7763,7 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Request_Partner_Logo_Slug is
       (To_Admin_Put_Landing_Config_Request_Partner_Logo_Slug (UARP.Types."+" (JS.As_Text (Node))));
 
-   function To_JSON (Model : Admin_Put_Landing_Config_Request_Partner_Logo) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Admin_Put_Landing_Config_Request_Partners_Variant1item_Logo) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       if Model.Has_Slug then
@@ -7775,8 +7775,8 @@ package body UARP.Models is
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Request_Partner_Logo is
-      Result : Admin_Put_Landing_Config_Request_Partner_Logo;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Request_Partners_Variant1item_Logo is
+      Result : Admin_Put_Landing_Config_Request_Partners_Variant1item_Logo;
    begin
       if JS.Present (Node, "slug") then
          Result.Has_Slug := True;
@@ -7789,7 +7789,7 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Admin_Put_Landing_Config_Request_Partner) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Admin_Put_Landing_Config_Request_Partners_Variant1item) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "id", JS.JSON.Create (Model.Id));
@@ -7803,8 +7803,8 @@ package body UARP.Models is
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Request_Partner is
-      Result : Admin_Put_Landing_Config_Request_Partner;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Request_Partners_Variant1item is
+      Result : Admin_Put_Landing_Config_Request_Partners_Variant1item;
    begin
       if JS.Present (Node, "id") then
          Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
@@ -28496,7 +28496,7 @@ package body UARP.Models is
          JS.Set (Result, "city", JS.JSON.Create (Model.City));
       end if;
       if Model.Has_Country then
-         JS.Set (Result, "country", Model.Country);
+         JS.Set (Result, "country", JS.JSON.Create (Model.Country));
       end if;
       return Result;
    end To_JSON;
@@ -28510,12 +28510,12 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "country") then
          Result.Has_Country := True;
-         Result.Country := JS.Get_Value (Node, "country");
+         Result.Country := JS.As_Text (JS.Get_Value (Node, "country"));
       end if;
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Create_Admin_Job_Request_Salary) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Create_Admin_Job_Request_Salary_Variant1) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       if Model.Has_Min then
@@ -28524,13 +28524,13 @@ package body UARP.Models is
       if Model.Has_Max then
          JS.Set (Result, "max", JS.JSON.Create (Model.Max));
       end if;
-      JS.Set (Result, "currency", Model.Currency);
+      JS.Set (Result, "currency", JS.JSON.Create (Model.Currency));
       JS.Set (Result, "period", To_JSON (Model.Period));
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Job_Request_Salary is
-      Result : Create_Admin_Job_Request_Salary;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Job_Request_Salary_Variant1 is
+      Result : Create_Admin_Job_Request_Salary_Variant1;
    begin
       if JS.Present (Node, "min") then
          Result.Has_Min := True;
@@ -28541,7 +28541,7 @@ package body UARP.Models is
          Result.Max := JS.As_Float (JS.Get_Value (Node, "max"));
       end if;
       if JS.Present (Node, "currency") then
-         Result.Currency := JS.Get_Value (Node, "currency");
+         Result.Currency := JS.As_Text (JS.Get_Value (Node, "currency"));
       end if;
       if JS.Present (Node, "period") then
          Result.Period := From_JSON (JS.Get_Value (Node, "period"));
@@ -28656,7 +28656,14 @@ package body UARP.Models is
          JS.Set (Result, "location", To_JSON (Model.Location));
       end if;
       if Model.Has_Applicant_Countries then
-         JS.Set (Result, "applicant_countries", Model.Applicant_Countries);
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Applicant_Countries loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "applicant_countries", Items);
+         end;
       end if;
       if Model.Has_English_Level then
          JS.Set (Result, "english_level", To_JSON (Model.English_Level));
@@ -28772,7 +28779,13 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "applicant_countries") then
          Result.Has_Applicant_Countries := True;
-         Result.Applicant_Countries := JS.Get_Value (Node, "applicant_countries");
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "applicant_countries");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Applicant_Countries.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
       end if;
       if JS.Present (Node, "english_level") then
          Result.Has_English_Level := True;
@@ -29590,6 +29603,7 @@ package body UARP.Models is
          Result.Has_Timeout_Ms := True;
          Result.Timeout_Ms := JS.As_Float (JS.Get_Value (Node, "timeout_ms"));
       end if;
+      Result.Extra := Node;
       return Result;
    end From_JSON;
 
@@ -37789,6 +37803,8 @@ package body UARP.Models is
          return (Kind => Error_Code_Rate_Limit_Exceeded, Raw => UARP.Types."+" (Value));
       elsif Value = "REFERENCE_NOT_FOUND" then
          return (Kind => Error_Code_Reference_Not_Found, Raw => UARP.Types."+" (Value));
+      elsif Value = "REQUEST_CANCELLED" then
+         return (Kind => Error_Code_Request_Cancelled, Raw => UARP.Types."+" (Value));
       elsif Value = "RESERVED_SCOPE" then
          return (Kind => Error_Code_Reserved_Scope, Raw => UARP.Types."+" (Value));
       elsif Value = "RUN_ACTIVE" then
@@ -38173,6 +38189,8 @@ package body UARP.Models is
             return (Kind => Kind, Raw => UARP.Types."+" ("RATE_LIMIT_EXCEEDED"));
          when Error_Code_Reference_Not_Found =>
             return (Kind => Kind, Raw => UARP.Types."+" ("REFERENCE_NOT_FOUND"));
+         when Error_Code_Request_Cancelled =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("REQUEST_CANCELLED"));
          when Error_Code_Reserved_Scope =>
             return (Kind => Kind, Raw => UARP.Types."+" ("RESERVED_SCOPE"));
          when Error_Code_Run_Active =>
@@ -72921,6 +72939,313 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Platform_Analytics_Metric_Unit (Value : String) return Platform_Analytics_Metric_Unit is
+   begin
+      if Value = "count" then
+         return (Kind => Platform_Analytics_Metric_Unit_Count, Raw => UARP.Types."+" (Value));
+      elsif Value = "ratio" then
+         return (Kind => Platform_Analytics_Metric_Unit_Ratio, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Platform_Analytics_Metric_Unit_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Platform_Analytics_Metric_Unit;
+
+   function To_Platform_Analytics_Metric_Unit (Kind : Platform_Analytics_Metric_Unit_Kind) return Platform_Analytics_Metric_Unit is
+   begin
+      case Kind is
+         when Platform_Analytics_Metric_Unit_Count =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("count"));
+         when Platform_Analytics_Metric_Unit_Ratio =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ratio"));
+         when Platform_Analytics_Metric_Unit_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Platform_Analytics_Metric_Unit;
+
+   function Image (Model : Platform_Analytics_Metric_Unit) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Platform_Analytics_Metric_Unit (Model.Kind).Raw));
+
+   function To_JSON (Model : Platform_Analytics_Metric_Unit) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Metric_Unit is
+      (To_Platform_Analytics_Metric_Unit (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Platform_Analytics_Metric_Status (Value : String) return Platform_Analytics_Metric_Status is
+   begin
+      if Value = "ok" then
+         return (Kind => Platform_Analytics_Metric_Status_Ok, Raw => UARP.Types."+" (Value));
+      elsif Value = "partial" then
+         return (Kind => Platform_Analytics_Metric_Status_Partial, Raw => UARP.Types."+" (Value));
+      elsif Value = "stale" then
+         return (Kind => Platform_Analytics_Metric_Status_Stale, Raw => UARP.Types."+" (Value));
+      elsif Value = "unavailable" then
+         return (Kind => Platform_Analytics_Metric_Status_Unavailable, Raw => UARP.Types."+" (Value));
+      elsif Value = "suppressed" then
+         return (Kind => Platform_Analytics_Metric_Status_Suppressed, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Platform_Analytics_Metric_Status_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Platform_Analytics_Metric_Status;
+
+   function To_Platform_Analytics_Metric_Status (Kind : Platform_Analytics_Metric_Status_Kind) return Platform_Analytics_Metric_Status is
+   begin
+      case Kind is
+         when Platform_Analytics_Metric_Status_Ok =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ok"));
+         when Platform_Analytics_Metric_Status_Partial =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("partial"));
+         when Platform_Analytics_Metric_Status_Stale =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("stale"));
+         when Platform_Analytics_Metric_Status_Unavailable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("unavailable"));
+         when Platform_Analytics_Metric_Status_Suppressed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("suppressed"));
+         when Platform_Analytics_Metric_Status_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Platform_Analytics_Metric_Status;
+
+   function Image (Model : Platform_Analytics_Metric_Status) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Platform_Analytics_Metric_Status (Model.Kind).Raw));
+
+   function To_JSON (Model : Platform_Analytics_Metric_Status) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Metric_Status is
+      (To_Platform_Analytics_Metric_Status (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Platform_Analytics_Metric_Coverage_Completeness (Value : String) return Platform_Analytics_Metric_Coverage_Completeness is
+   begin
+      if Value = "complete" then
+         return (Kind => Platform_Analytics_Metric_Coverage_Completeness_Complete, Raw => UARP.Types."+" (Value));
+      elsif Value = "partial" then
+         return (Kind => Platform_Analytics_Metric_Coverage_Completeness_Partial, Raw => UARP.Types."+" (Value));
+      elsif Value = "unknown" then
+         return (Kind => Platform_Analytics_Metric_Coverage_Completeness_Unknown, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Platform_Analytics_Metric_Coverage_Completeness_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Platform_Analytics_Metric_Coverage_Completeness;
+
+   function To_Platform_Analytics_Metric_Coverage_Completeness (Kind : Platform_Analytics_Metric_Coverage_Completeness_Kind) return Platform_Analytics_Metric_Coverage_Completeness is
+   begin
+      case Kind is
+         when Platform_Analytics_Metric_Coverage_Completeness_Complete =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("complete"));
+         when Platform_Analytics_Metric_Coverage_Completeness_Partial =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("partial"));
+         when Platform_Analytics_Metric_Coverage_Completeness_Unknown =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("unknown"));
+         when Platform_Analytics_Metric_Coverage_Completeness_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Platform_Analytics_Metric_Coverage_Completeness;
+
+   function Image (Model : Platform_Analytics_Metric_Coverage_Completeness) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Platform_Analytics_Metric_Coverage_Completeness (Model.Kind).Raw));
+
+   function To_JSON (Model : Platform_Analytics_Metric_Coverage_Completeness) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Metric_Coverage_Completeness is
+      (To_Platform_Analytics_Metric_Coverage_Completeness (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Platform_Analytics_Metric_Coverage_Gap) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_From then
+         JS.Set (Result, "from", JS.JSON.Create (Model.From));
+      end if;
+      if Model.Has_To then
+         JS.Set (Result, "to", JS.JSON.Create (Model.To));
+      end if;
+      JS.Set (Result, "reason", JS.JSON.Create (Model.Reason));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Metric_Coverage_Gap is
+      Result : Platform_Analytics_Metric_Coverage_Gap;
+   begin
+      if JS.Present (Node, "from") then
+         Result.Has_From := True;
+         Result.From := JS.As_Text (JS.Get_Value (Node, "from"));
+      end if;
+      if JS.Present (Node, "to") then
+         Result.Has_To := True;
+         Result.To := JS.As_Text (JS.Get_Value (Node, "to"));
+      end if;
+      if JS.Present (Node, "reason") then
+         Result.Reason := JS.As_Text (JS.Get_Value (Node, "reason"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Platform_Analytics_Metric_Coverage) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "completeness", To_JSON (Model.Completeness));
+      if Model.Has_Observed_From then
+         JS.Set (Result, "observed_from", JS.JSON.Create (Model.Observed_From));
+      end if;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Gaps loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "gaps", Items);
+      end;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Metric_Coverage is
+      Result : Platform_Analytics_Metric_Coverage;
+   begin
+      if JS.Present (Node, "completeness") then
+         Result.Completeness := From_JSON (JS.Get_Value (Node, "completeness"));
+      end if;
+      if JS.Present (Node, "observed_from") then
+         Result.Has_Observed_From := True;
+         Result.Observed_From := JS.As_Text (JS.Get_Value (Node, "observed_from"));
+      end if;
+      if JS.Present (Node, "gaps") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "gaps");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Gaps.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Platform_Analytics_Metric) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Value then
+         JS.Set (Result, "value", JS.JSON.Create (Model.Value));
+      end if;
+      JS.Set (Result, "unit", To_JSON (Model.Unit));
+      JS.Set (Result, "status", To_JSON (Model.Status));
+      if Model.Has_Since then
+         JS.Set (Result, "since", JS.JSON.Create (Model.Since));
+      end if;
+      if Model.Has_Data_Through then
+         JS.Set (Result, "data_through", JS.JSON.Create (Model.Data_Through));
+      end if;
+      if Model.Has_Numerator then
+         JS.Set (Result, "numerator", JS.JSON.Create (Model.Numerator));
+      end if;
+      if Model.Has_Denominator then
+         JS.Set (Result, "denominator", JS.JSON.Create (Model.Denominator));
+      end if;
+      JS.Set (Result, "coverage", To_JSON (Model.Coverage));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Metric is
+      Result : Platform_Analytics_Metric;
+   begin
+      if JS.Present (Node, "value") then
+         Result.Has_Value := True;
+         Result.Value := JS.As_Float (JS.Get_Value (Node, "value"));
+      end if;
+      if JS.Present (Node, "unit") then
+         Result.Unit := From_JSON (JS.Get_Value (Node, "unit"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "since") then
+         Result.Has_Since := True;
+         Result.Since := JS.As_Text (JS.Get_Value (Node, "since"));
+      end if;
+      if JS.Present (Node, "data_through") then
+         Result.Has_Data_Through := True;
+         Result.Data_Through := JS.As_Text (JS.Get_Value (Node, "data_through"));
+      end if;
+      if JS.Present (Node, "numerator") then
+         Result.Has_Numerator := True;
+         Result.Numerator := JS.As_Integer (JS.Get_Value (Node, "numerator"));
+      end if;
+      if JS.Present (Node, "denominator") then
+         Result.Has_Denominator := True;
+         Result.Denominator := JS.As_Integer (JS.Get_Value (Node, "denominator"));
+      end if;
+      if JS.Present (Node, "coverage") then
+         Result.Coverage := From_JSON (JS.Get_Value (Node, "coverage"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Platform_Analytics_Window_Metrics) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "companies_ever_active", To_JSON (Model.Companies_Ever_Active));
+      JS.Set (Result, "agents_ever_active", To_JSON (Model.Agents_Ever_Active));
+      JS.Set (Result, "execution_runs", To_JSON (Model.Execution_Runs));
+      JS.Set (Result, "logical_tool_calls", To_JSON (Model.Logical_Tool_Calls));
+      JS.Set (Result, "repeat_companies", To_JSON (Model.Repeat_Companies));
+      JS.Set (Result, "technical_completion_ratio", To_JSON (Model.Technical_Completion_Ratio));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Window_Metrics is
+      Result : Platform_Analytics_Window_Metrics;
+   begin
+      if JS.Present (Node, "companies_ever_active") then
+         Result.Companies_Ever_Active := From_JSON (JS.Get_Value (Node, "companies_ever_active"));
+      end if;
+      if JS.Present (Node, "agents_ever_active") then
+         Result.Agents_Ever_Active := From_JSON (JS.Get_Value (Node, "agents_ever_active"));
+      end if;
+      if JS.Present (Node, "execution_runs") then
+         Result.Execution_Runs := From_JSON (JS.Get_Value (Node, "execution_runs"));
+      end if;
+      if JS.Present (Node, "logical_tool_calls") then
+         Result.Logical_Tool_Calls := From_JSON (JS.Get_Value (Node, "logical_tool_calls"));
+      end if;
+      if JS.Present (Node, "repeat_companies") then
+         Result.Repeat_Companies := From_JSON (JS.Get_Value (Node, "repeat_companies"));
+      end if;
+      if JS.Present (Node, "technical_completion_ratio") then
+         Result.Technical_Completion_Ratio := From_JSON (JS.Get_Value (Node, "technical_completion_ratio"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Platform_Analytics_Window) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "start", JS.JSON.Create (Model.Start));
+      JS.Set (Result, "end_exclusive", JS.JSON.Create (Model.End_Exclusive));
+      JS.Set (Result, "metrics", To_JSON (Model.Metrics));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_Analytics_Window is
+      Result : Platform_Analytics_Window;
+   begin
+      if JS.Present (Node, "start") then
+         Result.Start := JS.As_Text (JS.Get_Value (Node, "start"));
+      end if;
+      if JS.Present (Node, "end_exclusive") then
+         Result.End_Exclusive := JS.As_Text (JS.Get_Value (Node, "end_exclusive"));
+      end if;
+      if JS.Present (Node, "metrics") then
+         Result.Metrics := From_JSON (JS.Get_Value (Node, "metrics"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Platform_Economics_Revenue_Subscription) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -74561,6 +74886,359 @@ package body UARP.Models is
       if JS.Present (Node, "found") then
          Result.Has_Found := True;
          Result.Found := JS.As_Boolean (JS.Get_Value (Node, "found"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Public_Platform_Analytics_Status (Value : String) return Public_Platform_Analytics_Status is
+   begin
+      if Value = "ok" then
+         return (Kind => Public_Platform_Analytics_Status_Ok, Raw => UARP.Types."+" (Value));
+      elsif Value = "partial" then
+         return (Kind => Public_Platform_Analytics_Status_Partial, Raw => UARP.Types."+" (Value));
+      elsif Value = "stale" then
+         return (Kind => Public_Platform_Analytics_Status_Stale, Raw => UARP.Types."+" (Value));
+      elsif Value = "unavailable" then
+         return (Kind => Public_Platform_Analytics_Status_Unavailable, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Public_Platform_Analytics_Status_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Public_Platform_Analytics_Status;
+
+   function To_Public_Platform_Analytics_Status (Kind : Public_Platform_Analytics_Status_Kind) return Public_Platform_Analytics_Status is
+   begin
+      case Kind is
+         when Public_Platform_Analytics_Status_Ok =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ok"));
+         when Public_Platform_Analytics_Status_Partial =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("partial"));
+         when Public_Platform_Analytics_Status_Stale =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("stale"));
+         when Public_Platform_Analytics_Status_Unavailable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("unavailable"));
+         when Public_Platform_Analytics_Status_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Public_Platform_Analytics_Status;
+
+   function Image (Model : Public_Platform_Analytics_Status) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Public_Platform_Analytics_Status (Model.Kind).Raw));
+
+   function To_JSON (Model : Public_Platform_Analytics_Status) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Status is
+      (To_Public_Platform_Analytics_Status (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Public_Platform_Analytics_Scope) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "population", JS.JSON.Create (Model.Population));
+      JS.Set (Result, "includes_internal", JS.JSON.Create (Model.Includes_Internal));
+      JS.Set (Result, "includes_test", JS.JSON.Create (Model.Includes_Test));
+      JS.Set (Result, "classification", JS.JSON.Create (Model.Classification));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Scope is
+      Result : Public_Platform_Analytics_Scope;
+   begin
+      if JS.Present (Node, "population") then
+         Result.Population := JS.As_Text (JS.Get_Value (Node, "population"));
+      end if;
+      if JS.Present (Node, "includes_internal") then
+         Result.Includes_Internal := JS.As_Boolean (JS.Get_Value (Node, "includes_internal"));
+      end if;
+      if JS.Present (Node, "includes_test") then
+         Result.Includes_Test := JS.As_Boolean (JS.Get_Value (Node, "includes_test"));
+      end if;
+      if JS.Present (Node, "classification") then
+         Result.Classification := JS.As_Text (JS.Get_Value (Node, "classification"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Public_Platform_Analytics_Lifetime_Metrics) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "companies_ever_active", To_JSON (Model.Companies_Ever_Active));
+      JS.Set (Result, "agents_ever_active", To_JSON (Model.Agents_Ever_Active));
+      JS.Set (Result, "execution_runs", To_JSON (Model.Execution_Runs));
+      JS.Set (Result, "logical_tool_calls", To_JSON (Model.Logical_Tool_Calls));
+      JS.Set (Result, "repeat_companies", To_JSON (Model.Repeat_Companies));
+      JS.Set (Result, "technical_completion_ratio", To_JSON (Model.Technical_Completion_Ratio));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Lifetime_Metrics is
+      Result : Public_Platform_Analytics_Lifetime_Metrics;
+   begin
+      if JS.Present (Node, "companies_ever_active") then
+         Result.Companies_Ever_Active := From_JSON (JS.Get_Value (Node, "companies_ever_active"));
+      end if;
+      if JS.Present (Node, "agents_ever_active") then
+         Result.Agents_Ever_Active := From_JSON (JS.Get_Value (Node, "agents_ever_active"));
+      end if;
+      if JS.Present (Node, "execution_runs") then
+         Result.Execution_Runs := From_JSON (JS.Get_Value (Node, "execution_runs"));
+      end if;
+      if JS.Present (Node, "logical_tool_calls") then
+         Result.Logical_Tool_Calls := From_JSON (JS.Get_Value (Node, "logical_tool_calls"));
+      end if;
+      if JS.Present (Node, "repeat_companies") then
+         Result.Repeat_Companies := From_JSON (JS.Get_Value (Node, "repeat_companies"));
+      end if;
+      if JS.Present (Node, "technical_completion_ratio") then
+         Result.Technical_Completion_Ratio := From_JSON (JS.Get_Value (Node, "technical_completion_ratio"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Public_Platform_Analytics_Lifetime) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Since then
+         JS.Set (Result, "since", JS.JSON.Create (Model.Since));
+      end if;
+      JS.Set (Result, "metrics", To_JSON (Model.Metrics));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Lifetime is
+      Result : Public_Platform_Analytics_Lifetime;
+   begin
+      if JS.Present (Node, "since") then
+         Result.Has_Since := True;
+         Result.Since := JS.As_Text (JS.Get_Value (Node, "since"));
+      end if;
+      if JS.Present (Node, "metrics") then
+         Result.Metrics := From_JSON (JS.Get_Value (Node, "metrics"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Public_Platform_Analytics_Windows) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_N_7d then
+         JS.Set (Result, "7d", To_JSON (Model.N_7d));
+      end if;
+      if Model.Has_N_30d then
+         JS.Set (Result, "30d", To_JSON (Model.N_30d));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Windows is
+      Result : Public_Platform_Analytics_Windows;
+   begin
+      if JS.Present (Node, "7d") then
+         Result.Has_N_7d := True;
+         Result.N_7d := From_JSON (JS.Get_Value (Node, "7d"));
+      end if;
+      if JS.Present (Node, "30d") then
+         Result.Has_N_30d := True;
+         Result.N_30d := From_JSON (JS.Get_Value (Node, "30d"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Public_Platform_Analytics_Series_Status (Value : String) return Public_Platform_Analytics_Series_Status is
+   begin
+      if Value = "ok" then
+         return (Kind => Public_Platform_Analytics_Series_Status_Ok, Raw => UARP.Types."+" (Value));
+      elsif Value = "partial" then
+         return (Kind => Public_Platform_Analytics_Series_Status_Partial, Raw => UARP.Types."+" (Value));
+      elsif Value = "unavailable" then
+         return (Kind => Public_Platform_Analytics_Series_Status_Unavailable, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Public_Platform_Analytics_Series_Status_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Public_Platform_Analytics_Series_Status;
+
+   function To_Public_Platform_Analytics_Series_Status (Kind : Public_Platform_Analytics_Series_Status_Kind) return Public_Platform_Analytics_Series_Status is
+   begin
+      case Kind is
+         when Public_Platform_Analytics_Series_Status_Ok =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ok"));
+         when Public_Platform_Analytics_Series_Status_Partial =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("partial"));
+         when Public_Platform_Analytics_Series_Status_Unavailable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("unavailable"));
+         when Public_Platform_Analytics_Series_Status_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Public_Platform_Analytics_Series_Status;
+
+   function Image (Model : Public_Platform_Analytics_Series_Status) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Public_Platform_Analytics_Series_Status (Model.Kind).Raw));
+
+   function To_JSON (Model : Public_Platform_Analytics_Series_Status) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Series_Status is
+      (To_Public_Platform_Analytics_Series_Status (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Public_Platform_Analytics_Series_Day) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "date", JS.JSON.Create (Model.Date));
+      if Model.Has_Companies_Active then
+         JS.Set (Result, "companies_active", JS.JSON.Create (Model.Companies_Active));
+      end if;
+      if Model.Has_Agents_Active then
+         JS.Set (Result, "agents_active", JS.JSON.Create (Model.Agents_Active));
+      end if;
+      if Model.Has_Execution_Runs then
+         JS.Set (Result, "execution_runs", JS.JSON.Create (Model.Execution_Runs));
+      end if;
+      if Model.Has_Logical_Tool_Calls then
+         JS.Set (Result, "logical_tool_calls", JS.JSON.Create (Model.Logical_Tool_Calls));
+      end if;
+      if Model.Has_Completed_Runs then
+         JS.Set (Result, "completed_runs", JS.JSON.Create (Model.Completed_Runs));
+      end if;
+      if Model.Has_Terminal_Runs then
+         JS.Set (Result, "terminal_runs", JS.JSON.Create (Model.Terminal_Runs));
+      end if;
+      JS.Set (Result, "status", To_JSON (Model.Status));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Series_Day is
+      Result : Public_Platform_Analytics_Series_Day;
+   begin
+      if JS.Present (Node, "date") then
+         Result.Date := JS.As_Text (JS.Get_Value (Node, "date"));
+      end if;
+      if JS.Present (Node, "companies_active") then
+         Result.Has_Companies_Active := True;
+         Result.Companies_Active := JS.As_Integer (JS.Get_Value (Node, "companies_active"));
+      end if;
+      if JS.Present (Node, "agents_active") then
+         Result.Has_Agents_Active := True;
+         Result.Agents_Active := JS.As_Integer (JS.Get_Value (Node, "agents_active"));
+      end if;
+      if JS.Present (Node, "execution_runs") then
+         Result.Has_Execution_Runs := True;
+         Result.Execution_Runs := JS.As_Integer (JS.Get_Value (Node, "execution_runs"));
+      end if;
+      if JS.Present (Node, "logical_tool_calls") then
+         Result.Has_Logical_Tool_Calls := True;
+         Result.Logical_Tool_Calls := JS.As_Integer (JS.Get_Value (Node, "logical_tool_calls"));
+      end if;
+      if JS.Present (Node, "completed_runs") then
+         Result.Has_Completed_Runs := True;
+         Result.Completed_Runs := JS.As_Integer (JS.Get_Value (Node, "completed_runs"));
+      end if;
+      if JS.Present (Node, "terminal_runs") then
+         Result.Has_Terminal_Runs := True;
+         Result.Terminal_Runs := JS.As_Integer (JS.Get_Value (Node, "terminal_runs"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Public_Platform_Analytics_Series) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "timezone", JS.JSON.Create (Model.Timezone));
+      JS.Set (Result, "status", To_JSON (Model.Status));
+      if Model.Has_Days then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Days loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "days", Items);
+         end;
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics_Series is
+      Result : Public_Platform_Analytics_Series;
+   begin
+      if JS.Present (Node, "timezone") then
+         Result.Timezone := JS.As_Text (JS.Get_Value (Node, "timezone"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "days") then
+         Result.Has_Days := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "days");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Days.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Public_Platform_Analytics) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "schema_version", JS.JSON.Create (Model.Schema_Version));
+      JS.Set (Result, "revision", JS.JSON.Create (Model.Revision));
+      JS.Set (Result, "generated_at", JS.JSON.Create (Model.Generated_At));
+      if Model.Has_Data_Through then
+         JS.Set (Result, "data_through", JS.JSON.Create (Model.Data_Through));
+      end if;
+      if Model.Has_Processed_Through then
+         JS.Set (Result, "processed_through", JS.JSON.Create (Model.Processed_Through));
+      end if;
+      JS.Set (Result, "status", To_JSON (Model.Status));
+      JS.Set (Result, "scope", To_JSON (Model.Scope));
+      JS.Set (Result, "lifetime", To_JSON (Model.Lifetime));
+      JS.Set (Result, "windows", To_JSON (Model.Windows));
+      JS.Set (Result, "series", To_JSON (Model.Series));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Platform_Analytics is
+      Result : Public_Platform_Analytics;
+   begin
+      if JS.Present (Node, "schema_version") then
+         Result.Schema_Version := JS.As_Integer (JS.Get_Value (Node, "schema_version"));
+      end if;
+      if JS.Present (Node, "revision") then
+         Result.Revision := JS.As_Text (JS.Get_Value (Node, "revision"));
+      end if;
+      if JS.Present (Node, "generated_at") then
+         Result.Generated_At := JS.As_Text (JS.Get_Value (Node, "generated_at"));
+      end if;
+      if JS.Present (Node, "data_through") then
+         Result.Has_Data_Through := True;
+         Result.Data_Through := JS.As_Text (JS.Get_Value (Node, "data_through"));
+      end if;
+      if JS.Present (Node, "processed_through") then
+         Result.Has_Processed_Through := True;
+         Result.Processed_Through := JS.As_Text (JS.Get_Value (Node, "processed_through"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "scope") then
+         Result.Scope := From_JSON (JS.Get_Value (Node, "scope"));
+      end if;
+      if JS.Present (Node, "lifetime") then
+         Result.Lifetime := From_JSON (JS.Get_Value (Node, "lifetime"));
+      end if;
+      if JS.Present (Node, "windows") then
+         Result.Windows := From_JSON (JS.Get_Value (Node, "windows"));
+      end if;
+      if JS.Present (Node, "series") then
+         Result.Series := From_JSON (JS.Get_Value (Node, "series"));
       end if;
       return Result;
    end From_JSON;
@@ -83711,6 +84389,784 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Failed_Type is
       (To_Run_Event_V1_Run_Failed_Type (UARP.Types."+" (JS.As_Text (Node))));
 
+   function To_Run_Event_V1_Run_Failed_Payload_Error_Code (Value : String) return Run_Event_V1_Run_Failed_Payload_Error_Code is
+   begin
+      if Value = "AAR_NOT_AVAILABLE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Aar_Not_Available, Raw => UARP.Types."+" (Value));
+      elsif Value = "ACTIVE_TENANT_NOT_SUPPORTED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Active_Tenant_Not_Supported, Raw => UARP.Types."+" (Value));
+      elsif Value = "ALREADY_EXISTS" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Already_Exists, Raw => UARP.Types."+" (Value));
+      elsif Value = "ANON_BUSY" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Anon_Busy, Raw => UARP.Types."+" (Value));
+      elsif Value = "ARTIFACT_INTEGRITY_ERROR" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Artifact_Integrity_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "ASSESSMENT_ISOLATION_REQUIRED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Assessment_Isolation_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "AUTH_ERROR" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Auth_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "BILLING_CANCELLED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Billing_Cancelled, Raw => UARP.Types."+" (Value));
+      elsif Value = "BILLING_DISPUTED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Billing_Disputed, Raw => UARP.Types."+" (Value));
+      elsif Value = "BILLING_PAST_DUE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Billing_Past_Due, Raw => UARP.Types."+" (Value));
+      elsif Value = "BUDGET_EXCEEDED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Budget_Exceeded, Raw => UARP.Types."+" (Value));
+      elsif Value = "CHECKSUM_MISMATCH" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Checksum_Mismatch, Raw => UARP.Types."+" (Value));
+      elsif Value = "CLIENT_REQUEST_CONFLICT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Client_Request_Conflict, Raw => UARP.Types."+" (Value));
+      elsif Value = "COMPANY_NOT_READY" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Company_Not_Ready, Raw => UARP.Types."+" (Value));
+      elsif Value = "COMPANY_PAUSED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Company_Paused, Raw => UARP.Types."+" (Value));
+      elsif Value = "CONCURRENCY_LIMIT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Concurrency_Limit, Raw => UARP.Types."+" (Value));
+      elsif Value = "CONCURRENT_MODIFICATION" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Concurrent_Modification, Raw => UARP.Types."+" (Value));
+      elsif Value = "CONFIGURATION_ERROR" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Configuration_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "CONFIRMATION_REQUIRED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Confirmation_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "CONFLICT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Conflict, Raw => UARP.Types."+" (Value));
+      elsif Value = "CONTEXT_LENGTH_EXCEEDED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Context_Length_Exceeded, Raw => UARP.Types."+" (Value));
+      elsif Value = "COUNT_LIMIT_REACHED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Count_Limit_Reached, Raw => UARP.Types."+" (Value));
+      elsif Value = "DAILY_LIMIT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Daily_Limit, Raw => UARP.Types."+" (Value));
+      elsif Value = "DEPENDENCY_EXISTS" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Dependency_Exists, Raw => UARP.Types."+" (Value));
+      elsif Value = "EVENT_STORE_ERROR" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Event_Store_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "EXECUTION_PROFILE_UNVERIFIABLE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Execution_Profile_Unverifiable, Raw => UARP.Types."+" (Value));
+      elsif Value = "EXECUTION_RECEIPT_PENDING" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Execution_Receipt_Pending, Raw => UARP.Types."+" (Value));
+      elsif Value = "EXTERNAL_SERVICE_ERROR" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_External_Service_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "FEATURED_SET_CONTENDED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Featured_Set_Contended, Raw => UARP.Types."+" (Value));
+      elsif Value = "FEATURE_DISABLED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Feature_Disabled, Raw => UARP.Types."+" (Value));
+      elsif Value = "FILE_NOT_FOUND" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_File_Not_Found, Raw => UARP.Types."+" (Value));
+      elsif Value = "FILE_TYPE_NOT_ALLOWED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_File_Type_Not_Allowed, Raw => UARP.Types."+" (Value));
+      elsif Value = "FORBIDDEN" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Forbidden, Raw => UARP.Types."+" (Value));
+      elsif Value = "GUARDRAIL_VIOLATION" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Guardrail_Violation, Raw => UARP.Types."+" (Value));
+      elsif Value = "IDEMPOTENCY_CONFLICT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Idempotency_Conflict, Raw => UARP.Types."+" (Value));
+      elsif Value = "IDEMPOTENCY_KEY_REUSED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Idempotency_Key_Reused, Raw => UARP.Types."+" (Value));
+      elsif Value = "INITIATIVE_BUDGET_EXHAUSTED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Initiative_Budget_Exhausted, Raw => UARP.Types."+" (Value));
+      elsif Value = "INITIATIVE_PAUSED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Initiative_Paused, Raw => UARP.Types."+" (Value));
+      elsif Value = "INTERNAL_ERROR" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Internal_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "INVALID_ARCHIVE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Archive, Raw => UARP.Types."+" (Value));
+      elsif Value = "INVALID_BODY" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Body, Raw => UARP.Types."+" (Value));
+      elsif Value = "INVALID_CURSOR" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Cursor, Raw => UARP.Types."+" (Value));
+      elsif Value = "INVALID_MANIFEST" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Manifest, Raw => UARP.Types."+" (Value));
+      elsif Value = "INVALID_QUERY" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Query, Raw => UARP.Types."+" (Value));
+      elsif Value = "INVALID_REQUEST" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Request, Raw => UARP.Types."+" (Value));
+      elsif Value = "INVALID_SHARE_LIST" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Share_List, Raw => UARP.Types."+" (Value));
+      elsif Value = "INVALID_SHARE_TARGET" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Share_Target, Raw => UARP.Types."+" (Value));
+      elsif Value = "INVALID_STATE_TRANSITION" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_State_Transition, Raw => UARP.Types."+" (Value));
+      elsif Value = "ISOLATION_VIOLATION" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Isolation_Violation, Raw => UARP.Types."+" (Value));
+      elsif Value = "LLM_ERROR" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_LLM_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "MANAGED_AGENT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Managed_Agent, Raw => UARP.Types."+" (Value));
+      elsif Value = "MAX_DURATION_EXCEEDED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Max_Duration_Exceeded, Raw => UARP.Types."+" (Value));
+      elsif Value = "MAX_TOKENS_EXCEEDED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Max_Tokens_Exceeded, Raw => UARP.Types."+" (Value));
+      elsif Value = "METHOD_NOT_ALLOWED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Method_Not_Allowed, Raw => UARP.Types."+" (Value));
+      elsif Value = "MIGRATION_CONFLICT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Migration_Conflict, Raw => UARP.Types."+" (Value));
+      elsif Value = "MISSING_FIELD" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Missing_Field, Raw => UARP.Types."+" (Value));
+      elsif Value = "MISSING_SCOPE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Missing_Scope, Raw => UARP.Types."+" (Value));
+      elsif Value = "MISSION_ALREADY_RUNNING" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Already_Running, Raw => UARP.Types."+" (Value));
+      elsif Value = "MISSION_CONCURRENCY_LIMIT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Concurrency_Limit, Raw => UARP.Types."+" (Value));
+      elsif Value = "MISSION_NOT_FOUND" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Not_Found, Raw => UARP.Types."+" (Value));
+      elsif Value = "MISSION_NOT_RUNNABLE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Not_Runnable, Raw => UARP.Types."+" (Value));
+      elsif Value = "MISSION_NOT_RUNNING" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Not_Running, Raw => UARP.Types."+" (Value));
+      elsif Value = "MISSION_ROUTE_NOT_FOUND" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Route_Not_Found, Raw => UARP.Types."+" (Value));
+      elsif Value = "NOT_BRIDGE_AGENT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Not_Bridge_Agent, Raw => UARP.Types."+" (Value));
+      elsif Value = "NOT_FOUND" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Not_Found, Raw => UARP.Types."+" (Value));
+      elsif Value = "NOT_YANKED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Not_Yanked, Raw => UARP.Types."+" (Value));
+      elsif Value = "NO_RUNNABLE_TARGET" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_No_Runnable_Target, Raw => UARP.Types."+" (Value));
+      elsif Value = "OAUTH_FAILED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Oauth_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "OUTPUT_CONTRACT_VIOLATION" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Output_Contract_Violation, Raw => UARP.Types."+" (Value));
+      elsif Value = "OUTPUT_TOO_LARGE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Output_Too_Large, Raw => UARP.Types."+" (Value));
+      elsif Value = "PAYLOAD_TOO_LARGE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Payload_Too_Large, Raw => UARP.Types."+" (Value));
+      elsif Value = "PERSISTENCE_ERROR" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Persistence_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "PLANNER_OUTPUT_INVALID" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Planner_Output_Invalid, Raw => UARP.Types."+" (Value));
+      elsif Value = "PLANNER_REFUSED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Planner_Refused, Raw => UARP.Types."+" (Value));
+      elsif Value = "PRECONDITION_FAILED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Precondition_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "PREREQUISITE_MISSING" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Prerequisite_Missing, Raw => UARP.Types."+" (Value));
+      elsif Value = "PRICING_UNAVAILABLE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Pricing_Unavailable, Raw => UARP.Types."+" (Value));
+      elsif Value = "PRIVATE_NOT_SHARED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Private_Not_Shared, Raw => UARP.Types."+" (Value));
+      elsif Value = "PROCESSING_POLICY_CHANGED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Processing_Policy_Changed, Raw => UARP.Types."+" (Value));
+      elsif Value = "PROCESSING_POLICY_NOT_READY" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Processing_Policy_Not_Ready, Raw => UARP.Types."+" (Value));
+      elsif Value = "PROMO_REDEMPTION_FAILED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Promo_Redemption_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "PROPOSAL_EXPIRED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Proposal_Expired, Raw => UARP.Types."+" (Value));
+      elsif Value = "QUALIFICATION_BUDGET_STOP" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Qualification_Budget_Stop, Raw => UARP.Types."+" (Value));
+      elsif Value = "QUALIFICATION_ROUTE_MISMATCH" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Qualification_Route_Mismatch, Raw => UARP.Types."+" (Value));
+      elsif Value = "QUALIFICATION_VERSION_UNAVAILABLE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Qualification_Version_Unavailable, Raw => UARP.Types."+" (Value));
+      elsif Value = "QUOTA_EXCEEDED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Quota_Exceeded, Raw => UARP.Types."+" (Value));
+      elsif Value = "RATE_LIMITED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Rate_Limited, Raw => UARP.Types."+" (Value));
+      elsif Value = "RATE_LIMIT_EXCEEDED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Rate_Limit_Exceeded, Raw => UARP.Types."+" (Value));
+      elsif Value = "REFERENCE_NOT_FOUND" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Reference_Not_Found, Raw => UARP.Types."+" (Value));
+      elsif Value = "RESERVED_SCOPE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Reserved_Scope, Raw => UARP.Types."+" (Value));
+      elsif Value = "RUN_ACTIVE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Active, Raw => UARP.Types."+" (Value));
+      elsif Value = "RUN_CANCELLED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Cancelled, Raw => UARP.Types."+" (Value));
+      elsif Value = "SCOPE_MISMATCH" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Scope_Mismatch, Raw => UARP.Types."+" (Value));
+      elsif Value = "SCOPE_TAKEN" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Scope_Taken, Raw => UARP.Types."+" (Value));
+      elsif Value = "SEARCH_PROVIDER_NOT_CONFIGURED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Search_Provider_Not_Configured, Raw => UARP.Types."+" (Value));
+      elsif Value = "SEARCH_UPSTREAM_FAILED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Search_Upstream_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "SEARCH_UPSTREAM_TIMEOUT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Search_Upstream_Timeout, Raw => UARP.Types."+" (Value));
+      elsif Value = "SECURITY_SCAN_FAILED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Security_Scan_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "SERVICE_UNAVAILABLE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Service_Unavailable, Raw => UARP.Types."+" (Value));
+      elsif Value = "SESSION_NOT_ACTIVE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Session_Not_Active, Raw => UARP.Types."+" (Value));
+      elsif Value = "SHARE_LIST_CONFLICT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Share_List_Conflict, Raw => UARP.Types."+" (Value));
+      elsif Value = "SIGNING_NOT_CONFIGURED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Signing_Not_Configured, Raw => UARP.Types."+" (Value));
+      elsif Value = "SIZE_LIMIT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Size_Limit, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPEC_NOT_FOUND" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Spec_Not_Found, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_BUDGET_BELOW_COMMITTED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Budget_Below_Committed, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_BUDGET_EXHAUSTED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Budget_Exhausted, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_CANDIDATE_LIMIT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Candidate_Limit, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_CONCURRENCY_LIMIT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Concurrency_Limit, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_FUNDING_UNAVAILABLE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Funding_Unavailable, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_GRANT_CONFLICT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Grant_Conflict, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_GRANT_IN_USE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Grant_In_Use, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_GRANT_MISMATCH" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Grant_Mismatch, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_GRANT_UNAVAILABLE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Grant_Unavailable, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_OUTCOME_UNKNOWN" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Outcome_Unknown, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_PROGRAM_IMMUTABLE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Program_Immutable, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_PROGRAM_INACTIVE" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Program_Inactive, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_PROGRAM_REVISION_CONFLICT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Program_Revision_Conflict, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_REQUIRED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "SPONSORSHIP_SCOPE_REQUIRED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Scope_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "STARTED_BY_ANOTHER_USER" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Started_By_Another_User, Raw => UARP.Types."+" (Value));
+      elsif Value = "STRATEGIST_MODEL_UNCONFIGURED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Strategist_Model_Unconfigured, Raw => UARP.Types."+" (Value));
+      elsif Value = "SUPER_ADMIN_REQUIRED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Super_Admin_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "TASK_GRAPH_FAILED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Task_Graph_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "TEAM_ABORT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Team_Abort, Raw => UARP.Types."+" (Value));
+      elsif Value = "TERMS_NOT_ACCEPTED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Terms_Not_Accepted, Raw => UARP.Types."+" (Value));
+      elsif Value = "TEXT_EXTRACTION_FAILED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Text_Extraction_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "UNAUTHENTICATED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Unauthenticated, Raw => UARP.Types."+" (Value));
+      elsif Value = "USAGE_CORRECTION_EXCEEDS_COUNTERS" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Usage_Correction_Exceeds_Counters, Raw => UARP.Types."+" (Value));
+      elsif Value = "USAGE_CORRECTION_IN_PROGRESS" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Usage_Correction_In_Progress, Raw => UARP.Types."+" (Value));
+      elsif Value = "USAGE_CORRECTION_NOT_SETTLED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Usage_Correction_Not_Settled, Raw => UARP.Types."+" (Value));
+      elsif Value = "USAGE_CORRECTION_NOT_SPONSORED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Usage_Correction_Not_Sponsored, Raw => UARP.Types."+" (Value));
+      elsif Value = "USER_REQUIRED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_User_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "VALIDATION_ERROR" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Validation_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "VERIFICATION_FAILED" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Verification_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "VERSION_CONFLICT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Version_Conflict, Raw => UARP.Types."+" (Value));
+      elsif Value = "VERSION_NOT_FOUND" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Version_Not_Found, Raw => UARP.Types."+" (Value));
+      elsif Value = "WORKSPACE_STORAGE_LIMIT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Workspace_Storage_Limit, Raw => UARP.Types."+" (Value));
+      elsif Value = "WOULD_ORPHAN" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Would_Orphan, Raw => UARP.Types."+" (Value));
+      elsif Value = "YANK_CONFLICT" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Yank_Conflict, Raw => UARP.Types."+" (Value));
+      elsif Value = "agent_deleted" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Agent_Deleted, Raw => UARP.Types."+" (Value));
+      elsif Value = "agent_not_found" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Agent_Not_Found, Raw => UARP.Types."+" (Value));
+      elsif Value = "already_bootstrapped" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Already_Bootstrapped, Raw => UARP.Types."+" (Value));
+      elsif Value = "approval_rejected" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Approval_Rejected, Raw => UARP.Types."+" (Value));
+      elsif Value = "billing_not_configured" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Billing_Not_Configured, Raw => UARP.Types."+" (Value));
+      elsif Value = "consent_required" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Consent_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "cv_invalid" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Cv_Invalid, Raw => UARP.Types."+" (Value));
+      elsif Value = "cv_too_large" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Cv_Too_Large, Raw => UARP.Types."+" (Value));
+      elsif Value = "duplicate_application" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Duplicate_Application, Raw => UARP.Types."+" (Value));
+      elsif Value = "governance_not_enabled" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Governance_Not_Enabled, Raw => UARP.Types."+" (Value));
+      elsif Value = "hire_catalog_unknown" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Hire_Catalog_Unknown, Raw => UARP.Types."+" (Value));
+      elsif Value = "incomplete_record" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Incomplete_Record, Raw => UARP.Types."+" (Value));
+      elsif Value = "inert_policy_field" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Inert_Policy_Field, Raw => UARP.Types."+" (Value));
+      elsif Value = "inert_public_config_field" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Inert_Public_Config_Field, Raw => UARP.Types."+" (Value));
+      elsif Value = "job_apply_elsewhere" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Job_Apply_Elsewhere, Raw => UARP.Types."+" (Value));
+      elsif Value = "job_closed" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Job_Closed, Raw => UARP.Types."+" (Value));
+      elsif Value = "kb_chunk_limit" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Chunk_Limit, Raw => UARP.Types."+" (Value));
+      elsif Value = "kb_document_body_invalid" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Document_Body_Invalid, Raw => UARP.Types."+" (Value));
+      elsif Value = "kb_document_too_large" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Document_Too_Large, Raw => UARP.Types."+" (Value));
+      elsif Value = "kb_embedding_failed" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Embedding_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "kb_storage_limit" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Storage_Limit, Raw => UARP.Types."+" (Value));
+      elsif Value = "kb_text_extraction_failed" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Text_Extraction_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "limit_reached" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Limit_Reached, Raw => UARP.Types."+" (Value));
+      elsif Value = "mfa_required" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Mfa_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "no_eligible_arbiter" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_No_Eligible_Arbiter, Raw => UARP.Types."+" (Value));
+      elsif Value = "not_hired" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Not_Hired, Raw => UARP.Types."+" (Value));
+      elsif Value = "plan_upgrade_required" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Plan_Upgrade_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "proposal_required" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Proposal_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "provider_auth_failed" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Provider_Auth_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "provider_circuit_open" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Provider_Circuit_Open, Raw => UARP.Types."+" (Value));
+      elsif Value = "provider_not_configured" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Provider_Not_Configured, Raw => UARP.Types."+" (Value));
+      elsif Value = "provider_rate_limited" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Provider_Rate_Limited, Raw => UARP.Types."+" (Value));
+      elsif Value = "quota_exceeded" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Quota_Exceeded_X, Raw => UARP.Types."+" (Value));
+      elsif Value = "rate_limited" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Rate_Limited_X, Raw => UARP.Types."+" (Value));
+      elsif Value = "resource_limit_reached" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Resource_Limit_Reached, Raw => UARP.Types."+" (Value));
+      elsif Value = "run_agent_stopped" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Agent_Stopped, Raw => UARP.Types."+" (Value));
+      elsif Value = "run_approval_expired" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Approval_Expired, Raw => UARP.Types."+" (Value));
+      elsif Value = "run_input_timeout" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Input_Timeout, Raw => UARP.Types."+" (Value));
+      elsif Value = "run_never_claimed" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Never_Claimed, Raw => UARP.Types."+" (Value));
+      elsif Value = "run_orphaned_restart" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Orphaned_Restart, Raw => UARP.Types."+" (Value));
+      elsif Value = "run_quota_exceeded" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Quota_Exceeded, Raw => UARP.Types."+" (Value));
+      elsif Value = "run_stalled" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Stalled, Raw => UARP.Types."+" (Value));
+      elsif Value = "secret_would_move" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Secret_Would_Move, Raw => UARP.Types."+" (Value));
+      elsif Value = "video_consent_required" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Consent_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "video_order_state" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Order_State, Raw => UARP.Types."+" (Value));
+      elsif Value = "video_photo_invalid" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Photo_Invalid, Raw => UARP.Types."+" (Value));
+      elsif Value = "video_photo_rejected" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Photo_Rejected, Raw => UARP.Types."+" (Value));
+      elsif Value = "video_regen_unavailable" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Regen_Unavailable, Raw => UARP.Types."+" (Value));
+      elsif Value = "video_slot_invalid" then
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Slot_Invalid, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_V1_Run_Failed_Payload_Error_Code_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_V1_Run_Failed_Payload_Error_Code;
+
+   function To_Run_Event_V1_Run_Failed_Payload_Error_Code (Kind : Run_Event_V1_Run_Failed_Payload_Error_Code_Kind) return Run_Event_V1_Run_Failed_Payload_Error_Code is
+   begin
+      case Kind is
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Aar_Not_Available =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("AAR_NOT_AVAILABLE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Active_Tenant_Not_Supported =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ACTIVE_TENANT_NOT_SUPPORTED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Already_Exists =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ALREADY_EXISTS"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Anon_Busy =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ANON_BUSY"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Artifact_Integrity_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ARTIFACT_INTEGRITY_ERROR"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Assessment_Isolation_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ASSESSMENT_ISOLATION_REQUIRED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Auth_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("AUTH_ERROR"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Billing_Cancelled =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("BILLING_CANCELLED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Billing_Disputed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("BILLING_DISPUTED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Billing_Past_Due =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("BILLING_PAST_DUE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Budget_Exceeded =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("BUDGET_EXCEEDED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Checksum_Mismatch =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("CHECKSUM_MISMATCH"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Client_Request_Conflict =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("CLIENT_REQUEST_CONFLICT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Company_Not_Ready =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("COMPANY_NOT_READY"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Company_Paused =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("COMPANY_PAUSED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Concurrency_Limit =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("CONCURRENCY_LIMIT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Concurrent_Modification =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("CONCURRENT_MODIFICATION"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Configuration_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("CONFIGURATION_ERROR"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Confirmation_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("CONFIRMATION_REQUIRED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Conflict =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("CONFLICT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Context_Length_Exceeded =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("CONTEXT_LENGTH_EXCEEDED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Count_Limit_Reached =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("COUNT_LIMIT_REACHED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Daily_Limit =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("DAILY_LIMIT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Dependency_Exists =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("DEPENDENCY_EXISTS"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Event_Store_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("EVENT_STORE_ERROR"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Execution_Profile_Unverifiable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("EXECUTION_PROFILE_UNVERIFIABLE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Execution_Receipt_Pending =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("EXECUTION_RECEIPT_PENDING"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_External_Service_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("EXTERNAL_SERVICE_ERROR"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Featured_Set_Contended =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("FEATURED_SET_CONTENDED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Feature_Disabled =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("FEATURE_DISABLED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_File_Not_Found =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("FILE_NOT_FOUND"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_File_Type_Not_Allowed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("FILE_TYPE_NOT_ALLOWED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Forbidden =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("FORBIDDEN"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Guardrail_Violation =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("GUARDRAIL_VIOLATION"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Idempotency_Conflict =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("IDEMPOTENCY_CONFLICT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Idempotency_Key_Reused =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("IDEMPOTENCY_KEY_REUSED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Initiative_Budget_Exhausted =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("INITIATIVE_BUDGET_EXHAUSTED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Initiative_Paused =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("INITIATIVE_PAUSED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Internal_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("INTERNAL_ERROR"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Archive =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("INVALID_ARCHIVE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Body =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("INVALID_BODY"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Cursor =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("INVALID_CURSOR"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Manifest =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("INVALID_MANIFEST"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Query =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("INVALID_QUERY"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Request =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("INVALID_REQUEST"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Share_List =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("INVALID_SHARE_LIST"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_Share_Target =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("INVALID_SHARE_TARGET"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Invalid_State_Transition =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("INVALID_STATE_TRANSITION"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Isolation_Violation =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ISOLATION_VIOLATION"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_LLM_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("LLM_ERROR"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Managed_Agent =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("MANAGED_AGENT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Max_Duration_Exceeded =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("MAX_DURATION_EXCEEDED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Max_Tokens_Exceeded =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("MAX_TOKENS_EXCEEDED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Method_Not_Allowed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("METHOD_NOT_ALLOWED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Migration_Conflict =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("MIGRATION_CONFLICT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Missing_Field =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("MISSING_FIELD"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Missing_Scope =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("MISSING_SCOPE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Already_Running =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("MISSION_ALREADY_RUNNING"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Concurrency_Limit =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("MISSION_CONCURRENCY_LIMIT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Not_Found =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("MISSION_NOT_FOUND"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Not_Runnable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("MISSION_NOT_RUNNABLE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Not_Running =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("MISSION_NOT_RUNNING"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Mission_Route_Not_Found =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("MISSION_ROUTE_NOT_FOUND"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Not_Bridge_Agent =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("NOT_BRIDGE_AGENT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Not_Found =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("NOT_FOUND"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Not_Yanked =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("NOT_YANKED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_No_Runnable_Target =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("NO_RUNNABLE_TARGET"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Oauth_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("OAUTH_FAILED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Output_Contract_Violation =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("OUTPUT_CONTRACT_VIOLATION"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Output_Too_Large =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("OUTPUT_TOO_LARGE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Payload_Too_Large =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("PAYLOAD_TOO_LARGE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Persistence_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("PERSISTENCE_ERROR"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Planner_Output_Invalid =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("PLANNER_OUTPUT_INVALID"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Planner_Refused =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("PLANNER_REFUSED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Precondition_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("PRECONDITION_FAILED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Prerequisite_Missing =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("PREREQUISITE_MISSING"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Pricing_Unavailable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("PRICING_UNAVAILABLE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Private_Not_Shared =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("PRIVATE_NOT_SHARED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Processing_Policy_Changed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("PROCESSING_POLICY_CHANGED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Processing_Policy_Not_Ready =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("PROCESSING_POLICY_NOT_READY"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Promo_Redemption_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("PROMO_REDEMPTION_FAILED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Proposal_Expired =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("PROPOSAL_EXPIRED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Qualification_Budget_Stop =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("QUALIFICATION_BUDGET_STOP"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Qualification_Route_Mismatch =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("QUALIFICATION_ROUTE_MISMATCH"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Qualification_Version_Unavailable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("QUALIFICATION_VERSION_UNAVAILABLE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Quota_Exceeded =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("QUOTA_EXCEEDED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Rate_Limited =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("RATE_LIMITED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Rate_Limit_Exceeded =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("RATE_LIMIT_EXCEEDED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Reference_Not_Found =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("REFERENCE_NOT_FOUND"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Reserved_Scope =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("RESERVED_SCOPE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Active =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("RUN_ACTIVE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Cancelled =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("RUN_CANCELLED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Scope_Mismatch =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SCOPE_MISMATCH"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Scope_Taken =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SCOPE_TAKEN"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Search_Provider_Not_Configured =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SEARCH_PROVIDER_NOT_CONFIGURED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Search_Upstream_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SEARCH_UPSTREAM_FAILED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Search_Upstream_Timeout =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SEARCH_UPSTREAM_TIMEOUT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Security_Scan_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SECURITY_SCAN_FAILED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Service_Unavailable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SERVICE_UNAVAILABLE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Session_Not_Active =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SESSION_NOT_ACTIVE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Share_List_Conflict =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SHARE_LIST_CONFLICT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Signing_Not_Configured =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SIGNING_NOT_CONFIGURED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Size_Limit =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SIZE_LIMIT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Spec_Not_Found =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPEC_NOT_FOUND"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Budget_Below_Committed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_BUDGET_BELOW_COMMITTED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Budget_Exhausted =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_BUDGET_EXHAUSTED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Candidate_Limit =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_CANDIDATE_LIMIT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Concurrency_Limit =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_CONCURRENCY_LIMIT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Funding_Unavailable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_FUNDING_UNAVAILABLE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Grant_Conflict =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_GRANT_CONFLICT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Grant_In_Use =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_GRANT_IN_USE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Grant_Mismatch =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_GRANT_MISMATCH"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Grant_Unavailable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_GRANT_UNAVAILABLE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Outcome_Unknown =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_OUTCOME_UNKNOWN"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Program_Immutable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_PROGRAM_IMMUTABLE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Program_Inactive =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_PROGRAM_INACTIVE"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Program_Revision_Conflict =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_PROGRAM_REVISION_CONFLICT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_REQUIRED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Sponsorship_Scope_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SPONSORSHIP_SCOPE_REQUIRED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Started_By_Another_User =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("STARTED_BY_ANOTHER_USER"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Strategist_Model_Unconfigured =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("STRATEGIST_MODEL_UNCONFIGURED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Super_Admin_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("SUPER_ADMIN_REQUIRED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Task_Graph_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("TASK_GRAPH_FAILED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Team_Abort =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("TEAM_ABORT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Terms_Not_Accepted =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("TERMS_NOT_ACCEPTED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Text_Extraction_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("TEXT_EXTRACTION_FAILED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Unauthenticated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("UNAUTHENTICATED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Usage_Correction_Exceeds_Counters =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("USAGE_CORRECTION_EXCEEDS_COUNTERS"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Usage_Correction_In_Progress =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("USAGE_CORRECTION_IN_PROGRESS"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Usage_Correction_Not_Settled =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("USAGE_CORRECTION_NOT_SETTLED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Usage_Correction_Not_Sponsored =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("USAGE_CORRECTION_NOT_SPONSORED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_User_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("USER_REQUIRED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Validation_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("VALIDATION_ERROR"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Verification_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("VERIFICATION_FAILED"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Version_Conflict =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("VERSION_CONFLICT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Version_Not_Found =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("VERSION_NOT_FOUND"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Workspace_Storage_Limit =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("WORKSPACE_STORAGE_LIMIT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Would_Orphan =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("WOULD_ORPHAN"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Yank_Conflict =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("YANK_CONFLICT"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Agent_Deleted =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("agent_deleted"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Agent_Not_Found =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("agent_not_found"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Already_Bootstrapped =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("already_bootstrapped"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Approval_Rejected =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("approval_rejected"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Billing_Not_Configured =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("billing_not_configured"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Consent_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("consent_required"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Cv_Invalid =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("cv_invalid"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Cv_Too_Large =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("cv_too_large"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Duplicate_Application =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("duplicate_application"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Governance_Not_Enabled =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("governance_not_enabled"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Hire_Catalog_Unknown =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("hire_catalog_unknown"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Incomplete_Record =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("incomplete_record"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Inert_Policy_Field =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("inert_policy_field"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Inert_Public_Config_Field =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("inert_public_config_field"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Job_Apply_Elsewhere =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("job_apply_elsewhere"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Job_Closed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("job_closed"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Chunk_Limit =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("kb_chunk_limit"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Document_Body_Invalid =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("kb_document_body_invalid"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Document_Too_Large =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("kb_document_too_large"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Embedding_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("kb_embedding_failed"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Storage_Limit =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("kb_storage_limit"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Kb_Text_Extraction_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("kb_text_extraction_failed"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Limit_Reached =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("limit_reached"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Mfa_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("mfa_required"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_No_Eligible_Arbiter =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("no_eligible_arbiter"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Not_Hired =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("not_hired"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Plan_Upgrade_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("plan_upgrade_required"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Proposal_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("proposal_required"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Provider_Auth_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("provider_auth_failed"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Provider_Circuit_Open =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("provider_circuit_open"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Provider_Not_Configured =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("provider_not_configured"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Provider_Rate_Limited =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("provider_rate_limited"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Quota_Exceeded_X =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("quota_exceeded"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Rate_Limited_X =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("rate_limited"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Resource_Limit_Reached =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("resource_limit_reached"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Agent_Stopped =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run_agent_stopped"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Approval_Expired =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run_approval_expired"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Input_Timeout =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run_input_timeout"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Never_Claimed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run_never_claimed"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Orphaned_Restart =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run_orphaned_restart"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Quota_Exceeded =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run_quota_exceeded"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Run_Stalled =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run_stalled"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Secret_Would_Move =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("secret_would_move"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Consent_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("video_consent_required"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Order_State =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("video_order_state"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Photo_Invalid =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("video_photo_invalid"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Photo_Rejected =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("video_photo_rejected"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Regen_Unavailable =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("video_regen_unavailable"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Video_Slot_Invalid =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("video_slot_invalid"));
+         when Run_Event_V1_Run_Failed_Payload_Error_Code_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_V1_Run_Failed_Payload_Error_Code;
+
+   function Image (Model : Run_Event_V1_Run_Failed_Payload_Error_Code) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_V1_Run_Failed_Payload_Error_Code (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_V1_Run_Failed_Payload_Error_Code) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_V1_Run_Failed_Payload_Error_Code is
+      (To_Run_Event_V1_Run_Failed_Payload_Error_Code (UARP.Types."+" (JS.As_Text (Node))));
+
    function To_JSON (Model : Run_Event_V1_Run_Failed_Payload) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -91352,6 +92808,46 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Set_Rate_Limits_Request_Endpoints_Value) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Max_Requests then
+         JS.Set (Result, "maxRequests", JS.JSON.Create (Model.Max_Requests));
+      end if;
+      if Model.Has_Max_Requests_X then
+         JS.Set (Result, "max_requests", JS.JSON.Create (Model.Max_Requests_X));
+      end if;
+      if Model.Has_Window_Sec then
+         JS.Set (Result, "windowSec", JS.JSON.Create (Model.Window_Sec));
+      end if;
+      if Model.Has_Window_Sec_X then
+         JS.Set (Result, "window_sec", JS.JSON.Create (Model.Window_Sec_X));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Rate_Limits_Request_Endpoints_Value is
+      Result : Set_Rate_Limits_Request_Endpoints_Value;
+   begin
+      if JS.Present (Node, "maxRequests") then
+         Result.Has_Max_Requests := True;
+         Result.Max_Requests := JS.As_Integer (JS.Get_Value (Node, "maxRequests"));
+      end if;
+      if JS.Present (Node, "max_requests") then
+         Result.Has_Max_Requests_X := True;
+         Result.Max_Requests_X := JS.As_Integer (JS.Get_Value (Node, "max_requests"));
+      end if;
+      if JS.Present (Node, "windowSec") then
+         Result.Has_Window_Sec := True;
+         Result.Window_Sec := JS.As_Integer (JS.Get_Value (Node, "windowSec"));
+      end if;
+      if JS.Present (Node, "window_sec") then
+         Result.Has_Window_Sec_X := True;
+         Result.Window_Sec_X := JS.As_Integer (JS.Get_Value (Node, "window_sec"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Set_Rate_Limits_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -92630,7 +94126,9 @@ package body UARP.Models is
    function To_JSON (Model : Start_Team_Run_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
-      JS.Set (Result, "input", Model.Input);
+      if Model.Has_Input then
+         JS.Set (Result, "input", Model.Input);
+      end if;
       if Model.Has_Metadata then
          JS.Set (Result, "metadata", Model.Metadata);
       end if;
@@ -92641,6 +94139,7 @@ package body UARP.Models is
       Result : Start_Team_Run_Request;
    begin
       if JS.Present (Node, "input") then
+         Result.Has_Input := True;
          Result.Input := JS.Get_Value (Node, "input");
       end if;
       if JS.Present (Node, "metadata") then
@@ -96681,7 +98180,7 @@ package body UARP.Models is
          JS.Set (Result, "city", JS.JSON.Create (Model.City));
       end if;
       if Model.Has_Country then
-         JS.Set (Result, "country", Model.Country);
+         JS.Set (Result, "country", JS.JSON.Create (Model.Country));
       end if;
       return Result;
    end To_JSON;
@@ -96695,12 +98194,12 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "country") then
          Result.Has_Country := True;
-         Result.Country := JS.Get_Value (Node, "country");
+         Result.Country := JS.As_Text (JS.Get_Value (Node, "country"));
       end if;
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Update_Admin_Job_Request_Salary) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Update_Admin_Job_Request_Salary_Variant1) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       if Model.Has_Min then
@@ -96709,13 +98208,13 @@ package body UARP.Models is
       if Model.Has_Max then
          JS.Set (Result, "max", JS.JSON.Create (Model.Max));
       end if;
-      JS.Set (Result, "currency", Model.Currency);
+      JS.Set (Result, "currency", JS.JSON.Create (Model.Currency));
       JS.Set (Result, "period", To_JSON (Model.Period));
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Job_Request_Salary is
-      Result : Update_Admin_Job_Request_Salary;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Job_Request_Salary_Variant1 is
+      Result : Update_Admin_Job_Request_Salary_Variant1;
    begin
       if JS.Present (Node, "min") then
          Result.Has_Min := True;
@@ -96726,7 +98225,7 @@ package body UARP.Models is
          Result.Max := JS.As_Float (JS.Get_Value (Node, "max"));
       end if;
       if JS.Present (Node, "currency") then
-         Result.Currency := JS.Get_Value (Node, "currency");
+         Result.Currency := JS.As_Text (JS.Get_Value (Node, "currency"));
       end if;
       if JS.Present (Node, "period") then
          Result.Period := From_JSON (JS.Get_Value (Node, "period"));
@@ -96849,7 +98348,14 @@ package body UARP.Models is
          JS.Set (Result, "location", To_JSON (Model.Location));
       end if;
       if Model.Has_Applicant_Countries then
-         JS.Set (Result, "applicant_countries", Model.Applicant_Countries);
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Applicant_Countries loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "applicant_countries", Items);
+         end;
       end if;
       if Model.Has_English_Level then
          JS.Set (Result, "english_level", To_JSON (Model.English_Level));
@@ -96969,7 +98475,13 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "applicant_countries") then
          Result.Has_Applicant_Countries := True;
-         Result.Applicant_Countries := JS.Get_Value (Node, "applicant_countries");
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "applicant_countries");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Applicant_Countries.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
       end if;
       if JS.Present (Node, "english_level") then
          Result.Has_English_Level := True;
@@ -98447,7 +99959,7 @@ package body UARP.Models is
          JS.Set (Result, "enabled", JS.JSON.Create (Model.Enabled));
       end if;
       if Model.Has_Isolation then
-         JS.Set (Result, "isolation", Model.Isolation);
+         JS.Set (Result, "isolation", To_JSON (Model.Isolation));
       end if;
       if Model.Has_Timeout_Ms then
          JS.Set (Result, "timeout_ms", JS.JSON.Create (Model.Timeout_Ms));
@@ -98490,7 +100002,7 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "isolation") then
          Result.Has_Isolation := True;
-         Result.Isolation := JS.Get_Value (Node, "isolation");
+         Result.Isolation := From_JSON (JS.Get_Value (Node, "isolation"));
       end if;
       if JS.Present (Node, "timeout_ms") then
          Result.Has_Timeout_Ms := True;
@@ -101583,7 +103095,7 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Update_Session_Todo_Request_Recurrence) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Update_Session_Todo_Request_Recurrence_Variant1) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "cron", JS.JSON.Create (Model.Cron));
@@ -101593,8 +103105,8 @@ package body UARP.Models is
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Session_Todo_Request_Recurrence is
-      Result : Update_Session_Todo_Request_Recurrence;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Session_Todo_Request_Recurrence_Variant1 is
+      Result : Update_Session_Todo_Request_Recurrence_Variant1;
    begin
       if JS.Present (Node, "cron") then
          Result.Cron := JS.As_Text (JS.Get_Value (Node, "cron"));

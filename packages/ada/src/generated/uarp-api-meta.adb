@@ -57,6 +57,20 @@ package body UARP.API.Meta is
              Options => Options));
    end Get_Public_Landing_Stats;
 
+   function Get_Public_Platform_Analytics
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Public_Platform_Analytics
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/platform-analytics",
+             Options => Options));
+   end Get_Public_Platform_Analytics;
+
    function Search
      (Self : Client_Type;
       Params : Search_Params := No_Search_Params;
@@ -80,4 +94,28 @@ package body UARP.API.Meta is
              Query => Query,
              Options => Options));
    end Search;
+
+   procedure Stream_Public_Platform_Analytics
+     (Self : Client_Type;
+      Params : Stream_Public_Platform_Analytics_Params := No_Stream_Public_Platform_Analytics_Params;
+      Sink : in out UARP.SSE.Event_Sink'Class;
+      Options : Request_Options := UARP.Client.Default_Options)
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+      Headers : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_After then
+         UARP.Types.Add (Query, "after", Params.After);
+      end if;
+      if Params.Has_Last_Event_Id then
+         UARP.Types.Add (Headers, "Last-Event-ID", Params.Last_Event_Id);
+      end if;
+      UARP.Client.Stream
+         (Self,
+          "/api/v1/public/platform-analytics/events",
+          Sink,
+          Query => Query,
+          Headers => Headers,
+          Options => Options);
+   end Stream_Public_Platform_Analytics;
 end UARP.API.Meta;

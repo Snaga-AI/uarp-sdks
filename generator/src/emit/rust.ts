@@ -134,7 +134,10 @@ function emitStruct(w: Writer, type: ObjectType): void {
 function structFields(type: ObjectType): { prop: Property; field: string }[] {
   const used = new Set<string>();
   return type.properties.map((prop) => {
-    let field = rustIdent(snake(prop.wire));
+    // A wire name can start with a digit (`7d`, `30d`), which no Rust
+    // identifier can; Swift and Kotlin spell it `field7d`, so Rust `field_7d`.
+    const name = snake(prop.wire);
+    let field = rustIdent(/^[0-9]/.test(name) ? `field_${name}` : name);
     while (used.has(field)) field += '_';
     used.add(field);
     return { prop, field };
