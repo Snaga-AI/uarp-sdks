@@ -146,9 +146,11 @@ export class EventStream implements AsyncIterable<UarpEvent> {
         response = await this.#connect(this.#lastEventId, this.#controller.signal);
       } catch (error) {
         if (this.#controller.signal.aborted) return;
-        // 401 always surfaces so the caller can act on it (the app stops the
-        // stream); any other connector error retries like a dropped connection.
-        if (error instanceof APIError && error.status === 401) throw error;
+        // Only a refusal that may be gone by the next attempt reconnects: a
+        // timeout, a rate limit, a 5xx. Any other status is final and surfaces
+        // at once (a 404 for a wrong run id used to retry five times first); a
+        // connection that failed below HTTP retries like a dropped stream.
+        if (error instanceof APIError && !reconnectableStatus(error.status)) throw error;
         if (!this.#reconnect || attempt >= this.#maxReconnects) throw error;
         this.#onState?.({ type: 'reconnecting', attempt: attempt + 1 });
         await sleep(
@@ -354,6 +356,11 @@ export async function* parseEventStream(
 }
 
 /** A comment-JSON or NDJSON frame: type and id live inside the JSON body. */
+/** A refusal that may be gone by the next attempt: a timeout, a rate limit, a 5xx. */
+function reconnectableStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
 function inlineEvent(body: string): UarpEvent {
   return makeEvent({
     id: extractField(body, 'event_id'),

@@ -16,6 +16,8 @@ WRITE_STATE = {"attempts": 0}
 #  How many times the 401 stream route has been hit — proves the client did
 #  not retry an Unauthorized.
 STREAM_401_STATE = {"n": 0}
+#  Hits on the refusing stream routes (/events/refused/<status>), by status.
+STREAM_REFUSED_STATE = {}
 #  POST streaming: the last request as it arrived, and how many came.
 STREAM_POST_STATE = {"n": 0, "last": {}}
 REFUSED_POST_STATE = {"n": 0}
@@ -312,6 +314,19 @@ class Handler(BaseHTTPRequestHandler):
             )
         if path == "/llm/refused/count":
             return self._send(200, json.dumps({"n": REFUSED_POST_STATE["n"]}).encode())
+        if path.startswith("/events/refused/") and path.endswith("/count"):
+            status = path.split("/")[3]
+            return self._send(200, json.dumps({"n": STREAM_REFUSED_STATE.get(status, 0)}).encode())
+        if path.startswith("/events/refused/"):
+            #  Every attempt refused with the status in the path: a final one
+            #  must be taken once, a transient one retried within the budget.
+            status = path.split("/")[3]
+            STREAM_REFUSED_STATE[status] = STREAM_REFUSED_STATE.get(status, 0) + 1
+            return self._send(
+                int(status),
+                json.dumps({"title": "Refused", "status": int(status), "code": "NOT_FOUND"}).encode(),
+                content_type="application/problem+json",
+            )
         if path == "/events/401/count":
             return self._send(200, json.dumps({"n": STREAM_401_STATE["n"]}).encode())
         if path == "/events/401":

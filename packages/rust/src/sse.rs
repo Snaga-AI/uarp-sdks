@@ -224,11 +224,11 @@ impl EventStream {
 
                 if !response.status().is_success() {
                     let status = response.status().as_u16();
-                    // 401 always surfaces so the caller can act on it (the app
-                    // treats it as "stop the stream"); any other HTTP error
-                    // retries like a dropped connection while the budget lasts,
-                    // then surfaces.
-                    if status == 401 || !options.reconnect || attempt >= options.max_reconnects {
+                    // Only a refusal that may be gone by the next attempt
+                    // reconnects, while the budget lasts: a timeout, a rate
+                    // limit, a 5xx. Any other status is final and surfaces at
+                    // once (a 404 for a wrong run id used to retry five times).
+                    if !reconnectable_status(status) || !options.reconnect || attempt >= options.max_reconnects {
                         let response_headers = collect_headers(response.headers());
                         let problem = response
                             .bytes()
@@ -663,6 +663,11 @@ fn extract_field(json: &str, field: &str) -> Option<String> {
 /// The `type` field of a JSON frame, peeked without decoding.
 fn extract_event_type(json: &str) -> Option<String> {
     extract_field(json, "type")
+}
+
+/// A refusal that may be gone by the next attempt: a timeout, a rate limit, a 5xx.
+fn reconnectable_status(status: u16) -> bool {
+    status == 408 || status == 429 || status >= 500
 }
 
 #[cfg(test)]

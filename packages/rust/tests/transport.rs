@@ -456,6 +456,57 @@ async fn streams_server_sent_events() {
     );
 }
 
+/// Opens `GET /runs/r1/events` against a server that answers every attempt with
+/// `status`, and returns the status the stream surfaced. The mock's `expect`
+/// pins how many attempts were made.
+async fn stream_refused_with(status: u16, attempts: u64) -> u16 {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/runs/r1/events"))
+        .respond_with(ResponseTemplate::new(status).set_body_json(json!({
+            "type": "about:blank",
+            "title": "Refused",
+            "status": status,
+            "code": "NOT_FOUND"
+        })))
+        .expect(attempts)
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await.with_stream_options(StreamOptions {
+        max_reconnects: 2,
+        base_retry: std::time::Duration::from_millis(1),
+        max_backoff: std::time::Duration::from_millis(2),
+        ..StreamOptions::default()
+    });
+    let runs = client.runs();
+    let params = StreamRunEventsParams::default();
+    let mut stream = pin!(runs.stream_run_events("r1", &params));
+    let surfaced = match stream.next().await {
+        Some(Err(Error::Api(api))) => api.status,
+        other => panic!("expected an API error, got {other:?}"),
+    };
+    server.verify().await;
+    surfaced
+}
+
+// Production answers GET /runs/{unknown}/events with a 404 problem document
+// (build 2dccd824, 2026-11-02), not with the RUN_NOT_FOUND frame. A wrong id is
+// final: it surfaces on the first answer instead of after five backoffs.
+#[tokio::test]
+async fn a_final_refusal_ends_the_stream_without_reconnecting() {
+    for status in [400, 403, 404, 410, 422] {
+        assert_eq!(stream_refused_with(status, 1).await, status);
+    }
+}
+
+#[tokio::test]
+async fn a_transient_refusal_reconnects_within_the_budget() {
+    for status in [408, 429, 500, 503] {
+        assert_eq!(stream_refused_with(status, 3).await, status);
+    }
+}
+
 fn publish_response() -> serde_json::Value {
     json!({
         "scope": "@demo",

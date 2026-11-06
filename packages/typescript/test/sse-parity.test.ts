@@ -141,6 +141,51 @@ test('a 401 surfaces without retrying', async () => {
   assert.equal(calls, 1, '401 must not retry');
 });
 
+// Production answers GET /runs/{unknown}/events with a 404 problem document
+// (build 2dccd824, 2026-11-02), not with the RUN_NOT_FOUND frame. A wrong id
+// is final: it surfaces on the first answer instead of after five backoffs.
+for (const status of [400, 403, 404, 410, 422]) {
+  test(`a ${status} surfaces without retrying`, async () => {
+    let calls = 0;
+    const stream = new EventStream(
+      async () => {
+        calls++;
+        throw new APIError(status, { title: 'Refused', code: 'NOT_FOUND' }, new Headers());
+      },
+      { baseRetryMillis: 1, maxBackoffMillis: 2 },
+    );
+
+    await assert.rejects(
+      async () => {
+        for await (const _event of stream) void _event;
+      },
+      (err: unknown) => err instanceof APIError && (err as APIError).status === status,
+    );
+    assert.equal(calls, 1, `${status} must not retry`);
+  });
+}
+
+for (const status of [408, 429, 500, 503]) {
+  test(`a ${status} reconnects within the budget, then surfaces`, async () => {
+    let calls = 0;
+    const stream = new EventStream(
+      async () => {
+        calls++;
+        throw new APIError(status, { title: 'Busy' }, new Headers());
+      },
+      { maxReconnects: 2, baseRetryMillis: 1, maxBackoffMillis: 2 },
+    );
+
+    await assert.rejects(
+      async () => {
+        for await (const _event of stream) void _event;
+      },
+      (err: unknown) => err instanceof APIError && (err as APIError).status === status,
+    );
+    assert.equal(calls, 3, `${status} retries maxReconnects times`);
+  });
+}
+
 test('reports connection lifecycle via onState', async () => {
   const states: string[] = [];
   const stream = new EventStream(

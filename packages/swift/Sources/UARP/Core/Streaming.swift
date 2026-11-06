@@ -228,10 +228,11 @@ public struct EventStream: AsyncSequence, Sendable {
                     headers: UARPClient.normalizedHeaders(http),
                     body: body
                 )
-                // 401 always surfaces so the caller can act on it (the app stops the
-                // stream); any other HTTP error retries like a dropped connection
-                // while the reconnect budget lasts, then surfaces.
-                if http.statusCode == 401 || !options.reconnect || attempt >= options.maxReconnects {
+                // Only a refusal that may be gone by the next attempt reconnects,
+                // while the budget lasts: a timeout, a rate limit, a 5xx. Any other
+                // status is final and surfaces at once (a 404 for a wrong run id
+                // used to retry five times first).
+                if !isReconnectableStatus(http.statusCode) || !options.reconnect || attempt >= options.maxReconnects {
                     throw UARPError.api(apiError)
                 }
                 attempt += 1
@@ -447,6 +448,11 @@ private final class WatchdogFlag: @unchecked Sendable {
         fired = false
         return wasFired
     }
+}
+
+/// A refusal that may be gone by the next attempt: a timeout, a rate limit, a 5xx.
+func isReconnectableStatus(_ status: Int) -> Bool {
+    status == 408 || status == 429 || status >= 500
 }
 
 /// Whether a `Content-Type` names an event stream, ignoring case and any

@@ -78,6 +78,10 @@ for try await event in client.runs.streamRunEvents(runId: id) {
 let done = try await client.runs.streamRunEvents(runId: id).until { $0.event == "run.completed" }
 ```
 
+Only a timeout (408), a rate limit (429) or a 5xx is retried, within the
+reconnect budget. Any other refusal, such as the 404 for a run that does not
+exist, throws `UARPError.api` on the first answer.
+
 ### Streaming a POST
 
 `client.streamPost(path:body:)` sends a JSON body and reads the answer as an

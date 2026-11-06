@@ -43,7 +43,9 @@ cursor-paginated endpoints — plus the platform's auth, idempotency and retry s
   `AsyncIterable`, a `futures::Stream`, an `AsyncSequence`, a `Flow`, an
   iterator (or async iterator) in Python, or a dispatching sink in Ada — that reopens with `Last-Event-ID` when the
   connection ends. A connection that delivered at least one event earns a fresh
-  reconnect budget, so a flapping server cannot spin the loop.
+  reconnect budget, so a flapping server cannot spin the loop. Only a timeout
+  (408), a rate limit (429) or a 5xx is retried; any other refusal, such as the
+  404 for a run that does not exist, is the API error on the first answer.
 - **Pagination.** Cursor-paginated endpoints get an extra method that walks
   every page and yields items, stopping on `has_more: false`, a null cursor, or
   a repeated cursor. An empty page does **not** end the walk: this API applies

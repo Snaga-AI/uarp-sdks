@@ -6,6 +6,19 @@ All six SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+- An event stream that the server refuses with a final status now fails on the
+  first answer in TypeScript, Rust, Swift, Kotlin and Ada, the way Python already
+  did. Only 408, 429 and 5xx reconnect, within the reconnect budget. Before, every
+  status but 401 was retried five times with backoff. Since build `2dccd824`
+  (2026-11-02), `GET /runs/{id}/events` for an unknown run answers HTTP 404
+  instead of sending the `RUN_NOT_FOUND` frame, so a wrong run id took about a
+  minute to surface. Kotlin note: OkHttp itself repeats a request once on a 408,
+  so there each stream attempt on a 408 makes two requests.
+
 ## 0.13.5 — 2026-11-04
 
 Build `0e6666cb`, digest `48904fdbaf7ef5b8`. Against 0.13.4: 656 paths (+2), 875

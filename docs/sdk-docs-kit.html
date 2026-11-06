@@ -312,7 +312,9 @@ Page   : constant UARP.Models.List_Agents_Response :=
     <h3>Streaming</h3>
     <p>The SSE endpoints return a native async type that reopens with
       <code>Last-Event-ID</code> when a connection drops. A connection that delivered at least one
-      event earns a fresh reconnect budget, so a flapping server cannot spin the loop.</p>
+      event earns a fresh reconnect budget, so a flapping server cannot spin the loop. Only a
+      timeout (408), a rate limit (429) or a 5xx is retried; any other refusal, such as the 404
+      for a run that does not exist, is the API error on the first answer.</p>
 <pre><code>for await (const event of client.runs.streamRunEvents(runId)) {
   if (event.event === 'run.completed') break;  // leaving the loop closes the request
 }</code></pre>

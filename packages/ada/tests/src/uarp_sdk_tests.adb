@@ -913,6 +913,48 @@ procedure UARP_SDK_Tests is
       end;
    end Test_401_Surfaces_Without_Retry;
 
+   --  Production answers GET /runs/{unknown}/events with a 404 problem
+   --  document (build 2dccd824, 2026-11-02), not with the RUN_NOT_FOUND frame.
+   --  A final refusal is taken once; a transient one is retried within the
+   --  budget (2 here, so 3 attempts), then surfaces.
+   procedure Test_Stream_Refusals (Client : UARP.Client.Client_Type) is
+      procedure One (Status : String; Attempts : Integer) is
+         Events  : Stream_Collector.All_Collector;
+         Options : UARP.Client.Request_Options;
+         Route   : constant String := "/events/refused/" & Status;
+      begin
+         Options.Max_Reconnects := 2;
+         Options.Base_Retry_Millis := 1;
+         Options.Max_Backoff_Millis := 2;
+         begin
+            UARP.Client.Stream (Client, Route, Events, Options => Options);
+            Check ("a " & Status & " stream surfaces API_Error", False, "no exception raised");
+         exception
+            when UARP.Errors.API_Error =>
+               Check ("a " & Status & " stream surfaces API_Error", True);
+         end;
+
+         declare
+            Count : constant JS.JSON_Value :=
+              UARP.Client.Call (Client, "GET", Route & "/count");
+         begin
+            Check ("a " & Status & " stream is attempted" & Integer'Image (Attempts) & " time(s)",
+                   JS.Get_Integer (Count, "n") = Integer_Value (Attempts),
+                   "got" & Integer_Value'Image (JS.Get_Integer (Count, "n")));
+         end;
+      end One;
+   begin
+      One ("400", 1);
+      One ("403", 1);
+      One ("404", 1);
+      One ("410", 1);
+      One ("422", 1);
+      One ("408", 3);
+      One ("429", 3);
+      One ("500", 3);
+      One ("503", 3);
+   end Test_Stream_Refusals;
+
    --  On_State reports Connecting -> Connected -> Disconnected on a stream that
    --  ends on a terminal event (a terminal end is a natural end, not a cancel).
    procedure Test_Reports_Lifecycle_Via_On_State
@@ -1115,6 +1157,7 @@ procedure UARP_SDK_Tests is
       Test_Done_Frame_Stops (Client);
       Test_Watchdog_Reconnects_Silent_Socket (Client);
       Test_401_Surfaces_Without_Retry (Client);
+      Test_Stream_Refusals (Client);
       Test_Stream_Post (Client);
       Test_Stream_Post_Refusal (Client);
       Test_Stream_Post_Not_A_Stream (Client);
