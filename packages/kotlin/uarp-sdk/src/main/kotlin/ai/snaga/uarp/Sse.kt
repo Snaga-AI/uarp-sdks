@@ -163,10 +163,11 @@ public fun sseFlow(client: UarpClient, spec: RequestSpec): Flow<ServerEvent> = f
         if (!response.isSuccessful) {
             val body = response.use { it.body?.string().orEmpty() }
             val problem = ApiException(response.code, parseProblem(body), response.headers.toMap(), body.ifBlank { null })
-            // 401 always surfaces so the caller can act on it (the app treats it
-            // as "stop the stream"); any other HTTP error retries like a dropped
-            // connection while the reconnect budget lasts, then surfaces.
-            if (response.code == 401 || !options.reconnect || attempt >= options.maxReconnects) throw problem
+            // Only a refusal that may be gone by the next attempt reconnects,
+            // while the budget lasts: a timeout, a rate limit, a 5xx. Any other
+            // status is final and surfaces at once (a 404 for a wrong run id used
+            // to retry five times first).
+            if (!isReconnectableStatus(response.code) || !options.reconnect || attempt >= options.maxReconnects) throw problem
             attempt++
             continue@reconnect
         }
@@ -346,6 +347,9 @@ internal fun postSseFlow(client: UarpClient, spec: RequestSpec): Flow<ServerEven
         }
     }
 }.flowOn(Dispatchers.IO)
+
+/** A refusal that may be gone by the next attempt: a timeout, a rate limit, a 5xx. */
+internal fun isReconnectableStatus(status: Int): Boolean = status == 408 || status == 429 || status >= 500
 
 /** `text/event-stream`, parameters such as `; charset=utf-8` allowed. */
 internal fun isEventStream(contentType: String?): Boolean {

@@ -101,6 +101,47 @@ final class StreamingTests: XCTestCase {
         XCTAssertEqual(MockURLProtocol.requests.count, 1)
     }
 
+    /// Answers every attempt with `status`; returns the status the stream
+    /// surfaced and how many requests it made, with a reconnect budget of 2.
+    private func streamRefused(with status: Int) async throws -> (Int, Int) {
+        MockURLProtocol.reset()
+        let client = makeClient()
+        MockURLProtocol.handler = { request in
+            (MockURLProtocol.response(request, status: status),
+             jsonData(["type": "about:blank", "title": "Refused", "status": status, "code": "NOT_FOUND"]))
+        }
+        var surfaced = 0
+        do {
+            for try await _ in client.runs.streamRunEvents(
+                runId: "r1",
+                options: RequestOptions(stream: StreamOptions(maxReconnects: 2, baseRetryMillis: 1, maxBackoffMillis: 2))
+            ) {}
+            XCTFail("expected a failure for \(status)")
+        } catch let UARPError.api(error) {
+            surfaced = error.status
+        }
+        return (surfaced, MockURLProtocol.requests.count)
+    }
+
+    // Production answers GET /runs/{unknown}/events with a 404 problem document
+    // (build 2dccd824, 2026-11-02), not with the RUN_NOT_FOUND frame. A wrong id
+    // is final: it surfaces on the first answer instead of after five backoffs.
+    func testAFinalRefusalEndsTheStreamWithoutReconnecting() async throws {
+        for status in [400, 403, 404, 410, 422] {
+            let (surfaced, requests) = try await streamRefused(with: status)
+            XCTAssertEqual(surfaced, status)
+            XCTAssertEqual(requests, 1, "\(status) must not reconnect")
+        }
+    }
+
+    func testATransientRefusalReconnectsWithinTheBudget() async throws {
+        for status in [408, 429, 500, 503] {
+            let (surfaced, requests) = try await streamRefused(with: status)
+            XCTAssertEqual(surfaced, status)
+            XCTAssertEqual(requests, 3, "\(status) reconnects maxReconnects times")
+        }
+    }
+
     func testReopensAFinishedStreamWithTheLastEventId() async throws {
         let client = makeClient()
         MockURLProtocol.handler = { request in

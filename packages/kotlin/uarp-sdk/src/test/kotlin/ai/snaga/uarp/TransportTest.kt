@@ -312,6 +312,51 @@ class TransportTest {
         assertEquals("7", server.takeRequest().getHeader("Last-Event-ID"))
     }
 
+    /** Answers every attempt with [status] from a server of its own; returns
+     *  the status the stream surfaced and how many requests it made, with a
+     *  reconnect budget of 2. */
+    private suspend fun streamRefusedWith(status: Int): Pair<Int, Int> {
+        val refusing = MockWebServer()
+        refusing.dispatcher = object : okhttp3.mockwebserver.Dispatcher() {
+            override fun dispatch(request: okhttp3.mockwebserver.RecordedRequest): MockResponse =
+                json("""{"title":"Refused","status":$status,"code":"NOT_FOUND"}""", status)
+        }
+        refusing.start()
+        try {
+            val client = UarpClient.builder()
+                .apiKey("uarp_test1234_secret")
+                .baseUrl(refusing.url("/").toString().trimEnd('/'))
+                .maxRetries(0)
+                .build()
+            val options = RequestOptions(stream = StreamOptions(maxReconnects = 2, baseRetryMillis = 1, maxBackoffMillis = 2))
+            val error = assertFailsWith<ApiException> {
+                client.runs.streamRunEvents("r1", options = options).toList()
+            }
+            return error.status to refusing.requestCount
+        } finally {
+            refusing.shutdown()
+        }
+    }
+
+    //  Production answers GET /runs/{unknown}/events with a 404 problem document
+    //  (build 2dccd824, 2026-11-02), not with the RUN_NOT_FOUND frame. A wrong id
+    //  is final: it surfaces on the first answer instead of after five backoffs.
+    @Test
+    fun `a final refusal ends the stream without reconnecting`() = runTest {
+        for (status in listOf(400, 403, 404, 410, 422)) {
+            assertEquals(status to 1, streamRefusedWith(status), "$status must not reconnect")
+        }
+    }
+
+    @Test
+    fun `a transient refusal reconnects within the budget`() = runTest {
+        //  408 is left out of the count: OkHttp itself repeats a request once on
+        //  a 408, below the SDK, so each stream attempt makes two requests.
+        for (status in listOf(429, 500, 503)) {
+            assertEquals(status to 3, streamRefusedWith(status), "$status reconnects maxReconnects times")
+        }
+    }
+
     @Test
     fun `does not retry a write that carries no idempotency key`() = runTest {
         server.enqueue(json("""{"title":"boom","status":500}""", 500, mapOf("Retry-After" to "0")))

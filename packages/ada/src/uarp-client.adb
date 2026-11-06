@@ -31,6 +31,7 @@ package body UARP.Client is
      (Attempt : Natural; Base_Ms : Positive; Max_Ms : Positive) return Duration;
    function Retry_After (Headers : Pair_Vectors.Vector) return Duration;
    function Is_Retryable_Status (Status : Natural) return Boolean;
+   function Is_Reconnectable_Stream_Status (Status : Natural) return Boolean;
 
    function To_Lower (C : Character) return Character;
    function Equal_CI (A, B : String) return Boolean;
@@ -194,6 +195,15 @@ package body UARP.Client is
       end loop;
       return False;
    end Is_Retryable_Status;
+
+   ------------------------------------
+   -- Is_Reconnectable_Stream_Status --
+   ------------------------------------
+
+   --  A refusal that may be gone by the next attempt: a timeout, a rate
+   --  limit, a 5xx.
+   function Is_Reconnectable_Stream_Status (Status : Natural) return Boolean is
+     (Status = 408 or else Status = 429 or else Status >= 500);
 
    ------------
    -- Create --
@@ -831,13 +841,15 @@ package body UARP.Client is
 
          if not Transport_Failed then
             --  Handle HTTP status.
-            if Status = 401 then
-               --  401 always surfaces so the caller can act on it.
-               raise UARP.Errors.API_Error
-                 with UARP.Errors.Image (UARP.Errors.Empty_Problem, Status);
-            elsif Status not in 200 .. 299 then
-               --  Other non-2xx: retry within budget, then surface.
-               if not Options.Reconnect or else Attempt >= Options.Max_Reconnects then
+            if Status not in 200 .. 299 then
+               --  Only a refusal that may be gone by the next attempt
+               --  reconnects, while the budget lasts: a timeout, a rate limit,
+               --  a 5xx. Any other status (401, or a 404 for a wrong run id,
+               --  which used to retry five times) is final and surfaces at once.
+               if not Is_Reconnectable_Stream_Status (Status)
+                 or else not Options.Reconnect
+                 or else Attempt >= Options.Max_Reconnects
+               then
                   raise UARP.Errors.API_Error
                     with UARP.Errors.Image (UARP.Errors.Empty_Problem, Status);
                end if;
