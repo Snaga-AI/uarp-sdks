@@ -203,7 +203,9 @@ function StreamingBody(): ReactElement {
         The server-sent-event endpoints return an async iterable that reopens with{' '}
         <Term>Last-Event-ID</Term> when a connection drops. A
         connection that delivered at least one event earns a fresh reconnect budget, so a
-        flapping server cannot spin the loop.
+        flapping server cannot spin the loop. Only a timeout (408), a rate limit (429) or a
+        5xx is retried; any other refusal, such as the 404 for a run that does not exist, is
+        the API error on the first answer.
       </p>
       <Code language={language}>{STREAMING[language]}</Code>
       <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-sm text-ink-soft">

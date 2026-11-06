@@ -134,6 +134,10 @@ Options.Reconnect := False;      --  return as soon as the stream ends
 Options.Max_Reconnects := 3;     --  give up after three fruitless attempts
 ```
 
+Only a timeout (408), a rate limit (429) or a 5xx is retried, within the
+reconnect budget. Any other refusal, such as the 404 for a run that does not
+exist, raises `UARP.Errors.API_Error` on the first answer.
+
 ### Streaming a POST
 
 An answer that comes back as server-sent events to a POST — an LLM completion

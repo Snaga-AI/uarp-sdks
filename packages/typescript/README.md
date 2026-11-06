@@ -80,6 +80,10 @@ for await (const event of stream) {
 await client.runs.streamRunEvents(runId).until((e) => e.event === 'run.completed');
 ```
 
+Only a timeout (408), a rate limit (429) or a 5xx is retried, within the
+reconnect budget. Any other refusal, such as the 404 for a run that does not
+exist, throws its `APIError` on the first answer.
+
 Browser proxies that cannot set an `Authorization` header can pass the key as a
 query parameter with `new UarpClient({ sseTokenInQuery: true })`.
 

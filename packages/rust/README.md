@@ -71,6 +71,10 @@ while let Some(event) = events.next().await {
 }
 ```
 
+Only a timeout (408), a rate limit (429) or a 5xx is retried, within the
+reconnect budget. Any other refusal, such as the 404 for a run that does not
+exist, comes back at once as the stream's first item, `Error::Api`.
+
 An answer streamed to a POST, such as an LLM completion with `"stream": true`,
 uses `stream_post`, which returns the same `EventStream`. Stream long
 completions: the platform cuts a non-streamed one that stays silent for 120 s.

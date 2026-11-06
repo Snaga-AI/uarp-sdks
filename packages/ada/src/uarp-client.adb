@@ -831,8 +831,8 @@ package body UARP.Client is
                Result             => Result);
          exception
             when UARP.Errors.Transport_Error =>
-               --  401 always surfaces; any other connector error retries like
-               --  a dropped connection while the reconnect budget lasts.
+               --  The connection failed below HTTP: it retries like a dropped
+               --  connection while the reconnect budget lasts.
                if not Options.Reconnect or else Attempt >= Options.Max_Reconnects then
                   raise;
                end if;

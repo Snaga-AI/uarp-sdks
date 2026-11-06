@@ -82,6 +82,10 @@ client.runs.streamRunEvents(runId)
     .collect()
 ```
 
+Only a timeout (408), a rate limit (429) or a 5xx is retried, within the
+reconnect budget. Any other refusal, such as the 404 for a run that does not
+exist, throws its `ApiException` on the first answer.
+
 Cancelling the collecting coroutine closes the connection.
 
 ### Streaming a POST

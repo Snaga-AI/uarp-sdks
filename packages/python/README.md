@@ -102,6 +102,10 @@ with client.runs.stream_run_events(run_id) as events:
             break
 ```
 
+Only a timeout (408), a rate limit (429) or a 5xx is retried, within the
+reconnect budget. Any other refusal, such as the 404 for a run that does not
+exist, raises its `APIError` on the first answer.
+
 `AsyncClient` returns an `AsyncEventStream`, iterated with `async for`.
 Reconnection, terminal events, an inactivity watchdog and a lifecycle callback
 are set with `StreamOptions`:
