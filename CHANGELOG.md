@@ -6,7 +6,11 @@ All six SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.13.6 — 2026-11-06
+
+Checked against build `4c82d43f`: the served document is unchanged since 0.13.5
+(digest `48904fdbaf7ef5b8`), so the generated code is the same. This release
+changes stream behaviour only.
 
 ### Fixed
 
