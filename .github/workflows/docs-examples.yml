@@ -68,7 +68,11 @@ jobs:
       - name: Prepare Ada dependencies without compiling the SDK twice
         if: matrix.language == 'ada'
         working-directory: packages/ada
-        run: alr -n build --profiles="*=development" --stop-after=pre-build
+        # A partial build does not persist profile overrides. Keep the default
+        # dependency profiles so later `alr exec` uses the same build paths.
+        run: |
+          alr -n build --stop-after=pre-build
+          alr exec -- printenv GPR_PROJECT_PATH
       # Last: other toolchain installers can replace Node on PATH.
       - uses: actions/setup-node@v4
         with:
