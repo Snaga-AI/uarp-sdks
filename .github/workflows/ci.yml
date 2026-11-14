@@ -276,7 +276,8 @@ jobs:
           version: 2.1.1
           toolchain: gnat_native^15 gprbuild^26
       - name: Build the library
-        run: alr -n build -- -j2 -cargs:Ada -O0 -g0
+        # PowerShell otherwise splits -cargs:Ada into two native arguments.
+        run: alr -n build -- -j2 '-cargs:Ada' -O0 -g0
         working-directory: packages/ada
 
   trailers:
