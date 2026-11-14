@@ -11,15 +11,15 @@ test('the guide index lists every guide', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Guides' })).toBeVisible();
   //  The install guide is the first card in the main column (the sidebar links
   //  to the same route, so scope to <main> to avoid a strict-mode match of two).
-  const install = page.locator('main').getByRole('link', { name: /Install & authenticate/ });
+  const install = page.locator('main').getByRole('link', { name: /Quickstart/ });
   await expect(install).toBeVisible();
   await install.click();
   await expect(page).toHaveURL(/\/docs\/guides\/getting-started$/);
 });
 
-test('a guide renders prose, a TS code block and a 5-language install block', async ({ page }) => {
+test('a guide renders prose, a TS code block and a six-language install block', async ({ page }) => {
   await page.goto('/docs/guides/getting-started');
-  await expect(page.getByRole('heading', { name: 'Install & authenticate' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your first agent run.' })).toBeVisible();
   //  The install block's platform line mentions a registry name.
   await expect(page.locator('body')).toContainText(/npm|crates\.io|SwiftPM|Maven Central|Alire/);
   //  The auth block is a Samples record — switching language rewrites it.
@@ -40,7 +40,7 @@ test('a TypeScript guide shows the real method signature from the reference', as
 test('a guide links to its neighbours along the ordered list', async ({ page }) => {
   await page.goto('/docs/guides/run-and-stream');
   //  run-and-stream is #2: prev is getting-started, next is hitl-run-control.
-  await expect(page.getByRole('link', { name: /Install & authenticate/ }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /Quickstart/ }).first()).toBeVisible();
   await expect(page.getByRole('link', { name: /Human-in-the-loop run control/ }).first()).toBeVisible();
 });
 

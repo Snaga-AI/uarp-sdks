@@ -5,6 +5,7 @@ import type { WireData } from '../data/wire';
 import { loadWire } from '../data/wire';
 import { useLanguage } from '../hooks/useLanguage';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { DocHeader } from '../components/DocPage';
 import { Code } from '../docs/Code';
 
 const SCENARIOS_URL =
@@ -96,8 +97,7 @@ export function WirePage() {
 
   return (
     <section className="flex flex-col gap-8">
-      <header className="flex flex-col gap-2 border-b border-rule-soft pb-4">
-        <h2 className="text-2xl font-semibold tracking-tight">Wire</h2>
+      <DocHeader eyebrow="Reference / SDK contract" title="Wire">
         <p className="text-ink-soft">
           Every SDK is pinned against the same twenty-two contract scenarios — the same calls
           replayed in TypeScript, Python, Rust, Swift, Kotlin and Ada, with a gate that refuses to pass
@@ -115,24 +115,25 @@ export function WirePage() {
           </a>
           .
         </p>
-      </header>
+      </DocHeader>
 
+      <p className="text-sm leading-7 text-ink-soft">These snippets are excerpts from the contract runners, not standalone programs. For complete imports, helper definitions and the local fixture command, see <a className="text-accent-soft underline" href="https://github.com/Snaga-AI/uarp-sdks/tree/main/contract">contract/run.sh and the language runners</a>. They execute against the local contract server, not a production tenant.</p>
       {error && <p className="text-ink-soft">Could not load the wire data: {error.message}</p>}
 
       {wire && (
         <ol className="flex flex-col gap-8">
           {wire.scenarios.map((s) => (
-            <li key={s.num} id={`scenario-${s.num}`} className="scroll-mt-24 flex flex-col gap-3">
+            <li key={s.num} id={`scenario-${s.num}`} className="scroll-mt-40 flex min-w-0 flex-col gap-3">
               <div className="flex flex-col gap-1">
-                <h3 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight">
-                  <span className="font-mono text-sm text-ink-soft">#{s.num}</span>
-                  <code className="notranslate font-mono text-base text-ink" translate="no">
+                <h3 className="flex min-w-0 items-baseline gap-2 text-lg font-semibold tracking-tight">
+                  <span className="shrink-0 font-mono text-sm text-ink-soft">#{s.num}</span>
+                  <code className="notranslate min-w-0 break-words font-mono text-sm text-ink sm:text-base" translate="no">
                     {s.call}
                   </code>
                 </h3>
                 <p className="text-sm text-ink-soft">{s.pins}</p>
               </div>
-              <Code language={language}>{s.samples[language] || s.samples.ts}</Code>
+              <Code selectable language={language}>{s.samples[language] || s.samples.ts}</Code>
             </li>
           ))}
         </ol>

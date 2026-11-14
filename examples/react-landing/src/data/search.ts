@@ -5,9 +5,11 @@
  * reaches a reader who never opens the search box. The index is built from the
  * already-fetched reference payload, so there is no second round-trip.
  */
+import { GUIDES } from '../content/guides';
+import { CONCEPTS } from '../content/concepts';
 import { loadReference } from './reference';
 
-export type SearchKind = 'method' | 'group' | 'model';
+export type SearchKind = 'method' | 'group' | 'model' | 'guide' | 'concept';
 
 export interface SearchHit {
   kind: SearchKind;
@@ -19,7 +21,7 @@ export interface SearchHit {
 let indexPromise: Promise<{ search: (q: string) => SearchHit[] }> | null = null;
 
 export function useSearch(): Promise<{ search: (q: string) => SearchHit[] }> {
-  if (!indexPromise) indexPromise = buildIndex();
+  if (!indexPromise) indexPromise = buildIndex().catch(error => { indexPromise = null; throw error; });
   return indexPromise;
 }
 
@@ -72,6 +74,15 @@ async function buildIndex() {
       group: '', method: '', model: name,
     });
   }
+
+  for (const guide of GUIDES) docs.push({
+    id: `guide:${guide.slug}`, kind: 'guide', label: guide.title, detail: guide.summary,
+    to: `/docs/guides/${guide.slug}`, group: '', method: '', model: '',
+  });
+  for (const concept of Object.values(CONCEPTS)) docs.push({
+    id: `concept:${concept.slug}`, kind: 'concept', label: concept.title, detail: 'Core SDK concepts',
+    to: `/docs/concepts/${concept.slug}`, group: '', method: '', model: '',
+  });
 
   const ms = new MiniSearch<Doc>({
     fields: ['label', 'detail', 'group', 'method', 'model'],

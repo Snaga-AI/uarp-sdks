@@ -7,7 +7,7 @@ beyond Foundation.
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.13.6"),
+    .package(url: "https://github.com/Snaga-AI/uarp-swift", exact: "0.13.6"),
 ],
 targets: [
     .target(name: "App", dependencies: [.product(name: "UARPSDK", package: "uarp-swift")]),
@@ -28,8 +28,12 @@ never happens on a stream that stays open. Calling one on Linux throws
 
 ## Quick start
 
+Place awaited snippets inside an `async throws` function in your executable target. Fragments below reuse the initialized client; `id` is an existing run or agent ID as appropriate, `request` is a `CreateAgentRequest`, and `key` is your API key. Keep imports at file level. A complete executable and Package.swift are available in the [portal Quickstart](https://dev.snaga.ai/docs/guides/getting-started?lang=swift).
+
 ```swift
+import Foundation
 import UARPSDK
+
 
 let client = try UARPClient.fromEnvironment()   // UARP_API_KEY (or SNAGA_API_KEY), UARP_BASE_URL
 // or: UARPClient(apiKey: "uarp_...")
@@ -57,6 +61,9 @@ SSE endpoints return an `EventStream`, an `AsyncSequence` that reconnects with
 `Last-Event-ID`:
 
 ```swift
+import Foundation
+import UARPSDK
+
 // The reply's text is `payload.delta` on chunks whose `payload.chunk_type` is
 // "content"; "thinking" and "tool_call" chunks carry the model's reasoning
 // and tool calls, which are not the answer. The rest of the envelope is
@@ -90,6 +97,9 @@ cuts a silent non-streamed request at 120 s, while a streamed one stays open for
 as long as the model writes.
 
 ```swift
+import Foundation
+import UARPSDK
+
 let body: JSONObject = [
     "model": "…",
     "stream": true,
@@ -113,6 +123,9 @@ so an answer with no events never reads as a finished stream.
 ## Pagination
 
 ```swift
+import Foundation
+import UARPSDK
+
 for try await agent in client.agents.listAll(limit: 100) {
     print(agent.name)
 }
@@ -128,6 +141,9 @@ empty pages in a row do stop it, as does a repeated cursor.
 ## Errors
 
 ```swift
+import Foundation
+import UARPSDK
+
 do {
     _ = try await client.agents.get(agentId: id)
 } catch let UARPError.api(error) {
@@ -147,6 +163,9 @@ do {
 ## Configuration
 
 ```swift
+import Foundation
+import UARPSDK
+
 var configuration = Configuration(apiKey: key)
 configuration.baseURL = URL(string: "http://localhost:8080")!
 configuration.timeout = 30
@@ -160,6 +179,9 @@ let client = UARPClient(configuration: configuration, session: .shared)
 Per-call overrides use the trailing `options:` argument:
 
 ```swift
+import Foundation
+import UARPSDK
+
 try await client.agents.create(
     body: request,
     options: RequestOptions(timeout: 5, maxRetries: 0, idempotencyKey: "order-4711")

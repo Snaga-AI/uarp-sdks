@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Section } from '../docs/Section';
 import { CONCEPTS } from '../content/concepts';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { SnippetSetup } from '../components/SnippetSetup';
 import { NotFound } from './NotFound';
 
 export function ConceptPage() {
@@ -14,6 +15,7 @@ export function ConceptPage() {
   const Body = concept.Body;
   return (
     <Section id={concept.slug} title={concept.title}>
+      <SnippetSetup typescript={concept.slug === 'browser'} />
       <Body />
     </Section>
   );

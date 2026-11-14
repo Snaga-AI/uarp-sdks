@@ -1,13 +1,13 @@
 # The SDKs' documentation, which runs an SDK
 
-A React, Tailwind and TypeScript page documenting all five UARP clients —
+A React, Tailwind and TypeScript page documenting all six UARP clients —
 install, authentication, errors, pagination, streaming, idempotency, per-call
 overrides and the limits — with a live agent answering in the corner.
 
-Pick a language in the header and every sample on the page follows it. The
+Choose an example language beside a multi-language code block or in the sidebar;
+all shared samples follow it. TypeScript-only reference examples stay explicitly labeled. The
 choice is remembered, and `#rust` in the URL selects one for a link you share.
-The samples are the ones compiled during the audit, per language, against the
-packages as published — not written from memory, which is how this
+The samples are checked by `npm run check:samples`, against SDK 0.13.6 — not written from memory, which is how this
 documentation was wrong before.
 
 The widget is not an illustration. It runs the code the page describes, against
@@ -159,3 +159,94 @@ refactor started keeping it in the browser.
 
 Without `UARP_API_KEY` the streaming test skips and the render test still runs,
 so the suite is useful without a tenant.
+
+## Keeping the documentation version aligned
+
+The documentation pins `uarp-sdk` to the version it describes. The reference
+build checks that the installed SDK, repository `VERSION`, TypeScript package
+version and generated SDK metadata agree; a mismatch stops the build instead
+of showing a stale version in the header.
+
+When updating a release, update the documentation dependency and its lockfile
+with `npm install --save-exact uarp-sdk@<version>` from this directory. Verify the
+Swift mirror tag before changing `SWIFT_MIRROR` in `src/docs/content.ts`.
+
+## Navigation and developer experience
+
+The header switches documentation sections: Quickstart, Guides, API reference
+and Concepts. Programming language is a synchronized sample preference, available
+beside multilingual code blocks and in the sidebar; it is retained in local
+storage and `?lang=`, without removing the current section anchor. A fixed
+TypeScript reference never advertises unavailable language translations.
+
+The reference sidebar expands resources into their methods. Search is available
+on every route with Cmd/Ctrl-K, supports guides, concepts and reference entries,
+and accepts arrow keys, Enter and Escape. Mobile navigation uses a modal drawer.
+Long code lines can wrap without altering copied text; large schemas can be
+filtered by field/type and required status. Method pages keep a section index
+visible on wide screens, highlight the current reading position and restore
+direct links to sections after the reference finishes loading. The resource
+tree scrolls its current method into view without moving the page content.
+
+These decisions were informed by the primary sources reviewed on 2026-11-14:
+
+- [Mintlify navigation](https://www.mintlify.com/docs/organize/navigation): top-level sections and contextual groups.
+- [Mintlify code groups](https://www.mintlify.com/docs/components/code-groups): synchronized language controls beside examples, including a compact dropdown.
+- [Supabase client libraries](https://supabase.com/docs/guides/api/rest/client-libs): distinct references for individual SDKs.
+- [Diátaxis](https://diataxis.fr/): separate learning, task guides, reference and conceptual explanation.
+
+These are design precedents, rather than usability-test results for this site.
+
+### Mobile examples
+
+On narrow screens, code and shell commands wrap by default. Each code block can
+open in a modal reading view, with synchronized language selection and copy
+controls. Closing it restores focus to the original Expand button. Copy falls
+back to selecting the sample if clipboard access is unavailable. Mobile controls
+have a minimum 44px touch height, and language inputs use a 16px font.
+
+The mobile agent launcher lives in the header so it does not obscure examples.
+Its panel stays within the viewport. The desktop launcher also lives in the
+header, so the closed widget does not overlap reference tables or navigation.
+
+### Whole-site layout audit
+
+Run `node scripts/audit-layout.mjs` with the local dev server on port 4318.
+It visits all authored documentation and every generated resource, method and
+model at 320, 390 and 1440px. The report is written to
+`/tmp/sdk-layout-audit.json`. Override `AUDIT_URL`, `AUDIT_WIDTHS` or
+`AUDIT_OUTPUT` when needed. Explicit code scrollers are excluded from overflow
+errors; mobile schemas use stacked fields with visible type and description.
+
+## Checking displayed code
+
+Run `npm run check:samples` to type-check the actual strings shown in the portal
+and execute the six standalone Quickstarts against an in-process local fixture.
+No production API calls are made. Node 22.18+ is required for this checker.
+Install the six toolchains and run `uv sync --project ../../packages/python --group dev`
+first. All six checks use SDK sources from this checkout, so an unpublished SDK
+change cannot hide behind a previously published package. TypeScript is built
+locally (install its build dependencies with `npm ci --prefix ../../packages/typescript`);
+Swift uses a local SwiftPM dependency and Kotlin a Gradle composite build.
+The reference is regenerated from current SDK sources before checking every
+method signature. Ada uses semantic checks and a
+non-optimized executable build, keeping documentation checks out of release
+library build artifacts.
+The first Ada executable build can take substantially longer than the other
+languages because its generated models share one large compilation unit. Set
+`DOCS_CHECK_DIR` to a persistent scratch directory to reuse compiler artifacts
+on subsequent checks.
+
+For a subset: `node scripts/check-samples.mjs ts python --run`.
+The temporary workspace contains `inventory.json` and `results.json` with the
+samples and validation results. Generated reference usage is checked against
+all method signatures; contract snippets are excerpts from the separately
+executable language runners under `../../contract`.
+
+GitHub Actions runs `.github/workflows/docs-examples.yml` on every pull request
+and push to main, with an independent job for each of the six languages. Each
+job compiles the displayed samples and executes its Quickstart against the
+local fixture; TypeScript also checks every generated API reference example.
+Failures do not cancel the other language checks. The sample inventory,
+successful results and compiler log are uploaded as per-language artifacts for
+14 days, including logs from failed checks. No API key or other secret is needed.

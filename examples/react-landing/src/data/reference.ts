@@ -84,6 +84,9 @@ export async function loadReference(): Promise<Reference> {
     .then((ref) => {
       cache = ref;
       return ref;
+    }).catch(error => {
+      inflight = null;
+      throw error;
     });
   return inflight;
 }

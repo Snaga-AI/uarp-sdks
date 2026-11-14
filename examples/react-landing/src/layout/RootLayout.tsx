@@ -1,74 +1,43 @@
-/**
- * The shell every route shares: the header and the live agent widget.
- *
- * The header is lifted from the old single-page App unchanged in shape — the
- * one substitution is that the language switcher now writes `?lang=` to the URL
- * (via `useLanguage`) instead of holding state it had to re-sync from a hash.
- */
-import { Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { VERSION } from 'uarp-sdk';
+import { HeaderLogoMark } from '../components/HeaderLogoMark';
+import { Search } from '../components/Search';
 import { AgentWidget } from '../AgentWidget';
-import { useLanguage } from '../hooks/useLanguage';
-import { LANGUAGES, type LanguageId } from '../docs/content';
 
-/** Where each package actually lives, for the link in the header. */
-const REGISTRY_URL: Record<LanguageId, string> = {
-  ts: 'https://www.npmjs.com/package/uarp-sdk',
-  python: 'https://pypi.org/project/uarp-sdk/',
-  rust: 'https://crates.io/crates/uarp-sdk',
-  swift: 'https://github.com/Snaga-AI/uarp-swift',
-  kotlin: 'https://central.sonatype.com/artifact/ai.snaga/uarp-sdk',
-  ada: 'https://github.com/alire-project/alire-index/pull/2059',
-};
+const SECTIONS = [
+  { to: '/docs/guides/getting-started', label: 'Quickstart' },
+  { to: '/docs/guides', label: 'Guides' },
+  { to: '/docs/reference', label: 'API reference' },
+  { to: '/docs/concepts/install', label: 'Concepts' },
+];
 
 export function RootLayout() {
-  const { language, setLanguage } = useLanguage();
-  const current = LANGUAGES.find((entry) => entry.id === language)!;
-
-  return (
-    <div className="min-h-screen bg-desk text-ink">
-      <header className="sticky top-0 z-40 border-b border-rule-soft bg-paper/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-5">
-          <a href="https://snaga.ai" className="flex shrink-0 items-center gap-2 text-sm font-semibold hover:text-accent">
-            <span aria-hidden>←</span> Snaga
-          </a>
-          <div className="hidden min-w-0 flex-1 text-center sm:block">
-            <p className="text-sm font-semibold">SDKs</p>
-            <p className="font-mono text-[0.7rem] text-ink-soft">{VERSION}</p>
-          </div>
-          <div className="ml-auto flex items-center gap-0.5 overflow-x-auto rounded-sm border border-rule-soft p-0.5 sm:ml-0">
-            {LANGUAGES.map((entry) => (
-              <button
-                key={entry.id}
-                onClick={() => setLanguage(entry.id)}
-                className={`shrink-0 rounded-sm px-2 py-1 text-xs transition ${
-                  language === entry.id
-                    ? 'bg-ink font-medium text-paper'
-                    : 'text-ink-soft hover:bg-ink/5 hover:text-ink'
-                }`}
-              >
-                {entry.name}
-              </button>
-            ))}
-          </div>
-          <a
-            href={REGISTRY_URL[language]}
-            className="hidden shrink-0 rounded-sm border border-rule-soft px-3 py-1.5 text-sm hover:bg-ink/5 lg:block"
-          >
-            {current.registry}
-          </a>
-          <a
-            href="https://github.com/Snaga-AI/uarp-sdks"
-            className="hidden shrink-0 rounded-sm border border-rule-soft px-3 py-1.5 text-sm hover:bg-ink/5 lg:block"
-          >
-            GitHub
-          </a>
-        </div>
-      </header>
-
-      <Outlet />
-
-      <AgentWidget />
-    </div>
-  );
+  const location = useLocation();
+  useEffect(() => {
+    if (!location.hash) window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [location.pathname]);
+  return <div data-docs-route={location.pathname} className="min-h-screen bg-desk text-ink">
+    <a href="#main-content" className="skip-link">Skip to content</a>
+    <header className="sticky top-0 z-40 border-b border-rule-soft bg-desk/95 backdrop-blur">
+      <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-5 py-4 sm:gap-5">
+        <Link to="/" className="group flex shrink-0 items-center gap-3 text-sm font-semibold"><HeaderLogoMark /><span>Snaga <span className="font-normal text-ink-soft">/ Docs</span></span></Link>
+        <span data-testid="sdk-version" className="sdk-version rounded-full border border-rule-soft px-2.5 py-1 font-mono text-[10px] text-ink-soft">{VERSION}</span>
+        <div className="ml-auto"><Search /></div>
+        <button type="button" aria-label="Ask the agent" aria-haspopup="dialog" className="agent-header-trigger" onClick={() => window.dispatchEvent(new Event('docs:open-agent'))}>Chat</button>
+        <a href="https://github.com/Snaga-AI/uarp-sdks" className="hidden text-xs text-ink-soft hover:text-ink sm:block">GitHub ↗</a>
+      </div>
+      <nav aria-label="Documentation sections" className="mx-auto flex max-w-[1440px] gap-5 overflow-x-auto px-5 sm:gap-7">
+        {SECTIONS.map(section => {
+          const active = section.label === 'Concepts' ? location.pathname.startsWith('/docs/concepts/')
+            : section.label === 'Guides' ? location.pathname.startsWith('/docs/guides') && location.pathname !== '/docs/guides/getting-started'
+            : section.label === 'API reference' ? location.pathname.startsWith('/docs/reference')
+            : location.pathname === section.to;
+          return <Link key={section.label} to={section.to} aria-current={active ? 'page' : false} className={`section-link ${active ? 'section-link-active' : ''}`}>{section.label}</Link>;
+        })}
+      </nav>
+    </header>
+    <Outlet />
+    <AgentWidget />
+  </div>;
 }

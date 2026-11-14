@@ -3,11 +3,19 @@
 Ada 2022 client for the **UARP — Universal Agent Runtime Platform** API. Full
 coverage of every operation the API describes, HTTP over libcurl, JSON via GNATCOLL.
 
-```toml
-# alire.toml
-[[depends-on]]
-uarp_sdk = "^0.13.6"
+Version 0.13.6 was not present in the configured Alire community index when
+checked on 2026-11-14. From an Alire application, pin the release source:
+
+```sh
+git clone --branch v0.13.6 --depth 1 https://github.com/Snaga-AI/uarp-sdks.git ../uarp-sdk-0.13.6
+alr with uarp_sdk --use ../uarp-sdk-0.13.6/packages/ada
+alr build --profiles="*=development"
 ```
+
+Keep that source checkout alongside your application. For a new executable,
+start with `alr init --bin demo` and `cd demo`. The source pin and project setup
+are also shown in the [SDK Quickstart](https://dev.snaga.ai/docs/guides/getting-started?lang=ada).
+
 
 Needs GNAT (Ada 2022), GNATCOLL, and **libcurl** on the system:
 
@@ -58,6 +66,17 @@ Operations live in one child package per API tag: `UARP.API.Agents`,
 `UARP.API.Runs`, `UARP.API.Sessions`, … one for each tag in the API
 description. Models and their JSON
 conversions are in `UARP.Models`.
+
+After the complete program above, examples are context fragments unless they
+include a procedure declaration. Put `with` clauses at file level, declarations
+before your procedure's `begin`, and executable statements after it. Add `with`
+clauses for the referenced `UARP.API.*`, `UARP.SSE`, `UARP.Errors` and
+`Ada.Text_IO` packages. `Client`, resource IDs, `Params`, `Options`, `Status`,
+`Body_Text` and `Problem` are application values; the error example uses
+`Status : Natural`, `Body_Text : UARP.Types.Text`, and
+`Problem : UARP.Errors.Problem`. Ellipses mark omitted surrounding code and
+must not be pasted as Ada statements. The portal has complete procedures for
+streaming, errors, pagination and overrides as well.
 
 ## Records and optional fields
 

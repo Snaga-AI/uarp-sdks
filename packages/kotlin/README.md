@@ -27,15 +27,31 @@ API. Use the Kotlin plugin 2.2 or later.
 ## Quick start
 
 ```kotlin
-val client = UarpClient.builder()
-    .apiKey(BuildConfig.UARP_API_KEY)
-    .build()
+import ai.snaga.uarp.UarpClient
+import ai.snaga.uarp.api.runs
+import ai.snaga.uarp.models.CreateRunRequest
+import ai.snaga.uarp.models.CreateRunRequestInput
+import ai.snaga.uarp.models.RunStatus
+import kotlinx.coroutines.runBlocking
 
-// The platform selects the model itself, so a create is just a name.
-val agent = client.agents.create(CreateAgentRequest(name = "demo"))
-
-val page = client.agents.list(limit = 20)
+fun main() = runBlocking {
+    val agentId = requireNotNull(System.getenv("UARP_AGENT_ID")) {
+        "Set UARP_AGENT_ID to an existing agent ID."
+    }
+    val client = UarpClient.fromEnvironment()
+    val run = client.runs.create(CreateRunRequest(
+        agentId = agentId,
+        input = CreateRunRequestInput(message = "Summarise the last deploy."),
+    ))
+    val result = client.runs.waitRun(run.runId)
+    check(result.status == RunStatus.COMPLETED) {
+        "Run is not completed: " + result.status
+    }
+    println(result.output)
+}
 ```
+
+Save the complete program above as `src/main/kotlin/Quickstart.kt` in a JVM application configured with the `application` plugin and `mainClass.set("QuickstartKt")`. Set `UARP_AGENT_ID` to an existing agent in your tenant. The remaining snippets reuse its client inside a coroutine; keep their imports at file level. `model`, `prompt`, `id`, `request`, `key` and `myOkHttpClient` in later fragments are application values.
 
 `UarpClient.fromEnvironment()` reads `UARP_API_KEY` / `SNAGA_API_KEY` and
 `UARP_BASE_URL`, which suits server-side use; on Android pass the key
@@ -59,27 +75,22 @@ SSE endpoints return a cold `Flow<ServerEvent>` that reconnects with
 `Last-Event-ID`:
 
 ```kotlin
-// The reply's text is `payload.delta` on chunks whose `payload.chunk_type` is
-// "content"; "thinking" and "tool_call" chunks carry the model's reasoning
-// and tool calls, which are not the answer. The rest of the envelope is
-// platform bookkeeping.
-@Serializable data class Chunk(val payload: Payload) {
-    @Serializable data class Payload(
-        @SerialName("chunk_type") val chunkType: String = "content",
-        val delta: String,
-    )
-}
+import ai.snaga.uarp.api.runs
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 client.runs.streamRunEvents(runId)
-    .onEach { event ->
+    .takeWhile { it.event != "run.completed" && it.event != "run.failed" }
+    .collect { event ->
         if (event.event == "llm.chunk") {
-            val payload = event.decode<Chunk>().payload
-            if (payload.chunkType == "content") append(payload.delta)
+            val payload = event.decode<JsonObject>()["payload"]?.jsonObject
+            val kind = payload?.get("chunk_type")?.jsonPrimitive?.content ?: "content"
+            if (kind == "content") print(payload?.get("delta")?.jsonPrimitive?.content.orEmpty())
         }
     }
-    .takeWhile { it.event != "run.completed" }
-    .flowOn(Dispatchers.IO)
-    .collect()
 ```
 
 Only a timeout (408), a rate limit (429) or a 5xx is retried, within the
@@ -96,6 +107,9 @@ request at 120 s, while a streamed one runs for as long as the model writes.
 `Accept: text/event-stream` and reads the answer as a `Flow<ServerEvent>`:
 
 ```kotlin
+import kotlinx.coroutines.flow.collect
+import kotlinx.serialization.json.*
+
 val body = buildJsonObject {
     put("model", model)
     put("stream", true)
@@ -103,7 +117,7 @@ val body = buildJsonObject {
 }
 client.streamPost("/api/v1/llm/chat/completions", body).collect { event ->
     val delta = event.json().jsonObject["choices"]!!.jsonArray[0].jsonObject["delta"]!!.jsonObject
-    delta["content"]?.jsonPrimitive?.contentOrNull?.let(::append)
+    delta["content"]?.jsonPrimitive?.contentOrNull?.let { print(it) }
 }
 ```
 
@@ -118,6 +132,11 @@ mid-stream throws `StreamException`.
 ## Pagination
 
 ```kotlin
+import ai.snaga.uarp.api.agents
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+
 client.agents.listAll(limit = 100).collect { agent ->
     println(agent.name)
 }
@@ -133,20 +152,22 @@ empty pages in a row do stop it, as does a repeated cursor.
 ## Errors
 
 ```kotlin
+import ai.snaga.uarp.api.agents
+import ai.snaga.uarp.ApiException
+import ai.snaga.uarp.ApiErrorKind
+import ai.snaga.uarp.TimeoutException
+
 try {
     client.agents.get(id)
 } catch (error: ApiException) {
     when (error.kind) {
-        ApiErrorKind.NOT_FOUND -> showMessage("No such agent")
-        ApiErrorKind.UNPROCESSABLE_ENTITY -> showFieldErrors(error.validationErrors)
-        ApiErrorKind.RATE_LIMIT -> retryAfter(error.retryAfterSeconds)
-        else -> when (error.code) {   // the stable value; `detail` is prose
-            "SESSION_NOT_ACTIVE" -> endChat(error.problem.extensions["session_status"])
-            else -> report(error.status, error.correlationId)
-        }
+        ApiErrorKind.NOT_FOUND -> println("No such agent")
+        ApiErrorKind.UNPROCESSABLE_ENTITY -> println(error.validationErrors)
+        ApiErrorKind.RATE_LIMIT -> println(error.retryAfterSeconds)
+        else -> println("Status: " + error.status + ", correlation: " + error.correlationId)
     }
-} catch (error: TimeoutException) {   // ai.snaga.uarp.TimeoutException,
-    showMessage("Timed out")           // not the one in java.util.concurrent
+} catch (error: TimeoutException) {
+    println("Timed out")
 }
 ```
 
@@ -155,6 +176,8 @@ Everything the SDK throws derives from `UarpException`.
 ## Configuration
 
 ```kotlin
+import ai.snaga.uarp.UarpClient
+
 val client = UarpClient.builder()
     .apiKey(key)
     .baseUrl("http://10.0.2.2:8080")
@@ -169,6 +192,9 @@ val client = UarpClient.builder()
 Per-call overrides go in the trailing `options` argument:
 
 ```kotlin
+import ai.snaga.uarp.RequestOptions
+import ai.snaga.uarp.api.agents
+
 client.agents.create(request, options = RequestOptions(idempotencyKey = "order-4711"))
 ```
 
