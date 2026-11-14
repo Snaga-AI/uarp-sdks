@@ -151,7 +151,9 @@ if (wants('ada')) {
     const unit = sample.code.match(/procedure (\w+) is/i)?.[1]?.toLowerCase();
     if (!unit) throw new Error(`Ada sample ${sample.name} must be a complete procedure`);
     writeFileSync(join(folder, `${unit}.adb`), sample.code);
-    writeFileSync(join(folder, 'sample.gpr'), `with "gnatcoll_core.gpr";\nproject Sample is\nfor Languages use ("Ada", "C");\nfor Source_Dirs use (".", "${join(root, 'packages/ada/src')}", "${join(root, 'packages/ada/src/generated')}", "${join(root, 'packages/ada/csrc')}");\nfor Object_Dir use "obj";\nfor Exec_Dir use "bin";\nfor Main use ("${unit}.adb");\npackage Compiler is for Default_Switches ("Ada") use ("-gnat2022", "-O0"); end Compiler;\npackage Linker is for Default_Switches ("Ada") use ("-lcurl"); end Linker;\nend Sample;\n`);
+    // Alire selects GNATCOLL's project file. Its public name/layout varies
+    // across releases; import the generated configuration like uarp_sdk.gpr.
+    writeFileSync(join(folder, 'sample.gpr'), `with "${join(root, 'packages/ada/config/uarp_sdk_config.gpr')}";\nproject Sample is\nfor Languages use ("Ada", "C");\nfor Source_Dirs use (".", "${join(root, 'packages/ada/src')}", "${join(root, 'packages/ada/src/generated')}", "${join(root, 'packages/ada/csrc')}");\nfor Object_Dir use "obj";\nfor Exec_Dir use "bin";\nfor Main use ("${unit}.adb");\npackage Compiler is for Default_Switches ("Ada") use ("-gnat2022", "-O0"); end Compiler;\npackage Linker is for Default_Switches ("Ada") use ("-lcurl"); end Linker;\nend Sample;\n`);
     console.log(`Checking ada ${sample.name}…`);
     const result = spawnSync('alr', ['exec', '--', 'gprbuild', '-q', '-p', '-c', '-u', '-P', join(folder, 'sample.gpr'), `${unit}.adb`, '-cargs:Ada', '-gnatc'], { cwd: join(root, 'packages/ada'), encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
     if (result.status !== 0) { console.error(result.stdout, result.stderr); throw new Error(`Ada ${sample.name} failed. Workspace: ${workspace}`); }
