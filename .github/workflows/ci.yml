@@ -157,6 +157,10 @@ jobs:
   contract:
     name: Cross-SDK contract
     runs-on: macos-15
+    env:
+      UARP_ADA_JOBS: "2"
+      UARP_ADA_CI: "1"
+      UARP_CONTRACT_REQUIRE_ALL: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -248,15 +252,13 @@ jobs:
         run: ./tests/run-tests.sh
         working-directory: packages/ada
         env:
-          # Two compiler processes, not one per core. At the default the
-          # library took 2.5 h on 2026-10-11 and over 4.5 h at build 0837bb4d,
-          # nearing the 6 h job limit. A probe at -j2 (PR #65) had STARTED 52
-          # of the 54 API units within 17 min, with no swap, but uarp-models.adb
-          # was still compiling when it was cancelled, and the first full run
-          # at -j2 passed 3 h. So this is not the fix; the cause is open.
+          # Avoid memory contention, optimization/debug-table overhead and a
+          # second SDK build in a different profile. The test suite still
+          # builds the whole pinned SDK and executes every test.
           UARP_ADA_JOBS: "2"
+          UARP_ADA_CI: "1"
       - name: Build the example
-        run: alr -n build -- -j2
+        run: alr -n build -- -j2 -cargs:Ada -O0 -g0
         working-directory: packages/ada/examples
 
   # The community index builds every crate on Windows too, where PE-COFF caps
@@ -274,7 +276,7 @@ jobs:
           version: 2.1.1
           toolchain: gnat_native^15 gprbuild^26
       - name: Build the library
-        run: alr -n build
+        run: alr -n build -- -j2 -cargs:Ada -O0 -g0
         working-directory: packages/ada
 
   trailers:
