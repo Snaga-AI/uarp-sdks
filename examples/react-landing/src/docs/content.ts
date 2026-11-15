@@ -1,12 +1,7 @@
 /**
- * The samples the portal shows, one set per language.
- *
- * Every one of these was compiled against the package as published — the
- * TypeScript ones by `scripts/check-docs.ts` on each build, the Python ones
- * type-checked by the same script with mypy (it reads the `python:` entries
- * from this file), the other four by hand against crates.io, the SwiftPM
- * mirror, Maven Central and the Alire tarball. Nothing here is written from memory: this documentation has been
- * wrong before, in exactly the way that reads perfectly well.
+ * Displayed SDK samples. Run scripts/check-samples.mjs to compile these strings,
+ * the standalone Quickstarts, authored TypeScript snippets and generated usage.
+ * Fragments reuse the context documented by SnippetSetup; Ada examples are complete units.
  */
 
 import { VERSION } from 'uarp-sdk';
@@ -51,15 +46,16 @@ const PUBLISHED = VERSION;
  * mirror has the tag, and not before — a snippet a person cannot run is worse
  * than a snippet that gives them an older SDK.
  */
-const SWIFT_MIRROR = '0.13.0';
+// Verified against Snaga-AI/uarp-swift tags on 2026-11-14.
+const SWIFT_MIRROR = '0.13.6';
 
 /** The install line, and what it needs. */
 export const INSTALL: Record<LanguageId, { command: string; shell: boolean; needs: string }> = {
-  ts: { command: 'npm install uarp-sdk', shell: true, needs: 'Node 18+' },
-  python: { command: 'pip install uarp-sdk', shell: true, needs: 'Python 3.10+' },
-  rust: { command: 'cargo add uarp-sdk tokio --features tokio/macros,tokio/rt-multi-thread', shell: true, needs: 'Rust 1.88+' },
+  ts: { command: 'npm install uarp-sdk@0.13.6', shell: true, needs: 'Node 18+' },
+  python: { command: 'python -m pip install uarp-sdk==0.13.6', shell: true, needs: 'Python 3.10+' },
+  rust: { command: 'cargo add uarp-sdk@=0.13.6 tokio --features tokio/macros,tokio/rt-multi-thread', shell: true, needs: 'Rust 1.88+' },
   swift: {
-    command: `.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "${SWIFT_MIRROR}")`,
+    command: `.package(url: "https://github.com/Snaga-AI/uarp-swift", exact: "${SWIFT_MIRROR}")`,
     shell: false,
     needs: 'Swift 5.9+, macOS 12 / iOS 15',
   },
@@ -68,40 +64,94 @@ export const INSTALL: Record<LanguageId, { command: string; shell: boolean; need
     shell: false,
     needs: 'Kotlin 2.2+, JVM 11+, Android 21+',
   },
-  ada: { command: 'alr with uarp_sdk', shell: true, needs: 'GNAT 2022, libcurl' },
+  ada: { command: 'git clone --branch v0.13.6 --depth 1 https://github.com/Snaga-AI/uarp-sdks.git ../uarp-sdk-0.13.6\nalr with uarp_sdk --use ../uarp-sdk-0.13.6/packages/ada', shell: true, needs: 'GNAT 2022, libcurl' },
 };
 
 /**
  * The shortest thing that actually does something: ask an agent, get its answer.
  *
- * Three statements in every language — `waitRun` polls to a terminal status
- * server-side, so nothing here has to loop. Streaming, which is what you want
- * once this works, is further down the page.
+ * These are flow previews. QUICKSTART contains complete programs with imports,
+ * entry points and status checks. A wait timeout can return still_running.
  */
 export const HELLO: Samples = {
-  ts: `const client = new UarpClient({ apiKey: process.env.UARP_API_KEY });
+  ts: `import { UarpClient } from 'uarp-sdk';
+
+const client = new UarpClient({ apiKey: process.env.UARP_API_KEY });
 const run = await client.runs.create({ agent_id: agentId, input: { message: 'Summarise the last deploy.' } });
-console.log((await client.runs.waitRun(run.run_id)).output);`,
+const result = await client.runs.waitRun(run.run_id);
+if (result.status !== 'completed') throw new Error('Run is not completed: ' + result.status);
+console.log(result.output);`,
 
-  python: `client = Client()  # UARP_API_KEY, UARP_BASE_URL
+  python: `from uarp_sdk import Client
+from uarp_sdk.models import CreateRunRequest
+
+client = Client()  # UARP_API_KEY, UARP_BASE_URL
 run = client.runs.create(CreateRunRequest(agent_id=agent_id))
-print(client.runs.wait_run(run.run_id).output)`,
+result = client.runs.wait_run(run.run_id)
+if result.status != "completed":
+    raise RuntimeError(f"Run is not completed: {result.status}")
+print(result.output)`,
 
-  rust: `let client = uarp_sdk::Client::from_env()?;
+  rust: `use uarp_sdk::models::{CreateRunRequest, RunStatus};
+
+let client = uarp_sdk::Client::from_env()?;
 let run = client.runs().create(&CreateRunRequest { agent_id, ..Default::default() }).await?;
-println!("{:?}", client.runs().wait_run(&run.run_id, &Default::default()).await?.output);`,
+let result = client.runs().wait_run(&run.run_id, &Default::default()).await?;
+if matches!(result.status, RunStatus::Completed) {
+    println!("{:?}", result.output);
+} else { eprintln!("Run is not completed: {:?}", result.status); }`,
 
-  swift: `let client = try UARPClient.fromEnvironment()
+  swift: `import Foundation
+import UARPSDK
+
+let client = try UARPClient.fromEnvironment()
 let run = try await client.runs.create(body: CreateRunRequest(agentId: agentId))
-print(try await client.runs.waitRun(runId: run.runId).output as Any)`,
+let result = try await client.runs.waitRun(runId: run.runId)
+if result.status.rawValue == "completed" { print(result.output as Any) }
+else { print("Run is not completed: " + result.status.rawValue) }`,
 
-  kotlin: `val client = UarpClient.fromEnvironment()
+  kotlin: `import ai.snaga.uarp.api.runs
+import ai.snaga.uarp.UarpClient
+import ai.snaga.uarp.models.CreateRunRequest
+import ai.snaga.uarp.models.RunStatus
+
+val client = UarpClient.fromEnvironment()
 val run = client.runs.create(CreateRunRequest(agentId = agentId))
-println(client.runs.waitRun(run.runId).output)`,
+val result = client.runs.waitRun(run.runId)
+check(result.status == RunStatus.COMPLETED) { "Run is not completed: " + result.status }
+println(result.output)`,
 
-  ada: `Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
-Run    : constant UARP.Models.Run := UARP.API.Runs.Create (Client, Request);
-Done   : constant UARP.Models.Run := UARP.API.Runs.Wait_Run (Client, +Run.Run_Id);`,
+  ada: `with Ada.Environment_Variables;
+with Ada.Text_IO;
+with UARP.API.Runs;
+with UARP.Client;
+with UARP.JSON_Support;
+with UARP.Models;
+with UARP.Types;
+
+procedure Quickstart is
+   use UARP.Types;
+   use type UARP.Models.Run_Status_Kind;
+   Client  : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
+   Request : UARP.Models.Create_Run_Request;
+begin
+   Request.Agent_Id := +Ada.Environment_Variables.Value ("UARP_AGENT_ID");
+   Request.Has_Input := True;
+   Request.Input.Has_Message := True;
+   Request.Input.Message := +"Summarise the last deploy.";
+   declare
+      Run : constant UARP.Models.Run := UARP.API.Runs.Create (Client, Request);
+      Done : constant UARP.Models.Run := UARP.API.Runs.Wait_Run (Client, +Run.Run_Id);
+   begin
+      if Done.Status.Kind /= UARP.Models.Run_Status_Completed then
+         raise Program_Error with "Run is not completed: " & UARP.Models.Image (Done.Status);
+      end if;
+      if Done.Has_Output then
+         Ada.Text_IO.Put_Line
+           (UARP.JSON_Support.Serialize (UARP.Models.To_JSON (Done.Output)));
+      end if;
+   end;
+end Quickstart;`,
 };
 
 export const AUTHENTICATE: Samples = {
@@ -114,14 +164,15 @@ const client = new UarpClient({ apiKey: process.env.UARP_API_KEY });
 // The base URL falls back to UARP_BASE_URL, then production.
 const fromEnv = new UarpClient({});`,
 
-  python: `from uarp_sdk import Client
+  python: `import os
+from uarp_sdk import Client
 
 # From the environment: UARP_API_KEY, then SNAGA_API_KEY.
 # The base URL falls back to UARP_BASE_URL, then production.
 client = Client()
 
 # Or explicitly
-client = Client(api_key=key, max_retries=3)`,
+explicit = Client(api_key=os.environ["UARP_API_KEY"], max_retries=3)`,
 
   rust: `// From the environment: UARP_API_KEY, UARP_BASE_URL
 let client = uarp_sdk::Client::from_env()?;
@@ -132,13 +183,14 @@ let client = uarp_sdk::Client::builder()
     .max_retries(3)
     .build()?;`,
 
-  swift: `import UARPSDK
+  swift: `import Foundation
+import UARPSDK
 
 // From the environment: UARP_API_KEY, UARP_BASE_URL
 let client = try UARPClient.fromEnvironment()
 
 // Or explicitly
-let client = UARPClient(apiKey: "uarp_…")`,
+let explicit = UARPClient(apiKey: "uarp_…")`,
 
   kotlin: `import ai.snaga.uarp.UarpClient
 
@@ -146,12 +198,25 @@ let client = UARPClient(apiKey: "uarp_…")`,
 val client = UarpClient.fromEnvironment()
 
 // Or explicitly
-val client = UarpClient.builder().apiKey(key).build()`,
+val explicit = UarpClient.builder().apiKey(requireNotNull(System.getenv("UARP_API_KEY"))).build()`,
 
-  ada: `with UARP.Client;
+  ada: `with Ada.Environment_Variables;
+with Ada.Text_IO;
+with UARP.API.Agents;
+with UARP.API.Runs;
+with UARP.Client;
+with UARP.Errors;
+with UARP.JSON_Support;
+with UARP.Models;
+with UARP.SSE;
+with UARP.Types;
 
---  From the environment: UARP_API_KEY, UARP_BASE_URL
-Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;`,
+procedure Example is
+   use UARP.Types;
+   Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
+begin
+   null;
+end Example;`,
 };
 
 /**
@@ -163,14 +228,18 @@ Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;`,
  * call that raises.
  */
 export const KEYLESS: Samples = {
-  ts: `// A browser app authenticated by an HttpOnly cookie never sees a key.
+  ts: `import { UarpClient } from 'uarp-sdk';
+
+// A browser app authenticated by an HttpOnly cookie never sees a key.
 // An EXPLICITLY empty key says so: no Authorization header is sent.
 const client = new UarpClient({ apiKey: '', baseURL: '/api/uarp' });
 
 // An OMITTED key still throws — "forgot to set UARP_API_KEY" is the
 // common mistake, and a 401 is a much worse way to find out.`,
 
-  python: `# No credentials of its own: the header is omitted, not sent empty.
+  python: `from uarp_sdk import Client
+
+# No credentials of its own: the header is omitted, not sent empty.
 client = Client(api_key="", base_url=base)
 
 # Client() refuses a set-but-empty UARP_API_KEY with ConfigError.`,
@@ -184,18 +253,37 @@ let client = uarp_sdk::Client::builder()
 // \`from_env\` refuses a set-but-empty UARP_API_KEY — going keyless is
 // a deliberate act on the builder, not an accident of the environment.`,
 
-  swift: `// A guest or public client: no Authorization header is sent.
+  swift: `import Foundation
+import UARPSDK
+
+// A guest or public client: no Authorization header is sent.
 let client = UARPClient(apiKey: "", baseURL: base)`,
 
-  kotlin: `// No credentials of its own: the header is omitted, not sent empty.
+  kotlin: `import ai.snaga.uarp.UarpClient
+
+// No credentials of its own: the header is omitted, not sent empty.
 val client = UarpClient.builder().apiKey("").baseUrl(base).build()
 
 // fromEnvironment() refuses a set-but-empty UARP_API_KEY.`,
 
-  ada: `--  Ada has no keyless client: the constructor refuses an empty key
---  ("the API key must not be empty"), so credentials always travel
---  with the client itself.
-Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;`,
+  ada: `with Ada.Environment_Variables;
+with Ada.Text_IO;
+with UARP.API.Agents;
+with UARP.API.Runs;
+with UARP.Client;
+with UARP.Errors;
+with UARP.JSON_Support;
+with UARP.Models;
+with UARP.SSE;
+with UARP.Types;
+
+procedure Example is
+   use UARP.Types;
+   Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
+begin
+   --  Ada requires a non-empty key; a keyless client is not supported.
+   null;
+end Example;`,
 };
 
 export const CALLING: Samples = {
@@ -228,24 +316,43 @@ let agent = client
 
 let page = client.agents().list(&Default::default()).await?;`,
 
-  swift: `// The platform selects the model itself, so a create is just a name.
+  swift: `import Foundation
+import UARPSDK
+
+// The platform selects the model itself, so a create is just a name.
 let agent = try await client.agents.create(body: CreateAgentRequest(name: "support"))
 
 let page = try await client.agents.list(limit: 20)`,
 
-  kotlin: `import ai.snaga.uarp.models.CreateAgentRequest
+  kotlin: `import ai.snaga.uarp.api.agents
+import ai.snaga.uarp.models.CreateAgentRequest
 
 // The platform selects the model itself, so a create is just a name.
 val agent = client.agents.create(CreateAgentRequest(name = "support"))
 
 val page = client.agents.list(limit = 20)`,
 
-  ada: `Request : UARP.Models.Create_Agent_Request;
-Agent   : UARP.Models.Agent;
+  ada: `with Ada.Environment_Variables;
+with Ada.Text_IO;
+with UARP.API.Agents;
+with UARP.API.Runs;
+with UARP.Client;
+with UARP.Errors;
+with UARP.JSON_Support;
+with UARP.Models;
+with UARP.SSE;
+with UARP.Types;
+
+procedure Example is
+   use UARP.Types;
+   Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
+   Request : UARP.Models.Create_Agent_Request;
+   Agent : UARP.Models.Agent;
 begin
-   --  The platform selects the model itself, so a create is just a name.
    Request.Name := +"support";
-   Agent := UARP.API.Agents.Create (Client, Request);`,
+   Agent := UARP.API.Agents.Create (Client, Request);
+   Ada.Text_IO.Put_Line (+Agent.Agent_Id);
+end Example;`,
 };
 
 export const ERRORS: Samples = {
@@ -259,7 +366,7 @@ try {
   } else if (error instanceof UnprocessableEntityError) {
     console.error(error.validationErrors);
   } else if (error instanceof APIError) {
-    console.error(error.status, error.problem.title, error.correlationId);
+    console.error(error.status, error.problem?.title, error.correlationId);
   } else {
     throw error;  // not from the API — a timeout or a dropped connection
   }
@@ -294,7 +401,10 @@ match client.agents().get("missing").await {
     Err(other) => println!("{other}"),
 }`,
 
-  swift: `do {
+  swift: `import Foundation
+import UARPSDK
+
+do {
     _ = try await client.agents.get(agentId: id)
 } catch let UARPError.api(error) {
     switch error.kind {
@@ -307,20 +417,44 @@ match client.agents().get("missing").await {
     print("timed out")
 }`,
 
-  kotlin: `try {
+  kotlin: `import ai.snaga.uarp.api.agents
+import ai.snaga.uarp.ApiException
+import ai.snaga.uarp.ApiErrorKind
+import ai.snaga.uarp.TimeoutException
+
+try {
     client.agents.get(id)
 } catch (error: ApiException) {
     when (error.kind) {
-        ApiErrorKind.NOT_FOUND -> showMessage("No such agent")
-        ApiErrorKind.UNPROCESSABLE_ENTITY -> showFieldErrors(error.validationErrors)
-        ApiErrorKind.RATE_LIMIT -> retryAfter(error.retryAfterSeconds)
-        else -> report(error.status, error.correlationId)
+        ApiErrorKind.NOT_FOUND -> println("No such agent")
+        ApiErrorKind.UNPROCESSABLE_ENTITY -> println(error.validationErrors)
+        ApiErrorKind.RATE_LIMIT -> println(error.retryAfterSeconds)
+        else -> println("Status: " + error.status + ", correlation: " + error.correlationId)
     }
-} catch (error: TimeoutException) {   // ai.snaga.uarp.TimeoutException,
-    showMessage("Timed out")           // not the one in java.util.concurrent
+} catch (error: TimeoutException) {
+    println("Timed out")
 }`,
 
-  ada: `--  Generated calls raise UARP.Errors.API_Error. The escape hatch reports
+
+  ada: `with Ada.Environment_Variables;
+with Ada.Text_IO;
+with UARP.API.Agents;
+with UARP.API.Runs;
+with UARP.Client;
+with UARP.Errors;
+with UARP.JSON_Support;
+with UARP.Models;
+with UARP.SSE;
+with UARP.Types;
+
+procedure Example is
+   use UARP.Types;
+   Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
+   Status : Natural;
+   Body_Text : UARP.Types.Text;
+   Problem : UARP.Errors.Problem;
+begin
+--  Generated calls raise UARP.Errors.API_Error. The escape hatch reports
 --  the status instead of raising, when that suits better.
 UARP.Client.Execute
   (Client, "GET", "/api/v1/agents/missing",
@@ -331,7 +465,8 @@ if Status /= 200 then
    for Failure of Problem.Errors loop
       Ada.Text_IO.Put_Line ((+Failure.Field) & ": " & (+Failure.Message));
    end loop;
-end if;`,
+end if;
+end Example;`,
 };
 
 export const PAGINATION: Samples = {
@@ -361,20 +496,48 @@ while let Some(agent) = all.next().await {
     println!("{}", agent?.name);
 }`,
 
-  swift: `for try await agent in client.agents.listAll(limit: 100) {
+  swift: `import Foundation
+import UARPSDK
+
+for try await agent in client.agents.listAll(limit: 100) {
     print(agent.name)
 }
 
 let firstPage = try await client.agents.listAll().collect(limit: 50)`,
 
-  kotlin: `client.agents.listAll(limit = 100).collect { agent ->
+  kotlin: `import ai.snaga.uarp.api.agents
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+
+client.agents.listAll(limit = 100).collect { agent ->
     println(agent.name)
 }
 
 val first50 = client.agents.listAll().take(50).toList()`,
 
-  ada: `Everything : constant UARP.Models.Agent_Vectors.Vector :=
-  UARP.API.Agents.List_All (Client, Params, Max_Items => 500);`,
+  ada: `with Ada.Environment_Variables;
+with Ada.Text_IO;
+with UARP.API.Agents;
+with UARP.API.Runs;
+with UARP.Client;
+with UARP.Errors;
+with UARP.JSON_Support;
+with UARP.Models;
+with UARP.SSE;
+with UARP.Types;
+
+procedure Example is
+   use UARP.Types;
+   Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
+   Params : UARP.API.Agents.List_Agents_Params;
+begin
+   Params.Has_Limit := True;
+   Params.Limit := 100;
+   for Agent of UARP.API.Agents.List_All (Client, Params, Max_Items => 500) loop
+      Ada.Text_IO.Put_Line (+Agent.Name);
+   end loop;
+end Example;`,
 };
 
 export const STREAMING: Samples = {
@@ -382,17 +545,21 @@ export const STREAMING: Samples = {
 
 for await (const event of stream) {
   if (event.event === 'llm.chunk') {
-    const { payload } = event.json<{ payload: { delta: string } }>();
-    process.stdout.write(payload.delta);
+    const { payload } = event.json<{ payload: { delta?: string; chunk_type?: string } }>();
+    if ((payload.chunk_type ?? 'content') === 'content') {
+      process.stdout.write(payload.delta ?? '');
+    }
   }
-  if (event.event === 'run.completed') break;  // leaving the loop closes the request
+  if (event.event === 'run.completed' || event.event === 'run.failed') break;  // leaving the loop closes the request
 }`,
 
   python: `with client.runs.stream_run_events(run_id) as events:
     for event in events:
         if event.event == "llm.chunk":
-            print(event.json()["payload"].get("delta", ""), end="")
-        if event.event == "run.completed":
+            payload = event.json()["payload"]
+            if payload.get("chunk_type", "content") == "content":
+                print(payload.get("delta", ""), end="")
+        if event.event in ("run.completed", "run.failed"):
             break  # and the end of the with block closes the request`,
 
   rust: `use futures_util::StreamExt;
@@ -405,58 +572,97 @@ while let Some(event) = events.next().await {
     let event = event?;
     if event.event == "llm.chunk" {
         let chunk = event.json::<serde_json::Value>()?;
-        if let Some(delta) = chunk["payload"]["delta"].as_str() {
-            print!("{delta}");
+        if chunk["payload"]["chunk_type"].as_str().unwrap_or("content") == "content" {
+            if let Some(delta) = chunk["payload"]["delta"].as_str() { print!("{delta}"); }
         }
     }
-    if event.event == "run.completed" { break; }
+    if event.event == "run.completed" || event.event == "run.failed" { break; }
 }`,
 
-  swift: `struct Chunk: Decodable {
-    struct Payload: Decodable { let delta: String }
+  swift: `import Foundation
+import UARPSDK
+
+struct Chunk: Decodable {
+    struct Payload: Decodable { let chunk_type: String?; let delta: String? }
     let payload: Payload
 }
 
 for try await event in client.runs.streamRunEvents(runId: id) {
     if event.event == "llm.chunk" {
-        print(try event.json(as: Chunk.self).payload.delta, terminator: "")
+        let payload = try event.json(as: Chunk.self).payload
+        if (payload.chunk_type ?? "content") == "content" { print(payload.delta ?? "", terminator: "") }
     }
-    if event.event == "run.completed" { break }
+    if event.event == "run.completed" || event.event == "run.failed" { break }
 }`,
 
-  kotlin: `@Serializable data class Chunk(val payload: Payload) {
-    @Serializable data class Payload(val delta: String)
-}
+  kotlin: `import ai.snaga.uarp.api.runs
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 client.runs.streamRunEvents(runId)
-    .onEach { event ->
-        if (event.event == "llm.chunk") append(event.decode<Chunk>().payload.delta)
-    }
-    .takeWhile { it.event != "run.completed" }
-    .collect()`,
+    .takeWhile { it.event != "run.completed" && it.event != "run.failed" }
+    .collect { event ->
+        if (event.event == "llm.chunk") {
+            val payload = event.decode<JsonObject>()["payload"]?.jsonObject
+            val kind = payload?.get("chunk_type")?.jsonPrimitive?.content ?: "content"
+            if (kind == "content") print(payload?.get("delta")?.jsonPrimitive?.content.orEmpty())
+        }
+    }`,
 
-  ada: `type Printer is limited new UARP.SSE.Event_Sink with record
-   Chunks : Natural := 0;
-end record;
 
-overriding procedure Handle
-  (Self : in out Printer; Event : UARP.SSE.Server_Event; Continue : in out Boolean)
-is
-   Name : constant String := UARP.Types.SU.To_String (Event.Name);
+  ada: `with Ada.Environment_Variables;
+with Ada.Text_IO;
+with UARP.API.Agents;
+with UARP.API.Runs;
+with UARP.Client;
+with UARP.Errors;
+with UARP.JSON_Support;
+with UARP.Models;
+with UARP.SSE;
+with UARP.Types;
+
+procedure Example is
+   use UARP.Types;
+   type Printer is limited new UARP.SSE.Event_Sink with null record;
+   overriding procedure Handle
+     (Self : in out Printer; Event : UARP.SSE.Server_Event; Continue : in out Boolean);
+   overriding procedure Handle
+     (Self : in out Printer; Event : UARP.SSE.Server_Event; Continue : in out Boolean)
+   is
+      pragma Unreferenced (Self);
+      Name : constant String := +Event.Name;
+   begin
+      if Name = "llm.chunk" then
+         declare
+            Envelope : constant UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Parse (+Event.Data);
+            Payload : constant UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Get_Value (Envelope, "payload");
+         begin
+            declare
+               Kind : constant String := +UARP.JSON_Support.Get_Text (Payload, "chunk_type");
+            begin
+               if Kind = "" or else Kind = "content" then
+                  Ada.Text_IO.Put (+UARP.JSON_Support.Get_Text (Payload, "delta"));
+               end if;
+            end;
+         end;
+      end if;
+      Continue := Name /= "run.completed" and then Name /= "run.failed";
+   end Handle;
+   Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
+   Output : Printer;
 begin
-   if Name = "llm.chunk" then
-      --  Event.Data is the whole envelope; the text is at payload.delta.
-      Self.Chunks := Self.Chunks + 1;
-      Ada.Text_IO.Put (UARP.Types.SU.To_String (Event.Data));
-   end if;
-   Continue := Name /= "run.completed";
-end Handle;`,
+   UARP.API.Runs.Stream_Run_Events
+     (Client, Ada.Environment_Variables.Value ("UARP_RUN_ID"), Sink => Output);
+end Example;`,
 };
 
 export const OVERRIDES: Samples = {
   ts: `await client.agents.create({ name: 'support' }, { idempotencyKey: 'onboarding-42' });
 
-await client.runs.create(body, {
+await client.runs.create({ agent_id: agentId }, {
   timeout: 120_000,
   maxRetries: 0,
   headers: { 'X-Request-Id': requestId },
@@ -471,21 +677,48 @@ client.agents.get(agent_id, request_options=RequestOptions(timeout=5.0, max_retr
 # Or bind options to a copy of the client; the connection pool is shared.
 traced = client.with_options(headers={"X-Request-Id": request_id})`,
 
-  rust: `// Rust has no default arguments, so overrides ride on a cheap clone of the
+  rust: `use std::time::Duration;
+
+// Rust has no default arguments, so overrides ride on a cheap clone of the
 // client that shares its connection pool.
 client.with_idempotency_key("order-4711").agents().create(&body).await?;
 client.with_timeout(Duration::from_secs(5)).agents().get(id).await?;
 client.with_max_retries(0).agents().get(id).await?;`,
 
-  swift: `try await client.agents.create(
+  swift: `import Foundation
+import UARPSDK
+
+try await client.agents.create(
     body: request,
     options: RequestOptions(timeout: 5, maxRetries: 0, idempotencyKey: "order-4711")
 )`,
 
-  kotlin: `client.agents.create(request, options = RequestOptions(idempotencyKey = "order-4711"))`,
+  kotlin: `import ai.snaga.uarp.api.agents
+import ai.snaga.uarp.RequestOptions
 
-  ada: `Options : UARP.Client.Request_Options;
+client.agents.create(request, options = RequestOptions(idempotencyKey = "order-4711"))`,
+
+  ada: `with Ada.Environment_Variables;
+with Ada.Text_IO;
+with UARP.API.Agents;
+with UARP.API.Runs;
+with UARP.Client;
+with UARP.Errors;
+with UARP.JSON_Support;
+with UARP.Models;
+with UARP.SSE;
+with UARP.Types;
+
+procedure Example is
+   use UARP.Types;
+   Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
+   Options : UARP.Client.Request_Options;
+   Agent : UARP.Models.Agent;
 begin
-   Options.Reconnect := False;      --  return as soon as the stream ends
-   Options.Max_Reconnects := 3;     --  give up after three fruitless attempts`,
+   Options.Timeout_Ms := 5_000;
+   Options.Max_Retries := 0;
+   Agent := UARP.API.Agents.Get
+     (Client, Ada.Environment_Variables.Value ("UARP_AGENT_ID"), Options => Options);
+   Ada.Text_IO.Put_Line (+Agent.Name);
+end Example;`,
 };

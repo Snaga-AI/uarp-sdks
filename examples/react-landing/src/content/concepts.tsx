@@ -35,7 +35,7 @@ function InstallBody(): ReactElement {
   const current = LANGUAGES.find((entry) => entry.id === language)!;
   return (
     <>
-      {install.shell ? <Shell>{install.command}</Shell> : <Code language={language}>{install.command}</Code>}
+      {install.shell ? <Shell>{install.command}</Shell> : <Code selectable language={language}>{install.command}</Code>}
       <p className="text-ink-soft">
         {current.name} · {current.registry} · needs {install.needs}.
       </p>
@@ -71,11 +71,11 @@ function InstallBody(): ReactElement {
       )}
       {language === 'ada' && (
         <Note tone="warn">
-          Not in the Alire community index yet — the submission is open as{' '}
+          Version 0.13.6 was not found in the configured Alire community index during this audit. The commands above pin the SDK release source locally; run them inside your Alire application. Index submission:{' '}
           <a className="underline" href="https://github.com/alire-project/alire-index/pull/2059">
             alire-index#2059
           </a>
-          . Until it lands, depend on the release tarball directly.
+          . The source checkout must remain alongside your application.
         </Note>
       )}
     </>
@@ -90,7 +90,7 @@ function AuthenticateBody(): ReactElement {
         A bearer key in the form <Term>uarp_&lt;prefix&gt;_&lt;secret&gt;</Term>,
         passed explicitly or read from the environment.
       </p>
-      <Code language={language}>{AUTHENTICATE[language]}</Code>
+      <Code selectable language={language}>{AUTHENTICATE[language]}</Code>
       <Note>
         <strong>Where a key comes from.</strong> Sign in at{' '}
         <a className="underline" href="https://snaga.ai">snaga.ai</a> and create one in your
@@ -111,7 +111,7 @@ function AuthenticateBody(): ReactElement {
         no <Term>Authorization</Term> header is sent, and no token is added to the
         streaming query.
       </p>
-      <Code language={language}>{KEYLESS[language]}</Code>
+      <Code selectable language={language}>{KEYLESS[language]}</Code>
       <Note>
         Empty is not the same as absent. An <strong>omitted</strong> key still fails at
         construction, because forgetting to set <Term>UARP_API_KEY</Term> is the common
@@ -135,7 +135,7 @@ function CallingBody(): ReactElement {
         to 12 operations take a free-form body and 6 to 9 return one, depending on how
         each language types an array or a map of untyped values.
       </p>
-      <Code language={language}>{CALLING[language]}</Code>
+      <Code selectable language={language}>{CALLING[language]}</Code>
       <p className="text-ink-soft">
         The platform selects the model itself, so a create is just a name. Anything sent for{' '}
         <Term>model</Term> is accepted and ignored — the document says
@@ -170,7 +170,7 @@ function ErrorsBody(): ReactElement {
         Failures arrive as RFC 9457 problem documents and are parsed into typed errors, with
         a subclass per status so you can catch the one you mean.
       </p>
-      <Code language={language}>{ERRORS[language]}</Code>
+      <Code selectable language={language}>{ERRORS[language]}</Code>
     </>
   );
 }
@@ -183,7 +183,7 @@ function PaginationBody(): ReactElement {
         Cursor-paginated endpoints get a second method that walks every page and yields
         items, so you never write the cursor loop.
       </p>
-      <Code language={language}>{PAGINATION[language]}</Code>
+      <Code selectable language={language}>{PAGINATION[language]}</Code>
       <Note>
         An empty page does not end the walk. This API applies the page size before
         filtering, so a request for two items can come back with none while there is more
@@ -207,7 +207,7 @@ function StreamingBody(): ReactElement {
         5xx is retried; any other refusal, such as the 404 for a run that does not exist, is
         the API error on the first answer.
       </p>
-      <Code language={language}>{STREAMING[language]}</Code>
+      <Code selectable language={language}>{STREAMING[language]}</Code>
       <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-sm text-ink-soft">
         <dt className="font-medium text-ink">Text</dt>
         <dd>
@@ -263,7 +263,7 @@ function OverridesBody(): ReactElement {
         Timeout, retry budget, headers and an abort signal can be set for one call without
         building another client.
       </p>
-      <Code language={language}>{OVERRIDES[language]}</Code>
+      <Code selectable language={language}>{OVERRIDES[language]}</Code>
     </>
   );
 }
@@ -304,7 +304,7 @@ for await (const event of client.runs.streamRunEvents(run.run_id)) {
     const delta = event.json<{ payload?: { delta?: string } }>().payload?.delta;
     if (delta) res.write(\`event: delta\\ndata: \${JSON.stringify({ text: delta })}\\n\\n\`);
   }
-  if (event.event === 'run.completed') break;
+  if (event.event === 'run.completed' || event.event === 'run.failed') break;
 }
 res.end();`}</Code>
       <p className="text-ink-soft">
@@ -313,7 +313,17 @@ res.end();`}</Code>
         frame ends at a <em>blank line</em> — which is exactly what naive line-splitting
         throws away.
       </p>
-      <Code>{`const response = await fetch('/api/uarp/chat', {
+      <Code>{`function handleFrame(frame: string) {
+  const data = frame.split('\\n')
+    .filter(line => line.startsWith('data:'))
+    .map(line => line.slice(5).trimStart()).join('\\n');
+  if (!data) return;
+  const payload: unknown = JSON.parse(data);
+  if (payload && typeof payload === 'object' && 'text' in payload
+      && typeof payload.text === 'string') console.log(payload.text);
+}
+
+const response = await fetch('/api/uarp/chat', {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ agentId, message }),

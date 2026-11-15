@@ -12,10 +12,16 @@ port="${UARP_TEST_PORT:-8931}"
 #  gprbuild's parallelism. Unset means its default, one job per core. CI sets
 #  2; see the comment there for what that did and did not change.
 jobs="${UARP_ADA_JOBS:-0}"
+build_args=(-j"$jobs")
+# Keep the profile's assertions/checks, but avoid optimizing and emitting huge
+# debug tables for the generated model unit in correctness-only CI runs.
+if [[ "${UARP_ADA_CI:-0}" == 1 ]]; then
+    build_args+=(-cargs:Ada -O0 -g0)
+fi
 
-cd "$root"
-alr -n build -- -j"$jobs"
-(cd "$here" && alr -n build -- -j"$jobs")
+# The pinned SDK is built transitively. Building it separately first compiles
+# it twice, in the root's development profile and the dependency's release one.
+(cd "$here" && alr -n build -- "${build_args[@]}")
 
 python3 "$here/mock_server.py" "$port" >/dev/null 2>&1 &
 server=$!

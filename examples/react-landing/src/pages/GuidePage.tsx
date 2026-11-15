@@ -5,6 +5,9 @@ import { useLanguage } from '../hooks/useLanguage';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { Code, Shell } from '../docs/Code';
 import { INSTALL, LANGUAGES } from '../docs/content';
+import { DocHeader, DocText, PageContents } from '../components/DocPage';
+import { SnippetSetup } from '../components/SnippetSetup';
+import { Quickstart } from './Quickstart';
 import { NotFound } from './NotFound';
 
 function Caption({ children }: { children: string }) {
@@ -16,8 +19,10 @@ function Caption({ children }: { children: string }) {
 function Block({ block }: { block: GuideBlock }) {
   const { language } = useLanguage();
   switch (block.kind) {
+    case 'heading':
+      return <h2 id={block.id} className="doc-section-title">{block.title}</h2>;
     case 'prose':
-      return <p className="text-sm leading-relaxed text-ink-soft">{block.text}</p>;
+      return <p className="text-sm leading-relaxed text-ink-soft"><DocText>{block.text}</DocText></p>;
     case 'install': {
       //  INSTALL is not a Samples record — it carries a command, a shell flag
       //  and a "needs" line, so it renders through Shell/Code like the install
@@ -28,7 +33,7 @@ function Block({ block }: { block: GuideBlock }) {
       return (
         <div className="flex flex-col gap-1.5">
           <Caption>Install</Caption>
-          {install.shell ? <Shell>{install.command}</Shell> : <Code language={language}>{install.command}</Code>}
+          {install.shell ? <Shell>{install.command}</Shell> : <Code selectable language={language}>{install.command}</Code>}
           <p className="text-xs text-ink-soft">
             {current.name} · {current.registry} · needs {install.needs}.
           </p>
@@ -46,7 +51,7 @@ function Block({ block }: { block: GuideBlock }) {
       return (
         <div className="flex flex-col gap-1.5">
           {block.caption && <Caption>{block.caption}</Caption>}
-          <Code language={language}>{block.record[language]}</Code>
+          <Code selectable language={language}>{block.record[language]}</Code>
         </div>
       );
   }
@@ -55,20 +60,21 @@ function Block({ block }: { block: GuideBlock }) {
 export function GuidePage() {
   const { slug } = useParams();
   const guide = GUIDES.find((g) => g.slug === slug);
-  usePageTitle(guide?.title);
+  usePageTitle(slug === 'getting-started' ? 'Quickstart' : guide?.title);
   if (!guide) return <NotFound />;
+  if (slug === 'getting-started') return <Quickstart />;
 
   return (
     <section className="flex flex-col gap-6">
-      <header className="flex flex-col gap-2 border-b border-rule-soft pb-4">
-        <p className="text-sm text-ink-soft">
-          <Link className="text-accent underline underline-offset-2" to="/docs/guides">
-            Guides
-          </Link>
-        </p>
-        <h2 className="text-2xl font-semibold tracking-tight">{guide.title}</h2>
-        <p className="text-ink-soft">{guide.summary}</p>
-      </header>
+      <DocHeader eyebrow={<><Link to="/docs/guides">Guides</Link><span>/</span><span>Workflow</span></>} title={guide.title}>
+        <p>{guide.summary}</p>
+      </DocHeader>
+      <div className="rounded-lg bg-paper-tint p-5 text-sm leading-7 text-ink-soft">
+        <strong className="text-ink">Before you begin.</strong> Complete the <Link className="text-accent-soft underline" to="/docs/guides/getting-started">Quickstart</Link> and initialize a client. Replace IDs and example values with resources from your tenant.
+        {guide.blocks.some((block) => block.kind === 'code') && <p className="mt-2">Task-specific blocks on this page use TypeScript. Blocks labeled with another SDK language follow your language selection.</p>}
+      </div>
+      <SnippetSetup typescript={guide.blocks.some(block => block.kind === 'code')} />
+      <PageContents entries={guide.blocks.flatMap((block) => block.kind === 'heading' ? [{ id: block.id, label: block.title }] : [])} />
 
       <div className="flex flex-col gap-4">
         {guide.blocks.map((block, index) => (
@@ -90,7 +96,7 @@ function PrevNext({ slug }: { slug: string }) {
   return (
     <nav className="mt-4 flex justify-between gap-4 border-t border-rule-soft pt-6">
       {prev ? (
-        <Link to={`/docs/guides/${prev.slug}`} className="group flex flex-col gap-0.5">
+        <Link to={`/docs/guides/${prev.slug}`} className="doc-card group flex flex-1 flex-col gap-2">
           <span className="font-mono text-[0.65rem] tracking-wider text-ink-soft uppercase">← Previous</span>
           <span className="text-sm text-ink-soft transition group-hover:text-ink">{prev.title}</span>
         </Link>
@@ -98,7 +104,7 @@ function PrevNext({ slug }: { slug: string }) {
         <span />
       )}
       {next ? (
-        <Link to={`/docs/guides/${next.slug}`} className="group flex flex-col items-end gap-0.5 text-right">
+        <Link to={`/docs/guides/${next.slug}`} className="doc-card group flex flex-1 flex-col items-end gap-2 text-right">
           <span className="font-mono text-[0.65rem] tracking-wider text-ink-soft uppercase">Next →</span>
           <span className="text-sm text-ink-soft transition group-hover:text-ink">{next.title}</span>
         </Link>

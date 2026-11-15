@@ -14,7 +14,7 @@ function KeyForm({ onSubmit, error }: { onSubmit: (token: string) => Promise<boo
 
   return (
     <form
-      className="flex flex-col gap-3 p-4"
+      className="flex min-h-0 flex-col gap-3 overflow-y-auto p-4"
       onSubmit={async (submit) => {
         submit.preventDefault();
         setChecking(true);
@@ -70,6 +70,19 @@ export function AgentWidget() {
   const [agentId, setAgentId] = useState('');
   const [draft, setDraft] = useState('');
   const transcript = useRef<HTMLDivElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
+  const close = () => {
+    setOpen(false);
+    requestAnimationFrame(() => returnFocus.current?.focus());
+  };
+  useEffect(() => {
+    const show = () => {
+      returnFocus.current = document.activeElement as HTMLElement;
+      setOpen(true);
+    };
+    window.addEventListener('docs:open-agent', show);
+    return () => window.removeEventListener('docs:open-agent', show);
+  }, []);
 
   useEffect(() => {
     if (connection && !agentId && connection.agents[0]) setAgentId(connection.agents[0].id);
@@ -79,24 +92,11 @@ export function AgentWidget() {
     transcript.current?.scrollTo({ top: transcript.current.scrollHeight, behavior: 'smooth' });
   }, [messages, status]);
 
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed right-5 bottom-5 z-50 flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-medium text-paper shadow-lg transition hover:opacity-90"
-      >
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-2 w-2 animate-ping rounded-full bg-emerald-400 opacity-70" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-        </span>
-        Ask the agent
-      </button>
-    );
-  }
+  if (!open) return null;
 
   return (
-    <section className="fixed right-5 bottom-5 z-50 flex h-[32rem] w-[min(24rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-xl border border-rule-soft bg-paper shadow-2xl">
-      <header className="flex items-center gap-3 border-b border-rule-soft px-4 py-3">
+    <section role="dialog" aria-label="Agent assistant" className="agent-panel fixed right-5 bottom-5 z-50 flex h-[32rem] w-[min(24rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-xl border border-rule-soft bg-paper shadow-2xl">
+      <header className="flex shrink-0 items-center gap-3 border-b border-rule-soft px-4 py-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-ink">
             {connection ? connection.tenant : 'Connect a tenant'}
@@ -117,7 +117,7 @@ export function AgentWidget() {
             </button>
           )}
           <button
-            onClick={() => setOpen(false)}
+            onClick={close}
             aria-label="Close"
             className="rounded px-2 py-1 text-ink-soft hover:text-ink"
           >

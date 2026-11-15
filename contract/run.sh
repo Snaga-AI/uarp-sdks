@@ -109,7 +109,11 @@ if wanted ada && have alr; then
     #  The build output used to go to /dev/null, so a failure here ended the
     #  whole run with `set -e` and no explanation at all. Keep it, and let the
     #  other four SDKs still be compared if Ada cannot build.
-    if (cd "$root/packages/ada/examples" && alr -n build > "$traces/ada-build.log" 2>&1); then
+    ada_build_args=(-j"${UARP_ADA_JOBS:-0}")
+    if [[ "${UARP_ADA_CI:-0}" == 1 ]]; then
+        ada_build_args+=(-cargs:Ada -O0 -g0)
+    fi
+    if (cd "$root/packages/ada/examples" && alr -n build -- "${ada_build_args[@]}" > "$traces/ada-build.log" 2>&1); then
         (cd "$root/packages/ada/examples" && UARP_CONTRACT_BASE_URL="$base" ./bin/contract >/dev/null) \
             && record ada || echo "    ada runner failed" >&2
     else
@@ -132,3 +136,10 @@ fi
 curl -fsS "$base/__probes" > "$traces/probes.json"
 
 python3 "$root/contract/compare.py" "${ran[@]}"
+
+# Local runs may compare a subset; CI promises to exercise every SDK. In
+# particular, an Ada compiler/runner failure must not become a five-SDK pass.
+if [[ "${UARP_CONTRACT_REQUIRE_ALL:-0}" == 1 && ${#ran[@]} -ne 6 ]]; then
+    echo "CI requires all six SDKs; ran: ${ran[*]}" >&2
+    exit 1
+fi

@@ -2,14 +2,15 @@ import { expect, test } from '@playwright/test';
 
 //  The wire page renders wire.json, generated from contract/SCENARIOS.md and
 //  the five per-language runners. These tests check that the page loads the
-//  generated data, lists all sixteen scenarios, switches the per-scenario
+//  generated data, lists all contract scenarios, switches the per-scenario
 //  snippet with the language toggle, and renders the prose sections (which
 //  carry inline code and bullets) without dropping their content.
 
-test('the wire page lists all sixteen scenarios', async ({ page }) => {
+test('the wire page lists all contract scenarios', async ({ page }) => {
   await page.goto('/docs/wire');
   await expect(page.getByRole('heading', { name: 'Wire' })).toBeVisible();
-  await expect(page.locator('body')).toContainText('16 scenarios');
+  const wire = await (await page.request.get('/wire.json')).json();
+  await expect(page.locator('main')).toContainText(`${wire.scenarios.length} scenarios`);
   //  Scenario 1's call renders as an inline code heading.
   await expect(page.getByText('agents.list(limit = 2)', { exact: true })).toBeVisible();
   //  The multipart scenario (10) and the decoder scenario (16) are present.

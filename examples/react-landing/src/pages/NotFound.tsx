@@ -1,12 +1,13 @@
 /** A page that does not exist. Used as a route element and inlined by ConceptPage. */
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 export function NotFound() {
   usePageTitle('Not found');
-  return (
+  const context = useOutletContext<{ docsLayout?: boolean } | undefined>();
+  const content = (
     <section className="flex flex-col gap-4">
-      <h2 className="text-2xl font-semibold tracking-tight">Not found</h2>
+      <h1 className="text-3xl font-semibold tracking-tight">Not found</h1>
       <p className="text-ink-soft">
         There is no page at this address. The documentation lives under{' '}
         <Link className="text-accent underline underline-offset-2" to="/docs/concepts/install">/docs</Link>.
@@ -16,4 +17,5 @@ export function NotFound() {
       </p>
     </section>
   );
+  return context?.docsLayout ? content : <main id="main-content" tabIndex={-1} className="doc-shell"><div className="doc-surface p-6 sm:p-10">{content}</div></main>;
 }

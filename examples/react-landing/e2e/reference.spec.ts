@@ -8,8 +8,8 @@ import { expect, test } from '@playwright/test';
 test('the reference index lists every resource group', async ({ page }) => {
   await page.goto('/docs/reference');
   await expect(page.getByRole('heading', { name: 'API reference' })).toBeVisible();
-  // 43 groups, each a link to its own route.
-  await expect(page.getByText(/43 resource groups/)).toBeVisible();
+  const reference = await (await page.request.get('/reference.json')).json();
+  await expect(page.getByText(new RegExp(`${reference.groups.length} resource groups`))).toBeVisible();
   const agentCard = page.getByRole('link', { name: /agents/ }).first();
   await expect(agentCard).toBeVisible();
 });
@@ -19,7 +19,7 @@ test('a group page lists its methods and reaches a method page', async ({ page }
   await expect(page.getByRole('heading', { name: 'agents', exact: true })).toBeVisible();
   // Pick the create method by its route — the grid layout uses CSS gaps, so the
   // link's textContent has no space between the method name and the verb.
-  const createLink = page.locator('a[href="/docs/reference/agents/create"]');
+  const createLink = page.locator('main a[href="/docs/reference/agents/create"]');
   await expect(createLink).toBeVisible();
   await createLink.click();
   await expect(page).toHaveURL(/\/docs\/reference\/agents\/create$/);
@@ -31,10 +31,10 @@ test('a method page shows the signature, verb+path and an example', async ({ pag
   //  The VERB and path the generator lifted from the JSDoc.
   await expect(page.locator('body')).toContainText('POST');
   await expect(page.locator('body')).toContainText('/api/v1/agents');
-  //  The page has two code blocks — signature first, generated example last.
+  //  The signature and the usage example have separate anchored sections.
   await expect(page.locator('pre').first()).toContainText('create(body: CreateAgentRequest');
   //  The generated usage snippet.
-  await expect(page.locator('pre').last()).toContainText('client.agents.create(body)');
+  await expect(page.locator('#example pre')).toContainText('client.agents.create(body)');
   //  Scopes are shown.
   await expect(page.locator('body')).toContainText('agents:write');
 });
@@ -42,8 +42,8 @@ test('a method page shows the signature, verb+path and an example', async ({ pag
 test('a streaming method is marked SSE and shows the stream snippet', async ({ page }) => {
   await page.goto('/docs/reference/runs/streamRunEvents');
   await expect(page.getByText('sse', { exact: true })).toBeVisible();
-  //  The generated snippet is the last code block on the page.
-  await expect(page.locator('pre').last()).toContainText('for await (const event of');
+  //  The usage example has a stable anchor.
+  await expect(page.locator('#example pre')).toContainText('for await (const event of');
   await expect(page.locator('body')).toContainText('GET');
   await expect(page.locator('body')).toContainText('/api/v1/runs/');
 });

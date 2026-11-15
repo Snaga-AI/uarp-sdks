@@ -32,7 +32,7 @@ test('a visitor can ask the agent and watch the answer stream in', async ({ page
   await page.getByPlaceholder('uarp_…').fill(key!);
   await page.getByRole('button', { name: 'Connect' }).click();
 
-  await expect(page.locator('select')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Agent assistant' }).locator('select')).toBeVisible();
   const stored = await page.evaluate(() => sessionStorage.getItem('uarp-demo-session'));
   expect(stored, 'a session must be stored').toBeTruthy();
   expect(stored, 'the key must never reach the browser').not.toContain(key!);
@@ -48,7 +48,7 @@ test('a visitor can ask the agent and watch the answer stream in', async ({ page
 
 test('the documentation renders and the samples are copyable without a key', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /three lines/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /your agents/i })).toBeVisible();
   //  The hero's promise has to be on the page, not just in the headline.
   await expect(page.locator('section').first()).toContainText('npm install uarp-sdk');
 
@@ -94,7 +94,7 @@ test('every identifier and sample is marked so a translator leaves it alone', as
   //  And the facts must survive a fragment being moved anyway, so the ones
   //  that matter are labelled rather than strung through a sentence.
   await page.goto('/docs/concepts/idempotency');
-  await expect(page.locator('#idempotency')).toContainText('408 409 429 500 502 503 504');
+  await expect(page.locator('#idempotency')).toContainText('408 429 500 502 503 504');
   await expect(page.locator('#idempotency')).toContainText('Retried');
   await page.goto('/docs/concepts/streaming');
   await expect(page.locator('#streaming')).toContainText('payload.delta');
@@ -106,7 +106,7 @@ test('the samples follow the language you pick, and the choice sticks', async ({
   //  TypeScript is the default, so its install line is what greets you.
   await expect(page.locator('#install')).toContainText('npm install uarp-sdk');
 
-  await page.getByRole('button', { name: 'Rust', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Example language', exact: true }).first().selectOption('rust');
   await expect(page.locator('#install')).toContainText('cargo add uarp-sdk');
 
   //  The choice is carried by `?lang` / localStorage, so it follows onto a
@@ -114,14 +114,14 @@ test('the samples follow the language you pick, and the choice sticks', async ({
   await page.goto('/docs/concepts/streaming');
   await expect(page.locator('#streaming')).toContainText('futures_util');
 
-  await page.getByRole('button', { name: 'Ada', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Example language', exact: true }).first().selectOption('ada');
   await page.goto('/docs/concepts/install');
-  await expect(page.locator('#install')).toContainText('alr with uarp_sdk');
+  await expect(page.locator('#install')).toContainText('alr with uarp_sdk --use');
   //  Ada is the one that is not in the community index yet; the page has to
   //  say so rather than send someone to a command that fails.
-  await expect(page.locator('#install')).toContainText('Not in the Alire community index yet');
+  await expect(page.locator('#install')).toContainText('Version 0.13.6 was not found in the configured Alire community index');
 
   //  A reader who works in one language should not have to pick it again.
   await page.reload();
-  await expect(page.locator('#install')).toContainText('alr with uarp_sdk');
+  await expect(page.locator('#install')).toContainText('alr with uarp_sdk --use');
 });

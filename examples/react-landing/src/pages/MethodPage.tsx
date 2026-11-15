@@ -1,34 +1,17 @@
 /** `/docs/reference/:group/:method` — one operation, fully rendered. */
 import type { ReactNode } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { useReference } from '../hooks/useReference';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { getModel, isModelName, type MethodInfo } from '../data/reference';
+import { getModel, isModelName } from '../data/reference';
+import { usageSnippet } from '../docs/usage';
 import { Code } from '../docs/Code';
 import { Term } from '../docs/Section';
 import { MethodBadge } from '../components/MethodBadge';
 import { FieldsTable } from '../components/FieldsTable';
+import { DocHeader, DocText, PageContents } from '../components/DocPage';
+import { CopyButton } from '../components/CopyButton';
 import { NotFound } from './NotFound';
-
-/** A generated TypeScript usage snippet for the method, from its signature. */
-function usageSnippet(group: string, m: MethodInfo): string {
-  const args: string[] = [];
-  for (const p of m.pathParams) args.push(p.name);
-  if (m.bodyType) args.push('body');
-  if (m.queryParams.length) args.push('params');
-  const call = `client.${group}.${m.name}(${args.join(', ')})`;
-
-  if (m.sse) {
-    return `for await (const event of ${call}) {\n  // event.event — see the streaming concept for the wire shape\n}`;
-  }
-  if (m.paginated) {
-    return `for await (const item of ${call}) {\n  // item: ${m.returnType}\n}`;
-  }
-  if (m.returnKind === 'promise' && m.returnType !== 'void') {
-    return `const result = await ${call};\n// result: ${m.returnType}`;
-  }
-  return `await ${call};`;
-}
 
 /**
  * One anchored block on a method page.
@@ -52,8 +35,8 @@ interface Block {
 
 function AnchoredBlock({ block }: { block: Block }) {
   return (
-    <div id={block.id} className="scroll-mt-24">
-      <h3 className="group mb-2 flex items-baseline gap-2 font-mono text-xs tracking-wider text-ink-soft uppercase">
+    <div id={block.id} className="doc-reference-section">
+      <h2 className="group mb-5 flex flex-wrap items-baseline gap-2 text-lg font-semibold tracking-tight">
         {block.title}
         <a
           href={`#${block.id}`}
@@ -62,7 +45,7 @@ function AnchoredBlock({ block }: { block: Block }) {
         >
           #
         </a>
-      </h3>
+      </h2>
       {block.body}
     </div>
   );
@@ -74,38 +57,12 @@ function AnchoredBlock({ block }: { block: Block }) {
  * Rendered only when there is more than one place to go — a two-entry page
  * navigates faster by scrolling than by reading a list of two.
  */
-function OnThisPage({ blocks }: { blocks: Block[] }) {
-  if (blocks.length < 3) return null;
-  return (
-    <nav
-      aria-label="On this page"
-      className="rounded-sm border border-rule-soft bg-paper-tint px-4 py-3"
-    >
-      <p className="mb-2 font-mono text-[0.6rem] tracking-wider text-ink-soft uppercase">
-        On this page
-      </p>
-      <ul className="flex flex-wrap gap-x-4 gap-y-1">
-        {blocks.map((b) => (
-          <li key={b.id}>
-            <a
-              href={`#${b.id}`}
-              className="text-xs text-ink-soft underline-offset-2 transition hover:text-ink hover:underline"
-            >
-              {b.label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
-
 function ScopePills({ scopes }: { scopes: string[] }) {
   if (!scopes.length) return <span className="text-xs text-ink-soft">none</span>;
   return (
     <span className="flex flex-wrap gap-1">
       {scopes.map((s) => (
-        <code key={s} className="rounded-sm border border-rule-soft px-1.5 py-0.5 font-mono text-[0.65rem] text-ink-soft">
+        <code translate="no" key={s} className="rounded-sm border border-rule-soft px-1.5 py-0.5 font-mono text-[0.65rem] text-ink-soft">
           {s}
         </code>
       ))}
@@ -115,6 +72,7 @@ function ScopePills({ scopes }: { scopes: string[] }) {
 
 export function MethodPage() {
   const { group, method } = useParams();
+  const location = useLocation();
   usePageTitle(group && method ? `${group}.${method}` : 'API reference');
   const { ref, error } = useReference();
 
@@ -196,7 +154,7 @@ export function MethodPage() {
       id: 'query-parameters',
       title: <>Query &amp; header parameters</>,
       label: 'Query parameters',
-      body: <FieldsTable fields={m.queryParams} toModel={toModel} hasModel={hasModel} />,
+      body: <FieldsTable label="Query parameters" fields={m.queryParams} toModel={toModel} hasModel={hasModel} />,
     });
   }
 
@@ -207,7 +165,7 @@ export function MethodPage() {
       label: 'Request body',
       body:
         bodyModel && bodyModel.kind === 'object' ? (
-          <FieldsTable fields={bodyModel.fields} toModel={toModel} hasModel={hasModel} />
+          <FieldsTable label="Request body" fields={bodyModel.fields} toModel={toModel} hasModel={hasModel} />
         ) : bodyModel?.kind === 'enum' ? (
           <EnumValues values={bodyModel.values} />
         ) : (
@@ -223,7 +181,7 @@ export function MethodPage() {
       label: 'Response',
       body:
         responseModel.kind === 'object' ? (
-          <FieldsTable fields={responseModel.fields} toModel={toModel} hasModel={hasModel} />
+          <FieldsTable label="Response" fields={responseModel.fields} toModel={toModel} hasModel={hasModel} />
         ) : (
           <EnumValues values={responseModel.values} />
         ),
@@ -234,41 +192,52 @@ export function MethodPage() {
     id: 'example',
     title: <>Example</>,
     label: 'Example',
-    body: <Code language="ts">{usageSnippet(g.accessor, m)}</Code>,
+    body: <><p className="mb-4 text-sm leading-7 text-ink-soft">This snippet shows the calling pattern. Supply the values described in the parameter sections.</p><Code language="ts">{usageSnippet(g.accessor, m)}</Code></>,
   });
 
+  // Keep the calling pattern close to the signature, before potentially long schemas.
+  const example = blocks.pop()!;
+  blocks.splice(1, 0, example);
+
   return (
-    <section className="flex flex-col gap-6">
-      <header className="flex flex-col gap-2 border-b border-rule-soft pb-4">
-        <p className="text-sm text-ink-soft">
-          <Link className="text-accent underline underline-offset-2" to="/docs/reference">Reference</Link>
-          {' / '}
-          <Link className="text-accent underline underline-offset-2" to={`/docs/reference/${g.accessor}`}>{g.accessor}</Link>
-        </p>
-        <div className="flex flex-wrap items-baseline gap-3">
-          <h2 className="font-mono text-2xl tracking-tight">
-            <span className="text-ink-soft">{g.accessor}.</span>{m.name}
-          </h2>
-          <MethodBadge method={m} />
-        </div>
+    <section className="method-page">
+      <div className="method-intro">
+      <DocHeader
+        eyebrow={<><Link to="/docs/reference">API reference</Link><span>/</span><Link to={`/docs/reference/${g.accessor}`}>{g.accessor}</Link></>}
+        title={<><span className="text-ink-soft">{g.accessor}.</span>{m.name}</>}
+        mono
+      >
+        <div className="flex flex-wrap gap-2"><MethodBadge method={m} /></div>
         {m.summary && <p className="text-ink">{m.summary}</p>}
-        {m.description && <p className="text-sm text-ink-soft whitespace-pre-line">{m.description}</p>}
-      </header>
+        {m.description && (m.description.length > 400
+          ? <details className="operation-details"><summary>Operation details</summary><p className="mt-4 whitespace-pre-line"><DocText>{m.description}</DocText></p></details>
+          : <p className="whitespace-pre-line"><DocText>{m.description}</DocText></p>)}
+      </DocHeader>
 
       {m.httpMethod && m.path && (
-        <div className="flex items-center gap-3">
-          <code className="rounded-sm border border-rule-soft px-2 py-1 font-mono text-xs font-medium text-ink">
+        <div className="flex items-start gap-3 rounded-lg bg-paper-tint p-5">
+          <code translate="no" className="http-verb">
             {m.httpMethod}
           </code>
-          <code className="font-mono text-xs text-ink-soft">{m.path}</code>
+          <code translate="no" className="min-w-0 break-all font-mono text-xs leading-6 text-ink-soft">{m.path}</code>
         </div>
       )}
 
-      <OnThisPage blocks={blocks} />
-
-      {blocks.map((block) => (
-        <AnchoredBlock key={block.id} block={block} />
-      ))}
+      <div className="flex flex-wrap gap-2">
+        <a className="contents-link" href="#example">Jump to example ↓</a>
+        <CopyButton label="Copy method name" value={`client.${g.accessor}.${m.name}`} />
+        <CopyButton label="Copy page link" value={`${window.location.origin}${location.pathname}${location.search}`} />
+      </div>
+      <p className="text-sm leading-7 text-ink-soft">Signatures and examples below use TypeScript. Initialize a client first; replace named arguments such as body, params and resource IDs with your own values.</p>
+      </div>
+      <PageContents rail entries={blocks.map((block) => ({ id: block.id, label: block.label }))} />
+      <div className="method-sections">
+        {blocks.map((block) => <AnchoredBlock key={`${g.accessor}.${m.name}.${block.id}`} block={block} />)}
+        <nav aria-label="Related methods" className="grid gap-3 border-t border-rule-soft pt-7 sm:grid-cols-2">
+          <Link className="doc-card" to={`/docs/reference/${g.accessor}`}><span className="eyebrow">Resource overview</span><span className="mt-3 block break-words font-mono text-sm">{g.accessor} →</span></Link>
+          {g.methods.filter(entry => Boolean(m.path) && entry.name !== m.name && entry.path === m.path).slice(0, 1).map(entry => <Link key={entry.name} className="doc-card" to={`/docs/reference/${g.accessor}/${entry.name}`}><span className="eyebrow">Same endpoint</span><span translate="no" className="mt-3 block break-all font-mono text-sm">{entry.name} →</span></Link>)}
+        </nav>
+      </div>
     </section>
   );
 }
@@ -277,9 +246,9 @@ function ParamsRows({ params }: { params: { name: string; type: string; optional
   return (
     <ul className="flex flex-col gap-1">
       {params.map((p) => (
-        <li key={p.name} className="flex items-baseline gap-3 text-sm">
-          <code className="font-mono text-xs text-ink">{p.name}</code>
-          <span className="text-xs text-ink-soft">{p.type}</span>
+        <li key={p.name} className="flex flex-wrap items-baseline gap-x-3 gap-y-2 text-sm">
+          <code translate="no" className="min-w-0 break-all font-mono text-xs text-ink">{p.name}</code>
+          <span className="min-w-0 break-words text-xs text-ink-soft">{p.type}</span>
           {!p.optional && <span className="text-[0.6rem] text-accent">required</span>}
         </li>
       ))}
@@ -291,7 +260,7 @@ function EnumValues({ values }: { values: string[] }) {
   return (
     <div className="flex flex-wrap gap-1">
       {values.map((v) => (
-        <code key={v} className="rounded-sm border border-rule-soft px-1.5 py-0.5 font-mono text-[0.65rem] text-ink-soft">
+        <code translate="no" key={v} className="rounded-sm border border-rule-soft px-1.5 py-0.5 font-mono text-[0.65rem] text-ink-soft">
           {v}
         </code>
       ))}

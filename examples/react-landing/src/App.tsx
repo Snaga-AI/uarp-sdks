@@ -10,7 +10,7 @@
  * through react-router's search params — a shared link carries the language into
  * any deep route, not only the page it was set on.
  */
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { LanguageProvider } from './hooks/useLanguage';
 import { RootLayout } from './layout/RootLayout';
 import { DocsLayout } from './layout/DocsLayout';
@@ -33,6 +33,7 @@ export function App() {
           <Route element={<RootLayout />}>
             <Route index element={<Landing />} />
             <Route path="docs" element={<DocsLayout />}>
+              <Route index element={<Navigate to="/docs/guides/getting-started" replace />} />
               <Route path="concepts/:slug" element={<ConceptPage />} />
               <Route path="guides" element={<GuideIndex />} />
               <Route path="guides/:slug" element={<GuidePage />} />

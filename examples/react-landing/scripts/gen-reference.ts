@@ -18,6 +18,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve as resolvePath, join } from 'node:path';
 import ts from 'typescript';
+import { VERSION as INSTALLED_SDK_VERSION } from 'uarp-sdk';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const LANDING = resolvePath(HERE, '..');
@@ -134,18 +135,6 @@ function parseFieldDoc(raw: string): {
 function parseSource(filePath: string): ts.SourceFile {
   const text = readFileSync(filePath, 'utf8');
   return ts.createSourceFile(filePath, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-}
-
-function isPrimitive(type: string): boolean {
-  const t = type.trim();
-  return (
-    t === 'string' ||
-    t === 'number' ||
-    t === 'boolean' ||
-    t === 'void' ||
-    t === 'BinaryInput' ||
-    t === 'Blob'
-  );
 }
 
 /** Unwrap `Promise<X>` / `AsyncIterableIterator<X>` / `EventStream` into inner type + kind. */
@@ -274,16 +263,12 @@ function parseGroup(filePath: string, accessor: string, className: string, descr
           hasOptions = true;
           continue;
         }
-        if (p.type.endsWith('Params')) {
+        if (p.name === 'params') {
           queryParams = paramsInterfaces.get(p.type) ?? [];
           continue;
         }
-        if (isPrimitive(p.type)) {
-          pathParams.push(p);
-          continue;
-        }
-        // A named, non-primitive type is the request body ( JsonObject, CreateAgentRequest, … ).
-        bodyType = p.type;
+        if (p.name === 'body') bodyType = p.type;
+        else pathParams.push(p); // Path arguments can be named enum types, not only primitives.
       }
 
       const signature = `${name}(${params
@@ -394,6 +379,11 @@ function parseGroupIndex(): { accessor: string; className: string; description: 
 
 export function generateReference(): Reference {
   const meta = parseMeta();
+  const repositoryVersion = readFileSync(resolvePath(LANDING, '../../VERSION'), 'utf8').trim();
+  const packageVersion = JSON.parse(readFileSync(resolvePath(LANDING, '../../packages/typescript/package.json'), 'utf8')).version;
+  if ([INSTALLED_SDK_VERSION, packageVersion, repositoryVersion].some((version) => version !== meta.sdkVersion)) {
+    throw new Error(`SDK version mismatch: installed=${INSTALLED_SDK_VERSION}, reference=${meta.sdkVersion}, package=${packageVersion}, repository=${repositoryVersion}. Update the docs dependency and regenerate the SDK before building.`);
+  }
   const index = parseGroupIndex();
   const groups: GroupInfo[] = [];
   for (const entry of index) {

@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, type ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { createContext, useCallback, useContext, useEffect, type ReactNode } from 'react';
+import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { LANGUAGES, type LanguageId } from '../docs/content';
 
 /**
@@ -25,7 +25,9 @@ interface LanguageContextValue {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const fromParam = params.get('lang');
   const fromStorage =
@@ -36,19 +38,19 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       ? fromStorage
       : 'ts';
 
+  // A shared ?lang= link must also keep its language after following an internal link.
+  useEffect(() => {
+    if (isLanguageId(fromParam)) localStorage.setItem(LANGUAGE_KEY, fromParam);
+  }, [fromParam]);
+
   const setLanguage = useCallback(
     (next: LanguageId) => {
       localStorage.setItem(LANGUAGE_KEY, next);
-      setParams(
-        (prev) => {
-          const nextParams = new URLSearchParams(prev);
-          nextParams.set('lang', next);
-          return nextParams;
-        },
-        { replace: true },
-      );
+      const nextParams = new URLSearchParams(params);
+      nextParams.set('lang', next);
+      navigate({ search: `?${nextParams}`, hash: location.hash }, { replace: true, preventScrollReset: true });
     },
-    [setParams],
+    [params, navigate, location.hash],
   );
 
   return (

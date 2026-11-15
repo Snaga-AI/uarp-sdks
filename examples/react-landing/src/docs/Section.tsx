@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { DocHeader } from '../components/DocPage';
 
 /**
  * A documentation section with a stable anchor.
@@ -8,16 +9,9 @@ import type { ReactNode } from 'react';
  */
 export function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <section id={id} className="scroll-mt-24 border-t border-rule-soft pt-12">
-      <h2 className="group flex items-baseline gap-2 text-2xl font-semibold tracking-tight">
-        <a href={`#${id}`} className="hover:underline">
-          {title}
-        </a>
-        <span className="font-mono text-sm text-ink-soft opacity-0 transition group-hover:opacity-100">
-          #
-        </span>
-      </h2>
-      <div className="mt-5 flex flex-col gap-4">{children}</div>
+    <section id={id} className="scroll-mt-40 flex flex-col gap-6">
+      <DocHeader eyebrow="Learn / Concepts" title={<a href={`#${id}`} className="hover:text-accent-soft">{title}</a>} />
+      <div className="flex flex-col gap-4">{children}</div>
     </section>
   );
 }

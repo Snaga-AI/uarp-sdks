@@ -79,15 +79,25 @@ let page = client.agents().list(&Default::default()).await?;
 ```
 
 ```swift
-// Swift
+// Swift — inside an async throws function
+import Foundation
+import UARPSDK
+
 let client = try UARPClient.fromEnvironment()
 let page = try await client.agents.list(limit: 50)
 ```
 
 ```kotlin
-// Kotlin
-val client = UarpClient.fromEnvironment()
-val page = client.agents.list(limit = 50)
+// Kotlin — JVM entry point
+import ai.snaga.uarp.UarpClient
+import ai.snaga.uarp.api.agents
+import kotlinx.coroutines.runBlocking
+
+fun main() = runBlocking {
+    val client = UarpClient.fromEnvironment()
+    val page = client.agents.list(limit = 50)
+    println(page.items.size)
+}
 ```
 
 ```python
@@ -100,10 +110,17 @@ for agent in client.agents.list_all(limit=50):
 ```
 
 ```ada
---  Ada
-Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
-Page   : constant UARP.Models.List_Agents_Response :=
-  UARP.API.Agents.List (Client);
+--  Ada: declarations inside your procedure; keep with clauses at file level.
+with UARP.API.Agents;
+with UARP.Client;
+with UARP.Models;
+
+procedure Demo is
+   Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
+   Page : constant UARP.Models.List_Agents_Response := UARP.API.Agents.List (Client);
+begin
+   null;
+end Demo;
 ```
 
 Each package has its own README with installation, streaming, pagination, error
