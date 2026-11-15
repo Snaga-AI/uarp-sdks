@@ -1,3 +1,4 @@
+import { useModalDialog } from '../hooks/useModalDialog';
 /**
  * The two-column docs shell: sidebar tree + content, on the same paper-on-desk
  * container the landing uses. Only `/docs/*` routes are wrapped here, so the
@@ -16,6 +17,7 @@ import { Sidebar } from '../components/Sidebar';
 function MobileNav() {
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  useModalDialog(dialogRef);
   const location = useLocation();
   const close = () => dialogRef.current?.close();
   useEffect(() => { dialogRef.current?.close(); }, [location.pathname]);

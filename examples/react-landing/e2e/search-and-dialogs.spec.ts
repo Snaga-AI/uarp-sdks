@@ -1,0 +1,55 @@
+import { expect, test } from '@playwright/test';
+
+test('search categories narrow results and Enter opens the first visible match', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto('/docs/guides');
+  await page.locator('header').getByRole('button', { name: 'Search documentation' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Search documentation' });
+  await dialog.getByRole('searchbox').fill('errors');
+  await dialog.getByRole('button', { name: 'Docs', exact: true }).click();
+  await expect(dialog.locator('ul button').filter({ hasText: 'concept' }).first()).toBeVisible();
+  await dialog.getByRole('searchbox').fill('z'.repeat(200));
+  await expect(dialog.getByText(/No results for/)).toBeVisible();
+  expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await dialog.getByRole('button', { name: 'Search all categories' }).click();
+  await expect(dialog.getByRole('button', { name: 'All', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await dialog.getByRole('searchbox').fill('create');
+  await expect(dialog.locator('ul button').first()).toBeVisible();
+  await dialog.getByRole('button', { name: 'Models', exact: true }).click();
+  await expect(dialog.getByRole('button', { name: 'Models', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(dialog.locator('ul button').first()).toContainText('model');
+  expect((await dialog.locator('ul button > span:last-child').allTextContents()).every(kind => kind === 'model')).toBe(true);
+  const first = await dialog.locator('ul button > span:first-child > span:first-child').first().innerText();
+  expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await page.screenshot({ path: '/tmp/sdk-search-mobile.png' });
+  await dialog.getByRole('searchbox').press('Enter');
+  await expect(page).toHaveURL(new RegExp(`/docs/reference/model/${first}$`));
+  await expect(dialog).not.toBeVisible();
+});
+
+test('dialogs lock background scrolling and release it after close or mobile handoff', async ({ page }) => {
+  await page.goto('/docs/guides/getting-started');
+  await page.evaluate(() => window.scrollTo({ top: 500, behavior: 'instant' }));
+  await page.locator('header').getByRole('button', { name: 'Search documentation' }).click();
+  await expect(page.locator('html')).toHaveCSS('overflow', 'hidden');
+  const before = await page.evaluate(() => scrollY);
+  await page.mouse.move(5, 500);
+  await page.mouse.wheel(0, 600);
+  await page.waitForTimeout(150);
+  expect(await page.evaluate(() => scrollY)).toBe(before);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('html')).not.toHaveCSS('overflow', 'hidden');
+  await page.locator('#run').getByRole('button', { name: 'Expand code' }).click();
+  await expect(page.locator('html')).toHaveCSS('overflow', 'hidden');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('html')).not.toHaveCSS('overflow', 'hidden');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/docs/guides');
+  await page.getByRole('button', { name: 'Open navigation' }).click();
+  await expect(page.locator('html')).toHaveCSS('overflow', 'hidden');
+  await page.getByRole('dialog', { name: 'Contents', exact: true }).getByRole('button', { name: 'Search documentation' }).click();
+  await expect(page.getByRole('dialog', { name: 'Search documentation' })).toBeVisible();
+  await expect(page.locator('html')).toHaveCSS('overflow', 'hidden');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('html')).not.toHaveCSS('overflow', 'hidden');
+});

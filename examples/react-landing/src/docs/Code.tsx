@@ -1,3 +1,4 @@
+import { useModalDialog } from '../hooks/useModalDialog';
 import { useEffect, useRef, useState } from 'react';
 import { tokenise, type TokenKind } from './highlight';
 import { LanguagePicker } from '../components/LanguagePicker';
@@ -15,6 +16,7 @@ export function Code({ children, language = 'ts', selectable = false }: { childr
   const [wrapOverride, setWrapOverride] = useState<boolean | null>(null);
   const [expanded, setExpanded] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  useModalDialog(dialogRef);
   const sampleRef = useRef<HTMLPreElement>(null);
   const expandedSampleRef = useRef<HTMLPreElement>(null);
   const wrap = wrapOverride ?? narrow;
